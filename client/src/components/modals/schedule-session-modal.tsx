@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -34,7 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 
 const scheduleSessionSchema = z.object({
-  studentName: z.string().min(1, "Student name is required"),
+  studentId: z.string().min(1, "Please select a student"),
   date: z.date({ required_error: "Date is required" }),
   time: z.string().min(1, "Time is required").regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter a valid time (HH:MM)"),
   duration: z.number().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
@@ -42,6 +49,12 @@ const scheduleSessionSchema = z.object({
 });
 
 type ScheduleSessionForm = z.infer<typeof scheduleSessionSchema>;
+
+interface Student {
+  id: string;
+  name: string;
+  created_at: string;
+}
 
 interface ScheduleSessionModalProps {
   open: boolean;
@@ -53,10 +66,28 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch students from Supabase
+  const { data: students, isLoading: studentsLoading } = useQuery({
+    queryKey: ['students'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('students')
+        .select('id, name')
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching students:', error);
+        throw error;
+      }
+
+      return data as Student[];
+    },
+  });
+
   const form = useForm<ScheduleSessionForm>({
     resolver: zodResolver(scheduleSessionSchema),
     defaultValues: {
-      studentName: "",
+      studentId: "",
       date: undefined,
       time: "",
       duration: 60,
@@ -70,7 +101,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
     try {
       // Prepare data for Supabase insertion
       const sessionData = {
-        student_name: data.studentName,
+        student_id: data.studentId,
         date: format(data.date, "yyyy-MM-dd"),
         time: data.time,
         duration: data.duration,
@@ -137,15 +168,26 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Student Name */}
+            {/* Student Selection */}
             <FormField
               control={form.control}
-              name="studentName"
+              name="studentId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Student Name</FormLabel>
+                  <FormLabel>Student</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter student name" {...field} />
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={studentsLoading ? "Loading students..." : "Select a student"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {students?.map((student) => (
+                          <SelectItem key={student.id} value={student.id}>
+                            {student.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
