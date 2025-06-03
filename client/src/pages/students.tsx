@@ -1,6 +1,209 @@
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabaseClient";
+import { formatCurrency } from "@/lib/utils";
+import { 
+  User, 
+  Calendar,
+  DollarSign,
+  Clock
+} from "lucide-react";
+
+interface Session {
+  id: string;
+  student_name: string;
+  date: string;
+  time: string;
+  duration: number;
+  rate: number;
+  created_at: string;
+}
+
+interface StudentSummary {
+  name: string;
+  totalSessions: number;
+  totalEarnings: number;
+  lastSessionDate: string;
+  avgSessionDuration: number;
+  upcomingSessions: number;
+}
 
 export default function Students() {
+  const queryClient = useQueryClient();
+
+  const { data: sessions, isLoading, error } = useQuery({
+    queryKey: ['student-sessions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching student data:', error);
+        throw error;
+      }
+
+      return data as Session[];
+    },
+  });
+
+  // Set up Supabase realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('student-sessions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sessions'
+        },
+        (payload) => {
+          console.log('Sessions updated, refreshing student data:', payload);
+          queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  // Calculate student summaries
+  const calculateStudentSummaries = (sessions: Session[]): StudentSummary[] => {
+    if (!sessions || sessions.length === 0) return [];
+
+    const now = new Date();
+    const studentMap = new Map<string, {
+      sessions: Session[];
+      totalEarnings: number;
+      totalDuration: number;
+      upcomingSessions: number;
+    }>();
+
+    sessions.forEach(session => {
+      const sessionDate = new Date(session.date);
+      const earnings = (session.duration / 60) * session.rate;
+      
+      if (!studentMap.has(session.student_name)) {
+        studentMap.set(session.student_name, {
+          sessions: [],
+          totalEarnings: 0,
+          totalDuration: 0,
+          upcomingSessions: 0
+        });
+      }
+
+      const studentData = studentMap.get(session.student_name)!;
+      studentData.sessions.push(session);
+      studentData.totalEarnings += earnings;
+      studentData.totalDuration += session.duration;
+      
+      if (sessionDate >= now) {
+        studentData.upcomingSessions++;
+      }
+    });
+
+    return Array.from(studentMap.entries()).map(([name, data]) => {
+      const sortedSessions = data.sessions.sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+
+      return {
+        name,
+        totalSessions: data.sessions.length,
+        totalEarnings: data.totalEarnings,
+        lastSessionDate: sortedSessions[0]?.date || '',
+        avgSessionDuration: data.totalDuration / data.sessions.length,
+        upcomingSessions: data.upcomingSessions
+      };
+    }).sort((a, b) => b.totalEarnings - a.totalEarnings);
+  };
+
+  const studentSummaries = sessions ? calculateStudentSummaries(sessions) : [];
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 overflow-auto">
+        <header className="bg-white border-b border-border px-6 py-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">Students</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your student profiles and session history.
+            </p>
+          </div>
+        </header>
+
+        <div className="p-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Student Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex justify-between items-center p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3 w-32" />
+                      </div>
+                    </div>
+                    <div className="flex gap-4">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 overflow-auto">
+        <header className="bg-white border-b border-border px-6 py-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">Students</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your student profiles and session history.
+            </p>
+          </div>
+        </header>
+
+        <div className="p-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-12">
+                <p className="text-red-500">
+                  Error loading student data. Please try again.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 overflow-auto">
       {/* Header */}
@@ -8,7 +211,7 @@ export default function Students() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Students</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage your student profiles and contact information.
+            Manage your student profiles and session history.
           </p>
         </div>
       </header>
@@ -17,14 +220,89 @@ export default function Students() {
       <div className="p-6">
         <Card>
           <CardHeader>
-            <CardTitle>Student Management</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Student Overview ({studentSummaries.length} students)
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                Student management functionality coming soon...
-              </p>
-            </div>
+            {studentSummaries.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  No students found. Start by scheduling your first session.
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student Name</TableHead>
+                    <TableHead className="text-center">Total Sessions</TableHead>
+                    <TableHead className="text-center">Upcoming</TableHead>
+                    <TableHead className="text-center">Avg Duration</TableHead>
+                    <TableHead className="text-center">Last Session</TableHead>
+                    <TableHead className="text-right">Total Earnings</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {studentSummaries.map((student) => (
+                    <TableRow key={student.name}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <User className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{student.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Active student
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          {student.totalSessions}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {student.upcomingSessions > 0 ? (
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            {student.upcomingSessions}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">0</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          {Math.round(student.avgSessionDuration)}m
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {student.lastSessionDate ? (
+                          <span className="text-sm">
+                            {new Date(student.lastSessionDate).toLocaleDateString()}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <DollarSign className="h-4 w-4 text-green-600" />
+                          <span className="font-medium text-green-600">
+                            {formatCurrency(student.totalEarnings)}
+                          </span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
