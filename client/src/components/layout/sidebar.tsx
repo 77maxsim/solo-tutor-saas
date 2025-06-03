@@ -3,13 +3,16 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/lib/supabaseClient";
+import { useToast } from "@/hooks/use-toast";
 import { 
   LayoutDashboard, 
   Calendar, 
   DollarSign, 
   Users, 
   GraduationCap,
-  Plus
+  Plus,
+  LogOut
 } from "lucide-react";
 
 const navigation = [
@@ -25,10 +28,36 @@ interface SidebarProps {
 
 export function Sidebar({ onScheduleSession }: SidebarProps) {
   const [location] = useLocation();
+  const { toast } = useToast();
 
   const handleScheduleSession = () => {
     if (onScheduleSession) {
       onScheduleSession();
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Logout Failed",
+          description: error.message,
+        });
+      } else {
+        toast({
+          title: "Logged out successfully",
+          description: "You have been signed out of your account.",
+        });
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred during logout.",
+      });
     }
   };
 
