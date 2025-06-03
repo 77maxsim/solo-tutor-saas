@@ -53,6 +53,11 @@ export default function Earnings() {
   const { data: sessions, isLoading, error } = useQuery<SessionWithStudent[]>({
     queryKey: ['earnings-sessions'],
     queryFn: async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
+      }
+
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -61,6 +66,7 @@ export default function Earnings() {
             name
           )
         `)
+        .eq('tutor_id', tutorId)
         .order('date', { ascending: false });
 
       if (error) {

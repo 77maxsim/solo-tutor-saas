@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { formatCurrency } from "@/lib/utils";
 import { 
   User, 
@@ -47,6 +48,11 @@ export default function Students() {
   const { data: sessions, isLoading, error } = useQuery({
     queryKey: ['student-sessions'],
     queryFn: async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
+      }
+
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -62,6 +68,7 @@ export default function Students() {
             name
           )
         `)
+        .eq('tutor_id', tutorId)
         .order('date', { ascending: false });
 
       if (error) {
