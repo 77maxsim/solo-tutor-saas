@@ -123,7 +123,7 @@ export default function Earnings() {
     const studentEarningsMap = new Map<string, { total: number; count: number }>();
     const activeStudentsSet = new Set<string>();
 
-    (sessions as SessionWithStudent[]).forEach(session => {
+    sessions.forEach(session => {
       const sessionDate = new Date(session.date);
       const earnings = (session.duration / 60) * session.rate;
       
