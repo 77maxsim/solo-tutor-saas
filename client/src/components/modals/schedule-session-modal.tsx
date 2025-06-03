@@ -245,6 +245,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                       type="number"
                       placeholder="45.00"
                       step="0.01"
+                      className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                       {...field}
                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       onFocus={(e) => {
