@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
 import { DollarSign, AlertTriangle } from "lucide-react";
 

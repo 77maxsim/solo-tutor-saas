@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
 import { X, DollarSign } from "lucide-react";
 
@@ -28,6 +29,11 @@ export function UpcomingSessions() {
   const { data: sessions, isLoading, error } = useQuery({
     queryKey: ['upcoming-sessions'],
     queryFn: async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
+      }
+
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -43,6 +49,7 @@ export function UpcomingSessions() {
             name
           )
         `)
+        .eq('tutor_id', tutorId)
         .gte('date', new Date().toISOString().split('T')[0]) // Only future sessions
         .order('date', { ascending: true })
         .order('time', { ascending: true })

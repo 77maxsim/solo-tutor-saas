@@ -6,6 +6,7 @@ import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { 
   BookOpen, 
   DollarSign, 
@@ -35,6 +36,11 @@ export default function Dashboard() {
   const { data: dashboardStats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
+      }
+
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -50,6 +56,7 @@ export default function Dashboard() {
             name
           )
         `)
+        .eq('tutor_id', tutorId)
         .order('date', { ascending: false });
 
       if (error) {
