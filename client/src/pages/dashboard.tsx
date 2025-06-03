@@ -4,6 +4,7 @@ import { UpcomingSessions } from "@/components/dashboard/upcoming-sessions";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
+import { supabase } from "@/lib/supabaseClient";
 import { 
   BookOpen, 
   DollarSign, 
@@ -11,6 +12,17 @@ import {
   Users,
   Plus 
 } from "lucide-react";
+
+interface SessionWithStudent {
+  id: string;
+  student_id: string;
+  student_name: string;
+  date: string;
+  time: string;
+  duration: number;
+  rate: number;
+  created_at: string;
+}
 
 
 
@@ -37,19 +49,95 @@ const mockRecentActivity = [
 ];
 
 export default function Dashboard() {
-  // In a real app, this would fetch actual data
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ["/api/dashboard/stats/1"],
-    enabled: false, // Disable for now since we're using mock data
-  });
+  // Fetch dashboard statistics from real session data
+  const { data: dashboardStats, isLoading } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select(`
+          *,
+          students (
+            name
+          )
+        `)
+        .order('date', { ascending: false });
 
-  // Mock stats data
-  const mockStats = {
-    sessionsThisWeek: 12,
-    totalEarnings: 2840,
-    pendingPayments: 320,
-    activeStudents: 28
-  };
+      if (error) {
+        console.error('Error fetching dashboard data:', error);
+        throw error;
+      }
+
+      // Transform the data to include student_name
+      const sessionsWithNames = data?.map((session: any) => ({
+        ...session,
+        student_name: session.students?.name || 'Unknown Student'
+      })) || [];
+
+      // Calculate statistics
+      const now = new Date();
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      // Current month boundaries
+      const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+      let sessionsThisWeek = 0;
+      let currentMonthEarnings = 0;
+      let lastMonthEarnings = 0;
+      let pendingPayments = 0; // Mock for now
+      const activeStudentsSet = new Set<string>();
+
+      sessionsWithNames.forEach((session: SessionWithStudent) => {
+        const sessionDate = new Date(session.date);
+        const earnings = (session.duration / 60) * session.rate;
+
+        // Sessions this week
+        if (sessionDate >= oneWeekAgo) {
+          sessionsThisWeek++;
+        }
+
+        // Current month earnings
+        if (sessionDate >= firstDayOfCurrentMonth) {
+          currentMonthEarnings += earnings;
+        }
+
+        // Last month earnings
+        if (sessionDate >= firstDayOfLastMonth && sessionDate <= lastDayOfLastMonth) {
+          lastMonthEarnings += earnings;
+        }
+
+        // Active students (sessions in last 30 days)
+        if (sessionDate >= thirtyDaysAgo) {
+          activeStudentsSet.add(session.student_name);
+        }
+      });
+
+      // Calculate percentage change
+      let earningsChange = "N/A";
+      let earningsChangeType: "positive" | "negative" | "neutral" = "neutral";
+
+      if (lastMonthEarnings > 0) {
+        const changePercent = ((currentMonthEarnings - lastMonthEarnings) / lastMonthEarnings) * 100;
+        earningsChange = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(1)}%`;
+        earningsChangeType = changePercent > 0 ? "positive" : changePercent < 0 ? "negative" : "neutral";
+      } else if (currentMonthEarnings > 0) {
+        earningsChange = "New";
+        earningsChangeType = "positive";
+      }
+
+      return {
+        sessionsThisWeek,
+        totalEarnings: currentMonthEarnings,
+        earningsChange,
+        earningsChangeType,
+        pendingPayments,
+        activeStudents: activeStudentsSet.size
+      };
+    },
+  });
 
   const handleScheduleSession = () => {
     // Trigger the global schedule session modal
@@ -82,7 +170,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
             title="Sessions This Week"
-            value={mockStats.sessionsThisWeek.toString()}
+            value={isLoading ? "..." : (dashboardStats?.sessionsThisWeek.toString() || "0")}
             change="+3 from last week"
             changeType="positive"
             icon={BookOpen}
@@ -90,18 +178,18 @@ export default function Dashboard() {
             iconBgColor="bg-blue-100"
           />
           <StatsCard
-            title="Total Earnings"
-            value={formatCurrency(mockStats.totalEarnings)}
-            change="+12% this month"
-            changeType="positive"
+            title="This Month Earnings"
+            value={isLoading ? "..." : formatCurrency(dashboardStats?.totalEarnings || 0)}
+            change={isLoading ? "..." : (dashboardStats?.earningsChange || "N/A")}
+            changeType={dashboardStats?.earningsChangeType || "neutral"}
             icon={DollarSign}
             iconColor="text-green-600"
             iconBgColor="bg-green-100"
           />
           <StatsCard
             title="Pending Payments"
-            value={formatCurrency(mockStats.pendingPayments)}
-            change="4 students"
+            value={isLoading ? "..." : formatCurrency(dashboardStats?.pendingPayments || 0)}
+            change="Mock data"
             changeType="neutral"
             icon={Clock}
             iconColor="text-orange-600"
@@ -109,7 +197,7 @@ export default function Dashboard() {
           />
           <StatsCard
             title="Active Students"
-            value={mockStats.activeStudents.toString()}
+            value={isLoading ? "..." : (dashboardStats?.activeStudents.toString() || "0")}
             change="+2 new this week"
             changeType="positive"
             icon={Users}
