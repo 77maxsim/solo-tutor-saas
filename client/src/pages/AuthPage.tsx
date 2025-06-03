@@ -256,7 +256,10 @@ export default function AuthPage() {
                             placeholder="Enter your full name"
                             disabled={isLoading}
                             autoComplete="name"
-                            {...field}
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
                           />
                         </FormControl>
                         <FormMessage />
