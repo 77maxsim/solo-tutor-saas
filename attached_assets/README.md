@@ -1,72 +1,112 @@
-# 📚 Solo Tutor SaaS
+# 📚 TutorTrack
 
-A lightweight scheduling and income tracking web app for solo language tutors. Built with Replit, Supabase, and shadcn/ui. The goal is to provide an elegant dashboard where tutors can plan lessons and see their earnings in real-time.
+A comprehensive tutor management platform designed to streamline scheduling, earnings tracking, and student management for educational professionals. Built with React, Supabase, and shadcn/ui components.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React or Next.js (on Replit)
-- **Backend**: Supabase (Auth + Database)
-- **Styling/UI**: shadcn/ui components
-- **Platform**: Replit + GitHub
-- **Approach**: Vibe coding in small, testable increments
+- **Frontend**: React.js with Vite
+- **Database**: Supabase (PostgreSQL)
+- **UI Components**: shadcn/ui component library
+- **Styling**: Tailwind CSS
+- **Forms**: React Hook Form with Zod validation
+- **State Management**: TanStack Query
+- **Platform**: Replit
 
 ---
 
-## ✅ Feature Backlog
+## ✅ Feature Progress
 
-### Epic 1: Core Setup
-- [x] Initialize Replit project with folders and dependencies
-- [x] Set up Supabase project and connect to Replit
-- [x] Implement user authentication (sign-up, log-in)
+### Epic 1: Core Dashboard ✅
+- [x] Responsive sidebar navigation with mobile support
+- [x] Dashboard with stats cards (sessions, earnings, payments, students)
+- [x] Recent activity feed component
+- [x] Upcoming sessions widget
+- [x] Mobile-first responsive design
 
-### Epic 2: Scheduling System
-- [ ] Create weekly calendar UI to display upcoming classes
-- [ ] Add modal form to schedule a new class (student, date, time, duration)
-- [ ] Save scheduled classes to Supabase
-- [ ] Enable editing/deleting of existing classes
+### Epic 2: Session Scheduling ✅
+- [x] Schedule Session modal with complete form validation
+- [x] Student name, date, time, duration, and rate fields
+- [x] Zod schema validation with error handling
+- [x] Direct Supabase integration for data persistence
+- [x] Success/error toast notifications
 
-### Epic 3: Earnings Tracker
-- [ ] Table of completed classes with payment info
-- [ ] Summary cards: total earned today / this week / this month
-- [ ] Forecast income from scheduled future classes
+### Epic 3: Database Integration ✅
+- [x] Supabase project configuration
+- [x] Sessions table with proper schema
+- [x] Real-time data insertion and retrieval
+- [x] Environment variable configuration
 
-### Epic 4: UI & UX Polish
-- [ ] Apply shadcn/ui components to forms, buttons, and cards
-- [ ] Responsive layout for mobile/tablet
-- [ ] Add empty states and loading indicators
+### Epic 4: Data Display & Management
+- [ ] Calendar view for session scheduling
+- [ ] Students page with student management
+- [ ] Earnings tracker with payment history
+- [ ] Real-time dashboard data from Supabase
 
-### Epic 5: Testing & Deployment
-- [ ] Create test data or simulate usage flow
-- [ ] Resolve bugs and edge cases
-- [ ] Connect GitHub and optionally deploy via Vercel
-
----
-
-## 🤖 AI Coding Guidelines (for Ghostwriter / Vibe Coding)
-
-- ✳️ Build in **incremental steps** – avoid large, monolithic prompts.
-- 🔄 **Use minimal code changes** when adding new features.
-- ♻️ **Reuse existing components** where possible (e.g., shadcn buttons, modals).
-- 📦 Keep **Supabase integration** modular and consistent across files.
-- 👁️ Prioritize **code readability and maintainability**.
-- 🧪 Do **not auto-generate test data** unless requested.
-- 🗂️ Add inline comments to explain any non-obvious logic.
+### Epic 5: Enhanced Features
+- [ ] Session editing and cancellation
+- [ ] Student profiles and contact information
+- [ ] Payment tracking and invoicing
+- [ ] Export functionality for reports
 
 ---
 
-## 🚀 How to Run
+## 🏗️ Architecture
 
-1. Fork this Replit
-2. Create a Supabase project:
-   - Add `users`, `classes`, and `payments` tables
-3. Set up your `.env` file with Supabase credentials
-4. Start the app using the Replit run button
+**Frontend Architecture:**
+- React.js with TypeScript
+- Component-based design with shadcn/ui
+- Form validation using React Hook Form + Zod
+- State management with TanStack Query
+- Responsive design with Tailwind CSS
+
+**Backend Architecture:**
+- Supabase PostgreSQL database
+- Direct client-to-database communication
+- Real-time data synchronization
+- Row Level Security (RLS) for data protection
+
+**Data Flow:**
+1. User interacts with React components
+2. Forms validate data using Zod schemas
+3. Supabase client handles database operations
+4. TanStack Query manages caching and state
+5. UI updates reactively with fresh data
 
 ---
 
-## 📓 Dev Notes
+## 🚀 Setup Instructions
 
-This project is being built solo with a focus on learning and real-world product management practice. Each feature is implemented and tested individually to ensure clean, bug-free development.
+1. **Supabase Project Setup:**
+   - Create account at https://supabase.com
+   - Create new project
+   - Copy project URL and anon key
+   - Create `sessions` table with required fields
+
+2. **Environment Configuration:**
+   ```
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_anon_key
+   ```
+
+3. **Run Application:**
+   - Use Replit's "Start application" workflow
+   - Navigate to the provided URL
+   - Begin scheduling sessions
+
+---
+
+## 📊 Database Schema
+
+**Sessions Table:**
+- id (uuid, primary key)
+- student_name (text)
+- date (date)
+- time (text)
+- duration (integer, minutes)
+- rate (numeric)
+- created_at (timestamp)
+
+Future tables: students, payments, users
 
