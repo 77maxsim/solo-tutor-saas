@@ -100,8 +100,9 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         description: "Session scheduled successfully!",
       });
 
-      // Invalidate and refetch upcoming sessions
+      // Invalidate and refetch upcoming sessions and calendar
       queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
 
       console.log("Session created:", insertedData);
       form.reset();
