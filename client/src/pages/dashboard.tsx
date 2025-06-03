@@ -28,27 +28,7 @@ interface SessionWithStudent {
 
 
 
-const mockRecentActivity = [
-  {
-    id: 1,
-    type: "payment" as const,
-    description: "Payment received from Maria Garcia",
-    time: "2 hours ago",
-    amount: 45
-  },
-  {
-    id: 2,
-    type: "session_scheduled" as const,
-    description: "New session scheduled with Tom Wilson",
-    time: "5 hours ago"
-  },
-  {
-    id: 3,
-    type: "student_added" as const,
-    description: "New student added: Emma Thompson",
-    time: "Yesterday"
-  }
-];
+
 
 export default function Dashboard() {
   // Fetch dashboard statistics from real session data
@@ -237,7 +217,7 @@ export default function Dashboard() {
 
         {/* Recent Activity */}
         <div className="max-w-2xl">
-          <RecentActivity activities={mockRecentActivity} />
+          <RecentActivity />
         </div>
       </div>
     </div>
