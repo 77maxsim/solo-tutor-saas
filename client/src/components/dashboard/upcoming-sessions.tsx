@@ -7,15 +7,17 @@ import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
-import { X } from "lucide-react";
+import { X, DollarSign } from "lucide-react";
 
 interface Session {
   id: string;
+  student_id: string;
   student_name: string;
   date: string;
   time: string;
   duration: number;
   rate: number;
+  paid: boolean;
   created_at: string;
 }
 
@@ -28,7 +30,19 @@ export function UpcomingSessions() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sessions')
-        .select('*')
+        .select(`
+          id,
+          student_id,
+          date,
+          time,
+          duration,
+          rate,
+          paid,
+          created_at,
+          students (
+            name
+          )
+        `)
         .gte('date', new Date().toISOString().split('T')[0]) // Only future sessions
         .order('date', { ascending: true })
         .order('time', { ascending: true })
@@ -39,7 +53,13 @@ export function UpcomingSessions() {
         throw error;
       }
 
-      return data as Session[];
+      // Transform the data to include student_name
+      const sessionsWithNames = data?.map((session: any) => ({
+        ...session,
+        student_name: session.students?.name || 'Unknown Student'
+      })) || [];
+
+      return sessionsWithNames as Session[];
     },
   });
 
@@ -96,9 +116,49 @@ export function UpcomingSessions() {
     },
   });
 
+  // Mark as paid mutation
+  const markAsPaidMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const { error } = await supabase
+        .from('sessions')
+        .update({ paid: true })
+        .eq('id', sessionId);
+
+      if (error) {
+        console.error('Error marking session as paid:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Payment recorded",
+        description: "The session has been marked as paid.",
+      });
+      // Refresh all relevant queries
+      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['earnings-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+    },
+    onError: (error) => {
+      console.error('Error marking session as paid:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update payment status. Please try again.",
+      });
+    },
+  });
+
   const handleCancelSession = (sessionId: string, studentName: string) => {
     if (window.confirm(`Are you sure you want to cancel the session with ${studentName}?`)) {
       cancelSessionMutation.mutate(sessionId);
+    }
+  };
+
+  const handleMarkAsPaid = (sessionId: string, studentName: string) => {
+    if (window.confirm(`Mark session with ${studentName} as paid?`)) {
+      markAsPaidMutation.mutate(sessionId);
     }
   };
 
@@ -191,18 +251,36 @@ export function UpcomingSessions() {
                     {session.date} at {session.time} ({session.duration} min)
                   </p>
                 </div>
-                <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full font-medium">
-                  {formatCurrency(calculatedPrice)}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
-                  onClick={() => handleCancelSession(session.id, session.student_name)}
-                  disabled={cancelSessionMutation.isPending}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full font-medium">
+                    {formatCurrency(calculatedPrice)}
+                  </span>
+                  {session.paid ? (
+                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full font-medium">
+                      Paid
+                    </span>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-xs px-2 text-green-600 border-green-200 hover:bg-green-50"
+                      onClick={() => handleMarkAsPaid(session.id, session.student_name)}
+                      disabled={markAsPaidMutation.isPending}
+                    >
+                      <DollarSign className="h-3 w-3 mr-1" />
+                      Mark Paid
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
+                    onClick={() => handleCancelSession(session.id, session.student_name)}
+                    disabled={cancelSessionMutation.isPending}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             );
           })}

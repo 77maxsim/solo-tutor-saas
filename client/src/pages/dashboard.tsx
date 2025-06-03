@@ -211,7 +211,7 @@ export default function Dashboard() {
           <StatsCard
             title="Pending Payments"
             value={isLoading ? "..." : formatCurrency(dashboardStats?.pendingPayments || 0)}
-            change={isLoading ? "..." : `${dashboardStats?.unpaidStudentsCount || 0} students`}
+            change={isLoading ? "..." : `${dashboardStats?.unpaidStudentsCount || 0} students with pending payments`}
             changeType="neutral"
             icon={Clock}
             iconColor="text-orange-600"
