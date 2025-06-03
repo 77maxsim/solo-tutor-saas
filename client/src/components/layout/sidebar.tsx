@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -38,6 +39,9 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
 
   const handleLogout = async () => {
     try {
+      // Clear all cached queries to prevent data leakage between users
+      queryClient.clear();
+      
       const { error } = await supabase.auth.signOut();
       if (error) {
         toast({
