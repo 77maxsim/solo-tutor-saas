@@ -247,6 +247,19 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                       step="0.01"
                       {...field}
                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      onFocus={(e) => {
+                        // Clear the field if it contains 0 when focused
+                        if (field.value === 0) {
+                          field.onChange('');
+                          e.target.value = '';
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // Reset to 0 if the field is empty when blurred
+                        if (e.target.value === '' || e.target.value === null) {
+                          field.onChange(0);
+                        }
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
