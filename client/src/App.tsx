@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
+import { ScheduleSessionModal } from "@/components/modals/schedule-session-modal";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ function Router() {
 
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   const getPageTitle = (pathname: string) => {
     switch (pathname) {
@@ -47,7 +49,7 @@ function AppLayout() {
   };
 
   const handleScheduleSession = () => {
-    alert("Schedule Session functionality will be implemented next!");
+    setIsScheduleModalOpen(true);
   };
 
   return (
@@ -76,6 +78,12 @@ function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         <Router />
       </div>
+
+      {/* Global Schedule Session Modal */}
+      <ScheduleSessionModal 
+        open={isScheduleModalOpen} 
+        onOpenChange={setIsScheduleModalOpen} 
+      />
     </div>
   );
 }
