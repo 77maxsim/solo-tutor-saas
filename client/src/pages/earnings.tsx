@@ -59,18 +59,21 @@ export default function Earnings() {
         totalEarnings: 0,
         thisWeekEarnings: 0,
         thisMonthSessions: 0,
+        activeStudents: 0,
         studentEarnings: []
       };
     }
 
     const now = new Date();
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     let totalEarnings = 0;
     let thisWeekEarnings = 0;
     let thisMonthSessions = 0;
     const studentEarningsMap = new Map<string, { total: number; count: number }>();
+    const activeStudentsSet = new Set<string>();
 
     sessions.forEach(session => {
       const sessionDate = new Date(session.date);
@@ -87,6 +90,11 @@ export default function Earnings() {
       // This month sessions
       if (sessionDate >= firstDayOfMonth) {
         thisMonthSessions++;
+      }
+      
+      // Active students (sessions in last 30 days)
+      if (sessionDate >= thirtyDaysAgo) {
+        activeStudentsSet.add(session.student_name);
       }
       
       // Student earnings
@@ -109,6 +117,7 @@ export default function Earnings() {
       totalEarnings,
       thisWeekEarnings,
       thisMonthSessions,
+      activeStudents: activeStudentsSet.size,
       studentEarnings
     };
   };
@@ -260,10 +269,10 @@ export default function Earnings() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                {earnings?.studentEarnings.length || 0}
+                {earnings?.activeStudents || 0}
               </div>
               <p className="text-xs text-muted-foreground">
-                Total students
+                Last 30 days
               </p>
             </CardContent>
           </Card>
