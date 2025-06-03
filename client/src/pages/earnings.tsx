@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { formatCurrency } from "@/lib/utils";
 import { 
   DollarSign, 

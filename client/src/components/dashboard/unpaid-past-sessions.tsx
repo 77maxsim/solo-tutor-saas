@@ -29,6 +29,11 @@ export function UnpaidPastSessions() {
   const { data: unpaidSessions, isLoading, error } = useQuery({
     queryKey: ['unpaid-past-sessions'],
     queryFn: async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
+      }
+
       const now = new Date();
       const currentDate = now.toISOString().split('T')[0];
       const currentTime = now.toTimeString().split(' ')[0].substring(0, 5);
@@ -48,6 +53,7 @@ export function UnpaidPastSessions() {
             name
           )
         `)
+        .eq('tutor_id', tutorId)
         .eq('paid', false)
         .or(`date.lt.${currentDate},and(date.eq.${currentDate},time.lt.${currentTime})`)
         .order('date', { ascending: false })

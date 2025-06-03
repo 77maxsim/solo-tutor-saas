@@ -6,6 +6,7 @@ import { CheckCircle, CalendarPlus, UserPlus } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { formatCurrency } from "@/lib/utils";
 
 interface Activity {
@@ -23,6 +24,11 @@ export function RecentActivity() {
   const { data: activities = [], isLoading, error } = useQuery({
     queryKey: ['recent-activity'],
     queryFn: async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
+      }
+
       // Fetch recent sessions (with student names)
       const { data: recentSessions, error: sessionsError } = await supabase
         .from('sessions')
@@ -36,6 +42,7 @@ export function RecentActivity() {
             name
           )
         `)
+        .eq('tutor_id', tutorId)
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -47,6 +54,7 @@ export function RecentActivity() {
       const { data: recentStudents, error: studentsError } = await supabase
         .from('students')
         .select('id, name, created_at')
+        .eq('tutor_id', tutorId)
         .order('created_at', { ascending: false })
         .limit(5);
 

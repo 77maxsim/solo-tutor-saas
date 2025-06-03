@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { Calendar as BigCalendar, momentLocalizer, Views } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -55,6 +56,11 @@ export default function Calendar() {
   const { data: sessions, isLoading, error } = useQuery({
     queryKey: ['calendar-sessions'],
     queryFn: async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
+      }
+
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -63,6 +69,7 @@ export default function Calendar() {
             name
           )
         `)
+        .eq('tutor_id', tutorId)
         .order('date', { ascending: true });
 
       if (error) {
