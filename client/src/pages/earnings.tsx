@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -8,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { formatCurrency } from "@/lib/utils";
 import { 
@@ -35,6 +36,8 @@ interface StudentEarnings {
 }
 
 export default function Earnings() {
+  const queryClient = useQueryClient();
+
   const { data: sessions, isLoading, error } = useQuery({
     queryKey: ['earnings-sessions'],
     queryFn: async () => {
@@ -51,6 +54,29 @@ export default function Earnings() {
       return data as Session[];
     },
   });
+
+  // Set up Supabase realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('earnings-sessions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sessions'
+        },
+        (payload) => {
+          console.log('Sessions updated, refreshing earnings data:', payload);
+          queryClient.invalidateQueries({ queryKey: ['earnings-sessions'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   // Calculate earnings metrics
   const calculateEarnings = (sessions: Session[]) => {

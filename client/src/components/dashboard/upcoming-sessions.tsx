@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,6 +42,29 @@ export function UpcomingSessions() {
       return data as Session[];
     },
   });
+
+  // Set up Supabase realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('upcoming-sessions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sessions'
+        },
+        (payload) => {
+          console.log('Sessions updated, refreshing upcoming sessions:', payload);
+          queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const cancelSessionMutation = useMutation({
     mutationFn: async (sessionId: string) => {

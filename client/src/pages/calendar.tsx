@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { Calendar as BigCalendar, momentLocalizer, Views } from "react-big-calendar";
 import moment from "moment";
@@ -39,6 +39,7 @@ interface CalendarEvent {
 export default function Calendar() {
   const [calendarView, setCalendarView] = useState<'week' | 'month'>('week');
   const [selectedStudent, setSelectedStudent] = useState<string>('all');
+  const queryClient = useQueryClient();
 
   const { data: sessions, isLoading, error } = useQuery({
     queryKey: ['calendar-sessions'],
@@ -56,6 +57,34 @@ export default function Calendar() {
       return data as Session[];
     },
   });
+
+  // Set up Supabase realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('sessions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'sessions'
+        },
+        (payload) => {
+          console.log('Sessions table changed:', payload);
+          
+          // Invalidate and refetch sessions data
+          queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+          queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+          queryClient.invalidateQueries({ queryKey: ['earnings-sessions'] });
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   // Get unique students for filter dropdown
   const uniqueStudents = sessions ? 
