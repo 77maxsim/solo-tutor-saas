@@ -1,12 +1,20 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { Calendar as BigCalendar, momentLocalizer, Views } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { Plus } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Filter } from "lucide-react";
 
 const localizer = momentLocalizer(moment);
 
@@ -29,6 +37,9 @@ interface CalendarEvent {
 }
 
 export default function Calendar() {
+  const [calendarView, setCalendarView] = useState<'week' | 'month'>('week');
+  const [selectedStudent, setSelectedStudent] = useState<string>('all');
+
   const { data: sessions, isLoading, error } = useQuery({
     queryKey: ['calendar-sessions'],
     queryFn: async () => {
@@ -46,8 +57,19 @@ export default function Calendar() {
     },
   });
 
+  // Get unique students for filter dropdown
+  const uniqueStudents = sessions ? 
+    Array.from(new Set(sessions.map(session => session.student_name))).sort() : [];
+
+  // Filter sessions based on selected student
+  const filteredSessions = sessions ? 
+    selectedStudent === 'all' 
+      ? sessions 
+      : sessions.filter(session => session.student_name === selectedStudent)
+    : [];
+
   // Convert sessions to calendar events
-  const events: CalendarEvent[] = sessions ? sessions.map(session => {
+  const events: CalendarEvent[] = filteredSessions.map(session => {
     // Parse date and time to create start datetime
     const [hours, minutes] = session.time.split(':').map(Number);
     const start = new Date(session.date);
@@ -64,7 +86,7 @@ export default function Calendar() {
       end,
       resource: session
     };
-  }) : [];
+  });
 
   const handleScheduleSession = () => {
     window.dispatchEvent(new CustomEvent('openScheduleModal'));
@@ -103,20 +125,21 @@ export default function Calendar() {
 
         <div className="p-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Weekly Schedule</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <Skeleton className="h-6 w-32" />
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-8 w-40" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-8 w-24" />
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Skeleton className="h-8 w-32" />
-                  <div className="flex gap-2">
-                    <Skeleton className="h-8 w-16" />
-                    <Skeleton className="h-8 w-16" />
-                  </div>
-                </div>
-                <Skeleton className="h-96 w-full" />
-              </div>
+              <Skeleton className="h-96 w-full" />
             </CardContent>
           </Card>
         </div>
@@ -178,8 +201,52 @@ export default function Calendar() {
       {/* Calendar Content */}
       <div className="p-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Weekly Schedule</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <CardTitle>
+              {calendarView === 'week' ? 'Weekly Schedule' : 'Monthly Schedule'}
+            </CardTitle>
+            <div className="flex items-center gap-3">
+              {/* Student Filter */}
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Filter by student" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Students</SelectItem>
+                    {uniqueStudents.map(student => (
+                      <SelectItem key={student} value={student}>
+                        {student}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* View Toggle */}
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                <div className="flex border rounded-md">
+                  <Button
+                    variant={calendarView === 'week' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="rounded-r-none border-r-0"
+                    onClick={() => setCalendarView('week')}
+                  >
+                    Week
+                  </Button>
+                  <Button
+                    variant={calendarView === 'month' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="rounded-l-none"
+                    onClick={() => setCalendarView('month')}
+                  >
+                    Month
+                  </Button>
+                </div>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div style={{ height: '600px' }}>
@@ -188,8 +255,10 @@ export default function Calendar() {
                 events={events}
                 startAccessor="start"
                 endAccessor="end"
-                defaultView={Views.WEEK}
-                views={[Views.WEEK]}
+                defaultView={calendarView === 'week' ? Views.WEEK : Views.MONTH}
+                view={calendarView === 'week' ? Views.WEEK : Views.MONTH}
+                onView={(view) => setCalendarView(view === Views.WEEK ? 'week' : 'month')}
+                views={[Views.WEEK, Views.MONTH]}
                 step={30}
                 showMultiDayTimes
                 eventPropGetter={eventStyleGetter}
