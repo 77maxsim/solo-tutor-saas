@@ -20,6 +20,17 @@ const localizer = momentLocalizer(moment);
 
 interface Session {
   id: string;
+  student_id: string;
+  date: string;
+  time: string;
+  duration: number;
+  rate: number;
+  created_at: string;
+}
+
+interface SessionWithStudent {
+  id: string;
+  student_id: string;
   student_name: string;
   date: string;
   time: string;
@@ -33,7 +44,7 @@ interface CalendarEvent {
   title: string;
   start: Date;
   end: Date;
-  resource: Session;
+  resource: SessionWithStudent;
 }
 
 export default function Calendar() {
@@ -46,7 +57,12 @@ export default function Calendar() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sessions')
-        .select('*')
+        .select(`
+          *,
+          students (
+            name
+          )
+        `)
         .order('date', { ascending: true });
 
       if (error) {
@@ -54,7 +70,13 @@ export default function Calendar() {
         throw error;
       }
 
-      return data as Session[];
+      // Transform the data to include student_name
+      const sessionsWithNames = data?.map((session: any) => ({
+        ...session,
+        student_name: session.students?.name || 'Unknown Student'
+      })) || [];
+
+      return sessionsWithNames as SessionWithStudent[];
     },
   });
 
@@ -86,7 +108,25 @@ export default function Calendar() {
     };
   }, [queryClient]);
 
-  // Get unique students for filter dropdown
+  // Fetch students for filter dropdown
+  const { data: students } = useQuery({
+    queryKey: ['students'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('students')
+        .select('id, name')
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching students:', error);
+        throw error;
+      }
+
+      return data;
+    },
+  });
+
+  // Get unique students from sessions for filter dropdown
   const uniqueStudents = sessions ? 
     Array.from(new Set(sessions.map(session => session.student_name))).sort() : [];
 
@@ -110,7 +150,7 @@ export default function Calendar() {
 
     return {
       id: session.id,
-      title: session.student_name,
+      title: `${session.student_name} – ${session.duration} min`,
       start,
       end,
       resource: session
@@ -134,16 +174,22 @@ export default function Calendar() {
     };
   };
 
-  // Custom event component with consistent tooltip
+  // Custom event component with enhanced tooltip
   const EventComponent = ({ event }: { event: CalendarEvent }) => {
-    const duration = event.resource.duration;
-    const tooltipText = `${event.title} — ${duration} min`;
+    const { student_name, duration, time, rate } = event.resource;
+    const startTime = new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const earning = (rate * duration / 60).toFixed(2);
+    
+    const tooltipText = `${student_name}\n${startTime} - ${duration} min\nRate: $${rate}/hr\nEarning: $${earning}`;
     
     return (
-      <div title={tooltipText} className="h-full w-full">
-        <span className="text-xs font-medium">
-          {event.title}
-        </span>
+      <div title={tooltipText} className="h-full w-full p-1">
+        <div className="text-xs font-medium text-white truncate">
+          {student_name}
+        </div>
+        <div className="text-xs text-white/80 truncate">
+          {duration} min
+        </div>
       </div>
     );
   };
