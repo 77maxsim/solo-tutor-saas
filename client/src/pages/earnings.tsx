@@ -21,6 +21,17 @@ import {
 
 interface Session {
   id: string;
+  student_id: string;
+  date: string;
+  time: string;
+  duration: number;
+  rate: number;
+  created_at: string;
+}
+
+interface SessionWithStudent {
+  id: string;
+  student_id: string;
   student_name: string;
   date: string;
   time: string;
@@ -38,12 +49,17 @@ interface StudentEarnings {
 export default function Earnings() {
   const queryClient = useQueryClient();
 
-  const { data: sessions, isLoading, error } = useQuery({
+  const { data: sessions, isLoading, error } = useQuery<SessionWithStudent[]>({
     queryKey: ['earnings-sessions'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sessions')
-        .select('*')
+        .select(`
+          *,
+          students (
+            name
+          )
+        `)
         .order('date', { ascending: false });
 
       if (error) {
@@ -51,7 +67,13 @@ export default function Earnings() {
         throw error;
       }
 
-      return data as Session[];
+      // Transform the data to include student_name
+      const sessionsWithNames = data?.map((session: any) => ({
+        ...session,
+        student_name: session.students?.name || 'Unknown Student'
+      })) || [];
+
+      return sessionsWithNames as SessionWithStudent[];
     },
   });
 
@@ -101,7 +123,7 @@ export default function Earnings() {
     const studentEarningsMap = new Map<string, { total: number; count: number }>();
     const activeStudentsSet = new Set<string>();
 
-    sessions.forEach(session => {
+    (sessions as SessionWithStudent[]).forEach(session => {
       const sessionDate = new Date(session.date);
       const earnings = (session.duration / 60) * session.rate;
       
