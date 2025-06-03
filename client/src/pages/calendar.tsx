@@ -134,6 +134,20 @@ export default function Calendar() {
     };
   };
 
+  // Custom event component with consistent tooltip
+  const EventComponent = ({ event }: { event: CalendarEvent }) => {
+    const duration = event.resource.duration;
+    const tooltipText = `${event.title} — ${duration} min`;
+    
+    return (
+      <div title={tooltipText} className="h-full w-full">
+        <span className="text-xs font-medium">
+          {event.title}
+        </span>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex-1 overflow-auto">
@@ -297,6 +311,7 @@ export default function Calendar() {
                 style={{ height: '100%' }}
                 components={{
                   toolbar: () => null, // Completely disable the toolbar
+                  event: EventComponent, // Use custom event component for consistent tooltips
                 }}
               />
             </div>
