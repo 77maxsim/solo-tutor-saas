@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UpcomingSessions } from "@/components/dashboard/upcoming-sessions";
+import { UnpaidPastSessions } from "@/components/dashboard/unpaid-past-sessions";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
@@ -228,9 +229,14 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Recent Activity and Upcoming Sessions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Sessions and Activity Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <UpcomingSessions />
+          <UnpaidPastSessions />
+        </div>
+
+        {/* Recent Activity */}
+        <div className="max-w-2xl">
           <RecentActivity activities={mockRecentActivity} />
         </div>
       </div>
