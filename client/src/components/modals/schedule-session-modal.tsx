@@ -39,6 +39,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
 
 const scheduleSessionSchema = z.object({
   studentId: z.string().min(1, "Please select a student"),
@@ -72,16 +73,15 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
   const { data: students, isLoading: studentsLoading } = useQuery({
     queryKey: ['students'],
     queryFn: async () => {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
       }
 
       const { data, error } = await supabase
         .from('students')
         .select('id, name')
-        .eq('tutor_id', user.id)
+        .eq('tutor_id', tutorId)
         .order('name', { ascending: true });
 
       if (error) {
@@ -96,17 +96,16 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
   // Add new student mutation
   const addStudentMutation = useMutation({
     mutationFn: async (name: string) => {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
       }
 
       const { data, error } = await supabase
         .from('students')
         .insert([{ 
           name: name.trim(),
-          tutor_id: user.id 
+          tutor_id: tutorId 
         }])
         .select()
         .single();
@@ -160,10 +159,9 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
     setIsSubmitting(true);
     
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
       }
 
       // Prepare data for Supabase insertion
@@ -173,7 +171,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         time: data.time,
         duration: data.duration,
         rate: data.rate,
-        tutor_id: user.id,
+        tutor_id: tutorId,
         paid: false,
         created_at: new Date().toISOString(),
       };

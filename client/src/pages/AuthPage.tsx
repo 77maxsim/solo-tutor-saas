@@ -123,6 +123,21 @@ export default function AuthPage() {
             description: error.message,
           });
         } else if (authData.user) {
+          // Create tutor record in tutors table
+          const { error: tutorError } = await supabase
+            .from('tutors')
+            .insert([{
+              id: authData.user.id,
+              email: authData.user.email,
+              full_name: authData.user.email?.split('@')[0] || 'Tutor',
+              created_at: new Date().toISOString(),
+            }]);
+
+          if (tutorError) {
+            console.error('Error creating tutor record:', tutorError);
+            // Continue with signup even if tutor creation fails
+          }
+
           setAuthMessage({
             type: 'success',
             message: 'Account created successfully! Please check your email to verify your account.'
