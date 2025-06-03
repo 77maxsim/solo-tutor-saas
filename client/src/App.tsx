@@ -1,6 +1,6 @@
 import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -51,6 +51,19 @@ function AppLayout() {
   const handleScheduleSession = () => {
     setIsScheduleModalOpen(true);
   };
+
+  // Listen for custom events to open the schedule modal from anywhere in the app
+  useEffect(() => {
+    const handleOpenScheduleModal = () => {
+      setIsScheduleModalOpen(true);
+    };
+
+    window.addEventListener('openScheduleModal', handleOpenScheduleModal);
+    
+    return () => {
+      window.removeEventListener('openScheduleModal', handleOpenScheduleModal);
+    };
+  }, []);
 
   return (
     <div className="flex h-screen bg-slate-50">

@@ -78,9 +78,8 @@ export default function Dashboard() {
   };
 
   const handleScheduleSession = () => {
-    // This will be handled by the global modal in App.tsx
-    // For now, we can show an alert as a placeholder
-    alert("Please use the Schedule Session button in the sidebar to open the modal.");
+    // Trigger the global schedule session modal
+    window.dispatchEvent(new CustomEvent('openScheduleModal'));
   };
 
   return (
