@@ -110,3 +110,12 @@ A comprehensive tutor management platform designed to streamline scheduling, ear
 
 Future tables: students, payments, users
 
+## 🤖 AI Coding Guidelines (for Replit / Vibe Coding)
+
+- ✳️ Build in **incremental steps** – avoid large, monolithic prompts.
+- 🔄 **Use minimal code changes** when adding new features.
+- ♻️ **Reuse existing components** where possible (e.g., shadcn buttons, modals).
+- 📦 Keep **Supabase integration** modular and consistent across files.
+- 👁️ Prioritize **code readability and maintainability**.
+- 🧪 Do **not auto-generate test data** unless requested.
+- 🗂️ Add inline comments to explain any non-obvious logic.
