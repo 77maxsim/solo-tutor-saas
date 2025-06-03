@@ -105,19 +105,28 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
 
       {/* User Profile Section */}
       <div className="border-t border-border p-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mb-3">
           <Avatar className="h-10 w-10">
-            <AvatarFallback>SJ</AvatarFallback>
+            <AvatarFallback>TU</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">
-              Sarah Johnson
+              Tutor
             </p>
             <p className="text-xs text-muted-foreground truncate">
-              English Tutor
+              TutorTrack User
             </p>
           </div>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleLogout}
+          className="w-full text-xs"
+        >
+          <LogOut className="h-3 w-3 mr-2" />
+          Sign Out
+        </Button>
       </div>
     </div>
   );
