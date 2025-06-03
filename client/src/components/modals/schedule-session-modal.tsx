@@ -68,13 +68,20 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch students from Supabase
+  // Fetch students from Supabase for current user
   const { data: students, isLoading: studentsLoading } = useQuery({
     queryKey: ['students'],
     queryFn: async () => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('students')
         .select('id, name')
+        .eq('tutor_id', user.id)
         .order('name', { ascending: true });
 
       if (error) {
@@ -89,9 +96,18 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
   // Add new student mutation
   const addStudentMutation = useMutation({
     mutationFn: async (name: string) => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('students')
-        .insert([{ name: name.trim() }])
+        .insert([{ 
+          name: name.trim(),
+          tutor_id: user.id 
+        }])
         .select()
         .single();
 
@@ -144,6 +160,12 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
     setIsSubmitting(true);
     
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       // Prepare data for Supabase insertion
       const sessionData = {
         student_id: data.studentId,
@@ -151,6 +173,8 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         time: data.time,
         duration: data.duration,
         rate: data.rate,
+        tutor_id: user.id,
+        paid: false,
         created_at: new Date().toISOString(),
       };
 
