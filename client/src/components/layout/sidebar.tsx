@@ -29,8 +29,6 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
   const handleScheduleSession = () => {
     if (onScheduleSession) {
       onScheduleSession();
-    } else {
-      alert("Schedule Session functionality will be implemented next!");
     }
   };
 

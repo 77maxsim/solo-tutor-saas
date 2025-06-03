@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UpcomingSessions } from "@/components/dashboard/upcoming-sessions";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { ScheduleSessionModal } from "@/components/modals/schedule-session-modal";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { 
@@ -63,6 +65,8 @@ const mockRecentActivity = [
 ];
 
 export default function Dashboard() {
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+
   // In a real app, this would fetch actual data
   const { data: stats, isLoading } = useQuery({
     queryKey: ["/api/dashboard/stats/1"],
@@ -78,7 +82,7 @@ export default function Dashboard() {
   };
 
   const handleScheduleSession = () => {
-    alert("Schedule Session functionality will be implemented next!");
+    setIsScheduleModalOpen(true);
   };
 
   return (
@@ -149,6 +153,12 @@ export default function Dashboard() {
           <RecentActivity activities={mockRecentActivity} />
         </div>
       </div>
+
+      {/* Schedule Session Modal */}
+      <ScheduleSessionModal 
+        open={isScheduleModalOpen} 
+        onOpenChange={setIsScheduleModalOpen} 
+      />
     </div>
   );
 }
