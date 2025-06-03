@@ -291,10 +291,13 @@ export default function Calendar() {
                 step={30}
                 showMultiDayTimes
                 eventPropGetter={eventStyleGetter}
-                toolbar={true}
+                toolbar={false}
                 popup={true}
                 popupOffset={30}
                 style={{ height: '100%' }}
+                components={{
+                  toolbar: () => null, // Completely disable the toolbar
+                }}
               />
             </div>
           </CardContent>
