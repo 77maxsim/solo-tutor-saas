@@ -20,24 +20,23 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
-const loginSchema = z.object({
+const authSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().optional(),
   rememberMe: z.boolean().default(false),
-});
-
-const signupSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
-  rememberMe: z.boolean().default(false),
-}).refine((data) => data.password === data.confirmPassword, {
+}).refine((data) => {
+  // Only validate confirm password if it exists (signup mode)
+  if (data.confirmPassword !== undefined && data.confirmPassword !== "") {
+    return data.password === data.confirmPassword;
+  }
+  return true;
+}, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
 
-type LoginForm = z.infer<typeof loginSchema>;
-type SignupForm = z.infer<typeof signupSchema>;
+type AuthForm = z.infer<typeof authSchema>;
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -48,28 +47,18 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const loginForm = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      rememberMe: false,
-    },
-  });
-
-  const signupForm = useForm<SignupForm>({
-    resolver: zodResolver(signupSchema),
+  const form = useForm<AuthForm>({
+    resolver: zodResolver(authSchema),
     defaultValues: {
       email: "",
       password: "",
       confirmPassword: "",
       rememberMe: false,
     },
+    mode: "onChange",
   });
 
-  const form = isLogin ? loginForm : signupForm;
-
-  const onSubmit = async (data: LoginForm | SignupForm) => {
+  const onSubmit = async (data: AuthForm) => {
     setIsLoading(true);
     setAuthMessage(null);
 
@@ -100,7 +89,6 @@ export default function AuthPage() {
             title: "Welcome back!",
             description: "Login successful.",
           });
-          // Redirect to dashboard after short delay
           setTimeout(() => {
             setLocation('/dashboard');
           }, 1000);
@@ -135,7 +123,6 @@ export default function AuthPage() {
 
           if (tutorError) {
             console.error('Error creating tutor record:', tutorError);
-            // Continue with signup even if tutor creation fails
           }
 
           setAuthMessage({
@@ -146,11 +133,9 @@ export default function AuthPage() {
             title: "Account Created",
             description: "Please check your email to verify your account.",
           });
-          // Switch to login mode after successful signup
           setTimeout(() => {
             setIsLogin(true);
-            loginForm.reset();
-            signupForm.reset();
+            form.reset();
           }, 2000);
         }
       }
@@ -173,8 +158,12 @@ export default function AuthPage() {
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setAuthMessage(null);
-    loginForm.reset();
-    signupForm.reset();
+    form.reset({
+      email: "",
+      password: "",
+      confirmPassword: "",
+      rememberMe: false,
+    });
   };
 
   return (
@@ -193,7 +182,6 @@ export default function AuthPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Auth Message Alert */}
             {authMessage && (
               <Alert className={authMessage.type === 'error' ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}>
                 {authMessage.type === 'error' ? (
@@ -209,7 +197,6 @@ export default function AuthPage() {
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {/* Email Field */}
                 <FormField
                   control={form.control}
                   name="email"
@@ -221,6 +208,7 @@ export default function AuthPage() {
                           type="email"
                           placeholder="Enter your email"
                           disabled={isLoading}
+                          autoComplete={isLogin ? "email" : "new-email"}
                           {...field}
                         />
                       </FormControl>
@@ -229,7 +217,6 @@ export default function AuthPage() {
                   )}
                 />
 
-                {/* Password Field */}
                 <FormField
                   control={form.control}
                   name="password"
@@ -242,6 +229,7 @@ export default function AuthPage() {
                             type={showPassword ? "text" : "password"}
                             placeholder="Enter your password"
                             disabled={isLoading}
+                            autoComplete={isLogin ? "current-password" : "new-password"}
                             {...field}
                           />
                           <Button
@@ -265,10 +253,9 @@ export default function AuthPage() {
                   )}
                 />
 
-                {/* Confirm Password Field (only for signup) */}
                 {!isLogin && (
                   <FormField
-                    control={signupForm.control}
+                    control={form.control}
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
@@ -279,6 +266,7 @@ export default function AuthPage() {
                               type={showConfirmPassword ? "text" : "password"}
                               placeholder="Confirm your password"
                               disabled={isLoading}
+                              autoComplete="new-password"
                               {...field}
                             />
                             <Button
@@ -303,10 +291,9 @@ export default function AuthPage() {
                   />
                 )}
 
-                {/* Remember Me Checkbox (only for login) */}
                 {isLogin && (
                   <FormField
-                    control={loginForm.control}
+                    control={form.control}
                     name="rememberMe"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0">
@@ -327,7 +314,6 @@ export default function AuthPage() {
                   />
                 )}
 
-                {/* Submit Button */}
                 <Button
                   type="submit"
                   className="w-full"
@@ -345,7 +331,6 @@ export default function AuthPage() {
               </form>
             </Form>
 
-            {/* Toggle Between Login/Signup */}
             <div className="text-center text-sm">
               <span className="text-muted-foreground">
                 {isLogin ? "Don't have an account? " : "Already have an account? "}
@@ -360,7 +345,6 @@ export default function AuthPage() {
               </Button>
             </div>
 
-            {/* Forgot Password (only for login) */}
             {isLogin && (
               <div className="text-center">
                 <Button
@@ -375,7 +359,6 @@ export default function AuthPage() {
           </CardContent>
         </Card>
 
-        {/* Footer */}
         <div className="text-center text-xs text-muted-foreground mt-4">
           <p>© 2025 TutorTrack. Manage your tutoring business with ease.</p>
         </div>
