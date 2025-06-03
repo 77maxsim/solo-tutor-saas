@@ -29,6 +29,8 @@ import {
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabaseClient";
+import { useToast } from "@/hooks/use-toast";
 
 const scheduleSessionSchema = z.object({
   studentName: z.string().min(1, "Student name is required"),
@@ -47,6 +49,7 @@ interface ScheduleSessionModalProps {
 
 export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<ScheduleSessionForm>({
     resolver: zodResolver(scheduleSessionSchema),
@@ -62,21 +65,53 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
   const onSubmit = async (data: ScheduleSessionForm) => {
     setIsSubmitting(true);
     
-    // Log the form data to console as requested
-    console.log("Schedule Session Form Data:", {
-      ...data,
-      date: format(data.date, "yyyy-MM-dd"),
-      time: data.time,
-      duration: `${data.duration} minutes`,
-      rate: `$${data.rate}/hour`,
-    });
+    try {
+      // Prepare data for Supabase insertion
+      const sessionData = {
+        student_name: data.studentName,
+        date: format(data.date, "yyyy-MM-dd"),
+        time: data.time,
+        duration: data.duration,
+        rate: data.rate,
+        created_at: new Date().toISOString(),
+      };
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setIsSubmitting(false);
-    onOpenChange(false);
-    form.reset();
+      // Insert into Supabase sessions table
+      const { data: insertedData, error } = await supabase
+        .from('sessions')
+        .insert([sessionData])
+        .select();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to schedule session. Please try again.",
+        });
+        return;
+      }
+
+      // Success - show success message and reset form
+      toast({
+        title: "Success",
+        description: "Session scheduled successfully!",
+      });
+
+      console.log("Session created:", insertedData);
+      form.reset();
+      onOpenChange(false);
+
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast({
+        variant: "destructive", 
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
