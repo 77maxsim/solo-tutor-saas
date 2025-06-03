@@ -22,11 +22,13 @@ import {
 
 interface Session {
   id: string;
+  student_id: string;
   student_name: string;
   date: string;
   time: string;
   duration: number;
   rate: number;
+  paid: boolean;
   created_at: string;
 }
 
@@ -47,7 +49,19 @@ export default function Students() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sessions')
-        .select('*')
+        .select(`
+          id,
+          student_id,
+          date,
+          time,
+          duration,
+          rate,
+          paid,
+          created_at,
+          students (
+            name
+          )
+        `)
         .order('date', { ascending: false });
 
       if (error) {
@@ -55,7 +69,13 @@ export default function Students() {
         throw error;
       }
 
-      return data as Session[];
+      // Transform the data to include student_name
+      const sessionsWithNames = data?.map((session: any) => ({
+        ...session,
+        student_name: session.students?.name || 'Unknown Student'
+      })) || [];
+
+      return sessionsWithNames as Session[];
     },
   });
 
