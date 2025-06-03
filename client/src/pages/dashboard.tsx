@@ -21,6 +21,7 @@ interface SessionWithStudent {
   time: string;
   duration: number;
   rate: number;
+  paid: boolean;
   created_at: string;
 }
 
@@ -56,7 +57,14 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from('sessions')
         .select(`
-          *,
+          id,
+          student_id,
+          date,
+          time,
+          duration,
+          rate,
+          paid,
+          created_at,
           students (
             name
           )
@@ -87,12 +95,17 @@ export default function Dashboard() {
       let sessionsThisWeek = 0;
       let currentMonthEarnings = 0;
       let lastMonthEarnings = 0;
-      let pendingPayments = 0; // Mock for now
+      let pendingPayments = 0;
+      let unpaidStudentsCount = 0;
       const activeStudentsSet = new Set<string>();
+      const unpaidStudentsSet = new Set<string>();
 
       sessionsWithNames.forEach((session: SessionWithStudent) => {
         const sessionDate = new Date(session.date);
         const earnings = (session.duration / 60) * session.rate;
+        
+        // Check if session is paid using the actual paid column
+        const isPaid = session.paid === true;
 
         // Sessions this week
         if (sessionDate >= oneWeekAgo) {
@@ -113,7 +126,15 @@ export default function Dashboard() {
         if (sessionDate >= thirtyDaysAgo) {
           activeStudentsSet.add(session.student_name);
         }
+
+        // Pending payments (unpaid sessions)
+        if (!isPaid) {
+          pendingPayments += earnings;
+          unpaidStudentsSet.add(session.student_name);
+        }
       });
+
+      unpaidStudentsCount = unpaidStudentsSet.size;
 
       // Calculate percentage change
       let earningsChange = "N/A";
@@ -134,6 +155,7 @@ export default function Dashboard() {
         earningsChange,
         earningsChangeType,
         pendingPayments,
+        unpaidStudentsCount,
         activeStudents: activeStudentsSet.size
       };
     },
@@ -189,7 +211,7 @@ export default function Dashboard() {
           <StatsCard
             title="Pending Payments"
             value={isLoading ? "..." : formatCurrency(dashboardStats?.pendingPayments || 0)}
-            change="Mock data"
+            change={isLoading ? "..." : `${dashboardStats?.unpaidStudentsCount || 0} students`}
             changeType="neutral"
             icon={Clock}
             iconColor="text-orange-600"
