@@ -20,22 +20,24 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
-const authSchema = z.object({
+const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().optional(),
   rememberMe: z.boolean().default(false),
-}).refine((data) => {
-  if (data.confirmPassword !== undefined) {
-    return data.password === data.confirmPassword;
-  }
-  return true;
-}, {
+});
+
+const signupSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+  rememberMe: z.boolean().default(false),
+}).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
 
-type AuthForm = z.infer<typeof authSchema>;
+type LoginForm = z.infer<typeof loginSchema>;
+type SignupForm = z.infer<typeof signupSchema>;
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -46,8 +48,17 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const form = useForm<AuthForm>({
-    resolver: zodResolver(authSchema),
+  const loginForm = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      rememberMe: false,
+    },
+  });
+
+  const signupForm = useForm<SignupForm>({
+    resolver: zodResolver(signupSchema),
     defaultValues: {
       email: "",
       password: "",
@@ -56,7 +67,9 @@ export default function AuthPage() {
     },
   });
 
-  const onSubmit = async (data: AuthForm) => {
+  const form = isLogin ? loginForm : signupForm;
+
+  const onSubmit = async (data: LoginForm | SignupForm) => {
     setIsLoading(true);
     setAuthMessage(null);
 
@@ -121,7 +134,8 @@ export default function AuthPage() {
           // Switch to login mode after successful signup
           setTimeout(() => {
             setIsLogin(true);
-            form.reset();
+            loginForm.reset();
+            signupForm.reset();
           }, 2000);
         }
       }
@@ -144,7 +158,8 @@ export default function AuthPage() {
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setAuthMessage(null);
-    form.reset();
+    loginForm.reset();
+    signupForm.reset();
   };
 
   return (
@@ -238,7 +253,7 @@ export default function AuthPage() {
                 {/* Confirm Password Field (only for signup) */}
                 {!isLogin && (
                   <FormField
-                    control={form.control}
+                    control={signupForm.control}
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
@@ -276,7 +291,7 @@ export default function AuthPage() {
                 {/* Remember Me Checkbox (only for login) */}
                 {isLogin && (
                   <FormField
-                    control={form.control}
+                    control={loginForm.control}
                     name="rememberMe"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0">
