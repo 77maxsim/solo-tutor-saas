@@ -23,6 +23,7 @@ import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  fullName: z.string().min(1, "Full name is required").optional(),
   confirmPassword: z.string().optional(),
   rememberMe: z.boolean().default(false),
 }).refine((data) => {
@@ -34,6 +35,15 @@ const authSchema = z.object({
 }, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
+}).refine((data) => {
+  // Validate full name is required for signup (when confirmPassword exists)
+  if (data.confirmPassword !== undefined && data.confirmPassword !== "") {
+    return data.fullName && data.fullName.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "Full name is required for signup",
+  path: ["fullName"],
 });
 
 type AuthForm = z.infer<typeof authSchema>;
@@ -52,6 +62,7 @@ export default function AuthPage() {
     defaultValues: {
       email: "",
       password: "",
+      fullName: "",
       confirmPassword: "",
       rememberMe: false,
     },
@@ -111,18 +122,33 @@ export default function AuthPage() {
             description: error.message,
           });
         } else if (authData.user) {
-          // Create tutor record in tutors table
-          const { error: tutorError } = await supabase
+          // Check if tutor record already exists
+          const { data: existingTutor } = await supabase
             .from('tutors')
-            .insert([{
-              id: authData.user.id,
-              email: authData.user.email,
-              full_name: authData.user.email?.split('@')[0] || 'Tutor',
-              created_at: new Date().toISOString(),
-            }]);
+            .select('id')
+            .eq('user_id', authData.user.id)
+            .single();
 
-          if (tutorError) {
-            console.error('Error creating tutor record:', tutorError);
+          // Only create tutor record if it doesn't exist
+          if (!existingTutor) {
+            const { error: tutorError } = await supabase
+              .from('tutors')
+              .insert([{
+                user_id: authData.user.id,
+                email: authData.user.email,
+                full_name: data.fullName?.trim() || data.email.split('@')[0],
+                created_at: new Date().toISOString(),
+              }]);
+
+            if (tutorError) {
+              console.error('Error creating tutor record:', tutorError);
+              toast({
+                variant: "destructive",
+                title: "Setup Error",
+                description: "Account created but profile setup failed. Please contact support.",
+              });
+              return;
+            }
           }
 
           setAuthMessage({
@@ -216,6 +242,28 @@ export default function AuthPage() {
                     </FormItem>
                   )}
                 />
+
+                {!isLogin && (
+                  <FormField
+                    control={form.control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="Enter your full name"
+                            disabled={isLoading}
+                            autoComplete="name"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}

@@ -32,6 +32,28 @@ interface SessionWithStudent {
 
 
 export default function Dashboard() {
+  // Fetch tutor information for welcome message
+  const { data: tutorInfo } = useQuery({
+    queryKey: ['tutor-info'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('tutors')
+        .select('full_name')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching tutor info:', error);
+        return { full_name: user.email?.split('@')[0] || 'Tutor' };
+      }
+
+      return data;
+    },
+  });
+
   // Fetch dashboard statistics from real session data
   const { data: dashboardStats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
@@ -161,7 +183,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">
-              Welcome back, Sarah!
+              Welcome back, {tutorInfo?.full_name || 'Tutor'}!
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Here's what's happening with your tutoring business today.
