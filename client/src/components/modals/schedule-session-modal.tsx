@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +51,7 @@ interface ScheduleSessionModalProps {
 export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm<ScheduleSessionForm>({
     resolver: zodResolver(scheduleSessionSchema),
@@ -97,6 +99,9 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         title: "Success",
         description: "Session scheduled successfully!",
       });
+
+      // Invalidate and refetch upcoming sessions
+      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
 
       console.log("Session created:", insertedData);
       form.reset();

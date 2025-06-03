@@ -12,33 +12,7 @@ import {
   Plus 
 } from "lucide-react";
 
-// Mock data for demonstration
-const mockUpcomingSessions = [
-  {
-    id: 1,
-    title: "Spanish Conversation",
-    startTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now
-    endTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours from now
-    rate: 45,
-    studentName: "Maria Garcia"
-  },
-  {
-    id: 2,
-    title: "Business English",
-    startTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // tomorrow
-    endTime: new Date(Date.now() + 25.5 * 60 * 60 * 1000).toISOString(),
-    rate: 65,
-    studentName: "David Chen"
-  },
-  {
-    id: 3,
-    title: "IELTS Preparation",
-    startTime: new Date(Date.now() + 28 * 60 * 60 * 1000).toISOString(),
-    endTime: new Date(Date.now() + 29 * 60 * 60 * 1000).toISOString(),
-    rate: 55,
-    studentName: "Lisa Park"
-  }
-];
+
 
 const mockRecentActivity = [
   {
@@ -146,7 +120,7 @@ export default function Dashboard() {
 
         {/* Recent Activity and Upcoming Sessions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <UpcomingSessions sessions={mockUpcomingSessions} />
+          <UpcomingSessions />
           <RecentActivity activities={mockRecentActivity} />
         </div>
       </div>
