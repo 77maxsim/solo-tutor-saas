@@ -20,23 +20,154 @@ import Students from "@/pages/students";
 import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/not-found";
 
-function AuthenticatedRouter() {
-  return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/calendar" component={Calendar} />
-      <Route path="/earnings" component={Earnings} />
-      <Route path="/students" component={Students} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
+// Create protected versions of each component
+const ProtectedDashboard = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setLocation]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+      </div>
+    );
+  }
+
+  return user ? <Dashboard /> : null;
+};
+
+const ProtectedCalendar = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setLocation]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+      </div>
+    );
+  }
+
+  return user ? <Calendar /> : null;
+};
+
+const ProtectedEarnings = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setLocation]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+      </div>
+    );
+  }
+
+  return user ? <Earnings /> : null;
+};
+
+const ProtectedStudents = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setLocation]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+      </div>
+    );
+  }
+
+  return user ? <Students /> : null;
+};
 
 function Router() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [, setLocation] = useLocation();
 
   useEffect(() => {
     // Get initial session
@@ -56,13 +187,6 @@ function Router() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Redirect unauthenticated users to auth page
-  useEffect(() => {
-    if (!loading && !user) {
-      setLocation('/auth');
-    }
-  }, [user, loading, setLocation]);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -77,7 +201,12 @@ function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
-      {user ? <Route path="/*" component={AuthenticatedRouter} /> : null}
+      <Route path="/" component={ProtectedDashboard} />
+      <Route path="/dashboard" component={ProtectedDashboard} />
+      <Route path="/calendar" component={ProtectedCalendar} />
+      <Route path="/earnings" component={ProtectedEarnings} />
+      <Route path="/students" component={ProtectedStudents} />
+      <Route component={NotFound} />
     </Switch>
   );
 }
@@ -85,6 +214,26 @@ function Router() {
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [location] = useLocation();
+
+  // Track authentication state
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const getPageTitle = (pathname: string) => {
     switch (pathname) {
@@ -118,38 +267,61 @@ function AppLayout() {
     };
   }, []);
 
-  return (
-    <div className="flex h-screen bg-slate-50">
-      {/* Desktop Sidebar */}
-      <div className="hidden md:flex">
-        <Sidebar onScheduleSession={handleScheduleSession} />
-      </div>
+  // Check if we're on the auth page
+  const isAuthPage = location === '/auth';
+  
+  // Show navigation only if user is authenticated and not on auth page
+  const showNavigation = user && !isAuthPage && !loading;
 
-      {/* Mobile Sidebar */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetTrigger asChild>
-          <div className="md:hidden">
-            <MobileHeader
-              title={getPageTitle(window.location.pathname)}
-              onMenuClick={() => setSidebarOpen(true)}
-            />
-          </div>
-        </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64">
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("flex h-screen bg-slate-50", !showNavigation && "flex-col")}>
+      {/* Desktop Sidebar - Only show when authenticated and not on auth page */}
+      {showNavigation && (
+        <div className="hidden md:flex">
           <Sidebar onScheduleSession={handleScheduleSession} />
-        </SheetContent>
-      </Sheet>
+        </div>
+      )}
+
+      {/* Mobile Sidebar - Only show when authenticated and not on auth page */}
+      {showNavigation && (
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetTrigger asChild>
+            <div className="md:hidden">
+              <MobileHeader
+                title={getPageTitle(location)}
+                onMenuClick={() => setSidebarOpen(true)}
+              />
+            </div>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-64">
+            <Sidebar onScheduleSession={handleScheduleSession} />
+          </SheetContent>
+        </Sheet>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         <Router />
       </div>
 
-      {/* Global Schedule Session Modal */}
-      <ScheduleSessionModal 
-        open={isScheduleModalOpen} 
-        onOpenChange={setIsScheduleModalOpen} 
-      />
+      {/* Global Schedule Session Modal - Only show when authenticated */}
+      {showNavigation && (
+        <ScheduleSessionModal 
+          open={isScheduleModalOpen} 
+          onOpenChange={setIsScheduleModalOpen} 
+        />
+      )}
     </div>
   );
 }
