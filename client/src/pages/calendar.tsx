@@ -16,6 +16,7 @@ import { Calendar as BigCalendar, momentLocalizer, Views } from "react-big-calen
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Plus, Calendar as CalendarIcon, Filter } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 const localizer = momentLocalizer(moment);
 
@@ -52,6 +53,28 @@ export default function Calendar() {
   const [calendarView, setCalendarView] = useState<'week' | 'month'>('week');
   const [selectedStudent, setSelectedStudent] = useState<string>('all');
   const queryClient = useQueryClient();
+
+  // Fetch tutor's currency preference
+  const { data: tutorCurrency = 'USD' } = useQuery({
+    queryKey: ['tutor-currency'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('tutors')
+        .select('currency')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching tutor currency:', error);
+        throw error;
+      }
+
+      return data?.currency || 'USD';
+    },
+  });
 
   const { data: sessions, isLoading, error } = useQuery({
     queryKey: ['calendar-sessions'],
@@ -185,9 +208,9 @@ export default function Calendar() {
   const EventComponent = ({ event }: { event: CalendarEvent }) => {
     const { student_name, duration, time, rate } = event.resource;
     const startTime = new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const earning = (rate * duration / 60).toFixed(2);
+    const earning = rate * duration / 60;
     
-    const tooltipText = `${student_name}\n${startTime} - ${duration} min\nRate: $${rate}/hr\nEarning: $${earning}`;
+    const tooltipText = `${student_name}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
     
     return (
       <div title={tooltipText} className="h-full w-full p-1">

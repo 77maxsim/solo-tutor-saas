@@ -45,6 +45,28 @@ interface StudentSummary {
 export default function Students() {
   const queryClient = useQueryClient();
 
+  // Fetch tutor's currency preference
+  const { data: tutorCurrency = 'USD' } = useQuery({
+    queryKey: ['tutor-currency'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('tutors')
+        .select('currency')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching tutor currency:', error);
+        throw error;
+      }
+
+      return data?.currency || 'USD';
+    },
+  });
+
   const { data: sessions, isLoading, error } = useQuery({
     queryKey: ['student-sessions'],
     queryFn: async () => {
@@ -321,7 +343,7 @@ export default function Students() {
                         <div className="flex items-center justify-end gap-1">
                           <DollarSign className="h-4 w-4 text-green-600" />
                           <span className="font-medium text-green-600">
-                            {formatCurrency(student.totalEarnings)}
+                            {formatCurrency(student.totalEarnings, tutorCurrency)}
                           </span>
                         </div>
                       </TableCell>
