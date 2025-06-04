@@ -16,6 +16,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
@@ -24,6 +31,7 @@ const authSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   fullName: z.string().optional(),
+  currency: z.string().optional(),
   confirmPassword: z.string().optional(),
   rememberMe: z.boolean().default(false),
 }).refine((data) => {
@@ -44,6 +52,15 @@ const authSchema = z.object({
 }, {
   message: "Full name is required for signup",
   path: ["fullName"],
+}).refine((data) => {
+  // Validate currency is required for signup (when confirmPassword exists)
+  if (data.confirmPassword !== undefined && data.confirmPassword !== "") {
+    return data.currency && data.currency.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "Currency selection is required for signup",
+  path: ["currency"],
 });
 
 type AuthForm = z.infer<typeof authSchema>;
@@ -63,6 +80,7 @@ export default function AuthPage() {
       email: "",
       password: "",
       fullName: "",
+      currency: "USD",
       confirmPassword: "",
       rememberMe: false,
     },
@@ -143,6 +161,7 @@ export default function AuthPage() {
                 user_id: authData.user.id,
                 email: authData.user.email,
                 full_name: data.fullName?.trim() || data.email.split('@')[0],
+                currency: data.currency || 'USD',
                 created_at: new Date().toISOString(),
               }]);
 
@@ -270,6 +289,39 @@ export default function AuthPage() {
                             onBlur={field.onBlur}
                             name={field.name}
                           />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {!isLogin && (
+                  <FormField
+                    control={form.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Currency</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value || "USD"}
+                            onValueChange={field.onChange}
+                            disabled={isLoading}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select your currency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="USD">USD - US Dollar</SelectItem>
+                              <SelectItem value="EUR">EUR - Euro</SelectItem>
+                              <SelectItem value="UAH">UAH - Ukrainian Hryvnia</SelectItem>
+                              <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                              <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                              <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                              <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
