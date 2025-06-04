@@ -65,7 +65,7 @@ export default function Earnings() {
 
       if (error) {
         console.error('Error fetching tutor currency:', error);
-        throw error;
+        return 'USD'; // Fallback to USD on error
       }
 
       return data?.currency || 'USD';
