@@ -741,34 +741,59 @@ export default function Calendar() {
     );
   };
 
-  // Custom header component for week view with expected earnings
-  const CustomWeekHeader = ({ date, localizer }: { date: Date; localizer: any }) => {
-    const dateKey = date.toISOString().split('T')[0];
+  // Function to add expected earnings to week headers
+  const addExpectedEarningsToHeaders = () => {
+    if (calendarView !== 'week' || !events || events.length === 0) return;
     
-    // Calculate expected earnings for this day
-    const dayEvents = events.filter(event => {
-      const eventDate = new Date(event.start).toISOString().split('T')[0];
-      return eventDate === dateKey;
-    });
-    
-    const expectedEarnings = dayEvents.reduce((total, event) => {
-      return total + (event.resource.rate * event.resource.duration / 60);
-    }, 0);
-    
-    return (
-      <div className="text-center py-2">
-        <div className="font-medium text-gray-900 dark:text-gray-100">
-          {localizer.format(date, 'ddd')}
-        </div>
-        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-          {localizer.format(date, 'MMM D')}
-        </div>
-        <div className="text-xs text-green-600 dark:text-green-400 font-medium">
-          Expected: {formatCurrency(expectedEarnings, tutorCurrency)}
-        </div>
-      </div>
-    );
+    // Wait for calendar to render
+    setTimeout(() => {
+      const headers = document.querySelectorAll('.rbc-header');
+      headers.forEach((header, index) => {
+        // Skip the first header (time gutter)
+        if (index === 0) return;
+        
+        // Calculate the date for this header
+        const headerText = header.textContent;
+        if (!headerText) return;
+        
+        // Find existing earnings display and remove it
+        const existingEarnings = header.querySelector('.expected-earnings');
+        if (existingEarnings) {
+          existingEarnings.remove();
+        }
+        
+        // Get the date from the header - this is a bit tricky with react-big-calendar
+        // We'll use the index to calculate the date
+        const startOfWeek = new Date();
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+        const currentDate = new Date(startOfWeek);
+        currentDate.setDate(startOfWeek.getDate() + (index - 1));
+        
+        const dateKey = currentDate.toISOString().split('T')[0];
+        
+        // Calculate expected earnings for this day
+        const dayEvents = events.filter(event => {
+          const eventDate = new Date(event.start).toISOString().split('T')[0];
+          return eventDate === dateKey;
+        });
+        
+        const expectedEarnings = dayEvents.reduce((total, event) => {
+          return total + (event.resource.rate * event.resource.duration / 60);
+        }, 0);
+        
+        // Create and add earnings display
+        const earningsDiv = document.createElement('div');
+        earningsDiv.className = 'expected-earnings text-xs text-green-600 dark:text-green-400 font-medium mt-1';
+        earningsDiv.textContent = `Expected: ${formatCurrency(expectedEarnings, tutorCurrency)}`;
+        header.appendChild(earningsDiv);
+      });
+    }, 100);
   };
+
+  // Add expected earnings when calendar view changes or events update
+  useEffect(() => {
+    addExpectedEarningsToHeaders();
+  }, [calendarView, events, tutorCurrency]);
 
   if (isLoading) {
     return (
@@ -951,9 +976,10 @@ export default function Calendar() {
                   components={{
                     toolbar: () => null, // Completely disable the toolbar
                     event: EventComponent, // Use custom event component for consistent tooltips
-                    week: {
-                      header: (props: any) => <CustomWeekHeader date={props.date} localizer={localizer} />
-                    }
+                    timeGutterHeader: () => null,
+                    ...(calendarView === 'week' && {
+                      header: ({ date }: { date: Date }) => <CustomWeekHeader date={date} localizer={localizer} />
+                    })
                   }}
                 />
               </DndProvider>

@@ -262,6 +262,19 @@
     @apply text-xs text-blue-100 opacity-90 leading-tight;
   }
 
+  /* Week View Header Styling */
+  .rbc-header {
+    @apply relative;
+  }
+
+  .week-header-earnings {
+    @apply absolute top-full left-0 right-0 text-center py-1 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700;
+  }
+
+  .week-header-earnings .earnings-text {
+    @apply text-xs font-medium text-green-600 dark:text-green-400;
+  }
+
   /* Drag and Drop Visual Feedback */
   .rbc-addons-dnd-drag-preview {
     @apply opacity-75 rotate-3 shadow-lg;
