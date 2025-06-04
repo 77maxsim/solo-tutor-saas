@@ -18,7 +18,11 @@ interface Activity {
   created_at: string;
 }
 
-export function RecentActivity() {
+interface RecentActivityProps {
+  currency?: string;
+}
+
+export function RecentActivity({ currency = 'USD' }: RecentActivityProps) {
   const queryClient = useQueryClient();
 
   const { data: activities = [], isLoading, error } = useQuery({
@@ -256,7 +260,7 @@ export function RecentActivity() {
                 </div>
                 {activity.amount && (
                   <span className="text-sm font-medium text-green-600">
-                    +${activity.amount}
+                    +{formatCurrency(activity.amount, currency)}
                   </span>
                 )}
               </div>

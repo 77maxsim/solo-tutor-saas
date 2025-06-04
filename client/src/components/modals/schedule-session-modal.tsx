@@ -69,6 +69,28 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch tutor's currency preference
+  const { data: tutorCurrency = 'USD' } = useQuery({
+    queryKey: ['tutor-currency'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('tutors')
+        .select('currency')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching tutor currency:', error);
+        return 'USD'; // Fallback to USD
+      }
+
+      return data?.currency || 'USD';
+    },
+  });
+
   // Fetch students from Supabase for current user
   const { data: students, isLoading: studentsLoading } = useQuery({
     queryKey: ['students'],
@@ -422,7 +444,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
               name="rate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Rate (per hour)</FormLabel>
+                  <FormLabel>Rate (per hour in {tutorCurrency})</FormLabel>
                   <FormControl>
                     <Input 
                       type="number"

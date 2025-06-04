@@ -246,7 +246,7 @@ export default function Dashboard() {
 
         {/* Recent Activity */}
         <div className="max-w-2xl">
-          <RecentActivity />
+          <RecentActivity currency={tutorInfo?.currency || 'USD'} />
         </div>
       </div>
     </div>
