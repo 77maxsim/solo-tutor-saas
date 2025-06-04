@@ -716,12 +716,7 @@ export default function Calendar() {
   const eventStyleGetter = (event: CalendarEvent) => {
     return {
       style: {
-        backgroundColor: '#3b82f6',
-        borderRadius: '4px',
-        opacity: 0.8,
-        color: 'white',
-        border: '0px',
-        display: 'block'
+        // Let CSS classes handle the styling for better consistency
       }
     };
   };
@@ -735,12 +730,12 @@ export default function Calendar() {
     const tooltipText = `${student_name}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
     
     return (
-      <div title={tooltipText} className="h-full w-full p-1">
-        <div className="text-xs font-medium text-white truncate">
+      <div title={tooltipText} className="calendar-event-content">
+        <div className="calendar-event-title">
           {student_name}
         </div>
-        <div className="text-xs text-white/80 truncate">
-          {duration} min
+        <div className="calendar-event-details">
+          {duration}min • {formatCurrency(rate, tutorCurrency)}
         </div>
       </div>
     );
@@ -823,16 +818,19 @@ export default function Calendar() {
 
   return (
     <div className="flex-1 overflow-auto">
-      {/* Header */}
-      <header className="bg-white border-b border-border px-6 py-4">
-        <div className="flex items-center justify-between">
+      {/* Enhanced Header */}
+      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 sticky top-0 z-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Calendar</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Calendar</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Manage your tutoring schedule and upcoming sessions.
             </p>
           </div>
-          <Button onClick={handleScheduleSession}>
+          <Button 
+            onClick={handleScheduleSession}
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Schedule Session
           </Button>
@@ -840,18 +838,18 @@ export default function Calendar() {
       </header>
 
       {/* Calendar Content */}
-      <div className="p-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <CardTitle>
+      <div className="p-4 sm:p-6">
+        <Card className="shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 pb-6">
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {calendarView === 'week' ? 'Weekly Schedule' : 'Monthly Schedule'}
             </CardTitle>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               {/* Student Filter */}
               <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full sm:w-44 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
                     <SelectValue placeholder="Filter by student" />
                   </SelectTrigger>
                   <SelectContent>
@@ -867,12 +865,16 @@ export default function Calendar() {
 
               {/* View Toggle */}
               <div className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                <div className="flex border rounded-md">
+                <CalendarIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <div className="flex bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden p-1">
                   <Button
                     variant={calendarView === 'week' ? 'default' : 'ghost'}
                     size="sm"
-                    className="rounded-r-none border-r-0"
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                      calendarView === 'week'
+                        ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-600/50'
+                    }`}
                     onClick={() => setCalendarView('week')}
                   >
                     Week
@@ -880,7 +882,11 @@ export default function Calendar() {
                   <Button
                     variant={calendarView === 'month' ? 'default' : 'ghost'}
                     size="sm"
-                    className="rounded-l-none"
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                      calendarView === 'month'
+                        ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-600/50'
+                    }`}
                     onClick={() => setCalendarView('month')}
                   >
                     Month
@@ -889,8 +895,8 @@ export default function Calendar() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div style={{ height: '600px' }}>
+          <CardContent className="p-4 sm:p-6">
+            <div className="h-[500px] sm:h-[600px] lg:h-[700px] bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
               <DndProvider backend={HTML5Backend}>
                 <DragAndDropCalendar
                   localizer={localizer}
