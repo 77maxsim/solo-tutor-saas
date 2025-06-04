@@ -26,8 +26,28 @@ import { Plus, Calendar as CalendarIcon, Filter, Edit, Trash2 } from "lucide-rea
 import { formatCurrency } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 
 const localizer = momentLocalizer(moment);
+
+// Schema for editing series (excluding date and recurring options)
+const editSeriesSchema = z.object({
+  studentId: z.string().min(1, "Please select a student"),
+  time: z.string().min(1, "Time is required").regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter a valid time (HH:MM)"),
+  duration: z.number().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
+  rate: z.number().min(0, "Rate must be a positive number"),
+});
 
 interface Session {
   id: string;
@@ -64,6 +84,7 @@ export default function Calendar() {
   const [selectedStudent, setSelectedStudent] = useState<string>('all');
   const [selectedSession, setSelectedSession] = useState<SessionWithStudent | null>(null);
   const [showSessionModal, setShowSessionModal] = useState(false);
+  const [modalView, setModalView] = useState<'details' | 'editSeries'>('details');
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -178,6 +199,7 @@ export default function Calendar() {
       queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       setShowSessionModal(false);
+      setModalView('details');
     },
     onError: (error) => {
       console.error('Error deleting recurring series:', error);
@@ -185,6 +207,47 @@ export default function Calendar() {
         variant: "destructive",
         title: "Error",
         description: "Failed to cancel recurring series. Please try again.",
+      });
+    },
+  });
+
+  // Update recurring series mutation
+  const updateSeriesMutation = useMutation({
+    mutationFn: async (updateData: { recurrenceId: string; data: any }) => {
+      const { recurrenceId, data } = updateData;
+      
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          student_id: data.studentId,
+          time: data.time,
+          duration: data.duration,
+          rate: data.rate,
+        })
+        .eq('recurrence_id', recurrenceId);
+
+      if (error) {
+        console.error('Error updating recurring series:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Series updated",
+        description: "All sessions in the recurring series have been updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      setShowSessionModal(false);
+      setModalView('details');
+    },
+    onError: (error) => {
+      console.error('Error updating recurring series:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update recurring series. Please try again.",
       });
     },
   });
@@ -273,6 +336,7 @@ export default function Calendar() {
   // Handle event click to show session details modal
   const handleSelectEvent = (event: CalendarEvent) => {
     setSelectedSession(event.resource);
+    setModalView('details');
     setShowSessionModal(true);
   };
 
@@ -284,9 +348,7 @@ export default function Calendar() {
   };
 
   const handleEditSeries = () => {
-    // TODO: Implement edit series functionality
-    console.log('Edit series:', selectedSession);
-    setShowSessionModal(false);
+    setModalView('editSeries');
   };
 
   const handleCancelSession = () => {
@@ -303,6 +365,131 @@ export default function Calendar() {
     if (window.confirm(`Are you sure you want to cancel ALL sessions in this recurring series with ${selectedSession.student_name}?`)) {
       deleteSeriesMutation.mutate(selectedSession.recurrence_id);
     }
+  };
+
+  // Handle modal close - reset to details view or close modal
+  const handleModalOpenChange = (open: boolean) => {
+    if (!open) {
+      setShowSessionModal(false);
+      setModalView('details');
+    } else {
+      setShowSessionModal(true);
+    }
+  };
+
+  // Handle form cancel - return to details view
+  const handleFormCancel = () => {
+    setModalView('details');
+  };
+
+  // Handle series form submission
+  const handleSeriesFormSubmit = (data: any) => {
+    if (!selectedSession?.recurrence_id) return;
+    
+    updateSeriesMutation.mutate({
+      recurrenceId: selectedSession.recurrence_id,
+      data
+    });
+  };
+
+  // EditSeriesForm component
+  const EditSeriesForm = () => {
+    if (!selectedSession) return null;
+
+    const form = useForm({
+      resolver: zodResolver(editSeriesSchema),
+      defaultValues: {
+        studentId: selectedSession.student_id,
+        time: selectedSession.time,
+        duration: selectedSession.duration,
+        rate: selectedSession.rate,
+      },
+    });
+
+    const onSubmit = (data: z.infer<typeof editSeriesSchema>) => {
+      handleSeriesFormSubmit(data);
+    };
+
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="time"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Time</FormLabel>
+                <FormControl>
+                  <Input
+                    type="time"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="duration"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Duration (minutes)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="60"
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                    value={field.value || ''}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="rate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Rate (per hour in {tutorCurrency})</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="45.00"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    value={field.value || ''}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="flex gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleFormCancel}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={updateSeriesMutation.isPending}
+              className="flex-1"
+            >
+              {updateSeriesMutation.isPending ? "Updating..." : "Update Series"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    );
   };
 
   const eventStyleGetter = (event: CalendarEvent) => {
@@ -510,10 +697,12 @@ export default function Calendar() {
       </div>
 
       {/* Session Details Modal */}
-      <Dialog open={showSessionModal} onOpenChange={setShowSessionModal}>
+      <Dialog open={showSessionModal} onOpenChange={handleModalOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Session Details</DialogTitle>
+            <DialogTitle>
+              {modalView === 'details' ? 'Session Details' : 'Edit Recurring Series'}
+            </DialogTitle>
           </DialogHeader>
           
           {selectedSession && (
