@@ -13,7 +13,8 @@ import {
   Users, 
   GraduationCap,
   Plus,
-  LogOut
+  LogOut,
+  Settings
 } from "lucide-react";
 
 const navigation = [
@@ -122,15 +123,27 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleLogout}
-          className="w-full text-xs"
-        >
-          <LogOut className="h-3 w-3 mr-2" />
-          Sign Out
-        </Button>
+        <div className="space-y-2">
+          <Link href="/profile">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs justify-start"
+            >
+              <Settings className="h-3 w-3 mr-2" />
+              Profile Settings
+            </Button>
+          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="w-full text-xs"
+          >
+            <LogOut className="h-3 w-3 mr-2" />
+            Sign Out
+          </Button>
+        </div>
       </div>
     </div>
   );

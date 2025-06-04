@@ -243,6 +243,7 @@ function Router() {
       <Route path="/calendar" component={ProtectedCalendar} />
       <Route path="/earnings" component={ProtectedEarnings} />
       <Route path="/students" component={ProtectedStudents} />
+      <Route path="/profile" component={ProtectedProfile} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -282,6 +283,8 @@ function AppLayout() {
         return "Earnings";
       case "/students":
         return "Students";
+      case "/profile":
+        return "Profile";
       default:
         return "TutorTrack";
     }
