@@ -976,10 +976,7 @@ export default function Calendar() {
                   components={{
                     toolbar: () => null, // Completely disable the toolbar
                     event: EventComponent, // Use custom event component for consistent tooltips
-                    timeGutterHeader: () => null,
-                    ...(calendarView === 'week' && {
-                      header: ({ date }: { date: Date }) => <CustomWeekHeader date={date} localizer={localizer} />
-                    })
+                    timeGutterHeader: () => null
                   }}
                 />
               </DndProvider>
