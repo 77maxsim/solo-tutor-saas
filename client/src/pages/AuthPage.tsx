@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -68,6 +68,11 @@ export default function AuthPage() {
     },
     mode: "onChange",
   });
+
+  // Clear form errors when switching between login/signup modes
+  useEffect(() => {
+    form.clearErrors();
+  }, [isLogin, form]);
 
   const onSubmit = async (data: AuthForm) => {
     setIsLoading(true);
@@ -184,9 +189,12 @@ export default function AuthPage() {
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setAuthMessage(null);
+    // Clear all form errors and reset form state completely
+    form.clearErrors();
     form.reset({
       email: "",
       password: "",
+      fullName: "",
       confirmPassword: "",
       rememberMe: false,
     });
