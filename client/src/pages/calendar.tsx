@@ -3,6 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -15,8 +22,10 @@ import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { Calendar as BigCalendar, momentLocalizer, Views } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { Plus, Calendar as CalendarIcon, Filter } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Filter, Edit, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 const localizer = momentLocalizer(moment);
 
@@ -39,6 +48,7 @@ interface SessionWithStudent {
   duration: number;
   rate: number;
   created_at: string;
+  recurrence_id?: string;
 }
 
 interface CalendarEvent {
@@ -52,7 +62,10 @@ interface CalendarEvent {
 export default function Calendar() {
   const [calendarView, setCalendarView] = useState<'week' | 'month'>('week');
   const [selectedStudent, setSelectedStudent] = useState<string>('all');
+  const [selectedSession, setSelectedSession] = useState<SessionWithStudent | null>(null);
+  const [showSessionModal, setShowSessionModal] = useState(false);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch tutor's currency preference
   const { data: tutorCurrency = 'USD' } = useQuery({
@@ -107,6 +120,72 @@ export default function Calendar() {
       })) || [];
 
       return sessionsWithNames as SessionWithStudent[];
+    },
+  });
+
+  // Delete individual session mutation
+  const deleteSessionMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('id', sessionId);
+
+      if (error) {
+        console.error('Error deleting session:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Session cancelled",
+        description: "The session has been cancelled successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      setShowSessionModal(false);
+    },
+    onError: (error) => {
+      console.error('Error deleting session:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to cancel session. Please try again.",
+      });
+    },
+  });
+
+  // Delete recurring series mutation
+  const deleteSeriesMutation = useMutation({
+    mutationFn: async (recurrenceId: string) => {
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('recurrence_id', recurrenceId);
+
+      if (error) {
+        console.error('Error deleting recurring series:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Series cancelled",
+        description: "All sessions in the recurring series have been cancelled.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      setShowSessionModal(false);
+    },
+    onError: (error) => {
+      console.error('Error deleting recurring series:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to cancel recurring series. Please try again.",
+      });
     },
   });
 
