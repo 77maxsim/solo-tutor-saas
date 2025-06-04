@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -47,6 +48,16 @@ const scheduleSessionSchema = z.object({
   time: z.string().min(1, "Time is required").regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter a valid time (HH:MM)"),
   duration: z.number().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
   rate: z.number().min(0, "Rate must be a positive number"),
+  repeatWeekly: z.boolean().default(false),
+  repeatWeeks: z.number().min(1, "Must repeat for at least 1 week").max(12, "Cannot repeat for more than 12 weeks").optional(),
+}).refine((data) => {
+  if (data.repeatWeekly && !data.repeatWeeks) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Please specify how many weeks to repeat",
+  path: ["repeatWeeks"],
 });
 
 type ScheduleSessionForm = z.infer<typeof scheduleSessionSchema>;
@@ -174,6 +185,8 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
       time: "",
       duration: 60,
       rate: 0,
+      repeatWeekly: false,
+      repeatWeeks: 1,
     },
   });
 
@@ -186,22 +199,50 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // Prepare data for Supabase insertion
-      const sessionData = {
+      // Generate recurring group ID if needed
+      const recurringGroupId = data.repeatWeekly ? crypto.randomUUID() : null;
+      
+      // Prepare sessions to insert
+      const sessionsToInsert = [];
+      const baseDate = new Date(data.date);
+      
+      // Add the first session
+      sessionsToInsert.push({
         student_id: data.studentId,
-        date: format(data.date, "yyyy-MM-dd"),
+        date: format(baseDate, "yyyy-MM-dd"),
         time: data.time,
         duration: data.duration,
         rate: data.rate,
         tutor_id: tutorId,
         paid: false,
+        recurring_group_id: recurringGroupId,
         created_at: new Date().toISOString(),
-      };
+      });
 
-      // Insert into Supabase sessions table
+      // If recurring, add additional sessions
+      if (data.repeatWeekly && data.repeatWeeks) {
+        for (let week = 1; week < data.repeatWeeks; week++) {
+          const sessionDate = new Date(baseDate);
+          sessionDate.setDate(sessionDate.getDate() + (week * 7));
+          
+          sessionsToInsert.push({
+            student_id: data.studentId,
+            date: format(sessionDate, "yyyy-MM-dd"),
+            time: data.time,
+            duration: data.duration,
+            rate: data.rate,
+            tutor_id: tutorId,
+            paid: false,
+            recurring_group_id: recurringGroupId,
+            created_at: new Date().toISOString(),
+          });
+        }
+      }
+
+      // Insert all sessions into Supabase
       const { data: insertedData, error } = await supabase
         .from('sessions')
-        .insert([sessionData])
+        .insert(sessionsToInsert)
         .select();
 
       if (error) {
@@ -215,9 +256,12 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
       }
 
       // Success - show success message and reset form
+      const sessionCount = sessionsToInsert.length;
       toast({
         title: "Success",
-        description: "Session scheduled successfully!",
+        description: sessionCount > 1 
+          ? `${sessionCount} sessions scheduled successfully!`
+          : "Session scheduled successfully!",
       });
 
       // Invalidate and refetch upcoming sessions and calendar
