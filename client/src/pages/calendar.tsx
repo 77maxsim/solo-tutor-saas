@@ -735,63 +735,11 @@ export default function Calendar() {
           {student_name}
         </div>
         <div className="calendar-event-details">
-          {duration}min • {formatCurrency(rate, tutorCurrency)}/hr
-        </div>
-        <div className="calendar-event-earning">
-          {formatCurrency(earning, tutorCurrency)}
+          {duration}min • {formatCurrency(rate, tutorCurrency)}
         </div>
       </div>
     );
   };
-
-  // Add expected earnings to week headers using DOM manipulation
-  useEffect(() => {
-    if (calendarView !== 'week' || !events || events.length === 0) return;
-    
-    const addEarnings = () => {
-      const headers = document.querySelectorAll('.rbc-header');
-      
-      headers.forEach((header, index) => {
-        // Skip the time gutter column (first header)
-        if (index === 0) return;
-        
-        // Remove existing earnings display
-        const existing = header.querySelector('.expected-earnings');
-        if (existing) existing.remove();
-        
-        // Calculate date for this column (Sunday = 0, Monday = 1, etc.)
-        const today = new Date();
-        const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
-        const columnDate = new Date(startOfWeek);
-        columnDate.setDate(startOfWeek.getDate() + (index - 1));
-        
-        const dateStr = columnDate.toISOString().split('T')[0];
-        
-        // Find events for this date
-        const dayEvents = events.filter(event => {
-          const eventDate = new Date(event.start).toISOString().split('T')[0];
-          return eventDate === dateStr;
-        });
-        
-        // Calculate total expected earnings
-        const totalEarnings = dayEvents.reduce((sum, event) => {
-          return sum + (event.resource.rate * event.resource.duration / 60);
-        }, 0);
-        
-        // Add earnings display if there are sessions
-        if (totalEarnings > 0) {
-          const earningsElement = document.createElement('div');
-          earningsElement.className = 'expected-earnings text-xs text-green-600 font-medium mt-1';
-          earningsElement.textContent = `Expected: ${formatCurrency(totalEarnings, tutorCurrency)}`;
-          header.appendChild(earningsElement);
-        }
-      });
-    };
-    
-    // Run after calendar renders
-    const timer = setTimeout(addEarnings, 200);
-    return () => clearTimeout(timer);
-  }, [calendarView, events, tutorCurrency]);
 
   if (isLoading) {
     return (
@@ -974,7 +922,6 @@ export default function Calendar() {
                   components={{
                     toolbar: () => null, // Completely disable the toolbar
                     event: EventComponent, // Use custom event component for consistent tooltips
-                    timeGutterHeader: () => null
                   }}
                 />
               </DndProvider>
