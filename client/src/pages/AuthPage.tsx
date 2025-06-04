@@ -302,7 +302,7 @@ export default function AuthPage() {
                     name="currency"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Currency</FormLabel>
+                        <FormLabel>Tuition Fee Currency</FormLabel>
                         <FormControl>
                           <Select
                             value={field.value || "USD"}
@@ -320,6 +320,7 @@ export default function AuthPage() {
                               <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
                               <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
                               <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
+                              <SelectItem value="CNY">CNY - Chinese Yuan</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormControl>
