@@ -741,6 +741,35 @@ export default function Calendar() {
     );
   };
 
+  // Custom header component for week view with expected earnings
+  const CustomWeekHeader = ({ date, localizer }: { date: Date; localizer: any }) => {
+    const dateKey = date.toISOString().split('T')[0];
+    
+    // Calculate expected earnings for this day
+    const dayEvents = events.filter(event => {
+      const eventDate = new Date(event.start).toISOString().split('T')[0];
+      return eventDate === dateKey;
+    });
+    
+    const expectedEarnings = dayEvents.reduce((total, event) => {
+      return total + (event.resource.rate * event.resource.duration / 60);
+    }, 0);
+    
+    return (
+      <div className="text-center py-2">
+        <div className="font-medium text-gray-900 dark:text-gray-100">
+          {localizer.format(date, 'ddd')}
+        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+          {localizer.format(date, 'MMM D')}
+        </div>
+        <div className="text-xs text-green-600 dark:text-green-400 font-medium">
+          Expected: {formatCurrency(expectedEarnings, tutorCurrency)}
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex-1 overflow-auto">
@@ -922,6 +951,9 @@ export default function Calendar() {
                   components={{
                     toolbar: () => null, // Completely disable the toolbar
                     event: EventComponent, // Use custom event component for consistent tooltips
+                    week: {
+                      header: (props: any) => <CustomWeekHeader date={props.date} localizer={localizer} />
+                    }
                   }}
                 />
               </DndProvider>
