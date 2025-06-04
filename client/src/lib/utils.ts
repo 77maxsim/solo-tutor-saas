@@ -5,10 +5,24 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrency(amount: number, currency: string = 'USD'): string {
+  // Define locale mappings for different currencies
+  const localeMap: Record<string, string> = {
+    USD: 'en-US',
+    EUR: 'en-GB', 
+    UAH: 'uk-UA',
+    GBP: 'en-GB',
+    CAD: 'en-CA',
+    AUD: 'en-AU',
+    JPY: 'ja-JP',
+    CNY: 'zh-CN'
+  };
+
+  const locale = localeMap[currency] || 'en-US';
+  
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: 'USD',
+    currency: currency,
   }).format(amount)
 }
 

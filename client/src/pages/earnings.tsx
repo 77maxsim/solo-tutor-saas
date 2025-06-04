@@ -50,6 +50,28 @@ interface StudentEarnings {
 export default function Earnings() {
   const queryClient = useQueryClient();
 
+  // Fetch tutor's currency preference
+  const { data: tutorCurrency = 'USD', isLoading: isCurrencyLoading } = useQuery({
+    queryKey: ['tutor-currency'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('tutors')
+        .select('currency')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching tutor currency:', error);
+        throw error;
+      }
+
+      return data?.currency || 'USD';
+    },
+  });
+
   const { data: sessions, isLoading, error } = useQuery<SessionWithStudent[]>({
     queryKey: ['earnings-sessions'],
     queryFn: async () => {
@@ -108,7 +130,7 @@ export default function Earnings() {
   }, [queryClient]);
 
   // Calculate earnings metrics
-  const calculateEarnings = (sessions: Session[]) => {
+  const calculateEarnings = (sessions: SessionWithStudent[]) => {
     if (!sessions || sessions.length === 0) {
       return {
         totalEarnings: 0,
