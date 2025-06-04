@@ -17,6 +17,7 @@ import Dashboard from "@/pages/dashboard";
 import Calendar from "@/pages/calendar";
 import Earnings from "@/pages/earnings";
 import Students from "@/pages/students";
+import Profile from "@/pages/profile";
 import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/not-found";
 
@@ -163,6 +164,42 @@ const ProtectedStudents = () => {
   }
 
   return user ? <Students /> : null;
+};
+
+const ProtectedProfile = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setLocation]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+      </div>
+    );
+  }
+
+  return user ? <Profile /> : null;
 };
 
 function Router() {
