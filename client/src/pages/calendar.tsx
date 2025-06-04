@@ -707,81 +707,89 @@ export default function Calendar() {
           
           {selectedSession && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <p><strong>Student:</strong> {selectedSession.student_name}</p>
-                <p><strong>Date:</strong> {new Date(selectedSession.date).toLocaleDateString()}</p>
-                <p><strong>Time:</strong> {selectedSession.time}</p>
-                <p><strong>Duration:</strong> {selectedSession.duration} minutes</p>
-                <p><strong>Rate:</strong> {formatCurrency(selectedSession.rate, tutorCurrency)}/hour</p>
-                <p><strong>Earning:</strong> {formatCurrency(selectedSession.rate * selectedSession.duration / 60, tutorCurrency)}</p>
-                {selectedSession.recurrence_id && (
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Note:</strong> This is part of a recurring series
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-2">
-                {/* Individual session actions */}
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Individual Session</h4>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleEditSession}
-                      className="flex-1"
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit this session
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleCancelSession}
-                      className="flex-1 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Cancel this session
-                    </Button>
+              {modalView === 'details' ? (
+                <>
+                  <div className="space-y-2">
+                    <p><strong>Student:</strong> {selectedSession.student_name}</p>
+                    <p><strong>Date:</strong> {new Date(selectedSession.date).toLocaleDateString()}</p>
+                    <p><strong>Time:</strong> {selectedSession.time}</p>
+                    <p><strong>Duration:</strong> {selectedSession.duration} minutes</p>
+                    <p><strong>Rate:</strong> {formatCurrency(selectedSession.rate, tutorCurrency)}/hour</p>
+                    <p><strong>Earning:</strong> {formatCurrency(selectedSession.rate * selectedSession.duration / 60, tutorCurrency)}</p>
+                    {selectedSession.recurrence_id && (
+                      <p className="text-sm text-muted-foreground">
+                        <strong>Note:</strong> This is part of a recurring series
+                      </p>
+                    )}
                   </div>
-                </div>
 
-                {/* Recurring series actions - only show if session has recurrence_id */}
-                {selectedSession.recurrence_id && (
-                  <div className="space-y-2 border-t pt-4">
-                    <h4 className="text-sm font-medium">Recurring Series</h4>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handleEditSeries}
-                        className="flex-1"
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit Series
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handleCancelSeries}
-                        className="flex-1 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Cancel Series
-                      </Button>
+                  <div className="flex flex-col gap-2">
+                    {/* Individual session actions */}
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Individual Session</h4>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleEditSession}
+                          className="flex-1"
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit this session
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleCancelSession}
+                          className="flex-1 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Cancel this session
+                        </Button>
+                      </div>
                     </div>
+
+                    {/* Recurring series actions - only show if session has recurrence_id */}
+                    {selectedSession.recurrence_id && (
+                      <div className="space-y-2 border-t pt-4">
+                        <h4 className="text-sm font-medium">Recurring Series</h4>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={handleEditSeries}
+                            className="flex-1"
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Series
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={handleCancelSeries}
+                            className="flex-1 text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Cancel Series
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              ) : (
+                <EditSeriesForm />
+              )}
             </div>
           )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSessionModal(false)}>
-              Close
-            </Button>
-          </DialogFooter>
+          {modalView === 'details' && (
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowSessionModal(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </div>
