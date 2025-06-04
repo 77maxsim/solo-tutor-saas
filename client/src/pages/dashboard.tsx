@@ -92,15 +92,28 @@ export default function Dashboard() {
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
 
-      // Calculate statistics
+      // Calculate statistics with correct business logic
       const now = new Date();
-      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      // Current week boundaries (Sunday to Saturday)
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
       
       // Current month boundaries
       const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      
+      // Last month boundaries for comparison
       const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      
+      // 30 days ago for active students
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
       let sessionsThisWeek = 0;
       let currentMonthEarnings = 0;
@@ -113,32 +126,31 @@ export default function Dashboard() {
       sessionsWithNames.forEach((session: SessionWithStudent) => {
         const sessionDate = new Date(session.date);
         const earnings = (session.duration / 60) * session.rate;
-        
-        // Check if session is paid using the actual paid column
         const isPaid = session.paid === true;
+        const isPastSession = sessionDate < now;
 
-        // Sessions this week
-        if (sessionDate >= oneWeekAgo) {
+        // Sessions this week count (regardless of payment status, but only current week)
+        if (sessionDate >= startOfWeek && sessionDate <= endOfWeek) {
           sessionsThisWeek++;
         }
 
-        // Current month earnings
-        if (sessionDate >= firstDayOfCurrentMonth) {
+        // Current month earnings (only paid sessions in current month)
+        if (sessionDate >= firstDayOfCurrentMonth && sessionDate <= lastDayOfCurrentMonth && isPaid) {
           currentMonthEarnings += earnings;
         }
 
-        // Last month earnings
-        if (sessionDate >= firstDayOfLastMonth && sessionDate <= lastDayOfLastMonth) {
+        // Last month earnings (only paid sessions in last month)
+        if (sessionDate >= firstDayOfLastMonth && sessionDate <= lastDayOfLastMonth && isPaid) {
           lastMonthEarnings += earnings;
         }
 
-        // Active students (sessions in last 30 days)
+        // Active students (sessions in last 30 days, regardless of payment)
         if (sessionDate >= thirtyDaysAgo) {
           activeStudentsSet.add(session.student_name);
         }
 
-        // Pending payments (unpaid sessions)
-        if (!isPaid) {
+        // Pending payments (unpaid sessions that are in the past only)
+        if (!isPaid && isPastSession) {
           pendingPayments += earnings;
           unpaidStudentsSet.add(session.student_name);
         }

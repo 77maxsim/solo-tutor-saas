@@ -131,7 +131,7 @@ export default function Students() {
     };
   }, [queryClient]);
 
-  // Calculate student summaries
+  // Calculate student summaries with correct business logic
   const calculateStudentSummaries = (sessions: Session[]): StudentSummary[] => {
     if (!sessions || sessions.length === 0) return [];
 
@@ -146,6 +146,7 @@ export default function Students() {
     sessions.forEach(session => {
       const sessionDate = new Date(session.date);
       const earnings = (session.duration / 60) * session.rate;
+      const isPaid = session.paid === true;
       
       if (!studentMap.has(session.student_name)) {
         studentMap.set(session.student_name, {
@@ -158,7 +159,12 @@ export default function Students() {
 
       const studentData = studentMap.get(session.student_name)!;
       studentData.sessions.push(session);
-      studentData.totalEarnings += earnings;
+      
+      // Only count earnings from paid sessions
+      if (isPaid) {
+        studentData.totalEarnings += earnings;
+      }
+      
       studentData.totalDuration += session.duration;
       
       if (sessionDate >= now) {
