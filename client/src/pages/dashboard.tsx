@@ -41,13 +41,13 @@ export default function Dashboard() {
 
       const { data, error } = await supabase
         .from('tutors')
-        .select('full_name')
+        .select('full_name, currency')
         .eq('user_id', user.id)
         .single();
 
       if (error) {
         console.error('Error fetching tutor info:', error);
-        return { full_name: user.email?.split('@')[0] || 'Tutor' };
+        return { full_name: user.email?.split('@')[0] || 'Tutor', currency: 'USD' };
       }
 
       return data;
@@ -211,7 +211,7 @@ export default function Dashboard() {
           />
           <StatsCard
             title="This Month Earnings"
-            value={isLoading ? "..." : formatCurrency(dashboardStats?.totalEarnings || 0)}
+            value={isLoading ? "..." : formatCurrency(dashboardStats?.totalEarnings || 0, tutorInfo?.currency || 'USD')}
             change={isLoading ? "..." : (dashboardStats?.earningsChange || "N/A")}
             changeType={dashboardStats?.earningsChangeType || "neutral"}
             icon={DollarSign}

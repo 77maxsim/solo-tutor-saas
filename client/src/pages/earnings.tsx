@@ -301,7 +301,7 @@ export default function Earnings() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(earnings?.totalEarnings || 0)}
+                {formatCurrency(earnings?.totalEarnings || 0, tutorCurrency)}
               </div>
               <p className="text-xs text-muted-foreground">
                 From all sessions
@@ -316,7 +316,7 @@ export default function Earnings() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(earnings?.thisWeekEarnings || 0)}
+                {formatCurrency(earnings?.thisWeekEarnings || 0, tutorCurrency)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Last 7 days
@@ -386,7 +386,7 @@ export default function Earnings() {
                         {student.session_count}
                       </TableCell>
                       <TableCell className="text-right font-medium text-green-600">
-                        {formatCurrency(student.total_earnings)}
+                        {formatCurrency(student.total_earnings, tutorCurrency)}
                       </TableCell>
                     </TableRow>
                   ))}
