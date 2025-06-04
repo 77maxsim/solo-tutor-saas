@@ -251,7 +251,19 @@
 
   /* Custom Event Component Styling */
   .calendar-event-content {
-    @apply w-full h-full flex flex-col justify-start;
+    @apply w-full h-full flex flex-col justify-start text-white p-1 text-xs;
+  }
+
+  .calendar-event-title {
+    @apply font-medium truncate;
+  }
+
+  .calendar-event-details {
+    @apply text-white/90 text-[10px] mt-0.5 font-medium;
+  }
+
+  .calendar-event-earning {
+    @apply text-white/80 text-[10px] mt-0.5;
   }
 
   .calendar-event-title {

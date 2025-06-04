@@ -735,64 +735,62 @@ export default function Calendar() {
           {student_name}
         </div>
         <div className="calendar-event-details">
-          {duration}min • {formatCurrency(rate, tutorCurrency)}
+          {duration}min • {formatCurrency(rate, tutorCurrency)}/hr
+        </div>
+        <div className="calendar-event-earning">
+          {formatCurrency(earning, tutorCurrency)}
         </div>
       </div>
     );
   };
 
-  // Function to add expected earnings to week headers
-  const addExpectedEarningsToHeaders = () => {
+  // Add expected earnings to week headers using DOM manipulation
+  useEffect(() => {
     if (calendarView !== 'week' || !events || events.length === 0) return;
     
-    // Wait for calendar to render
-    setTimeout(() => {
+    const addEarnings = () => {
       const headers = document.querySelectorAll('.rbc-header');
+      
       headers.forEach((header, index) => {
-        // Skip the first header (time gutter)
+        // Skip the time gutter column (first header)
         if (index === 0) return;
         
-        // Calculate the date for this header
-        const headerText = header.textContent;
-        if (!headerText) return;
+        // Remove existing earnings display
+        const existing = header.querySelector('.expected-earnings');
+        if (existing) existing.remove();
         
-        // Find existing earnings display and remove it
-        const existingEarnings = header.querySelector('.expected-earnings');
-        if (existingEarnings) {
-          existingEarnings.remove();
-        }
+        // Calculate date for this column (Sunday = 0, Monday = 1, etc.)
+        const today = new Date();
+        const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+        const columnDate = new Date(startOfWeek);
+        columnDate.setDate(startOfWeek.getDate() + (index - 1));
         
-        // Get the date from the header - this is a bit tricky with react-big-calendar
-        // We'll use the index to calculate the date
-        const startOfWeek = new Date();
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-        const currentDate = new Date(startOfWeek);
-        currentDate.setDate(startOfWeek.getDate() + (index - 1));
+        const dateStr = columnDate.toISOString().split('T')[0];
         
-        const dateKey = currentDate.toISOString().split('T')[0];
-        
-        // Calculate expected earnings for this day
+        // Find events for this date
         const dayEvents = events.filter(event => {
           const eventDate = new Date(event.start).toISOString().split('T')[0];
-          return eventDate === dateKey;
+          return eventDate === dateStr;
         });
         
-        const expectedEarnings = dayEvents.reduce((total, event) => {
-          return total + (event.resource.rate * event.resource.duration / 60);
+        // Calculate total expected earnings
+        const totalEarnings = dayEvents.reduce((sum, event) => {
+          return sum + (event.resource.rate * event.resource.duration / 60);
         }, 0);
         
-        // Create and add earnings display
-        const earningsDiv = document.createElement('div');
-        earningsDiv.className = 'expected-earnings text-xs text-green-600 dark:text-green-400 font-medium mt-1';
-        earningsDiv.textContent = `Expected: ${formatCurrency(expectedEarnings, tutorCurrency)}`;
-        header.appendChild(earningsDiv);
+        // Add earnings display if there are sessions
+        if (totalEarnings > 0) {
+          const earningsElement = document.createElement('div');
+          earningsElement.className = 'expected-earnings text-xs text-green-600 font-medium mt-1';
+          earningsElement.textContent = `Expected: ${formatCurrency(totalEarnings, tutorCurrency)}`;
+          header.appendChild(earningsElement);
+        }
       });
-    }, 100);
-  };
-
-  // Add expected earnings when calendar view changes or events update
-  useEffect(() => {
-    addExpectedEarningsToHeaders();
+    };
+    
+    // Run after calendar renders
+    const timer = setTimeout(addEarnings, 200);
+    return () => clearTimeout(timer);
   }, [calendarView, events, tutorCurrency]);
 
   if (isLoading) {
