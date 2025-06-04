@@ -22,7 +22,11 @@ interface Session {
   created_at: string;
 }
 
-export function UpcomingSessions() {
+interface UpcomingSessionsProps {
+  currency?: string;
+}
+
+export function UpcomingSessions({ currency = 'USD' }: UpcomingSessionsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -260,7 +264,7 @@ export function UpcomingSessions() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full font-medium">
-                    {formatCurrency(calculatedPrice)}
+                    {formatCurrency(calculatedPrice, currency)}
                   </span>
                   {session.paid ? (
                     <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full font-medium">

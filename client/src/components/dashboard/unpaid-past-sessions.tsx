@@ -22,7 +22,11 @@ interface UnpaidSession {
   created_at: string;
 }
 
-export function UnpaidPastSessions() {
+interface UnpaidPastSessionsProps {
+  currency?: string;
+}
+
+export function UnpaidPastSessions({ currency = 'USD' }: UnpaidPastSessionsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -223,7 +227,7 @@ export function UnpaidPastSessions() {
         <div className="text-right">
           <p className="text-sm text-muted-foreground">Total Overdue</p>
           <p className="text-lg font-semibold text-orange-600">
-            {formatCurrency(totalOverdue)}
+            {formatCurrency(totalOverdue, currency)}
           </p>
         </div>
       </CardHeader>
@@ -251,7 +255,7 @@ export function UnpaidPastSessions() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-orange-600">
-                    {formatCurrency(calculatedPrice)}
+                    {formatCurrency(calculatedPrice, currency)}
                   </span>
                   <Button
                     variant="outline"

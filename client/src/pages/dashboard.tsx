@@ -220,7 +220,7 @@ export default function Dashboard() {
           />
           <StatsCard
             title="Pending Payments"
-            value={isLoading ? "..." : formatCurrency(dashboardStats?.pendingPayments || 0)}
+            value={isLoading ? "..." : formatCurrency(dashboardStats?.pendingPayments || 0, tutorInfo?.currency || 'USD')}
             change={isLoading ? "..." : `${dashboardStats?.unpaidStudentsCount || 0} students with pending payments`}
             changeType="neutral"
             icon={Clock}
@@ -240,8 +240,8 @@ export default function Dashboard() {
 
         {/* Sessions and Activity Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <UpcomingSessions />
-          <UnpaidPastSessions />
+          <UpcomingSessions currency={tutorInfo?.currency || 'USD'} />
+          <UnpaidPastSessions currency={tutorInfo?.currency || 'USD'} />
         </div>
 
         {/* Recent Activity */}
