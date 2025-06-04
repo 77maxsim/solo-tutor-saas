@@ -19,7 +19,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
-import { Calendar as BigCalendar, momentLocalizer, Views } from "react-big-calendar";
+import { Calendar as BigCalendarBase, momentLocalizer, Views } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Plus, Calendar as CalendarIcon, Filter, Edit, Trash2 } from "lucide-react";
@@ -29,6 +29,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
+import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import {
   Form,
   FormControl,
@@ -40,6 +44,9 @@ import {
 import { Input } from "@/components/ui/input";
 
 const localizer = momentLocalizer(moment);
+
+// Create drag-and-drop enhanced calendar
+const DragAndDropCalendar = withDragAndDrop(BigCalendarBase);
 
 // Schema for editing series (excluding date and recurring options)
 const editSeriesSchema = z.object({
@@ -252,6 +259,49 @@ export default function Calendar() {
     },
   });
 
+  // Reschedule session mutation for drag-and-drop
+  const rescheduleSessionMutation = useMutation({
+    mutationFn: async (updateData: { sessionId: string; newStart: Date; newEnd: Date }) => {
+      const { sessionId, newStart, newEnd } = updateData;
+      
+      // Calculate new date, time, and duration
+      const newDate = newStart.toISOString().split('T')[0];
+      const newTime = newStart.toTimeString().slice(0, 5);
+      const newDuration = Math.round((newEnd.getTime() - newStart.getTime()) / (1000 * 60));
+      
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          date: newDate,
+          time: newTime,
+          duration: newDuration,
+        })
+        .eq('id', sessionId);
+
+      if (error) {
+        console.error('Error rescheduling session:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Session rescheduled",
+        description: "The session has been moved successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    },
+    onError: (error) => {
+      console.error('Error rescheduling session:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to reschedule session. Please try again.",
+      });
+    },
+  });
+
   // Update recurring series mutation
   const updateSeriesMutation = useMutation({
     mutationFn: async (updateData: { recurrenceId: string; data: any }) => {
@@ -438,6 +488,28 @@ export default function Calendar() {
     updateSeriesMutation.mutate({
       recurrenceId: selectedSession.recurrence_id,
       data
+    });
+  };
+
+  // Handle drag-and-drop event move
+  const handleEventDrop = ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
+    if (rescheduleSessionMutation.isPending) return;
+    
+    rescheduleSessionMutation.mutate({
+      sessionId: event.id,
+      newStart: start,
+      newEnd: end
+    });
+  };
+
+  // Handle event resize
+  const handleEventResize = ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
+    if (rescheduleSessionMutation.isPending) return;
+    
+    rescheduleSessionMutation.mutate({
+      sessionId: event.id,
+      newStart: start,
+      newEnd: end
     });
   };
 
@@ -819,27 +891,34 @@ export default function Calendar() {
           </CardHeader>
           <CardContent>
             <div style={{ height: '600px' }}>
-              <BigCalendar
-                localizer={localizer}
-                events={events}
-                startAccessor="start"
-                endAccessor="end"
-                defaultView={calendarView === 'week' ? Views.WEEK : Views.MONTH}
-                view={calendarView === 'week' ? Views.WEEK : Views.MONTH}
-                onView={(view) => setCalendarView(view === Views.WEEK ? 'week' : 'month')}
-                onSelectEvent={handleSelectEvent}
-                views={[Views.WEEK, Views.MONTH]}
-                step={30}
-                showMultiDayTimes
-                eventPropGetter={eventStyleGetter}
-                toolbar={false}
-                popup={false}
-                style={{ height: '100%' }}
-                components={{
-                  toolbar: () => null, // Completely disable the toolbar
-                  event: EventComponent, // Use custom event component for consistent tooltips
-                }}
-              />
+              <DndProvider backend={HTML5Backend}>
+                <DragAndDropCalendar
+                  localizer={localizer}
+                  events={events}
+                  startAccessor="start"
+                  endAccessor="end"
+                  defaultView={calendarView === 'week' ? Views.WEEK : Views.MONTH}
+                  view={calendarView === 'week' ? Views.WEEK : Views.MONTH}
+                  onView={(view: any) => setCalendarView(view === Views.WEEK ? 'week' : 'month')}
+                  onSelectEvent={handleSelectEvent}
+                  onEventDrop={handleEventDrop}
+                  onEventResize={handleEventResize}
+                  resizable
+                  draggableAccessor={() => true}
+                  views={[Views.WEEK, Views.MONTH]}
+                  step={30}
+                  timeslots={2}
+                  showMultiDayTimes
+                  eventPropGetter={eventStyleGetter}
+                  toolbar={false}
+                  popup={false}
+                  style={{ height: '100%' }}
+                  components={{
+                    toolbar: () => null, // Completely disable the toolbar
+                    event: EventComponent, // Use custom event component for consistent tooltips
+                  }}
+                />
+              </DndProvider>
             </div>
           </CardContent>
         </Card>
