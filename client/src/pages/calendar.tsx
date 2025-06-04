@@ -84,7 +84,7 @@ export default function Calendar() {
   const [selectedStudent, setSelectedStudent] = useState<string>('all');
   const [selectedSession, setSelectedSession] = useState<SessionWithStudent | null>(null);
   const [showSessionModal, setShowSessionModal] = useState(false);
-  const [modalView, setModalView] = useState<'details' | 'editSeries'>('details');
+  const [modalView, setModalView] = useState<'details' | 'editSeries' | 'editSession'>('details');
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -207,6 +207,47 @@ export default function Calendar() {
         variant: "destructive",
         title: "Error",
         description: "Failed to cancel recurring series. Please try again.",
+      });
+    },
+  });
+
+  // Update individual session mutation
+  const updateSessionMutation = useMutation({
+    mutationFn: async (updateData: { sessionId: string; data: any }) => {
+      const { sessionId, data } = updateData;
+      
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          student_id: data.studentId,
+          time: data.time,
+          duration: data.duration,
+          rate: data.rate,
+        })
+        .eq('id', sessionId);
+
+      if (error) {
+        console.error('Error updating session:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Session updated",
+        description: "The session has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      setShowSessionModal(false);
+      setModalView('details');
+    },
+    onError: (error) => {
+      console.error('Error updating session:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update session. Please try again.",
       });
     },
   });
@@ -342,9 +383,7 @@ export default function Calendar() {
 
   // Handle session actions
   const handleEditSession = () => {
-    // TODO: Implement edit session functionality
-    console.log('Edit session:', selectedSession);
-    setShowSessionModal(false);
+    setModalView('editSession');
   };
 
   const handleEditSeries = () => {
@@ -382,6 +421,16 @@ export default function Calendar() {
     setModalView('details');
   };
 
+  // Handle individual session form submission
+  const handleSessionFormSubmit = (data: any) => {
+    if (!selectedSession?.id) return;
+    
+    updateSessionMutation.mutate({
+      sessionId: selectedSession.id,
+      data
+    });
+  };
+
   // Handle series form submission
   const handleSeriesFormSubmit = (data: any) => {
     if (!selectedSession?.recurrence_id) return;
@@ -390,6 +439,106 @@ export default function Calendar() {
       recurrenceId: selectedSession.recurrence_id,
       data
     });
+  };
+
+  // EditSessionForm component
+  const EditSessionForm = () => {
+    if (!selectedSession) return null;
+
+    const form = useForm({
+      resolver: zodResolver(editSeriesSchema),
+      defaultValues: {
+        studentId: selectedSession.student_id,
+        time: selectedSession.time,
+        duration: selectedSession.duration,
+        rate: selectedSession.rate,
+      },
+    });
+
+    const onSubmit = (data: z.infer<typeof editSeriesSchema>) => {
+      handleSessionFormSubmit(data);
+    };
+
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="time"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Time</FormLabel>
+                <FormControl>
+                  <Input
+                    type="time"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="duration"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Duration (minutes)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="60"
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                    value={field.value || ''}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="rate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Rate (per hour in {tutorCurrency})</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="45.00"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    value={field.value || ''}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="flex gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleFormCancel}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={updateSessionMutation.isPending}
+              className="flex-1"
+            >
+              {updateSessionMutation.isPending ? "Updating..." : "Update Session"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    );
   };
 
   // EditSeriesForm component
@@ -701,7 +850,8 @@ export default function Calendar() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {modalView === 'details' ? 'Session Details' : 'Edit Recurring Series'}
+              {modalView === 'details' ? 'Session Details' : 
+               modalView === 'editSession' ? 'Edit Session' : 'Edit Recurring Series'}
             </DialogTitle>
           </DialogHeader>
           
@@ -777,6 +927,8 @@ export default function Calendar() {
                     )}
                   </div>
                 </>
+              ) : modalView === 'editSession' ? (
+                <EditSessionForm />
               ) : (
                 <EditSeriesForm />
               )}
