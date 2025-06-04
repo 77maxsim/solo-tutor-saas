@@ -23,7 +23,7 @@ import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  fullName: z.string().min(1, "Full name is required").optional(),
+  fullName: z.string().optional(),
   confirmPassword: z.string().optional(),
   rememberMe: z.boolean().default(false),
 }).refine((data) => {
@@ -75,6 +75,7 @@ export default function AuthPage() {
   }, [isLogin, form]);
 
   const onSubmit = async (data: AuthForm) => {
+    console.log('Form submitted with data:', data);
     setIsLoading(true);
     setAuthMessage(null);
 
@@ -230,7 +231,7 @@ export default function AuthPage() {
             )}
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
                 <FormField
                   control={form.control}
                   name="email"
@@ -377,6 +378,11 @@ export default function AuthPage() {
                   type="submit"
                   className="w-full"
                   disabled={isLoading}
+                  onClick={() => {
+                    console.log('Button clicked');
+                    console.log('Form state:', form.formState);
+                    console.log('Form values:', form.getValues());
+                  }}
                 >
                   {isLoading ? (
                     <>
