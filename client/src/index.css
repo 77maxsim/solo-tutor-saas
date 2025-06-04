@@ -102,8 +102,187 @@
     background-color: hsl(var(--muted-foreground));
     border-radius: 2px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--foreground));
+  }
+}
+
+/* Calendar UI/UX Improvements */
+@layer components {
+  /* Enhanced Calendar Container */
+  .rbc-calendar {
+    @apply bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden;
+    font-family: inherit;
+  }
+
+  /* Time Gutter Styling - Left Time Column */
+  .rbc-time-gutter {
+    @apply bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700;
+  }
+
+  .rbc-time-slot {
+    @apply border-gray-100 dark:border-gray-700;
+  }
+
+  .rbc-timeslot-group {
+    @apply border-b border-gray-100 dark:border-gray-700;
+  }
+
+  /* Time Labels - Increased Contrast */
+  .rbc-label {
+    @apply text-gray-700 dark:text-gray-300 font-medium text-sm;
+  }
+
+  /* Zebra Striping for Hour Blocks */
+  .rbc-timeslot-group:nth-child(even) {
+    @apply bg-gray-25 dark:bg-gray-850;
+  }
+
+  .rbc-timeslot-group:nth-child(odd) {
+    @apply bg-white dark:bg-gray-800;
+  }
+
+  /* Day Headers */
+  .rbc-header {
+    @apply bg-white dark:bg-gray-800 border-b-2 border-gray-200 dark:border-gray-700 py-3 font-semibold text-gray-800 dark:text-gray-200;
+  }
+
+  /* Time Grid */
+  .rbc-time-content {
+    @apply border-l border-gray-200 dark:border-gray-700;
+  }
+
+  .rbc-day-slot {
+    @apply border-r border-gray-100 dark:border-gray-700;
+  }
+
+  /* Enhanced Session Blocks */
+  .rbc-event {
+    @apply rounded-lg shadow-sm border-0 transition-all duration-200 ease-in-out cursor-move;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+  }
+
+  .rbc-event:hover {
+    @apply shadow-md scale-105 z-10;
+    transform: translateY(-1px) scale(1.02);
+  }
+
+  .rbc-event:focus {
+    @apply outline-none ring-2 ring-blue-300 ring-offset-1;
+  }
+
+  /* Event Content Styling */
+  .rbc-event-content {
+    @apply text-white;
+  }
+
+  /* Selected Event */
+  .rbc-selected {
+    @apply ring-2 ring-blue-300 ring-offset-1;
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+  }
+
+  /* Month View Improvements */
+  .rbc-month-view {
+    @apply bg-white dark:bg-gray-800 rounded-lg;
+  }
+
+  .rbc-date-cell {
+    @apply border-gray-100 dark:border-gray-700 text-gray-600 dark:text-gray-400;
+  }
+
+  .rbc-month-header {
+    @apply bg-gray-50 dark:bg-gray-750 border-b border-gray-200 dark:border-gray-700;
+  }
+
+  /* Week View Improvements */
+  .rbc-time-view {
+    @apply bg-white dark:bg-gray-800 rounded-lg overflow-hidden;
+  }
+
+  /* Responsive Improvements */
+  @media (max-width: 768px) {
+    .rbc-calendar {
+      @apply text-xs;
+    }
+
+    .rbc-event {
+      @apply text-xs py-1 px-2;
+      min-height: 18px !important;
+    }
+
+    .rbc-header {
+      @apply text-sm py-2;
+    }
+
+    .rbc-label {
+      @apply text-xs;
+    }
+
+    /* Ensure content doesn't clip on small screens */
+    .rbc-time-content {
+      min-width: 0;
+    }
+
+    .rbc-day-slot {
+      min-width: 60px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .rbc-event {
+      @apply text-xs py-1 px-1;
+      min-height: 16px !important;
+    }
+
+    .rbc-day-slot {
+      min-width: 50px;
+    }
+
+    .rbc-header {
+      @apply text-xs py-1;
+    }
+  }
+
+  /* Custom Event Component Styling */
+  .calendar-event-content {
+    @apply w-full h-full flex flex-col justify-start;
+  }
+
+  .calendar-event-title {
+    @apply font-semibold text-white truncate leading-tight;
+  }
+
+  .calendar-event-details {
+    @apply text-xs text-blue-100 opacity-90 leading-tight;
+  }
+
+  /* Drag and Drop Visual Feedback */
+  .rbc-addons-dnd-drag-preview {
+    @apply opacity-75 rotate-3 shadow-lg;
+  }
+
+  .rbc-addons-dnd-over {
+    @apply bg-blue-50 dark:bg-blue-900 bg-opacity-50;
+  }
+
+  /* Loading and Empty States */
+  .calendar-loading {
+    @apply flex items-center justify-center h-96 text-gray-500 dark:text-gray-400;
+  }
+
+  /* Today Highlighting */
+  .rbc-today {
+    @apply bg-blue-50 dark:bg-blue-900 bg-opacity-30;
+  }
+
+  /* Current Time Indicator */
+  .rbc-current-time-indicator {
+    @apply bg-red-500 h-0.5 z-10;
   }
 }
