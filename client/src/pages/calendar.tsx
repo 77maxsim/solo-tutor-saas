@@ -270,6 +270,41 @@ export default function Calendar() {
     window.dispatchEvent(new CustomEvent('openScheduleModal'));
   };
 
+  // Handle event click to show session details modal
+  const handleSelectEvent = (event: CalendarEvent) => {
+    setSelectedSession(event.resource);
+    setShowSessionModal(true);
+  };
+
+  // Handle session actions
+  const handleEditSession = () => {
+    // TODO: Implement edit session functionality
+    console.log('Edit session:', selectedSession);
+    setShowSessionModal(false);
+  };
+
+  const handleEditSeries = () => {
+    // TODO: Implement edit series functionality
+    console.log('Edit series:', selectedSession);
+    setShowSessionModal(false);
+  };
+
+  const handleCancelSession = () => {
+    if (!selectedSession) return;
+    
+    if (window.confirm(`Are you sure you want to cancel the session with ${selectedSession.student_name}?`)) {
+      deleteSessionMutation.mutate(selectedSession.id);
+    }
+  };
+
+  const handleCancelSeries = () => {
+    if (!selectedSession?.recurrence_id) return;
+    
+    if (window.confirm(`Are you sure you want to cancel ALL sessions in this recurring series with ${selectedSession.student_name}?`)) {
+      deleteSeriesMutation.mutate(selectedSession.recurrence_id);
+    }
+  };
+
   const eventStyleGetter = (event: CalendarEvent) => {
     return {
       style: {
@@ -456,13 +491,13 @@ export default function Calendar() {
                 defaultView={calendarView === 'week' ? Views.WEEK : Views.MONTH}
                 view={calendarView === 'week' ? Views.WEEK : Views.MONTH}
                 onView={(view) => setCalendarView(view === Views.WEEK ? 'week' : 'month')}
+                onSelectEvent={handleSelectEvent}
                 views={[Views.WEEK, Views.MONTH]}
                 step={30}
                 showMultiDayTimes
                 eventPropGetter={eventStyleGetter}
                 toolbar={false}
-                popup={true}
-                popupOffset={30}
+                popup={false}
                 style={{ height: '100%' }}
                 components={{
                   toolbar: () => null, // Completely disable the toolbar
@@ -473,6 +508,93 @@ export default function Calendar() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Session Details Modal */}
+      <Dialog open={showSessionModal} onOpenChange={setShowSessionModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Session Details</DialogTitle>
+          </DialogHeader>
+          
+          {selectedSession && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <p><strong>Student:</strong> {selectedSession.student_name}</p>
+                <p><strong>Date:</strong> {new Date(selectedSession.date).toLocaleDateString()}</p>
+                <p><strong>Time:</strong> {selectedSession.time}</p>
+                <p><strong>Duration:</strong> {selectedSession.duration} minutes</p>
+                <p><strong>Rate:</strong> {formatCurrency(selectedSession.rate, tutorCurrency)}/hour</p>
+                <p><strong>Earning:</strong> {formatCurrency(selectedSession.rate * selectedSession.duration / 60, tutorCurrency)}</p>
+                {selectedSession.recurrence_id && (
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Note:</strong> This is part of a recurring series
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {/* Individual session actions */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Individual Session</h4>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleEditSession}
+                      className="flex-1"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit this session
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleCancelSession}
+                      className="flex-1 text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Cancel this session
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Recurring series actions - only show if session has recurrence_id */}
+                {selectedSession.recurrence_id && (
+                  <div className="space-y-2 border-t pt-4">
+                    <h4 className="text-sm font-medium">Recurring Series</h4>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleEditSeries}
+                        className="flex-1"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Series
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleCancelSeries}
+                        className="flex-1 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Cancel Series
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSessionModal(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
