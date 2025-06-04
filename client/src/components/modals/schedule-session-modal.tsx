@@ -517,6 +517,58 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
               )}
             />
 
+            {/* Recurring Session Options */}
+            <FormField
+              control={form.control}
+              name="repeatWeekly"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Repeat Weekly
+                    </FormLabel>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {form.watch('repeatWeekly') && (
+              <FormField
+                control={form.control}
+                name="repeatWeeks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Number of weeks to repeat</FormLabel>
+                    <FormControl>
+                      <Select 
+                        onValueChange={(value) => field.onChange(parseInt(value, 10))}
+                        value={field.value?.toString()}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select weeks" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map((week) => (
+                            <SelectItem key={week} value={week.toString()}>
+                              {week} week{week > 1 ? 's' : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <DialogFooter>
               <Button
                 type="button"
