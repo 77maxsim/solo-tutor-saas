@@ -34,7 +34,7 @@ export const sessions = pgTable("sessions", {
   rate: decimal("rate", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("scheduled"), // scheduled, completed, cancelled
   isPaid: boolean("is_paid").notNull().default(false),
-  recurringGroupId: text("recurring_group_id"), // UUID for grouping recurring sessions
+  recurrenceId: text("recurrence_id"), // UUID for grouping recurring sessions
 });
 
 export const payments = pgTable("payments", {

@@ -199,8 +199,8 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // Generate recurring group ID if needed
-      const recurringGroupId = data.repeatWeekly ? crypto.randomUUID() : null;
+      // Generate recurrence ID if needed
+      const recurrenceId = data.repeatWeekly ? crypto.randomUUID() : null;
       
       // Prepare sessions to insert
       const sessionsToInsert = [];
@@ -215,7 +215,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         rate: data.rate,
         tutor_id: tutorId,
         paid: false,
-        recurring_group_id: recurringGroupId,
+        recurrence_id: recurrenceId,
         created_at: new Date().toISOString(),
       });
 
@@ -233,7 +233,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
             rate: data.rate,
             tutor_id: tutorId,
             paid: false,
-            recurring_group_id: recurringGroupId,
+            recurrence_id: recurrenceId,
             created_at: new Date().toISOString(),
           });
         }
