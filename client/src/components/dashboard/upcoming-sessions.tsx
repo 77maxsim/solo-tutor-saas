@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
-import { X, DollarSign, Repeat } from "lucide-react";
+import { X, Coins, Repeat } from "lucide-react";
 
 interface Session {
   id: string;
@@ -303,7 +303,7 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
                       onClick={() => handleMarkAsPaid(session.id, session.student_name)}
                       disabled={markAsPaidMutation.isPending}
                     >
-                      <DollarSign className="h-3 w-3 mr-1" />
+                      <Coins className="h-3 w-3 mr-1" />
                       Mark Paid
                     </Button>
                   )}

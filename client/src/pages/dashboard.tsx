@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { 
   BookOpen, 
-  DollarSign, 
+  Coins, 
   Clock, 
   Users,
   Plus 
@@ -226,7 +226,7 @@ export default function Dashboard() {
             value={isLoading ? "..." : formatCurrency(dashboardStats?.totalEarnings || 0, tutorInfo?.currency || 'USD')}
             change={isLoading ? "..." : (dashboardStats?.earningsChange || "N/A")}
             changeType={dashboardStats?.earningsChangeType || "neutral"}
-            icon={DollarSign}
+            icon={Coins}
             iconColor="text-green-600"
             iconBgColor="bg-green-100"
           />

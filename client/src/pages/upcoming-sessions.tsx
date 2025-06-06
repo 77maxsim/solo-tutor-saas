@@ -6,7 +6,7 @@ import {
   ArrowLeft, 
   Calendar as CalendarIcon, 
   Clock, 
-  DollarSign, 
+  Coins, 
   Repeat, 
   X,
   ChevronDown,
@@ -342,7 +342,7 @@ export default function UpcomingSessions() {
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-purple-600" />
+                  <Coins className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Expected Earnings</p>
@@ -449,7 +449,7 @@ export default function UpcomingSessions() {
                                     onClick={() => handleMarkAsPaid(session.id, session.student_name)}
                                     disabled={markAsPaidMutation.isPending}
                                   >
-                                    <DollarSign className="h-3 w-3 mr-1" />
+                                    <Coins className="h-3 w-3 mr-1" />
                                     Mark Paid
                                   </Button>
                                 )}
