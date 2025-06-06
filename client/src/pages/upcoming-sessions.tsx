@@ -405,6 +405,9 @@ export default function UpcomingSessions() {
                     <CollapsibleContent className="space-y-2 mt-2">
                       {dateSessions.map((session) => {
                         const calculatedPrice = (session.duration / 60) * session.rate;
+                        const sessionDate = new Date(session.date);
+                        const createdDate = new Date(session.created_at);
+                        const isLoggedLate = sessionDate < createdDate;
                         
                         return (
                           <div
@@ -425,6 +428,11 @@ export default function UpcomingSessions() {
                                   {session.paid && (
                                     <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
                                       Paid
+                                    </Badge>
+                                  )}
+                                  {isLoggedLate && (
+                                    <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">
+                                      Logged Late
                                     </Badge>
                                   )}
                                 </div>

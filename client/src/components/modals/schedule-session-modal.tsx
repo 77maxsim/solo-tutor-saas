@@ -44,7 +44,12 @@ import { getCurrentTutorId } from "@/lib/tutorHelpers";
 
 const scheduleSessionSchema = z.object({
   studentId: z.string().min(1, "Please select a student"),
-  date: z.date({ required_error: "Date is required" }),
+  date: z.date({ required_error: "Date is required" }).refine((date) => {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    return date >= thirtyDaysAgo;
+  }, "Sessions cannot be scheduled more than 30 days in the past"),
   time: z.string().min(1, "Time is required").regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter a valid time (HH:MM)"),
   duration: z.number().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
   rate: z.number().min(0, "Rate must be a positive number"),
@@ -58,6 +63,16 @@ const scheduleSessionSchema = z.object({
 }, {
   message: "Please specify how many weeks to repeat",
   path: ["repeatWeeks"],
+}).refine((data) => {
+  if (data.repeatWeekly) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return data.date >= today;
+  }
+  return true;
+}, {
+  message: "Recurring sessions can only be scheduled for today or future dates",
+  path: ["date"],
 });
 
 type ScheduleSessionForm = z.infer<typeof scheduleSessionSchema>;
@@ -432,9 +447,12 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < new Date() || date < new Date("1900-01-01")
-                        }
+                        disabled={(date) => {
+                          const today = new Date();
+                          const thirtyDaysAgo = new Date(today);
+                          thirtyDaysAgo.setDate(today.getDate() - 30);
+                          return date < thirtyDaysAgo || date < new Date("1900-01-01");
+                        }}
                         initialFocus
                       />
                     </PopoverContent>

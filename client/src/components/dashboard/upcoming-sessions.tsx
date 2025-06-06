@@ -266,6 +266,10 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
         <div className="space-y-4">
           {sessions.map((session, index) => {
             const calculatedPrice = (session.duration / 60) * session.rate;
+            const sessionDate = new Date(session.date);
+            const createdDate = new Date(session.created_at);
+            const isLoggedLate = sessionDate < createdDate;
+            
             return (
               <div key={session.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 <div className={`w-2 h-2 rounded-full ${
@@ -281,6 +285,11 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
                       <div title="Recurring session">
                         <Repeat className="h-3 w-3 text-blue-500" />
                       </div>
+                    )}
+                    {isLoggedLate && (
+                      <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full font-medium">
+                        Logged Late
+                      </span>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
