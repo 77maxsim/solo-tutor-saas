@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -204,6 +204,33 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
       repeatWeeks: 1,
     },
   });
+
+  // Listen for custom events to pre-fill form from calendar clicks
+  useEffect(() => {
+    const handleOpenScheduleModal = (event: CustomEvent) => {
+      if (event.detail) {
+        const { date, time, duration } = event.detail;
+        
+        if (date) {
+          form.setValue('date', new Date(date));
+        }
+        if (time) {
+          form.setValue('time', time);
+        }
+        if (duration) {
+          form.setValue('duration', duration);
+        }
+      }
+      
+      onOpenChange(true);
+    };
+
+    window.addEventListener('openScheduleModal', handleOpenScheduleModal as EventListener);
+    
+    return () => {
+      window.removeEventListener('openScheduleModal', handleOpenScheduleModal as EventListener);
+    };
+  }, [form, onOpenChange]);
 
   const onSubmit = async (data: ScheduleSessionForm) => {
     setIsSubmitting(true);

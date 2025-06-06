@@ -519,6 +519,29 @@ export default function Calendar() {
     setShowSessionModal(true);
   };
 
+  // Handle slot click to schedule new session
+  const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
+    // Calculate duration in minutes based on selected time range
+    const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+    
+    // Format date as YYYY-MM-DD
+    const selectedDate = start.toISOString().split('T')[0];
+    
+    // Format time as HH:MM
+    const hours = start.getHours().toString().padStart(2, '0');
+    const minutes = start.getMinutes().toString().padStart(2, '0');
+    const selectedTime = `${hours}:${minutes}`;
+    
+    // Create a custom event to open the schedule modal with pre-filled data
+    window.dispatchEvent(new CustomEvent('openScheduleModal', {
+      detail: {
+        date: selectedDate,
+        time: selectedTime,
+        duration: Math.max(30, duration) // Minimum 30 minutes, or the selected duration
+      }
+    }));
+  };
+
   // Handle session actions
   const handleEditSession = () => {
     setModalView('editSession');
@@ -1078,8 +1101,10 @@ export default function Calendar() {
                   view={calendarView === 'week' ? Views.WEEK : Views.MONTH}
                   onView={(view: any) => setCalendarView(view === Views.WEEK ? 'week' : 'month')}
                   onSelectEvent={handleSelectEvent}
+                  onSelectSlot={handleSelectSlot}
                   onEventDrop={handleEventDrop}
                   onEventResize={handleEventResize}
+                  selectable
                   resizable
                   draggableAccessor={() => true}
                   views={[Views.WEEK, Views.MONTH]}
