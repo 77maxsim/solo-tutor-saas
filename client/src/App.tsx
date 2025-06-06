@@ -240,6 +240,42 @@ const ProtectedActivity = () => {
   return user ? <Activity /> : null;
 };
 
+const ProtectedUpcomingSessions = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setLocation]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+      </div>
+    );
+  }
+
+  return user ? <UpcomingSessions /> : null;
+};
+
 function Router() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -283,6 +319,7 @@ function Router() {
       <Route path="/students" component={ProtectedStudents} />
       <Route path="/profile" component={ProtectedProfile} />
       <Route path="/activity" component={ProtectedActivity} />
+      <Route path="/upcoming-sessions" component={ProtectedUpcomingSessions} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -326,6 +363,8 @@ function AppLayout() {
         return "Profile";
       case "/activity":
         return "Activity";
+      case "/upcoming-sessions":
+        return "Upcoming Sessions";
       default:
         return "TutorTrack";
     }
