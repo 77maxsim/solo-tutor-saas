@@ -20,9 +20,10 @@ interface Activity {
 
 interface RecentActivityProps {
   currency?: string;
+  limit?: number; // Add limit prop for dashboard vs full view
 }
 
-export function RecentActivity({ currency = 'USD' }: RecentActivityProps) {
+export function RecentActivity({ currency = 'USD', limit = 5 }: RecentActivityProps) {
   const queryClient = useQueryClient();
 
   const { data: activities = [], isLoading, error } = useQuery({
@@ -110,10 +111,9 @@ export function RecentActivity({ currency = 'USD' }: RecentActivityProps) {
         });
       }
 
-      // Sort all activities by created_at and return top 10
+      // Sort all activities by created_at and return all for the query
       return activities
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 10);
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
   });
 
@@ -223,7 +223,7 @@ export function RecentActivity({ currency = 'USD' }: RecentActivityProps) {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/earnings">View all</Link>
+            <Link href="/activity">View all</Link>
           </Button>
         </CardHeader>
         <CardContent>
@@ -240,17 +240,17 @@ export function RecentActivity({ currency = 'USD' }: RecentActivityProps) {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/earnings">View all</Link>
+          <Link href="/activity">View all</Link>
         </Button>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {activities.map((activity) => {
+          {activities.slice(0, limit).map((activity) => {
             const Icon = getActivityIcon(activity.type);
             const colors = getIconColors(activity.type);
             
             return (
-              <div key={activity.id} className="flex items-center gap-3">
+              <div key={activity.id} className="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-md transition-colors">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${colors.bg}`}>
                   <Icon className={`w-4 h-4 ${colors.icon}`} />
                 </div>
