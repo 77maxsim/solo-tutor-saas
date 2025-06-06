@@ -39,7 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   User, 
   Calendar,
-  DollarSign,
+  Coins,
   Clock,
   Plus,
   Trash2
@@ -516,7 +516,7 @@ export default function Students() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <DollarSign className="h-4 w-4 text-green-600" />
+                          <Coins className="h-4 w-4 text-green-600" />
                           <span className="font-medium text-green-600">
                             {formatCurrency(student.totalEarnings, tutorCurrency)}
                           </span>
