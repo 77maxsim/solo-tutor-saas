@@ -867,6 +867,20 @@ export default function Calendar() {
   };
 
   const eventStyleGetter = (event: CalendarEvent) => {
+    const sessionDate = new Date(event.resource.date);
+    const createdDate = new Date(event.resource.created_at);
+    const isLoggedLate = sessionDate < createdDate;
+    
+    if (isLoggedLate) {
+      return {
+        style: {
+          background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+          opacity: '0.85',
+          border: '2px solid #fb923c',
+        }
+      };
+    }
+    
     return {
       style: {
         // Let CSS classes handle the styling for better consistency
@@ -876,16 +890,20 @@ export default function Calendar() {
 
   // Custom event component with enhanced tooltip
   const EventComponent = ({ event }: { event: CalendarEvent }) => {
-    const { student_name, duration, time, rate } = event.resource;
+    const { student_name, duration, time, rate, date, created_at } = event.resource;
     const startTime = new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const earning = rate * duration / 60;
+    const sessionDate = new Date(date);
+    const createdDate = new Date(created_at);
+    const isLoggedLate = sessionDate < createdDate;
     
-    const tooltipText = `${student_name}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
+    const tooltipText = `${student_name}${isLoggedLate ? ' (Logged Late)' : ''}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
     
     return (
       <div title={tooltipText} className="calendar-event-content">
         <div className="calendar-event-title">
           {student_name}
+          {isLoggedLate && <span className="ml-1 text-xs">⚠</span>}
         </div>
         <div className="calendar-event-details">
           {duration}min • {formatCurrency(rate, tutorCurrency)}
