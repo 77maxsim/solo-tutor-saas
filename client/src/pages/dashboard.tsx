@@ -1,9 +1,11 @@
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UpcomingSessions } from "@/components/dashboard/upcoming-sessions";
 import { UnpaidPastSessions } from "@/components/dashboard/unpaid-past-sessions";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
@@ -32,6 +34,17 @@ interface SessionWithStudent {
 
 
 export default function Dashboard() {
+  // Toggle state for earnings summary (week/month)
+  const [earningsView, setEarningsView] = useState<'week' | 'month'>(() => {
+    // Persist toggle state in localStorage
+    const saved = localStorage.getItem('dashboard-earnings-view');
+    return (saved as 'week' | 'month') || 'week';
+  });
+
+  // Save toggle state to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('dashboard-earnings-view', earningsView);
+  }, [earningsView]);
   // Fetch tutor information for welcome message
   const { data: tutorInfo } = useQuery({
     queryKey: ['tutor-info'],
@@ -116,6 +129,7 @@ export default function Dashboard() {
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
       let sessionsThisWeek = 0;
+      let currentWeekEarnings = 0;
       let currentMonthEarnings = 0;
       let lastMonthEarnings = 0;
       let pendingPayments = 0;
@@ -132,6 +146,11 @@ export default function Dashboard() {
         // Sessions this week count (regardless of payment status, but only current week)
         if (sessionDate >= startOfWeek && sessionDate <= endOfWeek) {
           sessionsThisWeek++;
+        }
+
+        // Current week earnings (only paid sessions in current week)
+        if (sessionDate >= startOfWeek && sessionDate <= endOfWeek && isPaid) {
+          currentWeekEarnings += earnings;
         }
 
         // Current month earnings (only paid sessions in current month)
@@ -158,24 +177,11 @@ export default function Dashboard() {
 
       unpaidStudentsCount = unpaidStudentsSet.size;
 
-      // Calculate percentage change
-      let earningsChange = "N/A";
-      let earningsChangeType: "positive" | "negative" | "neutral" = "neutral";
-
-      if (lastMonthEarnings > 0) {
-        const changePercent = ((currentMonthEarnings - lastMonthEarnings) / lastMonthEarnings) * 100;
-        earningsChange = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(1)}%`;
-        earningsChangeType = changePercent > 0 ? "positive" : changePercent < 0 ? "negative" : "neutral";
-      } else if (currentMonthEarnings > 0) {
-        earningsChange = "New";
-        earningsChangeType = "positive";
-      }
-
       return {
         sessionsThisWeek,
-        totalEarnings: currentMonthEarnings,
-        earningsChange,
-        earningsChangeType,
+        currentWeekEarnings,
+        currentMonthEarnings,
+        lastMonthEarnings,
         pendingPayments,
         unpaidStudentsCount,
         activeStudents: activeStudentsSet.size
@@ -221,15 +227,52 @@ export default function Dashboard() {
             iconColor="text-blue-600"
             iconBgColor="bg-blue-100"
           />
-          <StatsCard
-            title="This Month Earnings"
-            value={isLoading ? "..." : formatCurrency(dashboardStats?.totalEarnings || 0, tutorInfo?.currency || 'USD')}
-            change={isLoading ? "..." : (dashboardStats?.earningsChange || "N/A")}
-            changeType={dashboardStats?.earningsChangeType || "neutral"}
-            icon={Coins}
-            iconColor="text-green-600"
-            iconBgColor="bg-green-100"
-          />
+          
+          {/* Earnings Summary Card with Toggle */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Earnings Summary</CardTitle>
+              <div className="flex items-center gap-2">
+                <Coins className="h-4 w-4 text-green-600" />
+                <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
+                  <button
+                    onClick={() => setEarningsView('week')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      earningsView === 'week'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Week
+                  </button>
+                  <button
+                    onClick={() => setEarningsView('month')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      earningsView === 'month'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Month
+                  </button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {isLoading ? "..." : formatCurrency(
+                  earningsView === 'week' 
+                    ? dashboardStats?.currentWeekEarnings || 0
+                    : dashboardStats?.currentMonthEarnings || 0, 
+                  tutorInfo?.currency || 'USD'
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {earningsView === 'week' ? 'Earned This Week' : 'Earned This Month'}
+              </p>
+            </CardContent>
+          </Card>
+
           <StatsCard
             title="Pending Payments"
             value={isLoading ? "..." : formatCurrency(dashboardStats?.pendingPayments || 0, tutorInfo?.currency || 'USD')}
