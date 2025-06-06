@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -48,6 +48,17 @@ interface StudentEarnings {
 }
 
 export default function Earnings() {
+  // Toggle state for earnings summary (week/month)
+  const [earningsView, setEarningsView] = useState<'week' | 'month'>(() => {
+    // Persist toggle state in localStorage
+    const saved = localStorage.getItem('earnings-page-view');
+    return (saved as 'week' | 'month') || 'week';
+  });
+
+  // Save toggle state to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('earnings-page-view', earningsView);
+  }, [earningsView]);
   const queryClient = useQueryClient();
 
   // Fetch tutor's currency preference
@@ -161,6 +172,7 @@ export default function Earnings() {
 
     let totalEarnings = 0;
     let thisWeekEarnings = 0;
+    let thisMonthEarnings = 0;
     let thisMonthSessions = 0;
     const studentEarningsMap = new Map<string, { total: number; count: number }>();
     const activeStudentsSet = new Set<string>();
@@ -178,6 +190,11 @@ export default function Earnings() {
       // This week earnings (only from paid sessions in current week)
       if (isPaid && sessionDate >= startOfWeek && sessionDate <= endOfWeek) {
         thisWeekEarnings += earnings;
+      }
+      
+      // This month earnings (only from paid sessions in current month)
+      if (isPaid && sessionDate >= firstDayOfMonth && sessionDate <= lastDayOfMonth) {
+        thisMonthEarnings += earnings;
       }
       
       // This month sessions count (all sessions in current month regardless of payment)
@@ -211,6 +228,7 @@ export default function Earnings() {
     return {
       totalEarnings,
       thisWeekEarnings,
+      thisMonthEarnings,
       thisMonthSessions,
       activeStudents: activeStudentsSet.size,
       studentEarnings
@@ -327,17 +345,47 @@ export default function Earnings() {
             </CardContent>
           </Card>
 
+          {/* Earnings Summary Card with Toggle */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">This Week</CardTitle>
-              <TrendingUp className="h-4 w-4 text-blue-600" />
+              <CardTitle className="text-sm font-medium">Earnings Summary</CardTitle>
+              <div className="flex items-center gap-2">
+                <Coins className="h-4 w-4 text-green-600" />
+                <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
+                  <button
+                    onClick={() => setEarningsView('week')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      earningsView === 'week'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Week
+                  </button>
+                  <button
+                    onClick={() => setEarningsView('month')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      earningsView === 'month'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Month
+                  </button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(earnings?.thisWeekEarnings || 0, tutorCurrency)}
+              <div className="text-2xl font-bold text-green-600">
+                {formatCurrency(
+                  earningsView === 'week' 
+                    ? earnings?.thisWeekEarnings || 0
+                    : earnings?.thisMonthEarnings || 0, 
+                  tutorCurrency
+                )}
               </div>
               <p className="text-xs text-muted-foreground">
-                Last 7 days
+                {earningsView === 'week' ? 'Earned This Week' : 'Earned This Month'}
               </p>
             </CardContent>
           </Card>
