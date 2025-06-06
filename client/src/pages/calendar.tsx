@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
@@ -343,6 +344,93 @@ export default function Calendar() {
     },
   });
 
+  // Convert single session to recurring series mutation
+  const convertToRecurringMutation = useMutation({
+    mutationFn: async (data: { 
+      sessionId: string; 
+      sessionData: any; 
+      repeatWeeks: number; 
+      originalDate: string;
+      originalTime: string;
+    }) => {
+      const { sessionId, sessionData, repeatWeeks, originalDate, originalTime } = data;
+      const recurrenceId = crypto.randomUUID();
+      
+      // First update the original session with the recurrence_id and any changes
+      const { error: updateError } = await supabase
+        .from('sessions')
+        .update({
+          student_id: sessionData.studentId,
+          time: sessionData.time,
+          duration: sessionData.duration,
+          rate: sessionData.rate,
+          recurrence_id: recurrenceId,
+        })
+        .eq('id', sessionId);
+
+      if (updateError) {
+        console.error('Error updating original session:', updateError);
+        throw updateError;
+      }
+
+      // Get tutor ID for new sessions
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
+      }
+
+      // Create additional weekly sessions
+      const newSessions = [];
+      for (let week = 1; week < repeatWeeks; week++) {
+        const sessionDate = new Date(originalDate);
+        sessionDate.setDate(sessionDate.getDate() + (week * 7));
+        
+        newSessions.push({
+          tutor_id: tutorId,
+          student_id: sessionData.studentId,
+          date: sessionDate.toISOString().split('T')[0],
+          time: sessionData.time,
+          duration: sessionData.duration,
+          rate: sessionData.rate,
+          paid: false,
+          recurrence_id: recurrenceId,
+        });
+      }
+
+      if (newSessions.length > 0) {
+        const { error: insertError } = await supabase
+          .from('sessions')
+          .insert(newSessions);
+
+        if (insertError) {
+          console.error('Error creating recurring sessions:', insertError);
+          throw insertError;
+        }
+      }
+
+      return { recurrenceId, totalSessions: repeatWeeks };
+    },
+    onSuccess: (result) => {
+      toast({
+        title: "Recurring sessions created",
+        description: `Successfully created ${result.totalSessions} weekly sessions.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      setShowSessionModal(false);
+      setModalView('details');
+    },
+    onError: (error) => {
+      console.error('Error converting to recurring series:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create recurring sessions. Please try again.",
+      });
+    },
+  });
+
   // Set up Supabase realtime subscription
   useEffect(() => {
     const channel = supabase
@@ -517,6 +605,9 @@ export default function Calendar() {
   const EditSessionForm = () => {
     if (!selectedSession) return null;
 
+    const [isRepeatWeekly, setIsRepeatWeekly] = useState(false);
+    const [repeatWeeks, setRepeatWeeks] = useState(4);
+
     const form = useForm({
       resolver: zodResolver(editSeriesSchema),
       defaultValues: {
@@ -528,7 +619,19 @@ export default function Calendar() {
     });
 
     const onSubmit = (data: z.infer<typeof editSeriesSchema>) => {
-      handleSessionFormSubmit(data);
+      if (isRepeatWeekly && !selectedSession.recurrence_id) {
+        // Convert to recurring series
+        convertToRecurringMutation.mutate({
+          sessionId: selectedSession.id,
+          sessionData: data,
+          repeatWeeks: repeatWeeks,
+          originalDate: selectedSession.date,
+          originalTime: selectedSession.time,
+        });
+      } else {
+        // Regular session update
+        handleSessionFormSubmit(data);
+      }
     };
 
     return (
@@ -591,6 +694,54 @@ export default function Calendar() {
             )}
           />
 
+          {/* Show warning if session is already recurring */}
+          {selectedSession.recurrence_id && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800">
+                This session is already part of a recurring series.
+              </p>
+            </div>
+          )}
+
+          {/* Repeat weekly section - only show for non-recurring sessions */}
+          {!selectedSession.recurrence_id && (
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-md space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="repeat-weekly"
+                  checked={isRepeatWeekly}
+                  onCheckedChange={(checked) => setIsRepeatWeekly(!!checked)}
+                />
+                <label
+                  htmlFor="repeat-weekly"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Repeat weekly
+                </label>
+              </div>
+
+              {isRepeatWeekly && (
+                <div className="space-y-2">
+                  <label htmlFor="repeat-weeks" className="text-sm font-medium">
+                    Repeat for how many weeks?
+                  </label>
+                  <Input
+                    id="repeat-weeks"
+                    type="number"
+                    min="1"
+                    max="12"
+                    value={repeatWeeks}
+                    onChange={(e) => setRepeatWeeks(parseInt(e.target.value) || 4)}
+                    className="w-24"
+                  />
+                  <p className="text-xs text-gray-600">
+                    This will create {repeatWeeks} sessions (including this one) at the same time on consecutive weeks.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex gap-2 pt-4">
             <Button
               type="button"
@@ -602,10 +753,12 @@ export default function Calendar() {
             </Button>
             <Button
               type="submit"
-              disabled={updateSessionMutation.isPending}
+              disabled={updateSessionMutation.isPending || convertToRecurringMutation.isPending}
               className="flex-1"
             >
-              {updateSessionMutation.isPending ? "Updating..." : "Update Session"}
+              {(updateSessionMutation.isPending || convertToRecurringMutation.isPending) 
+                ? (isRepeatWeekly ? "Creating Series..." : "Updating...") 
+                : (isRepeatWeekly ? "Create Recurring Series" : "Update Session")}
             </Button>
           </div>
         </form>
