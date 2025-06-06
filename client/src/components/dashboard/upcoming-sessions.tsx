@@ -24,21 +24,23 @@ interface Session {
 
 interface UpcomingSessionsProps {
   currency?: string;
+  limit?: number;
+  showViewAll?: boolean;
 }
 
-export function UpcomingSessions({ currency = 'USD' }: UpcomingSessionsProps) {
+export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = true }: UpcomingSessionsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: sessions, isLoading, error } = useQuery({
-    queryKey: ['upcoming-sessions'],
+    queryKey: ['upcoming-sessions', limit],
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('sessions')
         .select(`
           id,
@@ -49,6 +51,7 @@ export function UpcomingSessions({ currency = 'USD' }: UpcomingSessionsProps) {
           rate,
           paid,
           created_at,
+          recurrence_id,
           students (
             name
           )
@@ -56,8 +59,14 @@ export function UpcomingSessions({ currency = 'USD' }: UpcomingSessionsProps) {
         .eq('tutor_id', tutorId)
         .gte('date', new Date().toISOString().split('T')[0]) // Only future sessions
         .order('date', { ascending: true })
-        .order('time', { ascending: true })
-        .limit(5);
+        .order('time', { ascending: true });
+
+      // Apply limit only if specified (for dashboard view)
+      if (limit && limit > 0) {
+        query = query.limit(limit);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching sessions:', error);
@@ -178,9 +187,11 @@ export function UpcomingSessions({ currency = 'USD' }: UpcomingSessionsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Upcoming Sessions</CardTitle>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/calendar">View all</Link>
-          </Button>
+          {showViewAll && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/upcoming-sessions">View all</Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -205,9 +216,11 @@ export function UpcomingSessions({ currency = 'USD' }: UpcomingSessionsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Upcoming Sessions</CardTitle>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/calendar">View all</Link>
-          </Button>
+          {showViewAll && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/upcoming-sessions">View all</Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <p className="text-center text-red-500 py-6">
@@ -223,9 +236,11 @@ export function UpcomingSessions({ currency = 'USD' }: UpcomingSessionsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Upcoming Sessions</CardTitle>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/calendar">View all</Link>
-          </Button>
+          {showViewAll && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/upcoming-sessions">View all</Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground py-6">
