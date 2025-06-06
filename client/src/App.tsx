@@ -19,6 +19,7 @@ import Earnings from "@/pages/earnings";
 import Students from "@/pages/students";
 import Profile from "@/pages/profile";
 import Activity from "@/pages/activity";
+import UpcomingSessions from "@/pages/upcoming-sessions";
 import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/not-found";
 

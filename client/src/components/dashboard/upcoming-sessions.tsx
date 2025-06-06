@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
-import { X, DollarSign } from "lucide-react";
+import { X, DollarSign, Repeat } from "lucide-react";
 
 interface Session {
   id: string;
@@ -20,6 +20,7 @@ interface Session {
   rate: number;
   paid: boolean;
   created_at: string;
+  recurrence_id?: string;
 }
 
 interface UpcomingSessionsProps {
@@ -255,9 +256,11 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Upcoming Sessions</CardTitle>
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/calendar">View all</Link>
-        </Button>
+        {showViewAll && (
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/upcoming-sessions">View all</Link>
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -270,9 +273,16 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
                   index === 1 ? 'bg-green-500' : 'bg-purple-500'
                 }`} />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">
-                    {session.student_name}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-foreground">
+                      {session.student_name}
+                    </p>
+                    {session.recurrence_id && (
+                      <div title="Recurring session">
+                        <Repeat className="h-3 w-3 text-blue-500" />
+                      </div>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {session.date} at {session.time} ({session.duration} min)
                   </p>
