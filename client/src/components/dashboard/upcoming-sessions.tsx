@@ -266,9 +266,14 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
         <div className="space-y-4">
           {sessions.map((session, index) => {
             const calculatedPrice = (session.duration / 60) * session.rate;
-            const sessionDate = new Date(session.date);
+            
+            // Create full datetime for the session
+            const sessionDateTime = new Date(`${session.date}T${session.time}`);
             const createdDate = new Date(session.created_at);
-            const isLoggedLate = sessionDate < createdDate;
+            const now = new Date();
+            
+            // Session is "logged late" if it was created after the session time had already passed
+            const isLoggedLate = createdDate > sessionDateTime && now > sessionDateTime;
             
             return (
               <div key={session.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">

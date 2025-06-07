@@ -920,9 +920,14 @@ export default function Calendar() {
     const { student_name, duration, time, rate, date, created_at } = event.resource;
     const startTime = new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const earning = rate * duration / 60;
-    const sessionDate = new Date(date);
+    
+    // Create full datetime for the session
+    const sessionDateTime = new Date(`${date}T${time}`);
     const createdDate = new Date(created_at);
-    const isLoggedLate = sessionDate < createdDate;
+    const now = new Date();
+    
+    // Session is "logged late" if it was created after the session time had already passed
+    const isLoggedLate = createdDate > sessionDateTime && now > sessionDateTime;
     
     const tooltipText = `${student_name}${isLoggedLate ? ' (Logged Late)' : ''}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
     

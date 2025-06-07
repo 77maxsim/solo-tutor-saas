@@ -405,9 +405,14 @@ export default function UpcomingSessions() {
                     <CollapsibleContent className="space-y-2 mt-2">
                       {dateSessions.map((session) => {
                         const calculatedPrice = (session.duration / 60) * session.rate;
-                        const sessionDate = new Date(session.date);
+                        
+                        // Create full datetime for the session
+                        const sessionDateTime = new Date(`${session.date}T${session.time}`);
                         const createdDate = new Date(session.created_at);
-                        const isLoggedLate = sessionDate < createdDate;
+                        const now = new Date();
+                        
+                        // Session is "logged late" if it was created after the session time had already passed
+                        const isLoggedLate = createdDate > sessionDateTime && now > sessionDateTime;
                         
                         return (
                           <div
