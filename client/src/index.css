@@ -285,4 +285,41 @@
   .rbc-current-time-indicator {
     @apply bg-red-500 h-0.5 z-10;
   }
+
+  /* Popup for "+X more" events */
+  .rbc-overlay {
+    z-index: 9999 !important;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 8px;
+    max-width: 300px;
+    position: absolute;
+  }
+
+  .dark .rbc-overlay {
+    background: #1f2937;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .rbc-overlay-header {
+    @apply font-semibold text-gray-900 dark:text-gray-100 text-sm mb-2 pb-2 border-b border-gray-200 dark:border-gray-600;
+  }
+
+  .rbc-overlay .rbc-event {
+    @apply mb-1 p-2 rounded text-xs;
+  }
+
+  /* Ensure calendar container doesn't clip popups */
+  .calendar-container {
+    overflow: visible !important;
+    position: relative;
+  }
+
+  /* Show more link styling */
+  .rbc-show-more {
+    @apply text-blue-600 dark:text-blue-400 text-xs font-medium cursor-pointer hover:underline;
+  }
 }

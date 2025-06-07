@@ -75,6 +75,7 @@ interface SessionWithStudent {
   time: string;
   duration: number;
   rate: number;
+  color?: string;
   created_at: string;
   recurrence_id?: string;
 }
@@ -1103,20 +1104,20 @@ export default function Calendar() {
             </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
-            <div className="h-[500px] sm:h-[600px] lg:h-[700px] bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div className="calendar-container h-[500px] sm:h-[600px] lg:h-[700px] bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
               <DndProvider backend={HTML5Backend}>
                 <DragAndDropCalendar
                   localizer={localizer}
                   events={events}
-                  startAccessor="start"
-                  endAccessor="end"
+                  startAccessor={(event: any) => event.start}
+                  endAccessor={(event: any) => event.end}
                   defaultView={calendarView === 'week' ? Views.WEEK : Views.MONTH}
                   view={calendarView === 'week' ? Views.WEEK : Views.MONTH}
                   onView={(view: any) => setCalendarView(view === Views.WEEK ? 'week' : 'month')}
-                  onSelectEvent={handleSelectEvent}
+                  onSelectEvent={(event: any) => handleSelectEvent(event)}
                   onSelectSlot={handleSelectSlot}
-                  onEventDrop={handleEventDrop}
-                  onEventResize={handleEventResize}
+                  onEventDrop={(args: any) => handleEventDrop(args)}
+                  onEventResize={(args: any) => handleEventResize(args)}
                   selectable
                   resizable
                   draggableAccessor={() => true}
@@ -1124,13 +1125,13 @@ export default function Calendar() {
                   step={30}
                   timeslots={2}
                   showMultiDayTimes
-                  eventPropGetter={eventStyleGetter}
+                  eventPropGetter={(event: any) => eventStyleGetter(event)}
                   toolbar={false}
-                  popup={false}
+                  popup={true}
                   style={{ height: '100%' }}
                   components={{
                     toolbar: () => null, // Completely disable the toolbar
-                    event: EventComponent, // Use custom event component for consistent tooltips
+                    event: (props: any) => <EventComponent event={props.event} />, // Use custom event component for consistent tooltips
                   }}
                 />
               </DndProvider>
