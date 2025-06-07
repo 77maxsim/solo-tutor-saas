@@ -890,9 +890,13 @@ export default function Calendar() {
   };
 
   const eventStyleGetter = (event: CalendarEvent) => {
-    const sessionDate = new Date(event.resource.date);
+    // Create full datetime for the session
+    const sessionDateTime = new Date(`${event.resource.date}T${event.resource.time}`);
     const createdDate = new Date(event.resource.created_at);
-    const isLoggedLate = sessionDate < createdDate;
+    const now = new Date();
+    
+    // Session is "logged late" if it was created after the session time had already passed
+    const isLoggedLate = createdDate > sessionDateTime && now > sessionDateTime;
     
     if (isLoggedLate) {
       return {
