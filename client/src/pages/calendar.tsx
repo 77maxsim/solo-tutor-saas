@@ -55,6 +55,7 @@ const editSeriesSchema = z.object({
   time: z.string().min(1, "Time is required").regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter a valid time (HH:MM)"),
   duration: z.number().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
   rate: z.number().min(0, "Rate must be a positive number"),
+  color: z.string().optional(),
 });
 
 interface Session {
@@ -224,7 +225,7 @@ export default function Calendar() {
   const updateSessionMutation = useMutation({
     mutationFn: async (updateData: { sessionId: string; data: any }) => {
       const { sessionId, data } = updateData;
-      
+
       const { error } = await supabase
         .from('sessions')
         .update({
@@ -232,6 +233,7 @@ export default function Calendar() {
           time: data.time,
           duration: data.duration,
           rate: data.rate,
+          color: data.color,
         })
         .eq('id', sessionId);
 
@@ -265,12 +267,12 @@ export default function Calendar() {
   const rescheduleSessionMutation = useMutation({
     mutationFn: async (updateData: { sessionId: string; newStart: Date; newEnd: Date }) => {
       const { sessionId, newStart, newEnd } = updateData;
-      
+
       // Calculate new date, time, and duration
       const newDate = newStart.toISOString().split('T')[0];
       const newTime = newStart.toTimeString().slice(0, 5);
       const newDuration = Math.round((newEnd.getTime() - newStart.getTime()) / (1000 * 60));
-      
+
       const { error } = await supabase
         .from('sessions')
         .update({
@@ -308,7 +310,7 @@ export default function Calendar() {
   const updateSeriesMutation = useMutation({
     mutationFn: async (updateData: { recurrenceId: string; data: any }) => {
       const { recurrenceId, data } = updateData;
-      
+
       const { error } = await supabase
         .from('sessions')
         .update({
@@ -316,6 +318,7 @@ export default function Calendar() {
           time: data.time,
           duration: data.duration,
           rate: data.rate,
+          color: data.color,
         })
         .eq('recurrence_id', recurrenceId);
 
@@ -356,7 +359,7 @@ export default function Calendar() {
     }) => {
       const { sessionId, sessionData, repeatWeeks, originalDate, originalTime } = data;
       const recurrenceId = crypto.randomUUID();
-      
+
       // First update the original session with the recurrence_id and any changes
       const { error: updateError } = await supabase
         .from('sessions')
@@ -366,6 +369,7 @@ export default function Calendar() {
           duration: sessionData.duration,
           rate: sessionData.rate,
           recurrence_id: recurrenceId,
+          color: sessionData.color,
         })
         .eq('id', sessionId);
 
@@ -385,7 +389,7 @@ export default function Calendar() {
       for (let week = 1; week < repeatWeeks; week++) {
         const sessionDate = new Date(originalDate);
         sessionDate.setDate(sessionDate.getDate() + (week * 7));
-        
+
         newSessions.push({
           tutor_id: tutorId,
           student_id: sessionData.studentId,
@@ -395,6 +399,7 @@ export default function Calendar() {
           rate: sessionData.rate,
           paid: false,
           recurrence_id: recurrenceId,
+          color: sessionData.color,
         });
       }
 
@@ -445,7 +450,7 @@ export default function Calendar() {
         },
         (payload) => {
           console.log('Sessions table changed:', payload);
-          
+
           // Invalidate and refetch sessions data
           queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
           queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
@@ -495,7 +500,7 @@ export default function Calendar() {
     const [hours, minutes] = session.time.split(':').map(Number);
     const start = new Date(session.date);
     start.setHours(hours, minutes, 0, 0);
-    
+
     // Calculate end time by adding duration
     const end = new Date(start);
     end.setMinutes(end.getMinutes() + session.duration);
@@ -524,15 +529,15 @@ export default function Calendar() {
   const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
     // Calculate duration in minutes based on selected time range
     const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
-    
+
     // Format date as YYYY-MM-DD
     const selectedDate = start.toISOString().split('T')[0];
-    
+
     // Format time as HH:MM
     const hours = start.getHours().toString().padStart(2, '0');
     const minutes = start.getMinutes().toString().padStart(2, '0');
     const selectedTime = `${hours}:${minutes}`;
-    
+
     // Create a custom event to open the schedule modal with pre-filled data
     window.dispatchEvent(new CustomEvent('openScheduleModal', {
       detail: {
@@ -554,7 +559,7 @@ export default function Calendar() {
 
   const handleCancelSession = () => {
     if (!selectedSession) return;
-    
+
     if (window.confirm(`Are you sure you want to cancel the session with ${selectedSession.student_name}?`)) {
       deleteSessionMutation.mutate(selectedSession.id);
     }
@@ -562,7 +567,7 @@ export default function Calendar() {
 
   const handleCancelSeries = () => {
     if (!selectedSession?.recurrence_id) return;
-    
+
     if (window.confirm(`Are you sure you want to cancel ALL sessions in this recurring series with ${selectedSession.student_name}?`)) {
       deleteSeriesMutation.mutate(selectedSession.recurrence_id);
     }
@@ -586,7 +591,7 @@ export default function Calendar() {
   // Handle individual session form submission
   const handleSessionFormSubmit = (data: any) => {
     if (!selectedSession?.id) return;
-    
+
     updateSessionMutation.mutate({
       sessionId: selectedSession.id,
       data
@@ -596,7 +601,7 @@ export default function Calendar() {
   // Handle series form submission
   const handleSeriesFormSubmit = (data: any) => {
     if (!selectedSession?.recurrence_id) return;
-    
+
     updateSeriesMutation.mutate({
       recurrenceId: selectedSession.recurrence_id,
       data
@@ -606,7 +611,7 @@ export default function Calendar() {
   // Handle drag-and-drop event move
   const handleEventDrop = ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
     if (rescheduleSessionMutation.isPending) return;
-    
+
     rescheduleSessionMutation.mutate({
       sessionId: event.id,
       newStart: start,
@@ -617,7 +622,7 @@ export default function Calendar() {
   // Handle event resize
   const handleEventResize = ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
     if (rescheduleSessionMutation.isPending) return;
-    
+
     rescheduleSessionMutation.mutate({
       sessionId: event.id,
       newStart: start,
@@ -639,6 +644,7 @@ export default function Calendar() {
         time: selectedSession.time,
         duration: selectedSession.duration,
         rate: selectedSession.rate,
+        color: selectedSession.color || "#3B82F6",
       },
     });
 
@@ -712,6 +718,41 @@ export default function Calendar() {
                     onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                     value={field.value || ''}
                   />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="color"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Session Color</FormLabel>
+                <FormControl>
+                  <div className="grid grid-cols-6 gap-2">
+                    {[
+                      { color: "#3B82F6", name: "Blue" },
+                      { color: "#F87171", name: "Red" },
+                      { color: "#34D399", name: "Green" },
+                      { color: "#FBBF24", name: "Yellow" },
+                      { color: "#A78BFA", name: "Purple" },
+                      { color: "#6B7280", name: "Gray" },
+                    ].map((colorOption) => (
+                      <div
+                        key={colorOption.color}
+                        className={`w-8 h-8 rounded-lg cursor-pointer border-2 transition-all ${
+                          field.value === colorOption.color
+                            ? "border-gray-900 scale-110"
+                            : "border-gray-300 hover:border-gray-500"
+                        }`}
+                        style={{ backgroundColor: colorOption.color }}
+                        onClick={() => field.onChange(colorOption.color)}
+                        title={colorOption.name}
+                      />
+                    ))}
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -801,6 +842,7 @@ export default function Calendar() {
         time: selectedSession.time,
         duration: selectedSession.duration,
         rate: selectedSession.rate,
+        color: selectedSession.color || "#3B82F6",
       },
     });
 
@@ -868,6 +910,41 @@ export default function Calendar() {
             )}
           />
 
+          <FormField
+            control={form.control}
+            name="color"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Session Color</FormLabel>
+                <FormControl>
+                  <div className="grid grid-cols-6 gap-2">
+                    {[
+                      { color: "#3B82F6", name: "Blue" },
+                      { color: "#F87171", name: "Red" },
+                      { color: "#34D399", name: "Green" },
+                      { color: "#FBBF24", name: "Yellow" },
+                      { color: "#A78BFA", name: "Purple" },
+                      { color: "#6B7280", name: "Gray" },
+                    ].map((colorOption) => (
+                      <div
+                        key={colorOption.color}
+                        className={`w-8 h-8 rounded-lg cursor-pointer border-2 transition-all ${
+                          field.value === colorOption.color
+                            ? "border-gray-900 scale-110"
+                            : "border-gray-300 hover:border-gray-500"
+                        }`}
+                        style={{ backgroundColor: colorOption.color }}
+                        onClick={() => field.onChange(colorOption.color)}
+                        title={colorOption.name}
+                      />
+                    ))}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <div className="flex gap-2 pt-4">
             <Button
               type="button"
@@ -895,10 +972,10 @@ export default function Calendar() {
     const sessionDateTime = new Date(`${event.resource.date}T${event.resource.time}`);
     const createdDate = new Date(event.resource.created_at);
     const now = new Date();
-    
+
     // Session is "logged late" if it was created after the session time had already passed
     const isLoggedLate = createdDate > sessionDateTime && now > sessionDateTime;
-    
+
     if (isLoggedLate) {
       return {
         style: {
@@ -908,7 +985,7 @@ export default function Calendar() {
         }
       };
     }
-    
+
     // Use the custom color from the session
     const sessionColor = event.resource.color || '#3B82F6';
     return {
@@ -925,17 +1002,17 @@ export default function Calendar() {
     const { student_name, duration, time, rate, date, created_at } = event.resource;
     const startTime = new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const earning = rate * duration / 60;
-    
+
     // Create full datetime for the session
     const sessionDateTime = new Date(`${date}T${time}`);
     const createdDate = new Date(created_at);
     const now = new Date();
-    
+
     // Session is "logged late" if it was created after the session time had already passed
     const isLoggedLate = createdDate > sessionDateTime && now > sessionDateTime;
-    
+
     const tooltipText = `${student_name}${isLoggedLate ? ' (Logged Late)' : ''}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
-    
+
     return (
       <div title={tooltipText} className="calendar-event-content">
         <div className="calendar-event-title">
@@ -1149,7 +1226,7 @@ export default function Calendar() {
                modalView === 'editSession' ? 'Edit Session' : 'Edit Recurring Series'}
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedSession && (
             <div className="space-y-4">
               {modalView === 'details' ? (
