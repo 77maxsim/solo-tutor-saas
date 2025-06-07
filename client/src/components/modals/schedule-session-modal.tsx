@@ -55,6 +55,7 @@ const scheduleSessionSchema = z.object({
   rate: z.number().min(0, "Rate must be a positive number"),
   repeatWeekly: z.boolean().default(false),
   repeatWeeks: z.number().min(1, "Must repeat for at least 1 week").max(12, "Cannot repeat for more than 12 weeks").optional(),
+  color: z.string().optional(), // Add color field
 }).refine((data) => {
   if (data.repeatWeekly && !data.repeatWeeks) {
     return false;
@@ -88,12 +89,28 @@ interface ScheduleSessionModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Predefined color palette
+const COLOR_PALETTE = [
+  { name: 'Blue', value: '#3b82f6' },
+  { name: 'Green', value: '#10b981' },
+  { name: 'Purple', value: '#8b5cf6' },
+  { name: 'Pink', value: '#ec4899' },
+  { name: 'Orange', value: '#f97316' },
+  { name: 'Red', value: '#ef4444' },
+  { name: 'Yellow', value: '#eab308' },
+  { name: 'Teal', value: '#14b8a6' },
+  { name: 'Indigo', value: '#6366f1' },
+  { name: 'Emerald', value: '#059669' }
+];
+
 export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newStudentName, setNewStudentName] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+    const [selectedColor, setSelectedColor] = useState('#3b82f6');
+
 
   // Fetch tutor's currency preference
   const { data: tutorCurrency = 'USD' } = useQuery({
@@ -168,14 +185,14 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
     onSuccess: (newStudent) => {
       // Refresh students list
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      
+
       // Auto-select the new student
       form.setValue('studentId', newStudent.id);
-      
+
       // Reset add student form
       setNewStudentName("");
       setShowAddStudent(false);
-      
+
       // Show success message
       toast({
         title: "Student added",
@@ -202,6 +219,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
       rate: 0,
       repeatWeekly: false,
       repeatWeeks: 1,
+      color: '#3b82f6', // Default color value
     },
   });
 
@@ -210,7 +228,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
     const handleOpenScheduleModal = (event: CustomEvent) => {
       if (event.detail) {
         const { date, time, duration } = event.detail;
-        
+
         if (date) {
           form.setValue('date', new Date(date));
         }
@@ -221,12 +239,12 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
           form.setValue('duration', duration);
         }
       }
-      
+
       onOpenChange(true);
     };
 
     window.addEventListener('openScheduleModal', handleOpenScheduleModal as EventListener);
-    
+
     return () => {
       window.removeEventListener('openScheduleModal', handleOpenScheduleModal as EventListener);
     };
@@ -234,7 +252,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
 
   const onSubmit = async (data: ScheduleSessionForm) => {
     setIsSubmitting(true);
-    
+
     try {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
@@ -243,11 +261,11 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
 
       // Generate recurrence ID if needed
       const recurrenceId = data.repeatWeekly ? crypto.randomUUID() : null;
-      
+
       // Prepare sessions to insert
       const sessionsToInsert = [];
       const baseDate = new Date(data.date);
-      
+
       // Add the first session
       sessionsToInsert.push({
         student_id: data.studentId,
@@ -259,6 +277,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         paid: false,
         recurrence_id: recurrenceId,
         created_at: new Date().toISOString(),
+        color: selectedColor, // Add color to session data
       });
 
       // If recurring, add additional sessions
@@ -266,7 +285,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         for (let week = 1; week < data.repeatWeeks; week++) {
           const sessionDate = new Date(baseDate);
           sessionDate.setDate(sessionDate.getDate() + (week * 7));
-          
+
           sessionsToInsert.push({
             student_id: data.studentId,
             date: format(sessionDate, "yyyy-MM-dd"),
@@ -277,6 +296,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
             paid: false,
             recurrence_id: recurrenceId,
             created_at: new Date().toISOString(),
+            color: selectedColor, // Add color to recurring sessions
           });
         }
       }
@@ -287,6 +307,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         .insert(sessionsToInsert)
         .select();
 
+      ```typescript
       if (error) {
         console.error('Supabase error:', error);
         toast({
@@ -342,9 +363,17 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
       });
       return;
     }
-    
+
     addStudentMutation.mutate(newStudentName);
   };
+
+    const handleClose = () => {
+      form.reset();
+      setShowAddStudent(false);
+      setNewStudentName("");
+        setSelectedColor('#3b82f6'); // Reset selected color
+        onOpenChange(false);
+    };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -560,6 +589,35 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                   <FormMessage />
                 </FormItem>
               )}
+            />
+
+            {/* Color Picker */}
+            <FormField
+                control={form.control}
+                name="color"
+                render={() => (
+                    <FormItem>
+                        <FormLabel>Color</FormLabel>
+                        <div className="flex flex-wrap gap-2">
+                            {COLOR_PALETTE.map((color) => (
+                                <button
+                                    key={color.value}
+                                    type="button"
+                                    onClick={() => setSelectedColor(color.value)}
+                                    className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${selectedColor === color.value ? 'border-gray-800 shadow-lg' : 'border-gray-300 hover:border-gray-500'}`}
+                                    style={{ backgroundColor: color.value }}
+                                    title={color.name}
+                                />
+                            ))}
+                        </div>
+                        <p className="text-sm text-gray-500 mt-2">
+                            Selected: {COLOR_PALETTE.find(c => c.value === selectedColor)?.name || 'Custom'}
+                        </p>
+                        <FormControl>
+                            <Input type="hidden" value={selectedColor} {...form.register('color')} />
+                        </FormControl>
+                    </FormItem>
+                )}
             />
 
             {/* Recurring Session Options */}
