@@ -53,6 +53,7 @@ const scheduleSessionSchema = z.object({
   time: z.string().min(1, "Time is required").regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter a valid time (HH:MM)"),
   duration: z.number().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
   rate: z.number().min(0, "Rate must be a positive number"),
+  color: z.string().default("#3B82F6"),
   repeatWeekly: z.boolean().default(false),
   repeatWeeks: z.number().min(1, "Must repeat for at least 1 week").max(12, "Cannot repeat for more than 12 weeks").optional(),
 }).refine((data) => {
@@ -168,14 +169,14 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
     onSuccess: (newStudent) => {
       // Refresh students list
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      
+
       // Auto-select the new student
       form.setValue('studentId', newStudent.id);
-      
+
       // Reset add student form
       setNewStudentName("");
       setShowAddStudent(false);
-      
+
       // Show success message
       toast({
         title: "Student added",
@@ -200,6 +201,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
       time: "",
       duration: 60,
       rate: 0,
+      color: "#3B82F6",
       repeatWeekly: false,
       repeatWeeks: 1,
     },
@@ -210,7 +212,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
     const handleOpenScheduleModal = (event: CustomEvent) => {
       if (event.detail) {
         const { date, time, duration } = event.detail;
-        
+
         if (date) {
           form.setValue('date', new Date(date));
         }
@@ -221,12 +223,12 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
           form.setValue('duration', duration);
         }
       }
-      
+
       onOpenChange(true);
     };
 
     window.addEventListener('openScheduleModal', handleOpenScheduleModal as EventListener);
-    
+
     return () => {
       window.removeEventListener('openScheduleModal', handleOpenScheduleModal as EventListener);
     };
@@ -234,7 +236,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
 
   const onSubmit = async (data: ScheduleSessionForm) => {
     setIsSubmitting(true);
-    
+
     try {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
@@ -243,11 +245,11 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
 
       // Generate recurrence ID if needed
       const recurrenceId = data.repeatWeekly ? crypto.randomUUID() : null;
-      
+
       // Prepare sessions to insert
       const sessionsToInsert = [];
       const baseDate = new Date(data.date);
-      
+
       // Add the first session
       sessionsToInsert.push({
         student_id: data.studentId,
@@ -255,6 +257,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         time: data.time,
         duration: data.duration,
         rate: data.rate,
+        color: data.color,
         tutor_id: tutorId,
         paid: false,
         recurrence_id: recurrenceId,
@@ -266,13 +269,14 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         for (let week = 1; week < data.repeatWeeks; week++) {
           const sessionDate = new Date(baseDate);
           sessionDate.setDate(sessionDate.getDate() + (week * 7));
-          
+
           sessionsToInsert.push({
             student_id: data.studentId,
             date: format(sessionDate, "yyyy-MM-dd"),
             time: data.time,
             duration: data.duration,
             rate: data.rate,
+            color: data.color,
             tutor_id: tutorId,
             paid: false,
             recurrence_id: recurrenceId,
@@ -342,9 +346,11 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
       });
       return;
     }
-    
+
     addStudentMutation.mutate(newStudentName);
   };
+
+  const colors = ["#3B82F6", "#F87171", "#34D399", "#FBBF24", "#A78BFA", "#6B7280"];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -557,6 +563,32 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                       }}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Session Color */}
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Session Color</FormLabel>
+                  <div className="grid grid-cols-6 gap-2">
+                    {colors.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={cn(
+                          "w-8 h-8 rounded-md",
+                          field.value === color ? "ring-2 ring-primary" : "ring-1 ring-gray-300 dark:ring-gray-700",
+                        )}
+                        style={{ backgroundColor: color }}
+                        onClick={() => field.onChange(color)}
+                      />
+                    ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
