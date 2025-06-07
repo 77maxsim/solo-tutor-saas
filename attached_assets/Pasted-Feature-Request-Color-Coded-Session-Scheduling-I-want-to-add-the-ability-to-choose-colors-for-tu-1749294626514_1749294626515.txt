@@ -1,0 +1,40 @@
+Feature Request: Color-Coded Session Scheduling
+
+I want to add the ability to choose colors for tutoring sessions when scheduling them, similar to Google Calendar's color picker functionality. Here are the requirements:
+
+Core Functionality:
+
+Add a color picker/selector in the Schedule Session Modal that allows users to choose from a predefined set of colors
+Store the selected color in the database with each session
+Display sessions with their chosen colors on the calendar view
+Show the colored indicators/backgrounds in all session lists (upcoming sessions, dashboard widgets, etc.)
+Technical Requirements:
+
+Database Schema: Add a color field to the sessions table (string field to store hex color codes or color names)
+Color Palette: Provide 8-10 predefined colors that work well with the current UI theme and have good contrast
+Default Behavior: If no color is selected, use a default color (current blue theme)
+UI Components:
+Color picker in the schedule session modal
+Color indicators on calendar events
+Color badges/indicators in session lists and cards
+Visual Design:
+
+Colors should be vibrant but not overwhelming
+Maintain good contrast with text overlays
+Use circular color swatches in the picker
+Show a subtle border around the selected color
+Colors should work well in both the calendar grid and list views
+Implementation Areas:
+
+Update the schedule-session-modal.tsx to include color selection
+Modify the database schema and session interfaces
+Update calendar events styling in calendar.tsx
+Update session cards in dashboard widgets and upcoming sessions
+Ensure color persistence across all session displays
+User Experience:
+
+Color selection should be optional and intuitive
+Users should be able to change colors when editing sessions
+Colors should be consistently applied across all views where sessions appear
+For recurring sessions, all sessions in the series should inherit the same color
+Can you help me implement this color-coding system for sessions?
