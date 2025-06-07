@@ -23,7 +23,7 @@ import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { Calendar as BigCalendarBase, momentLocalizer, Views } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { Plus, Calendar as CalendarIcon, Filter, Edit, Trash2 } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Filter, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -95,6 +95,7 @@ export default function Calendar() {
   const [selectedSession, setSelectedSession] = useState<SessionWithStudent | null>(null);
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [modalView, setModalView] = useState<'details' | 'editSeries' | 'editSession'>('details');
+  const [currentDate, setCurrentDate] = useState(new Date());
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -630,6 +631,35 @@ export default function Calendar() {
     });
   };
 
+  // Handle week navigation
+  const handlePreviousWeek = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() - 7);
+    setCurrentDate(newDate);
+  };
+
+  const handleNextWeek = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + 7);
+    setCurrentDate(newDate);
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  // Format the current week range for display
+  const getWeekRange = () => {
+    const startOfWeek = moment(currentDate).startOf('week');
+    const endOfWeek = moment(currentDate).endOf('week');
+    
+    if (startOfWeek.month() === endOfWeek.month()) {
+      return `${startOfWeek.format('MMMM D')} - ${endOfWeek.format('D, YYYY')}`;
+    } else {
+      return `${startOfWeek.format('MMM D')} - ${endOfWeek.format('MMM D, YYYY')}`;
+    }
+  };
+
   // EditSessionForm component
   const EditSessionForm = () => {
     if (!selectedSession) return null;
@@ -1126,9 +1156,47 @@ export default function Calendar() {
       <div className="p-4 sm:p-6">
         <Card className="shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 pb-6">
-            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {calendarView === 'week' ? 'Weekly Schedule' : 'Monthly Schedule'}
-            </CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {calendarView === 'week' ? 'Weekly Schedule' : 'Monthly Schedule'}
+              </CardTitle>
+              
+              {/* Week Navigation - only show in week view */}
+              {calendarView === 'week' && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviousWeek}
+                    className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[180px] text-center">
+                    {getWeekRange()}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextWeek}
+                    className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleToday}
+                    className="ml-2 px-3 h-8 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Today
+                  </Button>
+                </div>
+              )}
+            </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               {/* Student Filter */}
               <div className="flex items-center gap-2">
@@ -1190,6 +1258,8 @@ export default function Calendar() {
                   endAccessor={(event: any) => event.end}
                   defaultView={calendarView === 'week' ? Views.WEEK : Views.MONTH}
                   view={calendarView === 'week' ? Views.WEEK : Views.MONTH}
+                  date={currentDate}
+                  onNavigate={(date: Date) => setCurrentDate(date)}
                   onView={(view: any) => setCalendarView(view === Views.WEEK ? 'week' : 'month')}
                   onSelectEvent={(event: any) => handleSelectEvent(event)}
                   onSelectSlot={handleSelectSlot}
