@@ -1037,7 +1037,7 @@ export default function Calendar() {
     };
   };
 
-  // Custom event component with enhanced tooltip
+  // Custom event component with enhanced tooltip and height-responsive styling
   const EventComponent = ({ event }: { event: CalendarEvent }) => {
     const { student_name, duration, time, rate, date, created_at } = event.resource;
     const startTime = new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1053,23 +1053,28 @@ export default function Calendar() {
 
     const tooltipText = `${student_name}${isLoggedLate ? ' (Logged Late)' : ''}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
 
-    // Determine if this is a short session (less than 45 minutes)
-    const isShortSession = duration < 45;
+    // Determine session size for styling
+    const isTinySession = duration <= 30;  // 30 minutes or less
+    const isSmallSession = duration > 30 && duration < 60;  // 30-60 minutes
+    const isRegularSession = duration >= 60;  // 60+ minutes
+
+    // Apply appropriate CSS class based on session duration
+    let containerClass = "calendar-event-content";
+    if (isTinySession) {
+      containerClass += " calendar-event-tiny";
+    } else if (isSmallSession) {
+      containerClass += " calendar-event-small";
+    }
 
     return (
-      <div title={tooltipText} className="calendar-event-content">
+      <div title={tooltipText} className={containerClass}>
         <div className="calendar-event-title">
           {student_name}
-          {isLoggedLate && <span className="ml-1 text-xs">⚠</span>}
+          {isLoggedLate && <span className="ml-1" style={{ fontSize: '8px' }}>⚠</span>}
         </div>
-        {!isShortSession && (
+        {!isTinySession && (
           <div className="calendar-event-details">
-            {duration}min • {formatCurrency(rate, tutorCurrency)}
-          </div>
-        )}
-        {isShortSession && duration >= 30 && (
-          <div className="calendar-event-details">
-            {duration}min
+            {isSmallSession ? `${duration}min` : `${duration}min • ${formatCurrency(rate, tutorCurrency)}`}
           </div>
         )}
       </div>
