@@ -21,7 +21,6 @@ interface Session {
   paid: boolean;
   created_at: string;
   recurrence_id?: string;
-  color?: string;
 }
 
 interface UpcomingSessionsProps {
@@ -54,7 +53,6 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
           paid,
           created_at,
           recurrence_id,
-          color,
           students (
             name
           )
@@ -271,10 +269,13 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
             const sessionDate = new Date(session.date);
             const createdDate = new Date(session.created_at);
             const isLoggedLate = sessionDate < createdDate;
-
+            
             return (
               <div key={session.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: session.color || '#3b82f6' }} />
+                <div className={`w-2 h-2 rounded-full ${
+                  index === 0 ? 'bg-blue-500' : 
+                  index === 1 ? 'bg-green-500' : 'bg-purple-500'
+                }`} />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-foreground">

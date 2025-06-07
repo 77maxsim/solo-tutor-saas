@@ -77,7 +77,6 @@ interface SessionWithStudent {
   rate: number;
   created_at: string;
   recurrence_id?: string;
-  color?: string;
 }
 
 interface CalendarEvent {
@@ -224,7 +223,7 @@ export default function Calendar() {
   const updateSessionMutation = useMutation({
     mutationFn: async (updateData: { sessionId: string; data: any }) => {
       const { sessionId, data } = updateData;
-
+      
       const { error } = await supabase
         .from('sessions')
         .update({
@@ -265,12 +264,12 @@ export default function Calendar() {
   const rescheduleSessionMutation = useMutation({
     mutationFn: async (updateData: { sessionId: string; newStart: Date; newEnd: Date }) => {
       const { sessionId, newStart, newEnd } = updateData;
-
+      
       // Calculate new date, time, and duration
       const newDate = newStart.toISOString().split('T')[0];
       const newTime = newStart.toTimeString().slice(0, 5);
       const newDuration = Math.round((newEnd.getTime() - newStart.getTime()) / (1000 * 60));
-
+      
       const { error } = await supabase
         .from('sessions')
         .update({
@@ -308,7 +307,7 @@ export default function Calendar() {
   const updateSeriesMutation = useMutation({
     mutationFn: async (updateData: { recurrenceId: string; data: any }) => {
       const { recurrenceId, data } = updateData;
-
+      
       const { error } = await supabase
         .from('sessions')
         .update({
@@ -356,7 +355,7 @@ export default function Calendar() {
     }) => {
       const { sessionId, sessionData, repeatWeeks, originalDate, originalTime } = data;
       const recurrenceId = crypto.randomUUID();
-
+      
       // First update the original session with the recurrence_id and any changes
       const { error: updateError } = await supabase
         .from('sessions')
@@ -385,7 +384,7 @@ export default function Calendar() {
       for (let week = 1; week < repeatWeeks; week++) {
         const sessionDate = new Date(originalDate);
         sessionDate.setDate(sessionDate.getDate() + (week * 7));
-
+        
         newSessions.push({
           tutor_id: tutorId,
           student_id: sessionData.studentId,
@@ -445,7 +444,7 @@ export default function Calendar() {
         },
         (payload) => {
           console.log('Sessions table changed:', payload);
-
+          
           // Invalidate and refetch sessions data
           queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
           queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
@@ -495,7 +494,7 @@ export default function Calendar() {
     const [hours, minutes] = session.time.split(':').map(Number);
     const start = new Date(session.date);
     start.setHours(hours, minutes, 0, 0);
-
+    
     // Calculate end time by adding duration
     const end = new Date(start);
     end.setMinutes(end.getMinutes() + session.duration);
@@ -524,15 +523,15 @@ export default function Calendar() {
   const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
     // Calculate duration in minutes based on selected time range
     const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
-
+    
     // Format date as YYYY-MM-DD
     const selectedDate = start.toISOString().split('T')[0];
-
+    
     // Format time as HH:MM
     const hours = start.getHours().toString().padStart(2, '0');
     const minutes = start.getMinutes().toString().padStart(2, '0');
     const selectedTime = `${hours}:${minutes}`;
-
+    
     // Create a custom event to open the schedule modal with pre-filled data
     window.dispatchEvent(new CustomEvent('openScheduleModal', {
       detail: {
@@ -554,7 +553,7 @@ export default function Calendar() {
 
   const handleCancelSession = () => {
     if (!selectedSession) return;
-
+    
     if (window.confirm(`Are you sure you want to cancel the session with ${selectedSession.student_name}?`)) {
       deleteSessionMutation.mutate(selectedSession.id);
     }
@@ -562,7 +561,7 @@ export default function Calendar() {
 
   const handleCancelSeries = () => {
     if (!selectedSession?.recurrence_id) return;
-
+    
     if (window.confirm(`Are you sure you want to cancel ALL sessions in this recurring series with ${selectedSession.student_name}?`)) {
       deleteSeriesMutation.mutate(selectedSession.recurrence_id);
     }
@@ -586,7 +585,7 @@ export default function Calendar() {
   // Handle individual session form submission
   const handleSessionFormSubmit = (data: any) => {
     if (!selectedSession?.id) return;
-
+    
     updateSessionMutation.mutate({
       sessionId: selectedSession.id,
       data
@@ -596,7 +595,7 @@ export default function Calendar() {
   // Handle series form submission
   const handleSeriesFormSubmit = (data: any) => {
     if (!selectedSession?.recurrence_id) return;
-
+    
     updateSeriesMutation.mutate({
       recurrenceId: selectedSession.recurrence_id,
       data
@@ -606,7 +605,7 @@ export default function Calendar() {
   // Handle drag-and-drop event move
   const handleEventDrop = ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
     if (rescheduleSessionMutation.isPending) return;
-
+    
     rescheduleSessionMutation.mutate({
       sessionId: event.id,
       newStart: start,
@@ -617,7 +616,7 @@ export default function Calendar() {
   // Handle event resize
   const handleEventResize = ({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
     if (rescheduleSessionMutation.isPending) return;
-
+    
     rescheduleSessionMutation.mutate({
       sessionId: event.id,
       newStart: start,
@@ -894,7 +893,7 @@ export default function Calendar() {
     const sessionDate = new Date(event.resource.date);
     const createdDate = new Date(event.resource.created_at);
     const isLoggedLate = sessionDate < createdDate;
-
+    
     if (isLoggedLate) {
       return {
         style: {
@@ -904,7 +903,7 @@ export default function Calendar() {
         }
       };
     }
-
+    
     return {
       style: {
         // Let CSS classes handle the styling for better consistency
@@ -920,9 +919,9 @@ export default function Calendar() {
     const sessionDate = new Date(date);
     const createdDate = new Date(created_at);
     const isLoggedLate = sessionDate < createdDate;
-
+    
     const tooltipText = `${student_name}${isLoggedLate ? ' (Logged Late)' : ''}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
-
+    
     return (
       <div title={tooltipText} className="calendar-event-content">
         <div className="calendar-event-title">
@@ -1001,8 +1000,7 @@ export default function Calendar() {
             <CardContent className="pt-6">
               <div className="text-center py-12">
                 <p className="text-red-500">
-                  Error```python
-loading calendar data. Please try again.
+                  Error loading calendar data. Please try again.
                 </p>
               </div>
             </CardContent>
@@ -1137,7 +1135,7 @@ loading calendar data. Please try again.
                modalView === 'editSession' ? 'Edit Session' : 'Edit Recurring Series'}
             </DialogTitle>
           </DialogHeader>
-
+          
           {selectedSession && (
             <div className="space-y-4">
               {modalView === 'details' ? (

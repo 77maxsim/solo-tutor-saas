@@ -236,7 +236,7 @@ export function UnpaidPastSessions({ currency = 'USD' }: UnpaidPastSessionsProps
           {unpaidSessions.map((session) => {
             const calculatedPrice = (session.duration / 60) * session.rate;
             const daysOverdue = getDaysOverdue(session.date, session.time);
-
+            
             return (
               <div key={session.id} className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 border border-orange-200">
                 <div className="w-2 h-2 rounded-full bg-orange-500" />
