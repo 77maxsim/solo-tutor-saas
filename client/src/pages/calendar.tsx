@@ -1003,6 +1003,13 @@ export default function Calendar() {
     const createdDate = new Date(event.resource.created_at);
     const now = new Date();
 
+    // Calculate session end time
+    const sessionEndDateTime = new Date(sessionDateTime);
+    sessionEndDateTime.setMinutes(sessionEndDateTime.getMinutes() + event.resource.duration);
+
+    // Check if session has ended (past session)
+    const isPastSession = now > sessionEndDateTime;
+
     // Session is "logged late" if it was created after the session time had already passed
     const isLoggedLate = createdDate > sessionDateTime && now > sessionDateTime;
 
@@ -1010,8 +1017,9 @@ export default function Calendar() {
       return {
         style: {
           background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-          opacity: '0.85',
+          opacity: isPastSession ? '0.45' : '0.85',
           border: '2px solid #fb923c',
+          filter: isPastSession ? 'grayscale(0.3)' : 'none',
         }
       };
     }
@@ -1023,6 +1031,8 @@ export default function Calendar() {
         background: sessionColor,
         color: 'white',
         border: 'none',
+        opacity: isPastSession ? '0.4' : '1',
+        filter: isPastSession ? 'grayscale(0.3)' : 'none',
       }
     };
   };
