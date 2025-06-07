@@ -35,7 +35,6 @@ export const sessions = pgTable("sessions", {
   status: text("status").notNull().default("scheduled"), // scheduled, completed, cancelled
   isPaid: boolean("is_paid").notNull().default(false),
   recurrenceId: text("recurrence_id"), // UUID for grouping recurring sessions
-  color: text("color").default("#3B82F6"), // Default to blue
 });
 
 export const payments = pgTable("payments", {
