@@ -908,9 +908,13 @@ export default function Calendar() {
       };
     }
     
+    // Use the custom color from the session
+    const sessionColor = event.resource.color || '#3B82F6';
     return {
       style: {
-        // Let CSS classes handle the styling for better consistency
+        background: sessionColor,
+        color: 'white',
+        border: 'none',
       }
     };
   };

@@ -53,6 +53,7 @@ const scheduleSessionSchema = z.object({
   time: z.string().min(1, "Time is required").regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter a valid time (HH:MM)"),
   duration: z.number().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
   rate: z.number().min(0, "Rate must be a positive number"),
+  color: z.string().default("#3B82F6"),
   repeatWeekly: z.boolean().default(false),
   repeatWeeks: z.number().min(1, "Must repeat for at least 1 week").max(12, "Cannot repeat for more than 12 weeks").optional(),
 }).refine((data) => {
@@ -200,6 +201,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
       time: "",
       duration: 60,
       rate: 0,
+      color: "#3B82F6",
       repeatWeekly: false,
       repeatWeeks: 1,
     },
@@ -255,6 +257,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         time: data.time,
         duration: data.duration,
         rate: data.rate,
+        color: data.color,
         tutor_id: tutorId,
         paid: false,
         recurrence_id: recurrenceId,
@@ -273,6 +276,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
             time: data.time,
             duration: data.duration,
             rate: data.rate,
+            color: data.color,
             tutor_id: tutorId,
             paid: false,
             recurrence_id: recurrenceId,
@@ -556,6 +560,42 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                         }
                       }}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Session Color */}
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Session Color</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-6 gap-2">
+                      {[
+                        { color: "#3B82F6", name: "Blue" },
+                        { color: "#F87171", name: "Red" },
+                        { color: "#34D399", name: "Green" },
+                        { color: "#FBBF24", name: "Yellow" },
+                        { color: "#A78BFA", name: "Purple" },
+                        { color: "#6B7280", name: "Gray" },
+                      ].map((colorOption) => (
+                        <div
+                          key={colorOption.color}
+                          className={`w-8 h-8 rounded-lg cursor-pointer border-2 transition-all ${
+                            field.value === colorOption.color
+                              ? "border-gray-900 scale-110"
+                              : "border-gray-300 hover:border-gray-500"
+                          }`}
+                          style={{ backgroundColor: colorOption.color }}
+                          onClick={() => field.onChange(colorOption.color)}
+                          title={colorOption.name}
+                        />
+                      ))}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
