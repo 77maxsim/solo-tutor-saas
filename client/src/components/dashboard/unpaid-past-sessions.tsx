@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, AlertTriangle } from "lucide-react";
+import { Coins, AlertTriangle } from "lucide-react";
 
 interface UnpaidSession {
   id: string;
@@ -264,7 +264,7 @@ export function UnpaidPastSessions({ currency = 'USD' }: UnpaidPastSessionsProps
                     onClick={() => handleMarkAsPaid(session.id, session.student_name)}
                     disabled={markAsPaidMutation.isPending}
                   >
-                    <DollarSign className="h-3 w-3 mr-1" />
+                    <Coins className="h-3 w-3 mr-1" />
                     Mark Paid
                   </Button>
                 </div>
