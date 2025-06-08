@@ -243,6 +243,29 @@
     @apply bg-white dark:bg-gray-800 rounded-lg overflow-hidden;
   }
 
+  /* Week view specific event styling */
+  .rbc-time-view .rbc-event {
+    min-height: 28px !important;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .rbc-time-view .calendar-event-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    min-height: 100%;
+  }
+
+  .rbc-time-view .calendar-event-title {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+  }
+
   /* Responsive Improvements */
   @media (max-width: 768px) {
     .rbc-calendar {
