@@ -522,9 +522,14 @@ export default function Calendar() {
     }
     // For 120+ min sessions, show full name (no change needed)
 
+    // For 30-minute sessions, only show the name (like Google Calendar)
+    const eventTitle = session.duration <= 30 
+      ? displayName 
+      : `${displayName} – ${session.duration} min`;
+
     return {
       id: session.id,
-      title: `${displayName} – ${session.duration} min`,
+      title: eventTitle,
       start,
       end,
       resource: session
