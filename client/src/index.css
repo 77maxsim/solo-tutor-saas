@@ -181,6 +181,44 @@
     @apply text-white;
   }
 
+  /* Ensure student names are visible on short events */
+  .calendar-event-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .calendar-event-title {
+    font-weight: 600;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .calendar-event-details {
+    font-size: 11px;
+    line-height: 1.1;
+    opacity: 0.9;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Ensure minimum height for 30-minute events to show student name */
+  .rbc-event {
+    min-height: 24px !important;
+  }
+
+  /* For very short events, use a simpler layout */
+  @media (max-width: 768px) {
+    .rbc-event {
+      min-height: 20px !important;
+    }
+  }
+
   /* Selected Event */
   .rbc-selected {
     @apply ring-2 ring-blue-300 ring-offset-1;

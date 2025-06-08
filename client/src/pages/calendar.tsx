@@ -1075,9 +1075,11 @@ export default function Calendar() {
           {student_name}
           {isLoggedLate && <span className="ml-1 text-xs">⚠</span>}
         </div>
-        <div className="calendar-event-details">
-          {duration}min • {formatCurrency(rate, tutorCurrency)}
-        </div>
+        {duration > 30 && (
+          <div className="calendar-event-details">
+            {duration}min • {formatCurrency(rate, tutorCurrency)}
+          </div>
+        )}
       </div>
     );
   };
