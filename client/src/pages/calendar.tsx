@@ -1331,7 +1331,28 @@ export default function Calendar() {
                   style={{ height: '100%' }}
                   components={{
                     toolbar: () => null, // Completely disable the toolbar
-                    event: (props: any) => <EventComponent event={props.event} />, // Use custom event component for consistent tooltips
+                    event: (props: any) => {
+                      // For 30-minute or shorter events, force a minimum height by wrapping the component
+                      const duration = props.event.resource?.duration || 60;
+                      if (duration <= 30) {
+                        return (
+                          <div style={{ 
+                            minHeight: '32px', 
+                            height: '32px', 
+                            display: 'flex', 
+                            alignItems: 'center',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            padding: '2px 6px',
+                            overflow: 'visible',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {props.event.resource?.student_name || 'Unknown'}
+                          </div>
+                        );
+                      }
+                      return <EventComponent event={props.event} />;
+                    },
                   }}
                 />
               </DndProvider>
