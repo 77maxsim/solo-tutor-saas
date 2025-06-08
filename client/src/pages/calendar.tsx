@@ -1319,11 +1319,7 @@ export default function Calendar() {
                   style={{ height: '100%' }}
                   components={{
                     toolbar: () => null,
-                    event: (props: any) => {
-                      // Debug what's being passed
-                      console.log('Event component props:', props);
-                      return <EventComponent event={props.event} />;
-                    },
+                    event: (props: any) => <EventComponent event={props.event} />,
                   }}
                   formats={{
                     eventTimeRangeFormat: () => '',
