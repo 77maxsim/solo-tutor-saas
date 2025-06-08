@@ -511,14 +511,24 @@ export default function Calendar() {
     if (session.duration <= 30) {
       // For 30 min or less, show first name only
       displayName = session.student_name.split(' ')[0];
-    } else if (session.duration <= 60) {
+    } else if (session.duration > 30 && session.duration <= 60) {
       // For 31-60 min, show first name + last initial
       const nameParts = session.student_name.split(' ');
       if (nameParts.length > 1) {
         displayName = `${nameParts[0]} ${nameParts[nameParts.length - 1].charAt(0)}.`;
+      } else {
+        displayName = nameParts[0]; // If only one name, just show it
+      }
+    } else if (session.duration > 60 && session.duration <= 90) {
+      // For 61-90 min, show first name + last initial
+      const nameParts = session.student_name.split(' ');
+      if (nameParts.length > 1) {
+        displayName = `${nameParts[0]} ${nameParts[nameParts.length - 1].charAt(0)}.`;
+      } else {
+        displayName = nameParts[0];
       }
     }
-    // For 60+ min sessions, show full name (no change needed)
+    // For 90+ min sessions, show full name (no change needed)
 
     return {
       id: session.id,
