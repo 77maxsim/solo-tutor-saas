@@ -243,27 +243,48 @@
     @apply bg-white dark:bg-gray-800 rounded-lg overflow-hidden;
   }
 
-  /* Week view specific event styling */
-  .rbc-time-view .rbc-event {
-    min-height: 28px !important;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
+  /* Week view specific event styling - force minimum height for 30min sessions */
+  .rbc-time-view .rbc-event,
+  .rbc-time-view .rbc-event[style*="height"],
+  .rbc-time-view .rbc-event[style*="15px"],
+  .rbc-time-view .rbc-event[style*="16px"],
+  .rbc-time-view .rbc-event[style*="17px"],
+  .rbc-time-view .rbc-event[style*="18px"],
+  .rbc-time-view .rbc-event[style*="19px"],
+  .rbc-time-view .rbc-event[style*="20px"],
+  .rbc-time-view .rbc-event[style*="21px"],
+  .rbc-time-view .rbc-event[style*="22px"],
+  .rbc-time-view .rbc-event[style*="23px"],
+  .rbc-time-view .rbc-event[style*="24px"],
+  .rbc-time-view .rbc-event[style*="25px"] {
+    min-height: 32px !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    overflow: visible !important;
   }
 
   .rbc-time-view .calendar-event-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    width: 100%;
-    min-height: 100%;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    overflow: visible !important;
   }
 
   .rbc-time-view .calendar-event-title {
-    font-size: 12px !important;
+    font-size: 11px !important;
     font-weight: 600 !important;
-    line-height: 1.2 !important;
+    line-height: 1.3 !important;
     margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
   }
 
   /* Responsive Improvements */

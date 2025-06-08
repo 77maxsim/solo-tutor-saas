@@ -1069,17 +1069,42 @@ export default function Calendar() {
 
     const tooltipText = `${student_name}${isLoggedLate ? ' (Logged Late)' : ''}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
 
+    // For 30-minute sessions, use a simplified display optimized for week view
+    if (duration <= 30) {
+      return (
+        <div title={tooltipText} className="calendar-event-content" style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'flex-start',
+          height: '100%',
+          minHeight: '32px',
+          overflow: 'visible'
+        }}>
+          <div className="calendar-event-title" style={{ 
+            fontSize: '11px', 
+            fontWeight: '600', 
+            lineHeight: '1.3',
+            margin: '0',
+            padding: '0',
+            whiteSpace: 'nowrap',
+            overflow: 'visible'
+          }}>
+            {student_name}
+            {isLoggedLate && <span className="ml-1 text-xs">⚠</span>}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div title={tooltipText} className="calendar-event-content">
         <div className="calendar-event-title">
           {student_name}
           {isLoggedLate && <span className="ml-1 text-xs">⚠</span>}
         </div>
-        {duration > 30 && (
-          <div className="calendar-event-details">
-            {duration}min • {formatCurrency(rate, tutorCurrency)}
-          </div>
-        )}
+        <div className="calendar-event-details">
+          {duration}min • {formatCurrency(rate, tutorCurrency)}
+        </div>
       </div>
     );
   };
