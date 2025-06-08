@@ -1053,15 +1053,25 @@ export default function Calendar() {
 
     const tooltipText = `${student_name}${isLoggedLate ? ' (Logged Late)' : ''}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
 
+    // For very short sessions (30 minutes or less), show abbreviated layout
+    const isShortSession = duration <= 30;
+
     return (
       <div title={tooltipText} className="calendar-event-content">
         <div className="calendar-event-title">
           {student_name}
           {isLoggedLate && <span className="ml-1 text-xs">⚠</span>}
         </div>
-        <div className="calendar-event-details">
-          {duration}min • {formatCurrency(rate, tutorCurrency)}
-        </div>
+        {!isShortSession && (
+          <div className="calendar-event-details">
+            {duration}min • {formatCurrency(rate, tutorCurrency)}
+          </div>
+        )}
+        {isShortSession && (
+          <div className="calendar-event-details">
+            {duration}min
+          </div>
+        )}
       </div>
     );
   };
