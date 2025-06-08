@@ -506,25 +506,31 @@ export default function Calendar() {
     const end = new Date(start);
     end.setMinutes(end.getMinutes() + session.duration);
 
-    // Truncate student name based on session duration
-    let displayName = session.student_name;
-    if (session.duration <= 60) {
-      // For 60 min or less, show first name only
-      displayName = session.student_name.split(' ')[0];
-    } else if (session.duration > 60 && session.duration <= 120) {
-      // For 61-120 min, show first name + last initial
+    // Create display title based on session duration (Google Calendar style)
+    let displayTitle = '';
+    const firstName = session.student_name.split(' ')[0];
+    
+    if (session.duration <= 30) {
+      // For 30 min or less, show only first name
+      displayTitle = firstName;
+    } else if (session.duration <= 60) {
+      // For 31-60 min, show first name + duration
+      displayTitle = `${firstName} (${session.duration}m)`;
+    } else if (session.duration <= 120) {
+      // For 61-120 min, show first name + last initial + duration
       const nameParts = session.student_name.split(' ');
-      if (nameParts.length > 1) {
-        displayName = `${nameParts[0]} ${nameParts[nameParts.length - 1].charAt(0)}.`;
-      } else {
-        displayName = nameParts[0]; // If only one name, just show it
-      }
+      const displayName = nameParts.length > 1 
+        ? `${nameParts[0]} ${nameParts[nameParts.length - 1].charAt(0)}.`
+        : nameParts[0];
+      displayTitle = `${displayName} (${session.duration}m)`;
+    } else {
+      // For 120+ min sessions, show full name + duration
+      displayTitle = `${session.student_name} (${session.duration}m)`;
     }
-    // For 120+ min sessions, show full name (no change needed)
 
     return {
       id: session.id,
-      title: `${displayName} – ${session.duration} min`,
+      title: displayTitle,
       start,
       end,
       resource: session
@@ -1070,14 +1076,16 @@ export default function Calendar() {
     const tooltipText = `${student_name}${isLoggedLate ? ' (Logged Late)' : ''}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
 
     return (
-      <div title={tooltipText} className="calendar-event-content">
-        <div className="calendar-event-title">
-          {student_name}
+      <div title={tooltipText} className="calendar-event-content h-full flex flex-col justify-center px-2 py-1">
+        <div className="calendar-event-title text-white font-medium text-sm leading-tight">
+          {event.title}
           {isLoggedLate && <span className="ml-1 text-xs">⚠</span>}
         </div>
-        <div className="calendar-event-details">
-          {duration}min • {formatCurrency(rate, tutorCurrency)}
-        </div>
+        {duration > 45 && (
+          <div className="calendar-event-details text-white/90 text-xs mt-1">
+            {formatCurrency(rate, tutorCurrency)}/hr
+          </div>
+        )}
       </div>
     );
   };
