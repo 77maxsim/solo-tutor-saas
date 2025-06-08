@@ -522,9 +522,9 @@ export default function Calendar() {
     }
     // For 120+ min sessions, show full name (no change needed)
 
-    // For 30-minute sessions, only show the name (like Google Calendar)
+    // For 30-minute sessions, use empty title to force custom component usage
     const eventTitle = session.duration <= 30 
-      ? displayName 
+      ? '' 
       : `${displayName} – ${session.duration} min`;
 
     return {
@@ -1318,14 +1318,20 @@ export default function Calendar() {
                   popup={true}
                   style={{ height: '100%' }}
                   components={{
-                    toolbar: () => null, // Completely disable the toolbar
-                    event: (props: any) => <EventComponent event={props.event} />,
-                    week: {
-                      event: (props: any) => <EventComponent event={props.event} />,
+                    toolbar: () => null,
+                    event: (props: any) => {
+                      // Debug what's being passed
+                      console.log('Event component props:', props);
+                      return <EventComponent event={props.event} />;
                     },
-                    month: {
-                      event: (props: any) => <EventComponent event={props.event} />,
-                    },
+                  }}
+                  formats={{
+                    eventTimeRangeFormat: () => '',
+                    eventTimeRangeStartFormat: () => '',
+                    eventTimeRangeEndFormat: () => '',
+                    selectRangeFormat: () => '',
+                    dayFormat: 'dddd M/D',
+                    timeGutterFormat: 'h:mm A',
                   }}
                 />
               </DndProvider>
