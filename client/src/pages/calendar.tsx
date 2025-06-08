@@ -508,11 +508,11 @@ export default function Calendar() {
 
     // Truncate student name based on session duration
     let displayName = session.student_name;
-    if (session.duration <= 60) {
-      // For 60 min or less, show first name only
-      displayName = session.student_name.split(' ')[0];
-    } else if (session.duration > 60 && session.duration <= 120) {
-      // For 61-120 min, show first name + last initial
+    if (session.duration < 60) {
+      // For sessions less than 60 min, show full name (like Google Calendar)
+      displayName = session.student_name;
+    } else if (session.duration >= 60 && session.duration <= 120) {
+      // For 60-120 min, show first name + last initial
       const nameParts = session.student_name.split(' ');
       if (nameParts.length > 1) {
         displayName = `${nameParts[0]} ${nameParts[nameParts.length - 1].charAt(0)}.`;
