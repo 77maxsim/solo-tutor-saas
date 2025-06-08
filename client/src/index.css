@@ -181,6 +181,11 @@
     @apply text-white;
   }
 
+  /* Hide default event title when using custom component */
+  .rbc-event .rbc-event-label {
+    display: none !important;
+  }
+
   /* Ensure student names are visible on short events */
   .calendar-event-content {
     display: flex;
@@ -188,6 +193,8 @@
     justify-content: center;
     height: 100%;
     overflow: hidden;
+    position: relative;
+    z-index: 1;
   }
 
   .calendar-event-title {

@@ -1074,17 +1074,25 @@ export default function Calendar() {
 
     const tooltipText = `${student_name}${isLoggedLate ? ' (Logged Late)' : ''}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
 
+    // For very short sessions, return just the name to avoid display issues
+    if (duration <= 30) {
+      return (
+        <span title={tooltipText} className="text-white font-medium text-xs">
+          {student_name}
+          {isLoggedLate && " ⚠"}
+        </span>
+      );
+    }
+
     return (
       <div title={tooltipText} className="calendar-event-content">
         <div className="calendar-event-title">
           {student_name}
           {isLoggedLate && <span className="ml-1 text-xs">⚠</span>}
         </div>
-        {duration > 30 && (
-          <div className="calendar-event-details">
-            {duration}min • {formatCurrency(rate, tutorCurrency)}
-          </div>
-        )}
+        <div className="calendar-event-details">
+          {duration}min • {formatCurrency(rate, tutorCurrency)}
+        </div>
       </div>
     );
   };
@@ -1311,7 +1319,13 @@ export default function Calendar() {
                   style={{ height: '100%' }}
                   components={{
                     toolbar: () => null, // Completely disable the toolbar
-                    event: (props: any) => <EventComponent event={props.event} />, // Use custom event component for consistent tooltips
+                    event: (props: any) => <EventComponent event={props.event} />,
+                    week: {
+                      event: (props: any) => <EventComponent event={props.event} />,
+                    },
+                    month: {
+                      event: (props: any) => <EventComponent event={props.event} />,
+                    },
                   }}
                 />
               </DndProvider>
