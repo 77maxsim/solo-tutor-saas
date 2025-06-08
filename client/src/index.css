@@ -251,39 +251,15 @@
 
   /* Custom Event Component Styling */
   .calendar-event-content {
-    @apply w-full h-full flex flex-col justify-start overflow-hidden;
+    @apply w-full h-full flex flex-col justify-start;
   }
 
   .calendar-event-title {
-    @apply font-semibold text-white leading-tight;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
+    @apply font-semibold text-white truncate leading-tight;
   }
 
   .calendar-event-details {
     @apply text-xs text-blue-100 opacity-90 leading-tight;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* For very short events (30 min or less), show abbreviated content */
-  .rbc-event {
-    min-height: 20px !important;
-    overflow: hidden;
-  }
-
-  /* Better responsive behavior for mobile */
-  @media (max-width: 768px) {
-    .calendar-event-title {
-      @apply text-xs;
-    }
-    
-    .calendar-event-details {
-      @apply text-xs;
-    }
   }
 
   /* Drag and Drop Visual Feedback */
