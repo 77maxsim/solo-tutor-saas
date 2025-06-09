@@ -240,6 +240,11 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
           <AlertTriangle className="h-5 w-5 text-orange-600" />
           Overdue Payments
         </CardTitle>
+        {showViewAll && unpaidSessions && unpaidSessions.length > 0 && (
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/unpaid-sessions">View all</Link>
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         <div className="mb-4 p-3 rounded-lg bg-orange-50 border border-orange-200">
@@ -304,14 +309,6 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
                 </div>
               );
             })}
-          </div>
-        )}
-
-        {showViewAll && unpaidSessions && unpaidSessions.length > 0 && (
-          <div className="mt-4 pt-4 border-t">
-            <Button variant="outline" className="w-full" asChild>
-              <Link to="/unpaid-sessions">View All Unpaid Sessions</Link>
-            </Button>
           </div>
         )}
       </CardContent>
