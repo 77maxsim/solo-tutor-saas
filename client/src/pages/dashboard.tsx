@@ -296,7 +296,7 @@ export default function Dashboard() {
         {/* Sessions and Activity Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <UpcomingSessions currency={tutorInfo?.currency || 'USD'} />
-          <UnpaidPastSessions currency={tutorInfo?.currency || 'USD'} />
+          <UnpaidPastSessions currency={tutorInfo?.currency || 'USD'} limit={5} />
         </div>
 
         {/* Recent Activity */}

@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
 import { Coins, AlertTriangle } from "lucide-react";
+import { Link } from "wouter";
 
 interface UnpaidSession {
   id: string;
@@ -24,14 +25,16 @@ interface UnpaidSession {
 
 interface UnpaidPastSessionsProps {
   currency?: string;
+  limit?: number;
+  showViewAll?: boolean;
 }
 
-export function UnpaidPastSessions({ currency = 'USD' }: UnpaidPastSessionsProps) {
+export function UnpaidPastSessions({ currency = 'USD', limit = 0, showViewAll = true }: UnpaidPastSessionsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: unpaidSessions, isLoading, error } = useQuery({
-    queryKey: ['unpaid-past-sessions'],
+    queryKey: ['unpaid-past-sessions', limit],
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
@@ -42,7 +45,7 @@ export function UnpaidPastSessions({ currency = 'USD' }: UnpaidPastSessionsProps
       const currentDate = now.toISOString().split('T')[0];
       const currentTime = now.toTimeString().split(' ')[0].substring(0, 5);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('sessions')
         .select(`
           id,
@@ -62,6 +65,13 @@ export function UnpaidPastSessions({ currency = 'USD' }: UnpaidPastSessionsProps
         .or(`date.lt.${currentDate},and(date.eq.${currentDate},time.lt.${currentTime})`)
         .order('date', { ascending: false })
         .order('time', { ascending: false });
+
+      // Apply limit only if specified (for dashboard view)
+      if (limit && limit > 0) {
+        query = query.limit(limit);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching unpaid past sessions:', error);
@@ -152,11 +162,16 @@ export function UnpaidPastSessions({ currency = 'USD' }: UnpaidPastSessionsProps
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-600" />
             Unpaid Past Sessions
           </CardTitle>
+          {showViewAll && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/unpaid-sessions">View all</Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -180,11 +195,16 @@ export function UnpaidPastSessions({ currency = 'USD' }: UnpaidPastSessionsProps
   if (error) {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-600" />
             Unpaid Past Sessions
           </CardTitle>
+          {showViewAll && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/unpaid-sessions">View all</Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <p className="text-center text-red-500 py-6">
@@ -198,11 +218,16 @@ export function UnpaidPastSessions({ currency = 'USD' }: UnpaidPastSessionsProps
   if (!unpaidSessions || unpaidSessions.length === 0) {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-green-600" />
             Unpaid Past Sessions
           </CardTitle>
+          {showViewAll && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/unpaid-sessions">View all</Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <p className="text-center text-green-600 py-6">
@@ -224,6 +249,16 @@ export function UnpaidPastSessions({ currency = 'USD' }: UnpaidPastSessionsProps
           <AlertTriangle className="h-5 w-5 text-orange-600" />
           Unpaid Past Sessions
         </CardTitle>
+        {showViewAll && unpaidSessions && unpaidSessions.length > 0 && (
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/unpaid-sessions">View all</Link>
+          </Button>
+        )}
+        {showViewAll && unpaidSessions && unpaidSessions.length > 0 && (
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/unpaid-sessions">View all</Link>
+          </Button>
+        )}
         <div className="text-right">
           <p className="text-sm text-muted-foreground">Total Overdue</p>
           <p className="text-lg font-semibold text-orange-600">

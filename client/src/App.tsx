@@ -19,9 +19,9 @@ import Earnings from "@/pages/earnings";
 import Students from "@/pages/students";
 import Profile from "@/pages/profile";
 import Activity from "@/pages/activity";
-import UpcomingSessions from "@/pages/upcoming-sessions";
-import AuthPage from "@/pages/AuthPage";
-import NotFound from "@/pages/not-found";
+import UpcomingSessions from "./pages/upcoming-sessions";
+import UnpaidSessions from "./pages/unpaid-sessions";
+import NotFound from "./pages/not-found";
 
 // Create protected versions of each component
 const ProtectedDashboard = () => {
@@ -320,6 +320,7 @@ function Router() {
       <Route path="/profile" component={ProtectedProfile} />
       <Route path="/activity" component={ProtectedActivity} />
       <Route path="/upcoming-sessions" component={ProtectedUpcomingSessions} />
+      <Route path="/unpaid-sessions" component={UnpaidSessions} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -381,7 +382,7 @@ function AppLayout() {
     };
 
     window.addEventListener('openScheduleModal', handleOpenScheduleModal);
-    
+
     return () => {
       window.removeEventListener('openScheduleModal', handleOpenScheduleModal);
     };
@@ -389,7 +390,7 @@ function AppLayout() {
 
   // Check if we're on the auth page
   const isAuthPage = location === '/auth';
-  
+
   // Show navigation only if user is authenticated and not on auth page
   const showNavigation = user && !isAuthPage && !loading;
 
