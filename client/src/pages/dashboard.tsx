@@ -34,11 +34,11 @@ interface SessionWithStudent {
 
 
 export default function Dashboard() {
-  // Toggle state for earnings summary (week/month)
-  const [earningsView, setEarningsView] = useState<'week' | 'month'>(() => {
+  // Toggle state for earnings summary (today/week/month)
+  const [earningsView, setEarningsView] = useState<'today' | 'week' | 'month'>(() => {
     // Persist toggle state in localStorage
     const saved = localStorage.getItem('dashboard-earnings-view');
-    return (saved as 'week' | 'month') || 'week';
+    return (saved as 'today' | 'week' | 'month') || 'week';
   });
 
   // Save toggle state to localStorage when it changes
@@ -129,6 +129,7 @@ export default function Dashboard() {
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
       let sessionsThisWeek = 0;
+      let todayEarnings = 0;
       let currentWeekEarnings = 0;
       let currentMonthEarnings = 0;
       let lastMonthEarnings = 0;
@@ -146,6 +147,16 @@ export default function Dashboard() {
         // Sessions this week count (regardless of payment status, but only current week)
         if (sessionDate >= startOfWeek && sessionDate <= endOfWeek) {
           sessionsThisWeek++;
+        }
+
+        // Today earnings (only paid sessions for today)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const endOfToday = new Date(today);
+        endOfToday.setHours(23, 59, 59, 999);
+        
+        if (sessionDate >= today && sessionDate <= endOfToday && isPaid) {
+          todayEarnings += earnings;
         }
 
         // Current week earnings (only paid sessions in current week)
@@ -179,6 +190,7 @@ export default function Dashboard() {
 
       return {
         sessionsThisWeek,
+        todayEarnings,
         currentWeekEarnings,
         currentMonthEarnings,
         lastMonthEarnings,
@@ -248,8 +260,18 @@ export default function Dashboard() {
                 <Coins className="h-4 w-4 text-green-600" />
                 <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
                   <button
+                    onClick={() => setEarningsView('today')}
+                    className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+                      earningsView === 'today'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Today
+                  </button>
+                  <button
                     onClick={() => setEarningsView('week')}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                    className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
                       earningsView === 'week'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
@@ -259,7 +281,7 @@ export default function Dashboard() {
                   </button>
                   <button
                     onClick={() => setEarningsView('month')}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                    className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
                       earningsView === 'month'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
@@ -273,14 +295,16 @@ export default function Dashboard() {
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
                 {isLoading ? "..." : formatCurrency(
-                  earningsView === 'week' 
+                  earningsView === 'today' 
+                    ? dashboardStats?.todayEarnings || 0
+                    : earningsView === 'week' 
                     ? dashboardStats?.currentWeekEarnings || 0
                     : dashboardStats?.currentMonthEarnings || 0, 
                   tutorInfo?.currency || 'USD'
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                {earningsView === 'week' ? 'Earned This Week' : 'Earned This Month'}
+                {earningsView === 'today' ? 'Earned Today' : earningsView === 'week' ? 'Earned This Week' : 'Earned This Month'}
               </p>
             </CardContent>
           </Card>
