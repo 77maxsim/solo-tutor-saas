@@ -245,21 +245,23 @@ export function UnpaidPastSessions({ currency = 'USD', limit = 0, showViewAll = 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-orange-600" />
-          Unpaid Past Sessions
-        </CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-orange-600" />
+            Unpaid Past Sessions
+          </CardTitle>
+          <div className="text-left ml-4">
+            <p className="text-sm text-muted-foreground">Total Overdue</p>
+            <p className="text-lg font-semibold text-orange-600">
+              {formatCurrency(totalOverdue, currency)}
+            </p>
+          </div>
+        </div>
         {showViewAll && unpaidSessions && unpaidSessions.length > 0 && (
           <Button variant="ghost" size="sm" asChild>
             <Link href="/unpaid-sessions">View all</Link>
           </Button>
         )}
-        <div className="text-right">
-          <p className="text-sm text-muted-foreground">Total Overdue</p>
-          <p className="text-lg font-semibold text-orange-600">
-            {formatCurrency(totalOverdue, currency)}
-          </p>
-        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
