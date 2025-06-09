@@ -502,8 +502,9 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                   <FormLabel>Time</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="HH:MM (e.g., 14:30)" 
+                      type="time"
                       {...field} 
+                      className="cursor-pointer"
                     />
                   </FormControl>
                   <FormMessage />
