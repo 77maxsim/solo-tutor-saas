@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UpcomingSessions } from "@/components/dashboard/upcoming-sessions";
 import { PaymentOverview } from "@/components/dashboard/unpaid-past-sessions";
+import { ExpectedEarnings } from "@/components/dashboard/expected-earnings";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -216,7 +217,7 @@ export default function Dashboard() {
       {/* Dashboard Content */}
       <div className="p-6">
         {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
             title="Sessions This Week"
             value={isLoading ? "..." : (dashboardStats?.sessionsThisWeek.toString() || "0")}
@@ -226,6 +227,18 @@ export default function Dashboard() {
             iconColor="text-blue-600"
             iconBgColor="bg-blue-100"
           />
+
+          <StatsCard
+            title="Active Students"
+            value={isLoading ? "..." : (dashboardStats?.activeStudents.toString() || "0")}
+            change="+2 new this week"
+            changeType="positive"
+            icon={Users}
+            iconColor="text-purple-600"
+            iconBgColor="bg-purple-100"
+          />
+
+          <ExpectedEarnings currency={tutorInfo?.currency || 'USD'} />
           
           {/* Earnings Summary Card with Toggle */}
           <Card>
@@ -271,16 +284,6 @@ export default function Dashboard() {
               </p>
             </CardContent>
           </Card>
-
-          <StatsCard
-            title="Active Students"
-            value={isLoading ? "..." : (dashboardStats?.activeStudents.toString() || "0")}
-            change="+2 new this week"
-            changeType="positive"
-            icon={Users}
-            iconColor="text-purple-600"
-            iconBgColor="bg-purple-100"
-          />
         </div>
 
         {/* Sessions and Activity Overview */}
