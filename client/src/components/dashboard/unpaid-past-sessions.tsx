@@ -239,6 +239,9 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-orange-600" />
           Overdue Payments
+          <span className="text-lg font-bold text-orange-600">
+            {formatCurrency(totalOverdue, currency)}
+          </span>
         </CardTitle>
         {showViewAll && unpaidSessions && unpaidSessions.length > 0 && (
           <Button variant="ghost" size="sm" asChild>
@@ -247,20 +250,6 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
         )}
       </CardHeader>
       <CardContent>
-        <div className="mb-4 p-3 rounded-lg bg-orange-50 border border-orange-200">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-orange-600" />
-            <div>
-              <p className="text-sm text-muted-foreground">Overdue Payments</p>
-              <p className="text-lg font-semibold text-orange-600">
-                {formatCurrency(totalOverdue, currency)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                from {unpaidSessions?.length || 0} unpaid sessions
-              </p>
-            </div>
-          </div>
-        </div>
 
         {unpaidSessions?.length === 0 ? (
           <p className="text-center text-muted-foreground py-6">
