@@ -107,24 +107,24 @@ export default function Dashboard() {
 
       // Calculate statistics with correct business logic
       const now = new Date();
-
+      
       // Current week boundaries (Sunday to Saturday)
       const startOfWeek = new Date(now);
       startOfWeek.setDate(now.getDate() - now.getDay());
       startOfWeek.setHours(0, 0, 0, 0);
-
+      
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
-
+      
       // Current month boundaries
       const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
+      
       // Last month boundaries for comparison
       const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-
+      
       // 30 days ago for active students
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
@@ -154,7 +154,7 @@ export default function Dashboard() {
         today.setHours(0, 0, 0, 0);
         const endOfToday = new Date(today);
         endOfToday.setHours(23, 59, 59, 999);
-
+        
         if (sessionDate >= today && sessionDate <= endOfToday && isPaid) {
           todayEarnings += earnings;
         }
@@ -251,7 +251,7 @@ export default function Dashboard() {
           />
 
           <ExpectedEarnings currency={tutorInfo?.currency || 'USD'} />
-
+          
           {/* Earnings Summary Card with Toggle */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -310,22 +310,15 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Main Dashboard Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
-          {/* Left Column - Upcoming Sessions */}
-          <div className="xl:col-span-1">
-            <UpcomingSessions currency={tutorInfo?.currency || 'USD'} />
-          </div>
+        {/* Sessions and Activity Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <UpcomingSessions currency={tutorInfo?.currency || 'USD'} />
+          <PaymentOverview currency={tutorInfo?.currency || 'USD'} limit={5} />
+        </div>
 
-          {/* Middle Column - Overdue Payments */}
-          <div className="xl:col-span-1">
-            <PaymentOverview currency={tutorInfo?.currency || 'USD'} limit={5} />
-          </div>
-
-          {/* Right Column - Recent Activity */}
-          <div className="xl:col-span-1">
-            <RecentActivity currency={tutorInfo?.currency || 'USD'} />
-          </div>
+        {/* Recent Activity */}
+        <div className="max-w-2xl">
+          <RecentActivity currency={tutorInfo?.currency || 'USD'} />
         </div>
       </div>
     </div>
