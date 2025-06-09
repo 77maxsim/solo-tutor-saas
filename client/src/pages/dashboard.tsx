@@ -317,9 +317,7 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="max-w-2xl">
-          <RecentActivity currency={tutorInfo?.currency || 'USD'} />
-        </div>
+        <RecentActivity currency={tutorInfo?.currency || 'USD'} />
       </div>
     </div>
   );
