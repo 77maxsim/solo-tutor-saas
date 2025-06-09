@@ -22,7 +22,7 @@ import Activity from "@/pages/activity";
 import UpcomingSessions from "./pages/upcoming-sessions";
 import UnpaidSessions from "./pages/unpaid-sessions";
 import NotFound from "./pages/not-found";
-import AuthPage from "./pages/AuthPage";
+import AuthPage from './pages/AuthPage.tsx';
 
 // Create protected versions of each component
 const ProtectedDashboard = () => {

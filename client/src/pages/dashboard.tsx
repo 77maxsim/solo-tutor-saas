@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UpcomingSessions } from "@/components/dashboard/upcoming-sessions";
-import { UnpaidPastSessions } from "@/components/dashboard/unpaid-past-sessions";
+import { PaymentOverview } from "@/components/dashboard/unpaid-past-sessions";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,6 @@ import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { 
   BookOpen, 
   Coins, 
-  Clock, 
   Users,
   Plus 
 } from "lucide-react";
@@ -217,7 +216,7 @@ export default function Dashboard() {
       {/* Dashboard Content */}
       <div className="p-6">
         {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <StatsCard
             title="Sessions This Week"
             value={isLoading ? "..." : (dashboardStats?.sessionsThisWeek.toString() || "0")}
@@ -274,15 +273,6 @@ export default function Dashboard() {
           </Card>
 
           <StatsCard
-            title="Pending Payments"
-            value={isLoading ? "..." : formatCurrency(dashboardStats?.pendingPayments || 0, tutorInfo?.currency || 'USD')}
-            change={isLoading ? "..." : `${dashboardStats?.unpaidStudentsCount || 0} students with pending payments`}
-            changeType="neutral"
-            icon={Clock}
-            iconColor="text-orange-600"
-            iconBgColor="bg-orange-100"
-          />
-          <StatsCard
             title="Active Students"
             value={isLoading ? "..." : (dashboardStats?.activeStudents.toString() || "0")}
             change="+2 new this week"
@@ -296,7 +286,7 @@ export default function Dashboard() {
         {/* Sessions and Activity Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <UpcomingSessions currency={tutorInfo?.currency || 'USD'} />
-          <UnpaidPastSessions currency={tutorInfo?.currency || 'USD'} limit={5} />
+          <PaymentOverview currency={tutorInfo?.currency || 'USD'} limit={5} />
         </div>
 
         {/* Recent Activity */}
