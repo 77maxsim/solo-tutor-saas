@@ -254,11 +254,6 @@ export function UnpaidPastSessions({ currency = 'USD', limit = 0, showViewAll = 
             <Link href="/unpaid-sessions">View all</Link>
           </Button>
         )}
-        {showViewAll && unpaidSessions && unpaidSessions.length > 0 && (
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/unpaid-sessions">View all</Link>
-          </Button>
-        )}
         <div className="text-right">
           <p className="text-sm text-muted-foreground">Total Overdue</p>
           <p className="text-lg font-semibold text-orange-600">
@@ -267,7 +262,7 @@ export function UnpaidPastSessions({ currency = 'USD', limit = 0, showViewAll = 
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div className="space-y-3">
           {unpaidSessions.map((session) => {
             const calculatedPrice = (session.duration / 60) * session.rate;
             const daysOverdue = getDaysOverdue(session.date, session.time);
