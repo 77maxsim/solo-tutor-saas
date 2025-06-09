@@ -41,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
+import { TimePicker } from "@/components/ui/time-picker";
 
 const scheduleSessionSchema = z.object({
   studentId: z.string().min(1, "Please select a student"),
@@ -501,10 +502,10 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                 <FormItem>
                   <FormLabel>Time</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="time"
-                      {...field} 
-                      className="cursor-pointer"
+                    <TimePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select time"
                     />
                   </FormControl>
                   <FormMessage />
