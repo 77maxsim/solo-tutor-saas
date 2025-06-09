@@ -264,31 +264,30 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
               const earnings = (session.duration / 60) * session.rate;
 
               return (
-                <div
-                  key={session.id}
-                  className="flex items-center justify-between p-3 bg-white border rounded-lg hover:bg-gray-50"
-                >
+                <div key={session.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <div className={`w-2 h-2 rounded-full bg-orange-500`} />
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium text-foreground">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-foreground">
                         {session.student_name}
                       </p>
                       <Badge variant="destructive" className="text-xs">
                         {daysOverdue} days overdue
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(session.date).toLocaleDateString()} at {session.time} • {session.duration} min
-                    </p>
-                    <p className="text-sm font-medium text-orange-600">
-                      {formatCurrency(earnings, currency)}
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(session.date).toLocaleDateString()} at {session.time} ({session.duration} min)
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full font-medium">
+                      {formatCurrency(earnings, currency)}
+                    </span>
                     <Button
-                      size="sm"
                       variant="outline"
-                      onClick={() => markAsPaid(session.id)}
+                      size="sm"
+                      className="h-6 text-xs px-2 text-green-600 border-green-200 hover:bg-green-50"
+                      onClick={() => handleMarkAsPaid(session.id, session.student_name)}
                       disabled={markAsPaidMutation.isPending}
                     >
                       <Coins className="h-3 w-3 mr-1" />
