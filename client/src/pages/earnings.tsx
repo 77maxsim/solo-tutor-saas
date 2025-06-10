@@ -242,7 +242,7 @@ export default function Earnings() {
       <div className="flex-1 overflow-auto">
         <header className="bg-white border-b border-border px-6 py-4">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Earnings</h1>
+            <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">💰 Earnings</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Track your income and payment history.
             </p>

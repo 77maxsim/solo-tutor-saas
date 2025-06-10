@@ -357,7 +357,7 @@ export default function Students() {
       <div className="flex-1 overflow-auto">
         <header className="bg-white border-b border-border px-6 py-4">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Students</h1>
+            <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">🧑‍🎓 Students</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Manage your student profiles and session history.
             </p>
@@ -399,7 +399,7 @@ export default function Students() {
       <div className="flex-1 overflow-auto">
         <header className="bg-white border-b border-border px-6 py-4">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Students</h1>
+            <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">🧑‍🎓 Students</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Manage your student profiles and session history.
             </p>
@@ -427,7 +427,7 @@ export default function Students() {
       <header className="bg-white border-b border-border px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Students</h1>
+            <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">🧑‍🎓 Students</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Manage your student profiles and session history.
             </p>
