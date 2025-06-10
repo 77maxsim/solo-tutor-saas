@@ -328,8 +328,13 @@ export default function Earnings() {
 
       {/* Earnings Content */}
       <div className="p-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Earnings Summary Section */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
+            💰 Earnings Summary
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"></div>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
@@ -424,7 +429,9 @@ export default function Earnings() {
         {/* Earnings by Student Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Earnings by Student</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              🧑‍🎓 Earnings by Student
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {earnings?.studentEarnings.length === 0 ? (

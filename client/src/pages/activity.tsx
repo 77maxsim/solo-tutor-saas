@@ -96,7 +96,7 @@ export default function Activity() {
         allSessions.forEach((session: any) => {
           const studentName = session.students?.name || 'Unknown Student';
           const sessionEarnings = (session.duration / 60) * session.rate;
-          
+
           // Session scheduled activity
           activities.push({
             id: `session-${session.id}`,
@@ -204,7 +204,7 @@ export default function Activity() {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     let groupKey: string;
     if (date.toDateString() === today.toDateString()) {
       groupKey = "Today";
@@ -213,7 +213,7 @@ export default function Activity() {
     } else {
       groupKey = date.toLocaleDateString();
     }
-    
+
     if (!groups[groupKey]) {
       groups[groupKey] = [];
     }
@@ -301,8 +301,10 @@ export default function Activity() {
         <Card>
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <CardTitle className="text-2xl font-bold">All Activity</CardTitle>
-              
+              <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                📋 All Activity
+              </CardTitle>
+
               {/* Filter dropdown */}
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
@@ -319,7 +321,7 @@ export default function Activity() {
                 </Select>
               </div>
             </div>
-            
+
             {filteredActivities.length > 0 && (
               <p className="text-sm text-muted-foreground">
                 Showing {filteredActivities.length} {filterType === "all" ? "activities" : getActivityTypeLabel(filterType as Activity["type"]).toLowerCase() + "s"}
@@ -345,7 +347,7 @@ export default function Activity() {
                       {groupActivities.map((activity) => {
                         const Icon = getActivityIcon(activity.type);
                         const colors = getIconColors(activity.type);
-                        
+
                         return (
                           <div 
                             key={activity.id} 
