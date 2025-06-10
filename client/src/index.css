@@ -77,7 +77,7 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -89,15 +89,15 @@
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground)) transparent;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar {
     width: 4px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: hsl(var(--muted-foreground));
     border-radius: 2px;
@@ -357,10 +357,35 @@
     @apply mb-1 p-2 rounded text-xs;
   }
 
-  /* Ensure calendar container doesn't clip popups */
+  /* Calendar container */
   .calendar-container {
     overflow: visible !important;
     position: relative;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Selection styling */
+  .rbc-slot-selection {
+    background: rgba(59, 130, 246, 0.15) !important;
+    border: 2px dashed #3b82f6 !important;
+    border-radius: 8px !important;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+  }
+
+  /* Selected event styling */
+  .rbc-selected {
+    @apply ring-4 ring-blue-300 ring-offset-2;
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+    transform: scale(1.05) !important;
+    z-index: 15 !important;
+    box-shadow: 0 12px 32px rgba(59, 130, 246, 0.5), 0 4px 8px rgba(0, 0, 0, 0.2) !important;
   }
 
   /* Show more link styling */
