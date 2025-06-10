@@ -292,7 +292,7 @@ export default function Earnings() {
       <div className="flex-1 overflow-auto">
         <header className="bg-white border-b border-border px-6 py-4">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Earnings</h1>
+            <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">💰 Earnings</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Track your income and payment history.
             </p>
@@ -319,7 +319,7 @@ export default function Earnings() {
       {/* Header */}
       <header className="bg-white border-b border-border px-6 py-4">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Earnings</h1>
+          <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">💰 Earnings</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Track your income and payment history.
           </p>
@@ -424,7 +424,7 @@ export default function Earnings() {
         {/* Earnings by Student Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Earnings by Student</CardTitle>
+            <CardTitle className="flex items-center gap-2">🧑‍🎓 Earnings by Student</CardTitle>
           </CardHeader>
           <CardContent>
             {earnings?.studentEarnings.length === 0 ? (

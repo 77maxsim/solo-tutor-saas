@@ -1103,7 +1103,7 @@ export default function Calendar() {
         <header className="bg-white border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">Calendar</h1>
+              <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">📅 Calendar</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Manage your tutoring schedule and upcoming sessions.
               </p>
@@ -1145,7 +1145,7 @@ export default function Calendar() {
         <header className="bg-white border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">Calendar</h1>
+              <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">📅 Calendar</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Manage your tutoring schedule and upcoming sessions.
               </p>
@@ -1178,7 +1178,7 @@ export default function Calendar() {
       <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 sticky top-0 z-10">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Calendar</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">📅 Calendar</h1>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Manage your tutoring schedule and upcoming sessions.
             </p>
