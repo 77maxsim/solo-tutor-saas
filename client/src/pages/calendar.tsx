@@ -673,7 +673,7 @@ export default function Calendar() {
   const getWeekRange = () => {
     const startOfWeek = moment(currentDate).startOf('week');
     const endOfWeek = moment(currentDate).endOf('week');
-
+    
     if (startOfWeek.month() === endOfWeek.month()) {
       return `${startOfWeek.format('MMMM D')} - ${endOfWeek.format('D, YYYY')}`;
     } else {
@@ -1201,10 +1201,10 @@ export default function Calendar() {
               <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {calendarView === 'week' ? 'Weekly Schedule' : 'Monthly Schedule'}
               </CardTitle>
-
+              
               {/* Week Navigation - only show in week view */}
               {calendarView === 'week' && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -1213,11 +1213,11 @@ export default function Calendar() {
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-
+                  
                   <div className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[180px] text-center">
                     {getWeekRange()}
                   </div>
-
+                  
                   <Button
                     variant="outline"
                     size="sm"
@@ -1226,7 +1226,7 @@ export default function Calendar() {
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-
+                  
                   <Button
                     variant="outline"
                     size="sm"
