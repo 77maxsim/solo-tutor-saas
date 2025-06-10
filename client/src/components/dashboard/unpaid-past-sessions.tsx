@@ -237,8 +237,7 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-orange-600" />
-          Overdue Payments
+          🧾 Overdue Payments
           <span className="text-lg font-bold text-orange-600">
             {formatCurrency(totalOverdue, currency)}
           </span>

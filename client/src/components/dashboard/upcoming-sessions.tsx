@@ -216,7 +216,7 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Upcoming Sessions</CardTitle>
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">🗓️ Upcoming Sessions</CardTitle>
           {showViewAll && (
             <Button variant="ghost" size="sm" asChild>
               <Link href="/upcoming-sessions">View all</Link>
@@ -236,7 +236,7 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Upcoming Sessions</CardTitle>
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">🗓️ Upcoming Sessions</CardTitle>
           {showViewAll && (
             <Button variant="ghost" size="sm" asChild>
               <Link href="/upcoming-sessions">View all</Link>
@@ -255,7 +255,7 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-semibold">Upcoming Sessions</CardTitle>
+        <CardTitle className="text-lg font-semibold flex items-center gap-2">🗓️ Upcoming Sessions</CardTitle>
         {showViewAll && (
           <Button variant="ghost" size="sm" asChild>
             <Link href="/upcoming-sessions">View all</Link>

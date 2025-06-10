@@ -183,7 +183,7 @@ export function RecentActivity({ currency = 'USD', limit = 5 }: RecentActivityPr
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">📜 Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -206,7 +206,7 @@ export function RecentActivity({ currency = 'USD', limit = 5 }: RecentActivityPr
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">📜 Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center text-red-500 py-6">
@@ -238,7 +238,7 @@ export function RecentActivity({ currency = 'USD', limit = 5 }: RecentActivityPr
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+        <CardTitle className="text-lg font-semibold flex items-center gap-2">📜 Recent Activity</CardTitle>
         <Button variant="ghost" size="sm" asChild>
           <Link href="/activity">View all</Link>
         </Button>
