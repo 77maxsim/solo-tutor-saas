@@ -444,7 +444,8 @@ export default function Students() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              🧑‍🎓 Student Overview ({studentSummaries.length} students)
+              <User className="h-5 w-5" />
+              Student Overview ({studentSummaries.length} students)
             </CardTitle>
           </CardHeader>
           <CardContent>

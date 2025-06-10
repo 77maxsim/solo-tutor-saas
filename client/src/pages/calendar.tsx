@@ -1198,8 +1198,8 @@ export default function Calendar() {
         <Card className="shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 pb-6">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                📅 {calendarView === 'week' ? 'Weekly Schedule' : 'Monthly Schedule'}
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {calendarView === 'week' ? 'Weekly Schedule' : 'Monthly Schedule'}
               </CardTitle>
               
               {/* Week Navigation - only show in week view */}

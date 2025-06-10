@@ -185,9 +185,7 @@ export default function Profile() {
         <div className="max-w-2xl mx-auto">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                👤 Personal Information
-              </CardTitle>
+              <CardTitle>Personal Information</CardTitle>
               <CardDescription>
                 Update your name and currency preferences for session rates and earnings.
               </CardDescription>

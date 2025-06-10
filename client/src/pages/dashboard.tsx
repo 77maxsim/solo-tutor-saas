@@ -228,12 +228,7 @@ export default function Dashboard() {
 
       {/* Dashboard Content */}
       <div className="p-6">
-        {/* Quick Stats Section */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
-            📊 Quick Stats
-          </h2>
-        </div>
+        {/* Quick Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
             title="Sessions This Week"
@@ -315,24 +310,14 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Sessions and Payment Overview */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
-            📅 Upcoming Sessions & 💰 Payment Overview
-          </h2>
-        </div>
+        {/* Sessions and Activity Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <UpcomingSessions currency={tutorInfo?.currency || 'USD'} />
           <PaymentOverview currency={tutorInfo?.currency || 'USD'} limit={5} />
         </div>
 
-        {/* Recent Activity Section */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
-            🕒 Recent Activity
-          </h2>
-        </div>
-        <RecentActivity currency={tutorInfo?.currency || 'USD'} /></div>
+        {/* Recent Activity */}
+        <RecentActivity currency={tutorInfo?.currency || 'USD'} />
       </div>
     </div>
   );
