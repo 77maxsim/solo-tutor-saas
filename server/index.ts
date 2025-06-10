@@ -1,6 +1,28 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { createServer } from "http";
+
+const app = express();
+const server = createServer(app);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// Setup routes
+registerRoutes(app);
+
+// Setup Vite
+if (app.get("env") === "development") {
+  await setupVite(app, server);
+} else {
+  serveStatic(app);
+}
+
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, "0.0.0.0", () => {
+  log(`serving on port ${PORT}`);
+});
 
 const app = express();
 app.use(express.json());

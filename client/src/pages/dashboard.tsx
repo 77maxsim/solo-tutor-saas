@@ -234,7 +234,7 @@ export default function Dashboard() {
             📊 Quick Stats
           </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
             title="Sessions This Week"
             value={isLoading ? "..." : (dashboardStats?.sessionsThisWeek.toString() || "0")}
@@ -321,7 +321,7 @@ export default function Dashboard() {
             📅 Upcoming Sessions & 💰 Payment Overview
           </h2>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <UpcomingSessions currency={tutorInfo?.currency || 'USD'} />
           <PaymentOverview currency={tutorInfo?.currency || 'USD'} limit={5} />
         </div>
