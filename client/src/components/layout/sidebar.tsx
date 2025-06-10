@@ -18,10 +18,10 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Calendar", href: "/calendar", icon: Calendar },
-  { name: "Earnings", href: "/earnings", icon: DollarSign },
-  { name: "Students", href: "/students", icon: Users },
+  { name: "📊 Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "📅 Calendar", href: "/calendar", icon: Calendar },
+  { name: "💰 Earnings", href: "/earnings", icon: DollarSign },
+  { name: "🧑‍🎓 Students", href: "/students", icon: Users },
 ];
 
 interface SidebarProps {
