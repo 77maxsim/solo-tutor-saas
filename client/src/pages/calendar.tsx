@@ -98,6 +98,8 @@ export default function Calendar() {
   const [selectedSession, setSelectedSession] = useState<SessionWithStudent | null>(null);
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [modalView, setModalView] = useState<'details' | 'editSeries' | 'editSession'>('details');
+  const [sessionForDetails, setSessionForDetails] = useState<SessionWithStudent | null>(null);
+  const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -135,7 +137,16 @@ export default function Calendar() {
       const { data, error } = await supabase
         .from('sessions')
         .select(`
-          *,
+          id,
+          student_id,
+          date,
+          time,
+          duration,
+          rate,
+          paid,
+          notes,
+          recurrence_id,
+          created_at,
           students (
             name
           )
@@ -545,9 +556,8 @@ export default function Calendar() {
 
   // Handle event click to show session details modal
   const handleSelectEvent = (event: CalendarEvent) => {
-    setSelectedSession(event.resource);
-    setModalView('details');
-    setShowSessionModal(true);
+    setSessionForDetails(event.resource);
+    setShowSessionDetailsModal(true);
   };
 
   // Handle slot click to schedule new session
@@ -1063,7 +1073,7 @@ export default function Calendar() {
 
   // Custom event component with enhanced tooltip
   const EventComponent = ({ event }: { event: CalendarEvent }) => {
-    const { student_name, duration, time, rate, date, created_at } = event.resource;
+    const { student_name, duration, time, rate, date, created_at, notes } = event.resource;
     const startTime = new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const earning = rate * duration / 60;
 
@@ -1074,24 +1084,27 @@ export default function Calendar() {
 
     // Session is "logged late" if it was created after the session time had already passed
     const isLoggedLate = createdDate > sessionDateTime && now > sessionDateTime;
+    const hasNotes = notes && notes.trim().length > 0;
 
-    const tooltipText = `${student_name}${isLoggedLate ? ' (Logged Late)' : ''}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}`;
+    const tooltipText = `${student_name}${isLoggedLate ? ' (Logged Late)' : ''}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}${hasNotes ? '\nHas notes' : ''}`;
 
     // For very short sessions, return just the name to avoid display issues
     if (duration <= 30) {
       return (
-        <span title={tooltipText} className="text-white font-medium text-xs">
+        <span title={tooltipText} className="text-white font-medium text-xs flex items-center gap-1">
           {student_name}
           {isLoggedLate && " ⚠"}
+          {hasNotes && " 📄"}
         </span>
       );
     }
 
     return (
       <div title={tooltipText} className="calendar-event-content">
-        <div className="calendar-event-title">
+        <div className="calendar-event-title flex items-center gap-1">
           {student_name}
-          {isLoggedLate && <span className="ml-1 text-xs">⚠</span>}
+          {isLoggedLate && <span className="text-xs">⚠</span>}
+          {hasNotes && <span className="text-xs">📄</span>}
         </div>
         <div className="calendar-event-details">
           {duration}min • {formatCurrency(rate, tutorCurrency)}
@@ -1438,6 +1451,16 @@ export default function Calendar() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Session Details Modal */}
+      <SessionDetailsModal
+        isOpen={showSessionDetailsModal}
+        onClose={() => {
+          setShowSessionDetailsModal(false);
+          setSessionForDetails(null);
+        }}
+        session={sessionForDetails}
+      />
     </div>
   );
 }
