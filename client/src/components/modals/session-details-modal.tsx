@@ -192,7 +192,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
           {/* Session Color */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">Session Color</Label>
-            <div className="grid grid-cols-6 gap-2">
+            <div className="flex gap-3 flex-wrap">
               {[
                 { color: "#3B82F6", name: "Blue" },
                 { color: "#F87171", name: "Red" },
@@ -201,16 +201,18 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                 { color: "#A78BFA", name: "Purple" },
                 { color: "#6B7280", name: "Gray" },
               ].map((colorOption) => (
-                <div
+                <button
                   key={colorOption.color}
-                  className={`w-8 h-8 rounded-lg cursor-pointer border-2 transition-all ${
-                    sessionColor === colorOption.color
-                      ? "border-gray-900 scale-110"
-                      : "border-gray-300 hover:border-gray-500"
+                  type="button"
+                  onClick={() => setSessionColor(colorOption.color)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                    sessionColor === colorOption.color 
+                      ? 'border-gray-900 dark:border-gray-100 ring-2 ring-offset-2 ring-gray-400 scale-110' 
+                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-500'
                   }`}
                   style={{ backgroundColor: colorOption.color }}
-                  onClick={() => setSessionColor(colorOption.color)}
                   title={colorOption.name}
+                  aria-label={`Select ${colorOption.name} color`}
                 />
               ))}
             </div>
