@@ -439,14 +439,7 @@ export default function Students() {
 
   const studentSummaries = students && sessions ? calculateStudentSummaries(students, sessions) : [];
   
-  // Debug logging - check avatar data
-  if (studentSummaries.length > 0) {
-    console.log('First student avatar data:', {
-      name: studentSummaries[0].name,
-      avatarUrl: studentSummaries[0].avatarUrl,
-      avatarDisplay: getAvatarDisplay(studentSummaries[0].avatarUrl)
-    });
-  }
+
 
   if (isLoading) {
     return (
@@ -571,69 +564,68 @@ export default function Students() {
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-3">
                             <button
-                            onClick={() => handleEditAvatar(student)}
-                            className="h-10 w-10 rounded-full hover:opacity-80 transition-opacity cursor-pointer"
-                            title="Click to edit avatar"
-                          >
-                            {(() => {
-                              const avatarDisplay = getAvatarDisplay(student.avatarUrl);
-                              console.log(`Avatar display for ${student.name}:`, avatarDisplay, 'from:', student.avatarUrl);
-                              
-                              if (avatarDisplay.type === 'image') {
-                                return (
-                                  <img
-                                    src={`${avatarDisplay.content}?t=${Date.now()}`}
-                                    alt="avatar"
-                                    className="w-10 h-10 rounded-full object-cover"
-                                    key={`avatar-${student.id}-${student.avatarUrl}`}
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.src = '/default-avatar.svg';
-                                    }}
-                                  />
-                                );
-                              } else if (avatarDisplay.type === 'emoji') {
-                                return (
-                                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                    <span className="text-lg">{avatarDisplay.content}</span>
-                                  </div>
-                                );
-                              } else {
-                                return (
-                                  <img
-                                    src="/default-avatar.svg"
-                                    alt="avatar"
-                                    className="w-10 h-10 rounded-full object-cover"
-                                  />
-                                );
-                              }
-                            })()}
-                          </button>
-                          <div>
-                            <p className="font-medium">{student.name}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              {student.phone && (
-                                <span className="text-xs text-muted-foreground">📞 {student.phone}</span>
-                              )}
-                              {student.email && (
-                                <span className="text-xs text-muted-foreground">✉️ {student.email}</span>
-                              )}
-                            </div>
-                            {student.tags && student.tags.length > 0 && (
-                              <div className="flex gap-1 mt-1">
-                                {student.tags.slice(0, 2).map((tag) => (
-                                  <Badge key={tag} variant="outline" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                                {student.tags.length > 2 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{student.tags.length - 2}
-                                  </Badge>
+                              onClick={() => handleEditAvatar(student)}
+                              className="h-10 w-10 rounded-full hover:opacity-80 transition-opacity cursor-pointer"
+                              title="Click to edit avatar"
+                            >
+                              {(() => {
+                                const avatarDisplay = getAvatarDisplay(student.avatarUrl);
+                                
+                                if (avatarDisplay.type === 'image') {
+                                  return (
+                                    <img
+                                      src={`${avatarDisplay.content}?t=${Date.now()}`}
+                                      alt="avatar"
+                                      className="w-10 h-10 rounded-full object-cover"
+                                      key={`avatar-${student.id}-${student.avatarUrl}`}
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = '/default-avatar.svg';
+                                      }}
+                                    />
+                                  );
+                                } else if (avatarDisplay.type === 'emoji') {
+                                  return (
+                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                      <span className="text-lg">{avatarDisplay.content}</span>
+                                    </div>
+                                  );
+                                } else {
+                                  return (
+                                    <img
+                                      src="/default-avatar.svg"
+                                      alt="avatar"
+                                      className="w-10 h-10 rounded-full object-cover"
+                                    />
+                                  );
+                                }
+                              })()}
+                            </button>
+                            <div>
+                              <p className="font-medium">{student.name}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {student.phone && (
+                                  <span className="text-xs text-muted-foreground">📞 {student.phone}</span>
+                                )}
+                                {student.email && (
+                                  <span className="text-xs text-muted-foreground">✉️ {student.email}</span>
                                 )}
                               </div>
-                            )}
-                          </div>
+                              {student.tags && student.tags.length > 0 && (
+                                <div className="flex gap-1 mt-1">
+                                  {student.tags.slice(0, 2).map((tag) => (
+                                    <Badge key={tag} variant="outline" className="text-xs">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                  {student.tags.length > 2 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{student.tags.length - 2}
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                           
                           {/* Class History Button - appears on hover */}
@@ -776,6 +768,16 @@ export default function Students() {
           setStudentForAvatar(null);
         }}
         student={studentForAvatar}
+      />
+
+      {/* Student Session History Modal */}
+      <StudentSessionHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => {
+          setIsHistoryModalOpen(false);
+          setStudentForHistory(null);
+        }}
+        student={studentForHistory}
       />
 
       {/* Delete Student Confirmation */}
