@@ -118,6 +118,7 @@ export default function Students() {
       setNewStudentName('');
       setIsAddStudentOpen(false);
       queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
     },
     onError: (error: any) => {
       toast({
@@ -181,6 +182,7 @@ export default function Students() {
       setIsDeleteDialogOpen(false);
       setStudentToDelete('');
       queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
     },
     onError: (error: any) => {
       toast({
