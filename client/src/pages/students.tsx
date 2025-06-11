@@ -398,6 +398,7 @@ export default function Students() {
         phone: student.phone,
         email: student.email,
         tags: student.tags || [],
+        avatarUrl: student.avatar_url,
         totalSessions: studentSessions.length,
         totalEarnings,
         lastSessionDate: sortedSessions[0]?.date || '',
@@ -530,9 +531,30 @@ export default function Students() {
                     <TableRow key={student.name}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <User className="h-5 w-5 text-blue-600" />
-                          </div>
+                          <button
+                            onClick={() => handleEditAvatar(student)}
+                            className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors cursor-pointer"
+                            title="Click to edit avatar"
+                          >
+                            {(() => {
+                              const avatarDisplay = getAvatarDisplay(student.avatarUrl);
+                              if (avatarDisplay.type === 'image') {
+                                return (
+                                  <img
+                                    src={avatarDisplay.content}
+                                    alt={`${student.name}'s avatar`}
+                                    className="h-10 w-10 rounded-full object-cover"
+                                  />
+                                );
+                              } else if (avatarDisplay.type === 'emoji') {
+                                return (
+                                  <span className="text-lg">{avatarDisplay.content}</span>
+                                );
+                              } else {
+                                return <User className="h-5 w-5 text-blue-600" />;
+                              }
+                            })()}
+                          </button>
                           <div>
                             <p className="font-medium">{student.name}</p>
                             <div className="flex items-center gap-2 mt-1">
@@ -680,6 +702,16 @@ export default function Students() {
           setStudentToEdit(null);
         }}
         student={studentToEdit}
+      />
+
+      {/* Avatar Editor Modal */}
+      <AvatarEditorModal
+        isOpen={isAvatarEditorOpen}
+        onClose={() => {
+          setIsAvatarEditorOpen(false);
+          setStudentForAvatar(null);
+        }}
+        student={studentForAvatar}
       />
 
       {/* Delete Student Confirmation */}
