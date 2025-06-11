@@ -69,7 +69,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
         
         const { error } = await supabase
           .from('sessions')
-          .update({ notes })
+          .update({ notes, color })
           .eq('recurrence_id', session.recurrence_id)
           .gte('date', session.date);
 
@@ -83,7 +83,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
         // Update only the current session
         const { error } = await supabase
           .from('sessions')
-          .update({ notes })
+          .update({ notes, color })
           .eq('id', session.id);
 
         if (error) {
@@ -96,31 +96,32 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
     },
     onSuccess: (data) => {
       const message = data.type === 'series' 
-        ? "Notes updated for all future sessions in this series"
-        : "Session notes updated successfully";
+        ? "Session data updated for all future sessions in this series"
+        : "Session data updated successfully";
         
       toast({
-        title: "Notes Updated",
+        title: "Session Updated",
         description: message,
       });
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
       
       handleClose();
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update notes. Please try again.",
+        description: error.message || "Failed to update session. Please try again.",
         variant: "destructive",
       });
     },
   });
 
   const handleSave = () => {
-    updateNotesMutation.mutate({ notes, applyToSeries });
+    updateSessionMutation.mutate({ notes, color: sessionColor, applyToSeries });
   };
 
   if (!session) return null;
@@ -303,9 +304,9 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
           </Button>
           <Button 
             onClick={handleSave}
-            disabled={updateNotesMutation.isPending}
+            disabled={updateSessionMutation.isPending}
           >
-            {updateNotesMutation.isPending ? "Saving..." : "Save Notes"}
+            {updateSessionMutation.isPending ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </DialogContent>
