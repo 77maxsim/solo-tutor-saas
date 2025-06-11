@@ -409,6 +409,10 @@ export default function Students() {
   };
 
   const studentSummaries = students && sessions ? calculateStudentSummaries(students, sessions) : [];
+  
+  // Debug logging
+  console.log('Raw students data:', students?.slice(0, 2));
+  console.log('Student summaries:', studentSummaries?.slice(0, 2));
 
   if (isLoading) {
     return (
@@ -536,16 +540,39 @@ export default function Students() {
                             className="h-10 w-10 rounded-full hover:opacity-80 transition-opacity cursor-pointer"
                             title="Click to edit avatar"
                           >
-                            <img
-                              src={student.avatarUrl ? `${student.avatarUrl}?t=${new Date().getTime()}` : '/default-avatar.svg'}
-                              alt="avatar"
-                              className="w-10 h-10 rounded-full object-cover"
-                              key={`avatar-${student.id}-${student.avatarUrl}`}
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = '/default-avatar.svg';
-                              }}
-                            />
+                            {(() => {
+                              const avatarDisplay = getAvatarDisplay(student.avatarUrl);
+                              console.log(`Avatar display for ${student.name}:`, avatarDisplay, 'from:', student.avatarUrl);
+                              
+                              if (avatarDisplay.type === 'image') {
+                                return (
+                                  <img
+                                    src={`${avatarDisplay.content}?t=${Date.now()}`}
+                                    alt="avatar"
+                                    className="w-10 h-10 rounded-full object-cover"
+                                    key={`avatar-${student.id}-${student.avatarUrl}`}
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.src = '/default-avatar.svg';
+                                    }}
+                                  />
+                                );
+                              } else if (avatarDisplay.type === 'emoji') {
+                                return (
+                                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <span className="text-lg">{avatarDisplay.content}</span>
+                                  </div>
+                                );
+                              } else {
+                                return (
+                                  <img
+                                    src="/default-avatar.svg"
+                                    alt="avatar"
+                                    className="w-10 h-10 rounded-full object-cover"
+                                  />
+                                );
+                              }
+                            })()}
                           </button>
                           <div>
                             <p className="font-medium">{student.name}</p>
