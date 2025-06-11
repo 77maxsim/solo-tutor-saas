@@ -75,7 +75,7 @@ interface StudentSummary {
 export default function Students() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-
+  
   // Modal states
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isEditStudentOpen, setIsEditStudentOpen] = useState(false);
@@ -364,14 +364,14 @@ export default function Students() {
         const sessionDate = new Date(session.date);
         const earnings = (session.duration / 60) * session.rate;
         const isPaid = session.paid === true;
-
+        
         // Only count earnings from paid sessions
         if (isPaid) {
           totalEarnings += earnings;
         }
-
+        
         totalDuration += session.duration;
-
+        
         if (sessionDate >= now) {
           upcomingSessions++;
         }
