@@ -28,6 +28,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
+import { SessionDetailsModal } from "@/components/modals/session-details-modal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { DndProvider } from "react-dnd";
@@ -65,6 +66,7 @@ interface Session {
   time: string;
   duration: number;
   rate: number;
+  notes?: string;
   created_at: string;
 }
 
@@ -76,6 +78,7 @@ interface SessionWithStudent {
   time: string;
   duration: number;
   rate: number;
+  notes?: string;
   color?: string;
   created_at: string;
   recurrence_id?: string;
