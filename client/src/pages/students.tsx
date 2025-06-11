@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import { EditStudentModal } from "@/components/modals/edit-student-modal";
 import { AvatarEditorModal } from "@/components/modals/avatar-editor-modal";
+import { StudentSessionHistoryModal } from "@/components/modals/student-session-history-modal";
 import { getAvatarDisplay } from "@/lib/avatarUtils";
 
 interface Session {
@@ -87,7 +88,9 @@ export default function Students() {
   const [studentToDelete, setStudentToDelete] = useState<string>('');
   const [studentToEdit, setStudentToEdit] = useState<StudentSummary | null>(null);
   const [studentForAvatar, setStudentForAvatar] = useState<StudentSummary | null>(null);
+  const [studentForHistory, setStudentForHistory] = useState<StudentSummary | null>(null);
   const [newStudentName, setNewStudentName] = useState('');
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   // Mutation for adding a new student
   const addStudentMutation = useMutation({
@@ -219,6 +222,11 @@ export default function Students() {
   const handleEditAvatar = (student: StudentSummary) => {
     setStudentForAvatar(student);
     setIsAvatarEditorOpen(true);
+  };
+
+  const handleViewHistory = (student: StudentSummary) => {
+    setStudentForHistory(student);
+    setIsHistoryModalOpen(true);
   };
 
   const handleDeleteStudent = (studentName: string) => {
@@ -558,10 +566,11 @@ export default function Students() {
                 </TableHeader>
                 <TableBody>
                   {studentSummaries.map((student) => (
-                    <TableRow key={student.name}>
+                    <TableRow key={student.name} className="group hover:bg-accent/50 transition-colors">
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <button
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-3">
+                            <button
                             onClick={() => handleEditAvatar(student)}
                             className="h-10 w-10 rounded-full hover:opacity-80 transition-opacity cursor-pointer"
                             title="Click to edit avatar"
@@ -625,6 +634,16 @@ export default function Students() {
                               </div>
                             )}
                           </div>
+                          </div>
+                          
+                          {/* Class History Button - appears on hover */}
+                          <button
+                            onClick={() => handleViewHistory(student)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 px-3 py-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary text-sm font-medium"
+                            title="View session history"
+                          >
+                            📅 Class History
+                          </button>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
