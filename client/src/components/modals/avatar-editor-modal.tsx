@@ -83,9 +83,9 @@ export function AvatarEditorModal({ isOpen, onClose, student }: AvatarEditorModa
         description: `${data.studentName}'s avatar has been updated successfully.`,
       });
       
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-      queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
+      // Invalidate and refetch queries to refresh data immediately
+      queryClient.invalidateQueries({ queryKey: ['student-sessions'], refetchType: 'active' });
+      queryClient.refetchQueries({ queryKey: ['student-sessions'] });
       
       handleClose();
     },

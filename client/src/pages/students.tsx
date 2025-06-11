@@ -537,9 +537,10 @@ export default function Students() {
                             title="Click to edit avatar"
                           >
                             <img
-                              src={student.avatarUrl ? `${student.avatarUrl}?t=${Date.now()}` : '/default-avatar.svg'}
+                              src={student.avatarUrl ? `${student.avatarUrl}?t=${new Date().getTime()}` : '/default-avatar.svg'}
                               alt="avatar"
                               className="w-10 h-10 rounded-full object-cover"
+                              key={`avatar-${student.id}-${student.avatarUrl}`}
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = '/default-avatar.svg';
