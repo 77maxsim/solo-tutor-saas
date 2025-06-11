@@ -78,8 +78,10 @@ export default function Students() {
   
   // Modal states
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
+  const [isEditStudentOpen, setIsEditStudentOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<string>('');
+  const [studentToEdit, setStudentToEdit] = useState<StudentSummary | null>(null);
   const [newStudentName, setNewStudentName] = useState('');
 
   // Mutation for adding a new student
@@ -202,6 +204,11 @@ export default function Students() {
     addStudentMutation.mutate(newStudentName);
   };
 
+  const handleEditStudent = (student: StudentSummary) => {
+    setStudentToEdit(student);
+    setIsEditStudentOpen(true);
+  };
+
   const handleDeleteStudent = (studentName: string) => {
     setStudentToDelete(studentName);
     setIsDeleteDialogOpen(true);
@@ -235,7 +242,32 @@ export default function Students() {
     },
   });
 
-  const { data: sessions, isLoading, error } = useQuery({
+  // Fetch students data
+  const { data: students, isLoading: isLoadingStudents } = useQuery({
+    queryKey: ['students'],
+    queryFn: async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
+      }
+
+      const { data, error } = await supabase
+        .from('students')
+        .select('id, name, phone, email, tags')
+        .eq('tutor_id', tutorId)
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching students:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+  });
+
+  // Fetch sessions data
+  const { data: sessions, isLoading: isLoadingSessions, error } = useQuery({
     queryKey: ['student-sessions'],
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
@@ -255,7 +287,11 @@ export default function Students() {
           paid,
           created_at,
           students (
-            name
+            id,
+            name,
+            phone,
+            email,
+            tags
           )
         `)
         .eq('tutor_id', tutorId)
@@ -275,6 +311,8 @@ export default function Students() {
       return sessionsWithNames as Session[];
     },
   });
+
+  const isLoading = isLoadingStudents || isLoadingSessions;
 
   // Set up Supabase realtime subscription
   useEffect(() => {
@@ -300,63 +338,63 @@ export default function Students() {
   }, [queryClient]);
 
   // Calculate student summaries with correct business logic
-  const calculateStudentSummaries = (sessions: Session[]): StudentSummary[] => {
-    if (!sessions || sessions.length === 0) return [];
+  const calculateStudentSummaries = (students: any[], sessions: Session[]): StudentSummary[] => {
+    if (!students || students.length === 0) return [];
 
     const now = new Date();
-    const studentMap = new Map<string, {
-      sessions: Session[];
-      totalEarnings: number;
-      totalDuration: number;
-      upcomingSessions: number;
-    }>();
+    const sessionsByStudentId = new Map<string, Session[]>();
 
-    sessions.forEach(session => {
-      const sessionDate = new Date(session.date);
-      const earnings = (session.duration / 60) * session.rate;
-      const isPaid = session.paid === true;
-      
-      if (!studentMap.has(session.student_name)) {
-        studentMap.set(session.student_name, {
-          sessions: [],
-          totalEarnings: 0,
-          totalDuration: 0,
-          upcomingSessions: 0
-        });
+    // Group sessions by student_id
+    sessions?.forEach(session => {
+      if (!sessionsByStudentId.has(session.student_id)) {
+        sessionsByStudentId.set(session.student_id, []);
       }
-
-      const studentData = studentMap.get(session.student_name)!;
-      studentData.sessions.push(session);
-      
-      // Only count earnings from paid sessions
-      if (isPaid) {
-        studentData.totalEarnings += earnings;
-      }
-      
-      studentData.totalDuration += session.duration;
-      
-      if (sessionDate >= now) {
-        studentData.upcomingSessions++;
-      }
+      sessionsByStudentId.get(session.student_id)!.push(session);
     });
 
-    return Array.from(studentMap.entries()).map(([name, data]) => {
-      const sortedSessions = data.sessions.sort((a, b) => 
+    return students.map(student => {
+      const studentSessions = sessionsByStudentId.get(student.id) || [];
+      let totalEarnings = 0;
+      let totalDuration = 0;
+      let upcomingSessions = 0;
+
+      studentSessions.forEach(session => {
+        const sessionDate = new Date(session.date);
+        const earnings = (session.duration / 60) * session.rate;
+        const isPaid = session.paid === true;
+        
+        // Only count earnings from paid sessions
+        if (isPaid) {
+          totalEarnings += earnings;
+        }
+        
+        totalDuration += session.duration;
+        
+        if (sessionDate >= now) {
+          upcomingSessions++;
+        }
+      });
+
+      const sortedSessions = studentSessions.sort((a, b) => 
         new Date(b.date).getTime() - new Date(a.date).getTime()
       );
 
       return {
-        name,
-        totalSessions: data.sessions.length,
-        totalEarnings: data.totalEarnings,
+        id: student.id,
+        name: student.name,
+        phone: student.phone,
+        email: student.email,
+        tags: student.tags || [],
+        totalSessions: studentSessions.length,
+        totalEarnings,
         lastSessionDate: sortedSessions[0]?.date || '',
-        avgSessionDuration: data.totalDuration / data.sessions.length,
-        upcomingSessions: data.upcomingSessions
+        avgSessionDuration: studentSessions.length > 0 ? totalDuration / studentSessions.length : 0,
+        upcomingSessions
       };
     }).sort((a, b) => b.totalEarnings - a.totalEarnings);
   };
 
-  const studentSummaries = sessions ? calculateStudentSummaries(sessions) : [];
+  const studentSummaries = students && sessions ? calculateStudentSummaries(students, sessions) : [];
 
   if (isLoading) {
     return (
@@ -484,9 +522,28 @@ export default function Students() {
                           </div>
                           <div>
                             <p className="font-medium">{student.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Active student
-                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {student.phone && (
+                                <span className="text-xs text-muted-foreground">📞 {student.phone}</span>
+                              )}
+                              {student.email && (
+                                <span className="text-xs text-muted-foreground">✉️ {student.email}</span>
+                              )}
+                            </div>
+                            {student.tags && student.tags.length > 0 && (
+                              <div className="flex gap-1 mt-1">
+                                {student.tags.slice(0, 2).map((tag) => (
+                                  <Badge key={tag} variant="outline" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                                {student.tags.length > 2 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{student.tags.length - 2}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -529,14 +586,24 @@ export default function Students() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteStudent(student.name)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditStudent(student)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteStudent(student.name)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -591,6 +658,16 @@ export default function Students() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Student Modal */}
+      <EditStudentModal
+        isOpen={isEditStudentOpen}
+        onClose={() => {
+          setIsEditStudentOpen(false);
+          setStudentToEdit(null);
+        }}
+        student={studentToEdit}
+      />
 
       {/* Delete Student Confirmation */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
