@@ -192,27 +192,24 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
           {/* Session Color */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">Session Color</Label>
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid grid-cols-6 gap-2">
               {[
                 { color: "#3B82F6", name: "Blue" },
-                { color: "#10B981", name: "Green" },
-                { color: "#F59E0B", name: "Yellow" },
-                { color: "#EF4444", name: "Red" },
-                { color: "#8B5CF6", name: "Purple" },
-                { color: "#06B6D4", name: "Cyan" },
-                { color: "#F97316", name: "Orange" },
-                { color: "#84CC16", name: "Lime" },
+                { color: "#F87171", name: "Red" },
+                { color: "#34D399", name: "Green" },
+                { color: "#FBBF24", name: "Yellow" },
+                { color: "#A78BFA", name: "Purple" },
+                { color: "#6B7280", name: "Gray" },
               ].map((colorOption) => (
-                <button
+                <div
                   key={colorOption.color}
-                  type="button"
-                  onClick={() => setSessionColor(colorOption.color)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${
-                    sessionColor === colorOption.color 
-                      ? 'border-gray-900 dark:border-gray-100 ring-2 ring-offset-2 ring-gray-400' 
-                      : 'border-gray-300 dark:border-gray-600'
+                  className={`w-8 h-8 rounded-lg cursor-pointer border-2 transition-all ${
+                    sessionColor === colorOption.color
+                      ? "border-gray-900 scale-110"
+                      : "border-gray-300 hover:border-gray-500"
                   }`}
                   style={{ backgroundColor: colorOption.color }}
+                  onClick={() => setSessionColor(colorOption.color)}
                   title={colorOption.name}
                 />
               ))}
