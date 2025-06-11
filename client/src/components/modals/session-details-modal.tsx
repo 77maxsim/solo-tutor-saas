@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, Clock, User, DollarSign } from "lucide-react";
+import { Calendar, Clock, User, DollarSign, Edit, Trash2 } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
 
 interface SessionDetails {
@@ -175,6 +175,84 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
               </Label>
             </div>
           )}
+
+          {/* Session Actions */}
+          <div className="space-y-4 pt-4 border-t">
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Individual Session</h4>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    // Dispatch edit session event
+                    window.dispatchEvent(new CustomEvent('editSession', { 
+                      detail: { session } 
+                    }));
+                    handleClose();
+                  }}
+                  className="flex-1"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit this session
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    // Dispatch cancel session event
+                    window.dispatchEvent(new CustomEvent('cancelSession', { 
+                      detail: { session } 
+                    }));
+                    handleClose();
+                  }}
+                  className="flex-1 text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Cancel this session
+                </Button>
+              </div>
+            </div>
+
+            {/* Recurring series actions - only show if session has recurrence_id */}
+            {session.recurrence_id && (
+              <div className="space-y-2 border-t pt-4">
+                <h4 className="text-sm font-medium">Recurring Series</h4>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      // Dispatch edit series event
+                      window.dispatchEvent(new CustomEvent('editSeries', { 
+                        detail: { session } 
+                      }));
+                      handleClose();
+                    }}
+                    className="flex-1"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit future sessions
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      // Dispatch cancel series event
+                      window.dispatchEvent(new CustomEvent('cancelSeries', { 
+                        detail: { session } 
+                      }));
+                      handleClose();
+                    }}
+                    className="flex-1 text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Cancel future sessions
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 pt-4 border-t">

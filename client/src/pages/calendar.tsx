@@ -554,6 +554,48 @@ export default function Calendar() {
     window.dispatchEvent(new CustomEvent('openScheduleModal'));
   };
 
+  // Add event listeners for session actions from SessionDetailsModal
+  useEffect(() => {
+    const handleEditSession = (event: CustomEvent) => {
+      const session = event.detail.session;
+      setSelectedSession(session);
+      setModalView('editSession');
+      setShowSessionModal(true);
+    };
+
+    const handleEditSeries = (event: CustomEvent) => {
+      const session = event.detail.session;
+      setSelectedSession(session);
+      setModalView('editSeries');
+      setShowSessionModal(true);
+    };
+
+    const handleCancelSession = (event: CustomEvent) => {
+      const session = event.detail.session;
+      setSelectedSession(session);
+      deleteSessionMutation.mutate(session.id);
+    };
+
+    const handleCancelSeries = (event: CustomEvent) => {
+      const session = event.detail.session;
+      if (session.recurrence_id) {
+        deleteSeriesMutation.mutate(session.recurrence_id);
+      }
+    };
+
+    window.addEventListener('editSession', handleEditSession as EventListener);
+    window.addEventListener('editSeries', handleEditSeries as EventListener);
+    window.addEventListener('cancelSession', handleCancelSession as EventListener);
+    window.addEventListener('cancelSeries', handleCancelSeries as EventListener);
+
+    return () => {
+      window.removeEventListener('editSession', handleEditSession as EventListener);
+      window.removeEventListener('editSeries', handleEditSeries as EventListener);
+      window.removeEventListener('cancelSession', handleCancelSession as EventListener);
+      window.removeEventListener('cancelSeries', handleCancelSeries as EventListener);
+    };
+  }, [deleteSessionMutation, deleteSeriesMutation]);
+
   // Handle event click to show session details modal
   const handleSelectEvent = (event: CalendarEvent) => {
     setSessionForDetails(event.resource);
