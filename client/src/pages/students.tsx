@@ -533,27 +533,18 @@ export default function Students() {
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => handleEditAvatar(student)}
-                            className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors cursor-pointer"
+                            className="h-10 w-10 rounded-full hover:opacity-80 transition-opacity cursor-pointer"
                             title="Click to edit avatar"
                           >
-                            {(() => {
-                              const avatarDisplay = getAvatarDisplay(student.avatarUrl);
-                              if (avatarDisplay.type === 'image') {
-                                return (
-                                  <img
-                                    src={avatarDisplay.content}
-                                    alt={`${student.name}'s avatar`}
-                                    className="h-10 w-10 rounded-full object-cover"
-                                  />
-                                );
-                              } else if (avatarDisplay.type === 'emoji') {
-                                return (
-                                  <span className="text-lg">{avatarDisplay.content}</span>
-                                );
-                              } else {
-                                return <User className="h-5 w-5 text-blue-600" />;
-                              }
-                            })()}
+                            <img
+                              src={student.avatarUrl ? `${student.avatarUrl}?t=${Date.now()}` : '/default-avatar.svg'}
+                              alt="avatar"
+                              className="w-10 h-10 rounded-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = '/default-avatar.svg';
+                              }}
+                            />
                           </button>
                           <div>
                             <p className="font-medium">{student.name}</p>
