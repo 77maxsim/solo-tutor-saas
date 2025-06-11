@@ -101,6 +101,7 @@ export default function Calendar() {
   const [sessionForDetails, setSessionForDetails] = useState<SessionWithStudent | null>(null);
   const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [preventSlotSelection, setPreventSlotSelection] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -604,6 +605,12 @@ export default function Calendar() {
 
   // Handle slot click to schedule new session
   const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
+    // Prevent slot selection if we just closed a modal
+    if (preventSlotSelection) {
+      setPreventSlotSelection(false);
+      return;
+    }
+
     // Calculate duration in minutes based on selected time range
     const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
 
@@ -1500,6 +1507,9 @@ export default function Calendar() {
         onClose={() => {
           setShowSessionDetailsModal(false);
           setSessionForDetails(null);
+          setPreventSlotSelection(true);
+          // Reset the flag after a short delay
+          setTimeout(() => setPreventSlotSelection(false), 100);
         }}
         session={sessionForDetails}
       />
