@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +24,7 @@ interface SessionDetails {
   duration: number;
   rate: number;
   notes?: string;
+  color?: string;
   recurrence_id?: string;
 }
 
@@ -38,17 +39,28 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState(session?.notes || "");
   const [applyToSeries, setApplyToSeries] = useState(false);
+  const [sessionColor, setSessionColor] = useState(session?.color || '#3B82F6');
 
   // Reset state when modal opens/closes
   const handleClose = () => {
     setNotes(session?.notes || "");
     setApplyToSeries(false);
+    setSessionColor(session?.color || '#3B82F6');
     onClose();
   };
 
-  // Update session notes mutation
-  const updateNotesMutation = useMutation({
-    mutationFn: async ({ notes, applyToSeries }: { notes: string; applyToSeries: boolean }) => {
+  // Update state when session changes
+  useEffect(() => {
+    if (session) {
+      setNotes(session.notes || "");
+      setSessionColor(session.color || '#3B82F6');
+      setApplyToSeries(false);
+    }
+  }, [session]);
+
+  // Update session data mutation
+  const updateSessionMutation = useMutation({
+    mutationFn: async ({ notes, color, applyToSeries }: { notes: string; color: string; applyToSeries: boolean }) => {
       if (!session) throw new Error("No session selected");
 
       if (applyToSeries && session.recurrence_id) {
@@ -176,11 +188,41 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
             </div>
           )}
 
+          {/* Session Color */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Session Color</Label>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { color: "#3B82F6", name: "Blue" },
+                { color: "#10B981", name: "Green" },
+                { color: "#F59E0B", name: "Yellow" },
+                { color: "#EF4444", name: "Red" },
+                { color: "#8B5CF6", name: "Purple" },
+                { color: "#06B6D4", name: "Cyan" },
+                { color: "#F97316", name: "Orange" },
+                { color: "#84CC16", name: "Lime" },
+              ].map((colorOption) => (
+                <button
+                  key={colorOption.color}
+                  type="button"
+                  onClick={() => setSessionColor(colorOption.color)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${
+                    sessionColor === colorOption.color 
+                      ? 'border-gray-900 dark:border-gray-100 ring-2 ring-offset-2 ring-gray-400' 
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  style={{ backgroundColor: colorOption.color }}
+                  title={colorOption.name}
+                />
+              ))}
+            </div>
+          </div>
+
           {/* Session Actions */}
           <div className="space-y-4 pt-4 border-t">
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Individual Session</h4>
-              <div className="flex gap-2">
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Individual Session</h4>
+              <div className="grid grid-cols-2 gap-3">
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -191,10 +233,10 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                     }));
                     handleClose();
                   }}
-                  className="flex-1"
+                  className="flex items-center justify-center gap-2 h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit this session
+                  <Edit className="w-4 h-4" />
+                  <span className="text-sm">Edit this session</span>
                 </Button>
                 <Button 
                   variant="outline" 
@@ -206,19 +248,19 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                     }));
                     handleClose();
                   }}
-                  className="flex-1 text-red-600 hover:text-red-700"
+                  className="flex items-center justify-center gap-2 h-10 bg-white dark:bg-gray-800 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Cancel this session
+                  <Trash2 className="w-4 h-4" />
+                  <span className="text-sm">Cancel this session</span>
                 </Button>
               </div>
             </div>
 
             {/* Recurring series actions - only show if session has recurrence_id */}
             {session.recurrence_id && (
-              <div className="space-y-2 border-t pt-4">
-                <h4 className="text-sm font-medium">Recurring Series</h4>
-                <div className="flex gap-2">
+              <div className="space-y-3 border-t pt-4">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Recurring Series</h4>
+                <div className="grid grid-cols-2 gap-3">
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -229,10 +271,10 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                       }));
                       handleClose();
                     }}
-                    className="flex-1"
+                    className="flex items-center justify-center gap-2 h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit future sessions
+                    <Edit className="w-4 h-4" />
+                    <span className="text-sm">Edit future sessions</span>
                   </Button>
                   <Button 
                     variant="outline" 
@@ -244,10 +286,10 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                       }));
                       handleClose();
                     }}
-                    className="flex-1 text-red-600 hover:text-red-700"
+                    className="flex items-center justify-center gap-2 h-10 bg-white dark:bg-gray-800 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Cancel future sessions
+                    <Trash2 className="w-4 h-4" />
+                    <span className="text-sm">Cancel future sessions</span>
                   </Button>
                 </div>
               </div>
