@@ -146,6 +146,7 @@ export default function Calendar() {
           rate,
           paid,
           notes,
+          color,
           recurrence_id,
           created_at,
           students (
@@ -168,7 +169,41 @@ export default function Calendar() {
 
       return sessionsWithNames as SessionWithStudent[];
     },
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always consider data stale to force refresh
   });
+
+  // Add real-time subscription for sessions table changes
+  useEffect(() => {
+    const setupSubscription = async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) return;
+
+      const channel = supabase
+        .channel('sessions-realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'sessions',
+            filter: `tutor_id=eq.${tutorId}`,
+          },
+          (payload) => {
+            console.log('Sessions table changed, refreshing calendar:', payload);
+            // Force refresh calendar data
+            queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    setupSubscription();
+  }, [queryClient]);
 
   // Delete individual session mutation
   const deleteSessionMutation = useMutation({
