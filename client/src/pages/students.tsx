@@ -315,11 +315,17 @@ export default function Students() {
         throw error;
       }
 
-      // Transform the data to include student_name
+      // Transform the data to include student_name and debug the structure
       const sessionsWithNames = data?.map((session: any) => ({
         ...session,
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
+
+      // Debug: log the first session to see the structure
+      if (data && data.length > 0) {
+        console.log('Session data structure:', data[0]);
+        console.log('Student data in session:', data[0].students);
+      }
 
       return sessionsWithNames as Session[];
     },
@@ -352,12 +358,27 @@ export default function Students() {
 
   // Calculate student summaries with correct business logic
   const calculateStudentSummaries = (students: any[], sessions: Session[]): StudentSummary[] => {
-    if (!students || students.length === 0) return [];
+    if (!sessions || sessions.length === 0) return [];
 
     const now = new Date();
-    const sessionsByStudentId = new Map<string, Session[]>();
+    const studentMap = new Map<string, any>();
+
+    // Extract unique students from sessions data (which includes avatar_url)
+    sessions?.forEach((session: any) => {
+      if (session.students && !studentMap.has(session.student_id)) {
+        studentMap.set(session.student_id, {
+          id: session.student_id,
+          name: session.students.name,
+          phone: session.students.phone,
+          email: session.students.email,
+          tags: session.students.tags,
+          avatar_url: session.students.avatar_url
+        });
+      }
+    });
 
     // Group sessions by student_id
+    const sessionsByStudentId = new Map<string, Session[]>();
     sessions?.forEach(session => {
       if (!sessionsByStudentId.has(session.student_id)) {
         sessionsByStudentId.set(session.student_id, []);
@@ -365,7 +386,7 @@ export default function Students() {
       sessionsByStudentId.get(session.student_id)!.push(session);
     });
 
-    return students.map(student => {
+    return Array.from(studentMap.values()).map(student => {
       const studentSessions = sessionsByStudentId.get(student.id) || [];
       let totalEarnings = 0;
       let totalDuration = 0;
@@ -410,9 +431,14 @@ export default function Students() {
 
   const studentSummaries = students && sessions ? calculateStudentSummaries(students, sessions) : [];
   
-  // Debug logging
-  console.log('Raw students data:', students?.slice(0, 2));
-  console.log('Student summaries:', studentSummaries?.slice(0, 2));
+  // Debug logging - check avatar data
+  if (studentSummaries.length > 0) {
+    console.log('First student avatar data:', {
+      name: studentSummaries[0].name,
+      avatarUrl: studentSummaries[0].avatarUrl,
+      avatarDisplay: getAvatarDisplay(studentSummaries[0].avatarUrl)
+    });
+  }
 
   if (isLoading) {
     return (
