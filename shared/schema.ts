@@ -20,6 +20,7 @@ export const students = pgTable("students", {
   email: text("email"),
   phone: text("phone"),
   notes: text("notes"),
+  tags: text("tags").array(),
   isActive: boolean("is_active").notNull().default(true),
 });
 

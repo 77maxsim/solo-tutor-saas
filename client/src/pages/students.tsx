@@ -42,8 +42,10 @@ import {
   Coins,
   Clock,
   Plus,
-  Trash2
+  Trash2,
+  Edit
 } from "lucide-react";
+import { EditStudentModal } from "@/components/modals/edit-student-modal";
 
 interface Session {
   id: string;
@@ -58,7 +60,11 @@ interface Session {
 }
 
 interface StudentSummary {
+  id: string;
   name: string;
+  phone?: string;
+  email?: string;
+  tags?: string[];
   totalSessions: number;
   totalEarnings: number;
   lastSessionDate: string;
