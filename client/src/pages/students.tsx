@@ -46,6 +46,8 @@ import {
   Edit
 } from "lucide-react";
 import { EditStudentModal } from "@/components/modals/edit-student-modal";
+import { AvatarEditorModal } from "@/components/modals/avatar-editor-modal";
+import { getAvatarDisplay } from "@/lib/avatarUtils";
 
 interface Session {
   id: string;
@@ -65,6 +67,7 @@ interface StudentSummary {
   phone?: string;
   email?: string;
   tags?: string[];
+  avatarUrl?: string;
   totalSessions: number;
   totalEarnings: number;
   lastSessionDate: string;
@@ -79,9 +82,11 @@ export default function Students() {
   // Modal states
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isEditStudentOpen, setIsEditStudentOpen] = useState(false);
+  const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<string>('');
   const [studentToEdit, setStudentToEdit] = useState<StudentSummary | null>(null);
+  const [studentForAvatar, setStudentForAvatar] = useState<StudentSummary | null>(null);
   const [newStudentName, setNewStudentName] = useState('');
 
   // Mutation for adding a new student
@@ -211,6 +216,11 @@ export default function Students() {
     setIsEditStudentOpen(true);
   };
 
+  const handleEditAvatar = (student: StudentSummary) => {
+    setStudentForAvatar(student);
+    setIsAvatarEditorOpen(true);
+  };
+
   const handleDeleteStudent = (studentName: string) => {
     setStudentToDelete(studentName);
     setIsDeleteDialogOpen(true);
@@ -255,7 +265,7 @@ export default function Students() {
 
       const { data, error } = await supabase
         .from('students')
-        .select('id, name, phone, email, tags')
+        .select('id, name, phone, email, tags, avatar_url')
         .eq('tutor_id', tutorId)
         .order('name');
 
@@ -293,7 +303,8 @@ export default function Students() {
             name,
             phone,
             email,
-            tags
+            tags,
+            avatar_url
           )
         `)
         .eq('tutor_id', tutorId)

@@ -21,6 +21,7 @@ export const students = pgTable("students", {
   phone: text("phone"),
   notes: text("notes"),
   tags: text("tags").array(),
+  avatarUrl: text("avatar_url"),
   isActive: boolean("is_active").notNull().default(true),
 });
 
