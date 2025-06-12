@@ -462,8 +462,8 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-h-[95vh] w-[95vw] sm:w-full flex flex-col p-4 sm:p-6">
-        <DialogHeader className="shrink-0 pb-2">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] w-[95vw] sm:w-full flex flex-col p-0 gap-0">
+        <DialogHeader className="shrink-0 p-4 sm:p-6 pb-2">
           <DialogTitle className="text-lg">Schedule a Session</DialogTitle>
           <DialogDescription className="text-sm">
             Fill out the details below to schedule a new tutoring session.
@@ -471,8 +471,8 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
-            <div className="space-y-2 overflow-y-auto flex-1 px-1 -mx-1">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <div className="space-y-2 overflow-y-auto flex-1 min-h-0 px-4 sm:px-6 pb-2">
               {/* Student Selection */}
               <FormField
               control={form.control}
@@ -845,7 +845,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
             </div>
             </div>
 
-            <DialogFooter className="shrink-0 pt-3 gap-2">
+            <DialogFooter className="shrink-0 p-4 sm:p-6 pt-3 gap-2 border-t bg-white">
               <Button
                 type="button"
                 variant="outline"
