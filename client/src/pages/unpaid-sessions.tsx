@@ -20,6 +20,7 @@ import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { triggerEarningsConfetti } from "@/lib/confetti";
 
 interface UnpaidSession {
   id: string;
@@ -121,8 +122,11 @@ export default function UnpaidSessions() {
       }
     },
     onSuccess: () => {
+      // Trigger confetti for payment success
+      triggerEarningsConfetti();
+      
       toast({
-        title: "Payment recorded",
+        title: "💰 Payment recorded!",
         description: "The session has been marked as paid.",
       });
       queryClient.invalidateQueries({ queryKey: ['all-unpaid-sessions'] });

@@ -43,7 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { TimePicker } from "@/components/ui/time-picker";
-import { triggerSuccessConfetti } from "@/lib/confetti";
+import { triggerSuccessConfetti, triggerStudentConfetti } from "@/lib/confetti";
 
 const scheduleSessionSchema = z.object({
   studentId: z.string().min(1, "Please select a student"),
@@ -178,6 +178,9 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
       return data as Student;
     },
     onSuccess: (newStudent) => {
+      // Trigger confetti for new student
+      triggerStudentConfetti();
+      
       // Refresh students list
       queryClient.invalidateQueries({ queryKey: ['students'] });
       
@@ -190,7 +193,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
       
       // Show success message
       toast({
-        title: "Student added",
+        title: "🎓 Student added!",
         description: `${newStudent.name} has been added successfully.`,
       });
     },
