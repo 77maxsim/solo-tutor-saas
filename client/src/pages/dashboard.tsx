@@ -266,35 +266,25 @@ export default function Dashboard() {
     },
   });
 
-  const handleScheduleSession = () => {
-    // Trigger the global schedule session modal
-    window.dispatchEvent(new CustomEvent('openScheduleModal'));
+  // Handle drag end for reordering cards
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) {
+      return;
+    }
+
+    const items = Array.from(cards);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setCards(items);
+    updateCardOrderMutation.mutate(items);
   };
 
-  return (
-    <div className="flex-1 overflow-auto">
-      {/* Header */}
-      <header className="bg-white border-b border-border px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              Welcome back, {tutorInfo?.full_name || 'Tutor'}!
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Here's what's happening with your tutoring business today.
-            </p>
-          </div>
-          <Button onClick={handleScheduleSession}>
-            <Plus className="w-4 h-4 mr-2" />
-            Schedule a Session
-          </Button>
-        </div>
-      </header>
-
-      {/* Dashboard Content */}
-      <div className="p-6">
-        {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  // Render individual dashboard card based on card ID
+  const renderCard = (card: DashboardCard, index: number) => {
+    switch (card.id) {
+      case 'sessions_this_week':
+        return (
           <StatsCard
             title="Sessions This Week"
             value={isLoading ? "..." : (dashboardStats?.sessionsThisWeek.toString() || "0")}
@@ -304,7 +294,9 @@ export default function Dashboard() {
             iconColor="text-blue-600"
             iconBgColor="bg-blue-100"
           />
-
+        );
+      case 'active_students':
+        return (
           <StatsCard
             title="Active Students"
             value={isLoading ? "..." : (dashboardStats?.activeStudents.toString() || "0")}
@@ -314,10 +306,11 @@ export default function Dashboard() {
             iconColor="text-purple-600"
             iconBgColor="bg-purple-100"
           />
-
-          <ExpectedEarnings currency={tutorInfo?.currency || 'USD'} />
-          
-          {/* Earnings Summary Card with Toggle */}
+        );
+      case 'expected_earnings':
+        return <ExpectedEarnings currency={tutorInfo?.currency || 'USD'} />;
+      case 'earnings_summary':
+        return (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Earnings Summary</CardTitle>
@@ -373,7 +366,69 @@ export default function Dashboard() {
               </p>
             </CardContent>
           </Card>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const handleScheduleSession = () => {
+    // Trigger the global schedule session modal
+    window.dispatchEvent(new CustomEvent('openScheduleModal'));
+  };
+
+  return (
+    <div className="flex-1 overflow-auto">
+      {/* Header */}
+      <header className="bg-white border-b border-border px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">
+              Welcome back, {tutorInfo?.full_name || 'Tutor'}!
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Here's what's happening with your tutoring business today.
+            </p>
+          </div>
+          <Button onClick={handleScheduleSession}>
+            <Plus className="w-4 h-4 mr-2" />
+            Schedule a Session
+          </Button>
         </div>
+      </header>
+
+      {/* Dashboard Content */}
+      <div className="p-6">
+        {/* Draggable Quick Stats Cards */}
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="dashboard-cards" direction="horizontal">
+            {(provided) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+              >
+                {cards.map((card, index) => (
+                  <Draggable key={card.id} draggableId={card.id} index={index}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className={`transition-all duration-200 ${
+                          snapshot.isDragging ? 'scale-105 rotate-2 shadow-lg' : ''
+                        }`}
+                      >
+                        {renderCard(card, index)}
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
 
         {/* Sessions and Activity Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

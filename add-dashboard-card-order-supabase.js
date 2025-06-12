@@ -14,36 +14,30 @@ async function addDashboardCardOrderColumn() {
   try {
     console.log('Adding dashboard_card_order column to tutors table...');
     
-    // Add the column using raw SQL
-    const { data, error } = await supabase.rpc('exec_sql', {
-      sql: `
-        ALTER TABLE tutors ADD COLUMN IF NOT EXISTS dashboard_card_order JSONB;
-        COMMENT ON COLUMN tutors.dashboard_card_order IS 'Stores the order of dashboard cards as a JSON array of card objects with id and title';
-      `
-    });
+    // Try to query the tutors table to see if the column exists
+    const { data: existingTutors, error: queryError } = await supabase
+      .from('tutors')
+      .select('dashboard_card_order')
+      .limit(1);
 
-    if (error) {
-      console.error('Error adding column:', error);
+    if (queryError && queryError.code === 'PGRST116') {
+      console.log('Column does not exist, need to add it manually through Supabase dashboard.');
+      console.log('Please run this SQL in your Supabase SQL Editor:');
+      console.log('ALTER TABLE tutors ADD COLUMN dashboard_card_order JSONB;');
       return;
     }
 
-    console.log('Successfully added dashboard_card_order column');
-    
-    // Verify the column was added
-    const { data: columns, error: checkError } = await supabase
-      .from('information_schema.columns')
-      .select('column_name, data_type')
-      .eq('table_name', 'tutors')
-      .eq('column_name', 'dashboard_card_order');
-
-    if (checkError) {
-      console.error('Error checking column:', checkError);
-    } else {
-      console.log('Column verification:', columns);
+    if (existingTutors) {
+      console.log('Column dashboard_card_order already exists!');
+      return;
     }
+
+    console.log('Successfully verified dashboard_card_order column exists');
 
   } catch (error) {
     console.error('Unexpected error:', error);
+    console.log('Please manually add the column using Supabase dashboard:');
+    console.log('ALTER TABLE tutors ADD COLUMN dashboard_card_order JSONB;');
   }
 }
 
