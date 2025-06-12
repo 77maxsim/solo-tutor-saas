@@ -294,6 +294,16 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
     setUserModifiedFields(prev => new Set(prev).add(fieldName));
   };
 
+  // Handle cancel button click - reset form and close modal
+  const handleCancel = () => {
+    form.reset();
+    setUserModifiedFields(new Set());
+    setShowAddStudent(false);
+    setNewStudentName("");
+    setShowNotes(false);
+    onOpenChange(false);
+  };
+
   // Listen for custom events to pre-fill form from calendar clicks
   useEffect(() => {
     const handleOpenScheduleModal = (event: CustomEvent) => {
@@ -419,13 +429,6 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleCancel = () => {
-    form.reset();
-    setShowAddStudent(false);
-    setNewStudentName("");
-    onOpenChange(false);
   };
 
   const handleAddStudent = () => {
@@ -618,7 +621,10 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                       type="number"
                       placeholder="60"
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      onChange={(e) => {
+                        field.onChange(parseInt(e.target.value) || 0);
+                        handleFieldChange('duration');
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -640,13 +646,17 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                       step="0.01"
                       className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        field.onChange(parseFloat(e.target.value) || 0);
+                        handleFieldChange('rate');
+                      }}
                       onFocus={(e) => {
                         // Clear the field if it contains 0 when focused
                         if (field.value === 0) {
                           field.onChange('');
                           e.target.value = '';
                         }
+                        handleFieldChange('rate');
                       }}
                       onBlur={(e) => {
                         // Reset to 0 if the field is empty when blurred
