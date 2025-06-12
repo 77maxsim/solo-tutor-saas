@@ -22,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -35,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarIcon, Plus } from "lucide-react";
+import { CalendarIcon, Plus, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -57,6 +58,8 @@ const scheduleSessionSchema = z.object({
   color: z.string().default("#3B82F6"),
   repeatWeekly: z.boolean().default(false),
   repeatWeeks: z.number().min(1, "Must repeat for at least 1 week").max(12, "Cannot repeat for more than 12 weeks").optional(),
+  notes: z.string().optional(),
+  applyNotesToSeries: z.boolean().default(false),
 }).refine((data) => {
   if (data.repeatWeekly && !data.repeatWeeks) {
     return false;
@@ -94,6 +97,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newStudentName, setNewStudentName] = useState("");
+  const [showNotes, setShowNotes] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -205,6 +209,8 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
       color: "#3B82F6",
       repeatWeekly: false,
       repeatWeeks: 1,
+      notes: "",
+      applyNotesToSeries: false,
     },
   });
 
@@ -655,6 +661,74 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                 )}
               />
             )}
+
+            {/* Session Notes Section */}
+            <div className="space-y-4 border-t pt-4">
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => setShowNotes(!showNotes)}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">📝</span>
+                  <FormLabel className="text-sm font-medium cursor-pointer">
+                    Add Session Notes
+                  </FormLabel>
+                </div>
+                <ChevronDown 
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    showNotes ? 'rotate-180' : ''
+                  }`}
+                />
+              </div>
+
+              <div 
+                className={`overflow-hidden transition-all duration-200 ease-in-out ${
+                  showNotes ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'
+                }`}
+              >
+                <div className="space-y-4 pt-2">
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Optional notes about this session..."
+                            className="min-h-[80px] resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {form.watch('repeatWeekly') && (
+                    <FormField
+                      control={form.control}
+                      name="applyNotesToSeries"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="text-sm text-muted-foreground">
+                              Apply note to all future sessions in this series
+                            </FormLabel>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
 
             <DialogFooter>
               <Button
