@@ -167,6 +167,54 @@
     font-weight: 500 !important;
   }
 
+  /* Mobile-responsive calendar styles */
+  @media (max-width: 640px) {
+    .rbc-calendar {
+      font-size: 11px !important;
+    }
+    
+    .rbc-header {
+      padding: 8px 4px !important;
+      font-size: 11px !important;
+    }
+    
+    .rbc-event {
+      padding: 2px 4px !important;
+      font-size: 10px !important;
+      min-height: 18px !important;
+    }
+    
+    .rbc-time-slot {
+      min-height: 25px !important;
+    }
+    
+    .rbc-timeslot-group {
+      min-height: 50px !important;
+    }
+    
+    .rbc-time-header-gutter {
+      width: 40px !important;
+    }
+    
+    .rbc-time-header-content {
+      margin-right: 40px !important;
+    }
+    
+    .rbc-time-content > * + * > * {
+      border-left-width: 40px !important;
+    }
+    
+    .calendar-event-title {
+      font-size: 9px !important;
+      line-height: 1.2 !important;
+    }
+    
+    .calendar-event-details {
+      font-size: 8px !important;
+      line-height: 1.1 !important;
+    }
+  }
+
   .rbc-event:hover {
     @apply shadow-md scale-105 z-10;
     transform: translateY(-1px) scale(1.02);

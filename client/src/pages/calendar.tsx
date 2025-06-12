@@ -1200,38 +1200,39 @@ export default function Calendar() {
   if (isLoading) {
     return (
       <div className="flex-1 overflow-auto">
-        <header className="bg-white border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
+        <header className="bg-white border-b border-border px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">📅 Calendar</h1>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground flex items-center gap-2">📅 Calendar</h1>
+              <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
                 Manage your tutoring schedule and upcoming sessions.
               </p>
             </div>
-            <Button onClick={handleScheduleSession}>
+            <Button onClick={handleScheduleSession} size="sm" className="self-start sm:self-auto">
               <Plus className="w-4 h-4 mr-2" />
-              Schedule Session
+              <span className="hidden sm:inline">Schedule Session</span>
+              <span className="sm:hidden">Schedule</span>
             </Button>
           </div>
         </header>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 pb-4">
               <Skeleton className="h-6 w-32" />
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <div className="flex items-center gap-2">
                   <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-8 w-40" />
+                  <Skeleton className="h-8 w-full sm:w-40" />
                 </div>
                 <div className="flex items-center gap-2">
                   <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-8 w-24" />
+                  <Skeleton className="h-8 w-full sm:w-24" />
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-96 w-full" />
+              <Skeleton className="h-[400px] sm:h-96 w-full" />
             </CardContent>
           </Card>
         </div>
@@ -1242,22 +1243,23 @@ export default function Calendar() {
   if (error) {
     return (
       <div className="flex-1 overflow-auto">
-        <header className="bg-white border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
+        <header className="bg-white border-b border-border px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">📅 Calendar</h1>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground flex items-center gap-2">📅 Calendar</h1>
+              <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
                 Manage your tutoring schedule and upcoming sessions.
               </p>
             </div>
-            <Button onClick={handleScheduleSession}>
+            <Button onClick={handleScheduleSession} size="sm" className="self-start sm:self-auto">
               <Plus className="w-4 h-4 mr-2" />
-              Schedule Session
+              <span className="hidden sm:inline">Schedule Session</span>
+              <span className="sm:hidden">Schedule</span>
             </Button>
           </div>
         </header>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <Card>
             <CardContent className="pt-6">
               <div className="text-center py-12">
