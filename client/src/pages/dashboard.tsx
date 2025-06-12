@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { UpcomingSessions } from "@/components/dashboard/upcoming-sessions";
 import { PaymentOverview } from "@/components/dashboard/unpaid-past-sessions";
@@ -29,11 +30,26 @@ interface SessionWithStudent {
   created_at: string;
 }
 
+interface DashboardCard {
+  id: string;
+  title: string;
+}
+
+const defaultCardOrder: DashboardCard[] = [
+  { id: 'sessions_this_week', title: 'Sessions This Week' },
+  { id: 'active_students', title: 'Active Students' },
+  { id: 'expected_earnings', title: 'Expected Earnings' },
+  { id: 'earnings_summary', title: 'Earnings Summary' }
+];
+
 
 
 
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
+  const [cards, setCards] = useState<DashboardCard[]>(defaultCardOrder);
+  
   // Toggle state for earnings summary (today/week/month)
   const [earningsView, setEarningsView] = useState<'today' | 'week' | 'month'>(() => {
     // Persist toggle state in localStorage
@@ -45,6 +61,55 @@ export default function Dashboard() {
   useEffect(() => {
     localStorage.setItem('dashboard-earnings-view', earningsView);
   }, [earningsView]);
+
+  // Fetch dashboard card order from Supabase
+  const { data: cardOrder } = useQuery({
+    queryKey: ['dashboard-card-order'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('tutors')
+        .select('dashboard_card_order')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching dashboard card order:', error);
+        return defaultCardOrder;
+      }
+
+      return data?.dashboard_card_order || defaultCardOrder;
+    },
+  });
+
+  // Update cards state when data is fetched
+  useEffect(() => {
+    if (cardOrder) {
+      setCards(cardOrder);
+    }
+  }, [cardOrder]);
+
+  // Mutation to update dashboard card order
+  const updateCardOrderMutation = useMutation({
+    mutationFn: async (newOrder: DashboardCard[]) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('tutors')
+        .update({ dashboard_card_order: newOrder })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return newOrder;
+    },
+    onSuccess: (newOrder) => {
+      queryClient.setQueryData(['dashboard-card-order'], newOrder);
+    },
+  });
+
   // Fetch tutor information for welcome message
   const { data: tutorInfo } = useQuery({
     queryKey: ['tutor-info'],
