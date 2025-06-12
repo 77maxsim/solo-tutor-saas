@@ -1275,30 +1275,29 @@ export default function Calendar() {
   }
 
   return (
-    <div className="flex-1 overflow-auto">
-      {/* Enhanced Header */}
-      <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 sticky top-0 z-10">
+    <div className="flex-1 overflow-auto w-full">
+      {/* Enhanced Header - Hidden on mobile since we have MobileHeader */}
+      <header className="hidden md:block bg-white/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 sticky top-0 z-10">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">📅 Calendar</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 hidden sm:block">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Manage your tutoring schedule and upcoming sessions.
             </p>
           </div>
           <Button 
             onClick={handleScheduleSession}
             size="sm"
-            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm self-start sm:self-auto"
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
           >
             <Plus className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Schedule Session</span>
-            <span className="sm:hidden">Schedule</span>
+            Schedule Session
           </Button>
         </div>
       </header>
 
       {/* Calendar Content */}
-      <div className="p-4 sm:p-6">
+      <div className="p-4 sm:p-6 w-full">
         <Card className="shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardHeader className="pb-4">
             <div className="flex flex-col space-y-4">

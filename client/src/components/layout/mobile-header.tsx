@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, Plus } from "lucide-react";
 
 interface MobileHeaderProps {
   title: string;
@@ -7,13 +7,20 @@ interface MobileHeaderProps {
 }
 
 export function MobileHeader({ title, onMenuClick }: MobileHeaderProps) {
+  const handleScheduleSession = () => {
+    // Trigger the global schedule session modal
+    window.dispatchEvent(new CustomEvent('openScheduleModal'));
+  };
+
   return (
     <header className="flex items-center justify-between p-4 bg-white border-b border-border md:hidden">
       <Button variant="ghost" size="icon" onClick={onMenuClick}>
         <Menu className="h-5 w-5" />
       </Button>
       <h1 className="text-lg font-semibold text-foreground">{title}</h1>
-      <div className="w-8" />
+      <Button variant="ghost" size="icon" onClick={handleScheduleSession}>
+        <Plus className="h-5 w-5" />
+      </Button>
     </header>
   );
 }

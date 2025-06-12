@@ -383,28 +383,27 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex-1 overflow-auto">
-      {/* Header */}
-      <header className="bg-white border-b border-border px-4 sm:px-6 py-4">
+    <div className="flex-1 overflow-auto w-full">
+      {/* Header - Hidden on mobile since we have MobileHeader */}
+      <header className="hidden md:block bg-white border-b border-border px-4 sm:px-6 py-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
               Welcome back, {tutorInfo?.full_name || 'Tutor'}!
             </h1>
-            <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
+            <p className="text-sm text-muted-foreground mt-1">
               Here's what's happening with your tutoring business today.
             </p>
           </div>
-          <Button onClick={handleScheduleSession} size="sm" className="self-start sm:self-auto">
+          <Button onClick={handleScheduleSession} size="sm">
             <Plus className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Schedule a Session</span>
-            <span className="sm:hidden">Schedule</span>
+            Schedule a Session
           </Button>
         </div>
       </header>
 
       {/* Dashboard Content */}
-      <div className="p-4 sm:p-6">
+      <div className="p-4 sm:p-6 w-full">
         {/* Draggable Quick Stats Cards */}
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="dashboard-cards" direction="horizontal">
@@ -412,7 +411,7 @@ export default function Dashboard() {
               <div
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8"
+                className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 w-full"
               >
                 {cards.map((card, index) => (
                   <Draggable key={card.id} draggableId={card.id} index={index}>
@@ -437,13 +436,13 @@ export default function Dashboard() {
         </DragDropContext>
 
         {/* Sessions and Activity Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 w-full">
           <UpcomingSessions currency={tutorInfo?.currency || 'USD'} />
           <PaymentOverview currency={tutorInfo?.currency || 'USD'} limit={5} />
         </div>
 
         {/* Recent Activity - Hidden on small screens */}
-        <div className="hidden sm:block">
+        <div className="hidden sm:block w-full">
           <RecentActivity currency={tutorInfo?.currency || 'USD'} />
         </div>
       </div>

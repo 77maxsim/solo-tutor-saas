@@ -407,42 +407,46 @@ function AppLayout() {
   }
 
   return (
-    <div className={cn("flex h-screen bg-slate-50", !showNavigation && "flex-col")}>
-      {/* Desktop Sidebar - Only show when authenticated and not on auth page */}
-      {showNavigation && (
-        <div className="hidden md:flex">
-          <Sidebar onScheduleSession={handleScheduleSession} />
-        </div>
-      )}
-
-      {/* Mobile Sidebar - Only show when authenticated and not on auth page */}
-      {showNavigation && (
-        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetTrigger asChild>
-            <div className="md:hidden">
-              <MobileHeader
-                title={getPageTitle(location)}
-                onMenuClick={() => setSidebarOpen(true)}
-              />
-            </div>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64">
+    <div className={cn("h-screen bg-slate-50", !showNavigation && "flex flex-col")}>
+      {showNavigation ? (
+        // Authenticated layout with sidebar
+        <div className="flex h-full">
+          {/* Desktop Sidebar */}
+          <div className="hidden md:flex md:w-64 md:flex-shrink-0">
             <Sidebar onScheduleSession={handleScheduleSession} />
-          </SheetContent>
-        </Sheet>
-      )}
+          </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <Router />
-      </div>
+          {/* Mobile Sidebar */}
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetTrigger asChild>
+              <div className="md:hidden fixed top-0 left-0 right-0 z-40">
+                <MobileHeader
+                  title={getPageTitle(location)}
+                  onMenuClick={() => setSidebarOpen(true)}
+                />
+              </div>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-64">
+              <Sidebar onScheduleSession={handleScheduleSession} />
+            </SheetContent>
+          </Sheet>
 
-      {/* Global Schedule Session Modal - Only show when authenticated */}
-      {showNavigation && (
-        <ScheduleSessionModal 
-          open={isScheduleModalOpen} 
-          onOpenChange={setIsScheduleModalOpen} 
-        />
+          {/* Main Content - Full width on mobile, reduced width on desktop */}
+          <div className="flex-1 flex flex-col min-w-0 w-full md:w-[calc(100%-16rem)] pt-16 md:pt-0">
+            <Router />
+          </div>
+
+          {/* Global Schedule Session Modal */}
+          <ScheduleSessionModal 
+            open={isScheduleModalOpen} 
+            onOpenChange={setIsScheduleModalOpen} 
+          />
+        </div>
+      ) : (
+        // Unauthenticated layout (auth page)
+        <div className="flex flex-col h-full">
+          <Router />
+        </div>
       )}
     </div>
   );
