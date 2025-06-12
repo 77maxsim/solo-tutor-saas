@@ -1279,16 +1279,18 @@ export default function Calendar() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">📅 Calendar</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 hidden sm:block">
               Manage your tutoring schedule and upcoming sessions.
             </p>
           </div>
           <Button 
             onClick={handleScheduleSession}
-            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm self-start sm:self-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Schedule Session
+            <span className="hidden sm:inline">Schedule Session</span>
+            <span className="sm:hidden">Schedule</span>
           </Button>
         </div>
       </header>
@@ -1296,25 +1298,58 @@ export default function Calendar() {
       {/* Calendar Content */}
       <div className="p-4 sm:p-6">
         <Card className="shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 pb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {calendarView === 'week' ? 'Weekly Schedule' : 'Monthly Schedule'}
-              </CardTitle>
+          <CardHeader className="pb-4">
+            <div className="flex flex-col space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {calendarView === 'week' ? 'Weekly Schedule' : 'Monthly Schedule'}
+                </CardTitle>
+                
+                {/* View Toggle */}
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <CalendarIcon className="h-4 w-4 text-gray-500 dark:text-gray-400 hidden sm:block" />
+                  <div className="flex bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden p-1">
+                    <Button
+                      variant={calendarView === 'week' ? 'default' : 'ghost'}
+                      size="sm"
+                      className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                        calendarView === 'week'
+                          ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-600/50'
+                      }`}
+                      onClick={() => setCalendarView('week')}
+                    >
+                      Week
+                    </Button>
+                    <Button
+                      variant={calendarView === 'month' ? 'default' : 'ghost'}
+                      size="sm"
+                      className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                        calendarView === 'month'
+                          ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-600/50'
+                      }`}
+                      onClick={() => setCalendarView('month')}
+                    >
+                      Month
+                    </Button>
+                  </div>
+                </div>
+              </div>
               
               {/* Week Navigation - only show in week view */}
               {calendarView === 'week' && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handlePreviousWeek}
-                    className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[180px] text-center">
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[160px] sm:min-w-[180px] text-center">
                     {getWeekRange()}
                   </div>
                   
@@ -1322,7 +1357,7 @@ export default function Calendar() {
                     variant="outline"
                     size="sm"
                     onClick={handleNextWeek}
-                    className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -1331,17 +1366,16 @@ export default function Calendar() {
                     variant="outline"
                     size="sm"
                     onClick={handleToday}
-                    className="ml-2 px-3 h-8 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="ml-2 px-3 h-9 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     Today
                   </Button>
                 </div>
               )}
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              
               {/* Student Filter */}
               <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400 hidden sm:block" />
                 <Select value={selectedStudent} onValueChange={setSelectedStudent}>
                   <SelectTrigger className="w-full sm:w-44 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
                     <SelectValue placeholder="Filter by student" />
@@ -1355,37 +1389,6 @@ export default function Calendar() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              {/* View Toggle */}
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <div className="flex bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden p-1">
-                  <Button
-                    variant={calendarView === 'week' ? 'default' : 'ghost'}
-                    size="sm"
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                      calendarView === 'week'
-                        ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-600/50'
-                    }`}
-                    onClick={() => setCalendarView('week')}
-                  >
-                    Week
-                  </Button>
-                  <Button
-                    variant={calendarView === 'month' ? 'default' : 'ghost'}
-                    size="sm"
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                      calendarView === 'month'
-                        ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-600/50'
-                    }`}
-                    onClick={() => setCalendarView('month')}
-                  >
-                    Month
-                  </Button>
-                </div>
               </div>
             </div>
           </CardHeader>

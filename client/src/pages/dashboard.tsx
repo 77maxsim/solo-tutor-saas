@@ -312,46 +312,51 @@ export default function Dashboard() {
       case 'earnings_summary':
         return (
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Earnings Summary</CardTitle>
-              <div className="flex items-center gap-2">
-                <Coins className="h-4 w-4 text-green-600" />
-                <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
-                  <button
-                    onClick={() => setEarningsView('today')}
-                    className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
-                      earningsView === 'today'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Today
-                  </button>
-                  <button
-                    onClick={() => setEarningsView('week')}
-                    className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
-                      earningsView === 'week'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Week
-                  </button>
-                  <button
-                    onClick={() => setEarningsView('month')}
-                    className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
-                      earningsView === 'month'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Month
-                  </button>
+            <CardHeader className="pb-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                <CardTitle className="text-sm font-medium">Earnings</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Coins className="h-4 w-4 text-green-600" />
+                  <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
+                    <button
+                      onClick={() => setEarningsView('today')}
+                      className={`px-1.5 sm:px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+                        earningsView === 'today'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <span className="hidden sm:inline">Today</span>
+                      <span className="sm:hidden">T</span>
+                    </button>
+                    <button
+                      onClick={() => setEarningsView('week')}
+                      className={`px-1.5 sm:px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+                        earningsView === 'week'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <span className="hidden sm:inline">Week</span>
+                      <span className="sm:hidden">W</span>
+                    </button>
+                    <button
+                      onClick={() => setEarningsView('month')}
+                      className={`px-1.5 sm:px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+                        earningsView === 'month'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <span className="hidden sm:inline">Month</span>
+                      <span className="sm:hidden">M</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-lg sm:text-2xl font-bold text-green-600">
                 {isLoading ? "..." : formatCurrency(
                   earningsView === 'today' 
                     ? dashboardStats?.todayEarnings || 0
@@ -380,25 +385,26 @@ export default function Dashboard() {
   return (
     <div className="flex-1 overflow-auto">
       {/* Header */}
-      <header className="bg-white border-b border-border px-6 py-4">
-        <div className="flex items-center justify-between">
+      <header className="bg-white border-b border-border px-4 sm:px-6 py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
               Welcome back, {tutorInfo?.full_name || 'Tutor'}!
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
               Here's what's happening with your tutoring business today.
             </p>
           </div>
-          <Button onClick={handleScheduleSession}>
+          <Button onClick={handleScheduleSession} size="sm" className="self-start sm:self-auto">
             <Plus className="w-4 h-4 mr-2" />
-            Schedule a Session
+            <span className="hidden sm:inline">Schedule a Session</span>
+            <span className="sm:hidden">Schedule</span>
           </Button>
         </div>
       </header>
 
       {/* Dashboard Content */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {/* Draggable Quick Stats Cards */}
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="dashboard-cards" direction="horizontal">
@@ -406,7 +412,7 @@ export default function Dashboard() {
               <div
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+                className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8"
               >
                 {cards.map((card, index) => (
                   <Draggable key={card.id} draggableId={card.id} index={index}>
@@ -431,13 +437,15 @@ export default function Dashboard() {
         </DragDropContext>
 
         {/* Sessions and Activity Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <UpcomingSessions currency={tutorInfo?.currency || 'USD'} />
           <PaymentOverview currency={tutorInfo?.currency || 'USD'} limit={5} />
         </div>
 
-        {/* Recent Activity */}
-        <RecentActivity currency={tutorInfo?.currency || 'USD'} />
+        {/* Recent Activity - Hidden on small screens */}
+        <div className="hidden sm:block">
+          <RecentActivity currency={tutorInfo?.currency || 'USD'} />
+        </div>
       </div>
     </div>
   );
