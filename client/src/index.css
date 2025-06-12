@@ -150,11 +150,26 @@
 
   /* Time Grid */
   .rbc-time-content {
-    @apply border-l border-gray-200 dark:border-gray-700;
+    @apply border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800;
   }
 
   .rbc-day-slot {
-    @apply border-r border-gray-100 dark:border-gray-700;
+    @apply border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800;
+  }
+
+  /* Time Slots */
+  .rbc-time-slot {
+    @apply border-b border-gray-100 dark:border-gray-700;
+  }
+
+  .rbc-timeslot-group {
+    @apply border-b border-gray-200 dark:border-gray-600;
+  }
+
+  /* Time Gutter */
+  .rbc-time-header-gutter,
+  .rbc-time-gutter {
+    @apply bg-gray-50 dark:bg-gray-700 border-r border-gray-200 dark:border-gray-600;
   }
 
   /* Enhanced Session Blocks */
@@ -171,37 +186,56 @@
   @media (max-width: 640px) {
     .rbc-calendar {
       font-size: 11px !important;
+      background: white !important;
     }
     
     .rbc-header {
       padding: 8px 4px !important;
       font-size: 11px !important;
+      background: #f8fafc !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+    
+    .rbc-time-content {
+      background: white !important;
+    }
+    
+    .rbc-day-slot {
+      background: white !important;
+      border-right: 1px solid #e2e8f0 !important;
+    }
+    
+    .rbc-time-slot {
+      min-height: 25px !important;
+      border-bottom: 1px solid #f1f5f9 !important;
+      background: white !important;
+    }
+    
+    .rbc-timeslot-group {
+      min-height: 50px !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+    
+    .rbc-time-header-gutter,
+    .rbc-time-gutter {
+      width: 50px !important;
+      background: #f8fafc !important;
+      border-right: 1px solid #e2e8f0 !important;
+    }
+    
+    .rbc-time-header-content {
+      margin-right: 50px !important;
+    }
+    
+    .rbc-time-content > * + * > * {
+      border-left-width: 50px !important;
     }
     
     .rbc-event {
       padding: 2px 4px !important;
       font-size: 10px !important;
       min-height: 18px !important;
-    }
-    
-    .rbc-time-slot {
-      min-height: 25px !important;
-    }
-    
-    .rbc-timeslot-group {
-      min-height: 50px !important;
-    }
-    
-    .rbc-time-header-gutter {
-      width: 40px !important;
-    }
-    
-    .rbc-time-header-content {
-      margin-right: 40px !important;
-    }
-    
-    .rbc-time-content > * + * > * {
-      border-left-width: 40px !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
     }
     
     .calendar-event-title {

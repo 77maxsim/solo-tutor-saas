@@ -1394,7 +1394,7 @@ export default function Calendar() {
             </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
-            <div className="calendar-container h-[500px] sm:h-[600px] lg:h-[700px] bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="calendar-container h-[500px] sm:h-[600px] lg:h-[700px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
               <DndProvider backend={HTML5Backend}>
                 <DragAndDropCalendar
                   localizer={localizer}
