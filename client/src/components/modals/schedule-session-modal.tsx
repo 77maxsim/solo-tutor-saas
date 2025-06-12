@@ -101,6 +101,9 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Track which fields user has manually modified to prevent overwriting
+  const [userModifiedFields, setUserModifiedFields] = useState<Set<string>>(new Set());
+
   // Fetch tutor's currency preference
   const { data: tutorCurrency = 'USD' } = useQuery({
     queryKey: ['tutor-currency'],
@@ -214,6 +217,83 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
     },
   });
 
+  // Function to fetch student's most recent session data
+  const fetchStudentLastSession = async (studentId: string) => {
+    try {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) return null;
+
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('rate, duration, time')
+        .eq('student_id', studentId)
+        .eq('tutor_id', tutorId)
+        .order('date', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching student last session:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Unexpected error fetching student session:', error);
+      return null;
+    }
+  };
+
+  // Handle student selection change to prefill form with last session data
+  const handleStudentChange = async (studentId: string) => {
+    // Update the student field
+    form.setValue('studentId', studentId);
+    
+    // Fetch student's last session data
+    const lastSession = await fetchStudentLastSession(studentId);
+    
+    if (lastSession) {
+      // Only prefill fields that haven't been manually modified by the user
+      const fieldsToUpdate: Array<{ field: string; value: any }> = [];
+      
+      if (!userModifiedFields.has('rate') && lastSession.rate !== null) {
+        fieldsToUpdate.push({ field: 'rate', value: Number(lastSession.rate) });
+      }
+      
+      if (!userModifiedFields.has('duration') && lastSession.duration !== null) {
+        fieldsToUpdate.push({ field: 'duration', value: lastSession.duration });
+      }
+      
+      if (!userModifiedFields.has('time') && lastSession.time !== null) {
+        fieldsToUpdate.push({ field: 'time', value: lastSession.time });
+      }
+      
+      // Apply the updates
+      if (fieldsToUpdate.length > 0) {
+        fieldsToUpdate.forEach(({ field, value }) => {
+          if (field === 'rate') {
+            form.setValue('rate', value);
+          } else if (field === 'duration') {
+            form.setValue('duration', value);
+          } else if (field === 'time') {
+            form.setValue('time', value);
+          }
+        });
+        
+        // Show success toast
+        toast({
+          title: "Prefilled from last session",
+          description: "Form fields filled with this student's most recent session data.",
+        });
+      }
+    }
+  };
+
+  // Track field modifications to prevent overwriting user changes
+  const handleFieldChange = (fieldName: string) => {
+    setUserModifiedFields(prev => new Set(prev).add(fieldName));
+  };
+
   // Listen for custom events to pre-fill form from calendar clicks
   useEffect(() => {
     const handleOpenScheduleModal = (event: CustomEvent) => {
@@ -225,9 +305,11 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         }
         if (time) {
           form.setValue('time', time);
+          setUserModifiedFields(prev => new Set(prev).add('time'));
         }
         if (duration) {
           form.setValue('duration', duration);
+          setUserModifiedFields(prev => new Set(prev).add('duration'));
         }
       }
       
@@ -380,7 +462,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                   <FormLabel>Student</FormLabel>
                   <div className="flex gap-2">
                     <FormControl className="flex-1">
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={handleStudentChange} value={field.value}>
                         <SelectTrigger>
                           <SelectValue placeholder={studentsLoading ? "Loading students..." : "Select a student"} />
                         </SelectTrigger>
@@ -512,7 +594,10 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                   <FormControl>
                     <TimePicker
                       value={field.value}
-                      onChange={field.onChange}
+                      onChange={(value) => {
+                        field.onChange(value);
+                        handleFieldChange('time');
+                      }}
                       placeholder="Select time"
                     />
                   </FormControl>
