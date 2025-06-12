@@ -88,11 +88,11 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="grid grid-cols-8 border-b">
-          <div className="p-2 text-xs font-medium text-gray-500 border-r"></div>
+        <div className="grid border-b" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+          <div className="p-2 text-xs font-medium text-gray-500 border-r bg-gray-50"></div>
           {weekDays.map((day, index) => (
-            <div key={index} className="p-2 text-center border-r last:border-r-0">
-              <div className="text-xs font-medium text-gray-600">
+            <div key={index} className="p-2 text-center border-r last:border-r-0 min-w-0">
+              <div className="text-xs font-medium text-gray-600 truncate">
                 {day.toLocaleDateString('en-US', { weekday: 'short' })}
               </div>
               <div className="text-sm font-semibold">
@@ -104,9 +104,9 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
 
         <div className="max-h-[500px] overflow-y-auto">
           {timeSlots.map((time) => (
-            <div key={time} className="grid grid-cols-8 border-b last:border-b-0 min-h-[60px]">
-              <div className="p-2 text-xs text-gray-500 border-r bg-gray-50 flex items-center">
-                {time}
+            <div key={time} className="grid border-b last:border-b-0 min-h-[65px]" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+              <div className="p-2 text-xs text-gray-500 border-r bg-gray-50 flex items-center justify-center">
+                <span className="font-medium">{time}</span>
               </div>
               {weekDays.map((day, dayIndex) => {
                 const daySessions = getSessionsForDate(day);
@@ -116,17 +116,17 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
                 });
 
                 return (
-                  <div key={dayIndex} className="relative border-r last:border-r-0 p-1 bg-white hover:bg-gray-50 min-h-[60px]">
+                  <div key={dayIndex} className="relative border-r last:border-r-0 p-1 bg-white hover:bg-gray-50 min-h-[60px] min-w-0">
                     {sessionAtTime ? (
                       <div
-                        className="bg-blue-100 border border-blue-200 rounded p-1 cursor-pointer hover:bg-blue-200 transition-colors h-full"
+                        className="rounded text-white cursor-pointer hover:opacity-80 transition-opacity h-full px-1 py-1 flex flex-col justify-center overflow-hidden w-full"
                         onClick={() => onSelectEvent(sessionAtTime)}
-                        style={{ backgroundColor: sessionAtTime.color || '#dbeafe' }}
+                        style={{ backgroundColor: sessionAtTime.color || '#3b82f6' }}
                       >
-                        <div className="text-xs font-medium text-blue-800 truncate leading-tight">
-                          {sessionAtTime.student_name}
+                        <div className="text-xs font-medium truncate leading-tight mb-0.5 w-full">
+                          {sessionAtTime.student_name.split(' ')[0]}
                         </div>
-                        <div className="text-xs text-blue-600 leading-tight">
+                        <div className="text-xs opacity-90 leading-tight truncate w-full">
                           {sessionAtTime.duration}min
                         </div>
                       </div>
