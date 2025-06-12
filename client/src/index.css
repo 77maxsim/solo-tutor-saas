@@ -197,12 +197,12 @@
     }
     
     .rbc-time-slot {
-      min-height: 25px !important;
+      min-height: 15px !important;
       border-bottom: 1px solid #f1f5f9 !important;
     }
     
     .rbc-timeslot-group {
-      min-height: 50px !important;
+      min-height: 60px !important;
       border-bottom: 1px solid #e2e8f0 !important;
     }
     

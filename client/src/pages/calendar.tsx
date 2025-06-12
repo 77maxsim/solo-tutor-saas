@@ -1433,8 +1433,8 @@ export default function Calendar() {
                     resizable
                     draggableAccessor={() => true}
                     views={[Views.WEEK, Views.MONTH]}
-                    step={30}
-                    timeslots={2}
+                    step={15}
+                    timeslots={4}
                     showMultiDayTimes
                     eventPropGetter={(event: any) => eventStyleGetter(event)}
                     toolbar={false}
