@@ -103,25 +103,45 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
         </div>
 
         <div className="max-h-[500px] overflow-y-auto">
-          {timeSlots.map((time) => (
-            <div key={time} className="grid border-b last:border-b-0 min-h-[65px]" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+          {timeSlots.map((time, timeIndex) => (
+            <div key={time} className="grid border-b last:border-b-0 min-h-[40px]" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
               <div className="p-2 text-xs text-gray-500 border-r bg-gray-50 flex items-center justify-center">
                 <span className="font-medium">{time}</span>
               </div>
               {weekDays.map((day, dayIndex) => {
                 const daySessions = getSessionsForDate(day);
+                
+                // Find session that starts at this exact time
                 const sessionAtTime = daySessions.find(session => {
                   const sessionTime = session.time.substring(0, 5);
                   return sessionTime === time;
                 });
 
+                // Check if this slot is occupied by a continuing session
+                const occupyingSession = daySessions.find(session => {
+                  const sessionStart = session.time.substring(0, 5);
+                  const [sessionHour, sessionMin] = sessionStart.split(':').map(Number);
+                  const [currentHour, currentMin] = time.split(':').map(Number);
+                  
+                  const sessionStartMinutes = sessionHour * 60 + sessionMin;
+                  const currentTimeMinutes = currentHour * 60 + currentMin;
+                  const sessionEndMinutes = sessionStartMinutes + session.duration;
+                  
+                  return currentTimeMinutes >= sessionStartMinutes && currentTimeMinutes < sessionEndMinutes;
+                });
+
+                const isOccupied = occupyingSession && !sessionAtTime;
+
                 return (
-                  <div key={dayIndex} className="relative border-r last:border-r-0 p-1 bg-white hover:bg-gray-50 min-h-[60px] min-w-0">
+                  <div key={dayIndex} className="relative border-r last:border-r-0 p-0.5 bg-white hover:bg-gray-50 min-h-[38px] min-w-0">
                     {sessionAtTime ? (
                       <div
-                        className="rounded text-white cursor-pointer hover:opacity-80 transition-opacity h-full px-1 py-1 flex flex-col justify-center overflow-hidden w-full"
+                        className="absolute top-0.5 left-0.5 right-0.5 rounded text-white cursor-pointer hover:opacity-80 transition-opacity px-1 py-1 flex flex-col justify-center overflow-hidden z-10"
                         onClick={() => onSelectEvent(sessionAtTime)}
-                        style={{ backgroundColor: sessionAtTime.color || '#3b82f6' }}
+                        style={{ 
+                          backgroundColor: sessionAtTime.color || '#3b82f6',
+                          height: `${Math.max(30, (sessionAtTime.duration / 60) * 40)}px`
+                        }}
                       >
                         <div className="text-xs font-medium truncate leading-tight mb-0.5 w-full">
                           {sessionAtTime.student_name.split(' ')[0]}
@@ -130,12 +150,15 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
                           {sessionAtTime.duration}min
                         </div>
                       </div>
+                    ) : isOccupied ? (
+                      // This slot is occupied by a continuing session, render empty
+                      <div className="w-full h-full"></div>
                     ) : (
                       <button
-                        className="w-full h-full min-h-[54px] rounded hover:bg-gray-100 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                        className="w-full h-full rounded hover:bg-gray-100 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
                         onClick={() => handleAddSession(day, time)}
                       >
-                        <Plus className="h-4 w-4 text-gray-400" />
+                        <Plus className="h-3 w-3 text-gray-400" />
                       </button>
                     )}
                   </div>
