@@ -182,81 +182,13 @@
     font-weight: 500 !important;
   }
 
-  /* Nuclear option: Override ALL react-big-calendar backgrounds */
-  .calendar-container,
-  .calendar-container *:not(.rbc-event):not(.rbc-event *) {
-    background: white !important;
-    background-color: white !important;
-  }
-
-  .calendar-container .rbc-time-header-gutter,
-  .calendar-container .rbc-time-gutter {
-    background: #f8fafc !important;
-    background-color: #f8fafc !important;
-    border-right: 1px solid #e2e8f0 !important;
-  }
-
-  .calendar-container .rbc-header {
-    background: #f8fafc !important;
-    background-color: #f8fafc !important;
-    border-bottom: 1px solid #e2e8f0 !important;
-  }
-
-  /* Add subtle borders for visual structure */
-  .calendar-container .rbc-day-slot {
-    border-right: 1px solid #e2e8f0 !important;
-  }
-
-  .calendar-container .rbc-time-slot {
-    border-bottom: 1px solid #f1f5f9 !important;
-  }
-
-  .calendar-container .rbc-timeslot-group {
-    border-bottom: 1px solid #e2e8f0 !important;
+  /* Basic calendar styling */
+  .calendar-container .rbc-calendar {
+    background: white;
   }
 
   /* Mobile-responsive calendar styles */
   @media (max-width: 640px) {
-    .calendar-container {
-      background: white !important;
-    }
-
-    .calendar-container .rbc-calendar {
-      font-size: 11px !important;
-      background: white !important;
-    }
-
-    /* Aggressively override all background colors on mobile */
-    .calendar-container .rbc-time-view,
-    .calendar-container .rbc-time-content,
-    .calendar-container .rbc-day-slot,
-    .calendar-container .rbc-time-slot,
-    .calendar-container .rbc-timeslot-group,
-    .calendar-container .rbc-time-view > *,
-    .calendar-container .rbc-time-content > *,
-    .calendar-container .rbc-day-slot > *,
-    .calendar-container div[style*="background"],
-    .calendar-container .rbc-row-bg,
-    .calendar-container .rbc-row-bg > *,
-    .calendar-container .rbc-time-view .rbc-allday-cell,
-    .calendar-container .rbc-time-view .rbc-day-bg {
-      background: white !important;
-      background-color: white !important;
-    }
-
-    /* Override inline styles that may be applied by the library */
-    .calendar-container [style] {
-      background: white !important;
-      background-color: white !important;
-    }
-
-    /* Except for events which should keep their colors */
-    .calendar-container .rbc-event,
-    .calendar-container .rbc-event [style] {
-      background: inherit !important;
-      background-color: inherit !important;
-    }
-    
     .rbc-header {
       padding: 8px 4px !important;
       font-size: 11px !important;
@@ -264,19 +196,9 @@
       border-bottom: 1px solid #e2e8f0 !important;
     }
     
-    .rbc-time-content {
-      background: white !important;
-    }
-    
-    .rbc-day-slot {
-      background: white !important;
-      border-right: 1px solid #e2e8f0 !important;
-    }
-    
     .rbc-time-slot {
       min-height: 25px !important;
       border-bottom: 1px solid #f1f5f9 !important;
-      background: white !important;
     }
     
     .rbc-timeslot-group {
@@ -289,14 +211,6 @@
       width: 50px !important;
       background: #f8fafc !important;
       border-right: 1px solid #e2e8f0 !important;
-    }
-    
-    .rbc-time-header-content {
-      margin-right: 50px !important;
-    }
-    
-    .rbc-time-content > * + * > * {
-      border-left-width: 50px !important;
     }
     
     .rbc-event {
