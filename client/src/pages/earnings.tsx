@@ -9,7 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { formatCurrency } from "@/lib/utils";
@@ -47,7 +48,22 @@ interface StudentEarnings {
   session_count: number;
 }
 
+interface EarningsCard {
+  id: string;
+  title: string;
+}
+
+const defaultCardOrder: EarningsCard[] = [
+  { id: 'total_earnings', title: 'Total Earnings' },
+  { id: 'earnings_summary', title: 'Earnings Summary' },
+  { id: 'sessions_this_month', title: 'Sessions This Month' },
+  { id: 'active_students', title: 'Active Students' }
+];
+
 export default function Earnings() {
+  const queryClient = useQueryClient();
+  const [cards, setCards] = useState<EarningsCard[]>(defaultCardOrder);
+  
   // Toggle state for earnings summary (week/month)
   const [earningsView, setEarningsView] = useState<'week' | 'month'>(() => {
     // Persist toggle state in localStorage
@@ -59,7 +75,54 @@ export default function Earnings() {
   useEffect(() => {
     localStorage.setItem('earnings-page-view', earningsView);
   }, [earningsView]);
-  const queryClient = useQueryClient();
+
+  // Fetch earnings card order from Supabase
+  const { data: cardOrder } = useQuery({
+    queryKey: ['earnings-card-order'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('tutors')
+        .select('earnings_card_order')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching earnings card order:', error);
+        return defaultCardOrder;
+      }
+
+      return data?.earnings_card_order || defaultCardOrder;
+    },
+  });
+
+  // Update cards state when data is fetched
+  useEffect(() => {
+    if (cardOrder) {
+      setCards(cardOrder);
+    }
+  }, [cardOrder]);
+
+  // Mutation to update earnings card order
+  const updateCardOrderMutation = useMutation({
+    mutationFn: async (newOrder: EarningsCard[]) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('tutors')
+        .update({ earnings_card_order: newOrder })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return newOrder;
+    },
+    onSuccess: (newOrder) => {
+      queryClient.setQueryData(['earnings-card-order'], newOrder);
+    },
+  });
 
   // Fetch tutor's currency preference
   const { data: tutorCurrency = 'USD', isLoading: isCurrencyLoading } = useQuery({
@@ -237,6 +300,125 @@ export default function Earnings() {
 
   const earnings = sessions ? calculateEarnings(sessions) : null;
 
+  // Handle drag end for reordering cards
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) {
+      return;
+    }
+
+    const items = Array.from(cards);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setCards(items);
+    updateCardOrderMutation.mutate(items);
+  };
+
+  // Render individual earnings card based on card ID
+  const renderCard = (card: EarningsCard, index: number) => {
+    switch (card.id) {
+      case 'total_earnings':
+        return (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+              <Coins className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {formatCurrency(earnings?.totalEarnings || 0, tutorCurrency)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                From all sessions
+              </p>
+            </CardContent>
+          </Card>
+        );
+      case 'earnings_summary':
+        return (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Earnings Summary</CardTitle>
+              <div className="flex items-center gap-2">
+                <Coins className="h-4 w-4 text-green-600" />
+                <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
+                  <button
+                    onClick={() => setEarningsView('week')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      earningsView === 'week'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Week
+                  </button>
+                  <button
+                    onClick={() => setEarningsView('month')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      earningsView === 'month'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Month
+                  </button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {formatCurrency(
+                  earningsView === 'week' 
+                    ? earnings?.thisWeekEarnings || 0
+                    : earnings?.thisMonthEarnings || 0, 
+                  tutorCurrency
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {earningsView === 'week' ? 'Earned This Week' : 'Earned This Month'}
+              </p>
+            </CardContent>
+          </Card>
+        );
+      case 'sessions_this_month':
+        return (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Sessions This Month</CardTitle>
+              <Calendar className="h-4 w-4 text-purple-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">
+                {earnings?.thisMonthSessions || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Current month
+              </p>
+            </CardContent>
+          </Card>
+        );
+      case 'active_students':
+        return (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Students</CardTitle>
+              <Users className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">
+                {earnings?.activeStudents || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Last 30 days
+              </p>
+            </CardContent>
+          </Card>
+        );
+      default:
+        return null;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex-1 overflow-auto">
@@ -328,98 +510,36 @@ export default function Earnings() {
 
       {/* Earnings Content */}
       <div className="p-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-              <Coins className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(earnings?.totalEarnings || 0, tutorCurrency)}
+        {/* Draggable Stats Cards */}
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="earnings-cards" direction="horizontal">
+            {(provided) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+              >
+                {cards.map((card, index) => (
+                  <Draggable key={card.id} draggableId={card.id} index={index}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className={`transition-all duration-200 ${
+                          snapshot.isDragging ? 'scale-105 rotate-2 shadow-lg' : ''
+                        }`}
+                      >
+                        {renderCard(card, index)}
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
               </div>
-              <p className="text-xs text-muted-foreground">
-                From all sessions
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Earnings Summary Card with Toggle */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Earnings Summary</CardTitle>
-              <div className="flex items-center gap-2">
-                <Coins className="h-4 w-4 text-green-600" />
-                <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
-                  <button
-                    onClick={() => setEarningsView('week')}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      earningsView === 'week'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Week
-                  </button>
-                  <button
-                    onClick={() => setEarningsView('month')}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      earningsView === 'month'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Month
-                  </button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(
-                  earningsView === 'week' 
-                    ? earnings?.thisWeekEarnings || 0
-                    : earnings?.thisMonthEarnings || 0, 
-                  tutorCurrency
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {earningsView === 'week' ? 'Earned This Week' : 'Earned This Month'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Sessions This Month</CardTitle>
-              <Calendar className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {earnings?.thisMonthSessions || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Current month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Students</CardTitle>
-              <Users className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
-                {earnings?.activeStudents || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Last 30 days
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </Droppable>
+        </DragDropContext>
 
         {/* Earnings by Student Table */}
         <Card>
