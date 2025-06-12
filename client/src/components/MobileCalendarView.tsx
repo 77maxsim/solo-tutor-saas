@@ -60,10 +60,12 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
     setCurrentDate(newDate);
   };
 
-  // Time slots from 6 AM to 10 PM
-  const timeSlots = Array.from({ length: 16 }, (_, i) => {
-    const hour = 6 + i;
-    return `${hour.toString().padStart(2, '0')}:00`;
+  // Time slots from 6 AM to 10 PM in 30-minute increments
+  const timeSlots = Array.from({ length: 32 }, (_, i) => {
+    const totalMinutes = 6 * 60 + (i * 30); // Start at 6 AM, increment by 30 minutes
+    const hour = Math.floor(totalMinutes / 60);
+    const minute = totalMinutes % 60;
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   });
 
   const handleAddSession = (date: Date, time: string) => {
@@ -108,8 +110,8 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
 
         <div className="max-h-[500px] overflow-y-auto">
           {timeSlots.map((time, timeIndex) => (
-            <div key={time} className="grid border-b last:border-b-0 min-h-[40px]" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
-              <div className="p-2 text-xs text-gray-500 border-r bg-gray-50 flex items-center justify-center">
+            <div key={time} className="grid border-b last:border-b-0 min-h-[30px]" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+              <div className="p-1 text-xs text-gray-500 border-r bg-gray-50 flex items-center justify-center">
                 <span className="font-medium">{time}</span>
               </div>
               {weekDays.map((day, dayIndex) => {
@@ -137,14 +139,14 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
                 const isOccupied = occupyingSession && !sessionAtTime;
 
                 return (
-                  <div key={dayIndex} className="relative border-r last:border-r-0 p-0.5 bg-white hover:bg-gray-50 min-h-[38px] min-w-0">
+                  <div key={dayIndex} className="relative border-r last:border-r-0 p-0.5 bg-white hover:bg-gray-50 min-h-[28px] min-w-0">
                     {sessionAtTime ? (
                       <div
                         className="absolute top-0.5 left-0.5 right-0.5 rounded text-white cursor-pointer hover:opacity-80 transition-opacity px-1 py-1 flex flex-col justify-center overflow-hidden z-10"
                         onClick={() => onSelectEvent(sessionAtTime)}
                         style={{ 
                           backgroundColor: sessionAtTime.color || '#3b82f6',
-                          height: `${Math.max(30, (sessionAtTime.duration / 30) * 38)}px`
+                          height: `${Math.max(26, (sessionAtTime.duration / 30) * 28)}px`
                         }}
                       >
                         <div className="text-xs font-medium truncate leading-tight w-full text-center">
