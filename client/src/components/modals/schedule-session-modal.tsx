@@ -462,10 +462,10 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col">
-        <DialogHeader className="shrink-0">
-          <DialogTitle>Schedule a Session</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-[425px] max-h-[95vh] w-[95vw] sm:w-full flex flex-col p-4 sm:p-6">
+        <DialogHeader className="shrink-0 pb-2">
+          <DialogTitle className="text-lg">Schedule a Session</DialogTitle>
+          <DialogDescription className="text-sm">
             Fill out the details below to schedule a new tutoring session.
           </DialogDescription>
         </DialogHeader>
@@ -845,16 +845,17 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
             </div>
             </div>
 
-            <DialogFooter className="shrink-0">
+            <DialogFooter className="shrink-0 pt-3 gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleCancel}
                 disabled={isSubmitting}
+                className="flex-1 sm:flex-none"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="flex-1 sm:flex-none">
                 {isSubmitting ? "Scheduling..." : "Schedule Session"}
               </Button>
             </DialogFooter>
