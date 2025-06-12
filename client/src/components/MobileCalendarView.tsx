@@ -45,7 +45,11 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
 
   // Get sessions for a specific date
   const getSessionsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    // Use local date string to avoid timezone issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
     return sessions.filter(session => session.date === dateStr);
   };
 
@@ -140,14 +144,11 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
                         onClick={() => onSelectEvent(sessionAtTime)}
                         style={{ 
                           backgroundColor: sessionAtTime.color || '#3b82f6',
-                          height: `${Math.max(30, (sessionAtTime.duration / 60) * 40)}px`
+                          height: `${Math.max(30, (sessionAtTime.duration / 30) * 38)}px`
                         }}
                       >
-                        <div className="text-xs font-medium truncate leading-tight mb-0.5 w-full">
+                        <div className="text-xs font-medium truncate leading-tight w-full text-center">
                           {sessionAtTime.student_name.split(' ')[0]}
-                        </div>
-                        <div className="text-xs opacity-90 leading-tight truncate w-full">
-                          {sessionAtTime.duration}min
                         </div>
                       </div>
                     ) : isOccupied ? (
