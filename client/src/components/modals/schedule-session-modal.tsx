@@ -43,6 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { TimePicker } from "@/components/ui/time-picker";
+import { triggerSuccessConfetti } from "@/lib/confetti";
 
 const scheduleSessionSchema = z.object({
   studentId: z.string().min(1, "Please select a student"),
@@ -103,6 +104,8 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
 
   // Track which fields user has manually modified to prevent overwriting
   const [userModifiedFields, setUserModifiedFields] = useState<Set<string>>(new Set());
+
+
 
   // Fetch tutor's currency preference
   const { data: tutorCurrency = 'USD' } = useQuery({
@@ -402,10 +405,12 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         return;
       }
 
-      // Success - show success message and reset form
+      // Success - trigger confetti celebration and show success message
+      triggerSuccessConfetti();
+      
       const sessionCount = sessionsToInsert.length;
       toast({
-        title: "Success",
+        title: "🎉 Success!",
         description: sessionCount > 1 
           ? `${sessionCount} sessions scheduled successfully!`
           : "Session scheduled successfully!",
@@ -416,8 +421,16 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
 
       console.log("Session created:", insertedData);
-      form.reset();
-      onOpenChange(false);
+      
+      // Reset form and close modal after a brief delay to let confetti show
+      setTimeout(() => {
+        form.reset();
+        setUserModifiedFields(new Set());
+        setShowAddStudent(false);
+        setNewStudentName("");
+        setShowNotes(false);
+        onOpenChange(false);
+      }, 500);
 
     } catch (error) {
       console.error('Error submitting form:', error);
