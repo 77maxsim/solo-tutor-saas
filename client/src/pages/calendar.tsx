@@ -44,6 +44,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import MobileCalendarView from "@/components/MobileCalendarView";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const localizer = momentLocalizer(moment);
 
@@ -93,6 +95,7 @@ interface CalendarEvent {
 }
 
 export default function Calendar() {
+  const isMobile = useIsMobile();
   const [calendarView, setCalendarView] = useState<'week' | 'month'>('week');
   const [selectedStudent, setSelectedStudent] = useState<string>('all');
   const [selectedSession, setSelectedSession] = useState<SessionWithStudent | null>(null);
@@ -1394,48 +1397,65 @@ export default function Calendar() {
             </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
-            <div className="calendar-container h-[500px] sm:h-[600px] lg:h-[700px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-              <DndProvider backend={HTML5Backend}>
-                <DragAndDropCalendar
-                  localizer={localizer}
-                  events={events}
-                  startAccessor={(event: any) => event.start}
-                  endAccessor={(event: any) => event.end}
-                  defaultView={calendarView === 'week' ? Views.WEEK : Views.MONTH}
-                  view={calendarView === 'week' ? Views.WEEK : Views.MONTH}
-                  date={currentDate}
-                  onNavigate={(date: Date) => setCurrentDate(date)}
-                  onView={(view: any) => setCalendarView(view === Views.WEEK ? 'week' : 'month')}
-                  onSelectEvent={(event: any) => handleSelectEvent(event)}
-                  onSelectSlot={handleSelectSlot}
-                  onEventDrop={(args: any) => handleEventDrop(args)}
-                  onEventResize={(args: any) => handleEventResize(args)}
-                  selectable
-                  resizable
-                  draggableAccessor={() => true}
-                  views={[Views.WEEK, Views.MONTH]}
-                  step={30}
-                  timeslots={2}
-                  showMultiDayTimes
-                  eventPropGetter={(event: any) => eventStyleGetter(event)}
-                  toolbar={false}
-                  popup={true}
-                  style={{ height: '100%' }}
-                  components={{
-                    toolbar: () => null,
-                    event: (props: any) => <EventComponent event={props.event} />,
-                  }}
-                  formats={{
-                    eventTimeRangeFormat: () => '',
-                    eventTimeRangeStartFormat: () => '',
-                    eventTimeRangeEndFormat: () => '',
-                    selectRangeFormat: () => '',
-                    dayFormat: 'dddd M/D',
-                    timeGutterFormat: 'h:mm A',
-                  }}
-                />
-              </DndProvider>
-            </div>
+            {isMobile ? (
+              <MobileCalendarView
+                sessions={sessions || []}
+                onSelectSlot={(date: Date) => handleSelectSlot({ start: date, end: date })}
+                onSelectEvent={(session: SessionWithStudent) => {
+                  const calendarEvent = {
+                    id: session.id,
+                    title: session.student_name,
+                    start: new Date(`${session.date}T${session.time}`),
+                    end: new Date(new Date(`${session.date}T${session.time}`).getTime() + session.duration * 60000),
+                    resource: session
+                  };
+                  handleSelectEvent(calendarEvent);
+                }}
+              />
+            ) : (
+              <div className="calendar-container h-[500px] sm:h-[600px] lg:h-[700px] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                <DndProvider backend={HTML5Backend}>
+                  <DragAndDropCalendar
+                    localizer={localizer}
+                    events={events}
+                    startAccessor={(event: any) => event.start}
+                    endAccessor={(event: any) => event.end}
+                    defaultView={calendarView === 'week' ? Views.WEEK : Views.MONTH}
+                    view={calendarView === 'week' ? Views.WEEK : Views.MONTH}
+                    date={currentDate}
+                    onNavigate={(date: Date) => setCurrentDate(date)}
+                    onView={(view: any) => setCalendarView(view === Views.WEEK ? 'week' : 'month')}
+                    onSelectEvent={(event: any) => handleSelectEvent(event)}
+                    onSelectSlot={handleSelectSlot}
+                    onEventDrop={(args: any) => handleEventDrop(args)}
+                    onEventResize={(args: any) => handleEventResize(args)}
+                    selectable
+                    resizable
+                    draggableAccessor={() => true}
+                    views={[Views.WEEK, Views.MONTH]}
+                    step={30}
+                    timeslots={2}
+                    showMultiDayTimes
+                    eventPropGetter={(event: any) => eventStyleGetter(event)}
+                    toolbar={false}
+                    popup={true}
+                    style={{ height: '100%' }}
+                    components={{
+                      toolbar: () => null,
+                      event: (props: any) => <EventComponent event={props.event} />,
+                    }}
+                    formats={{
+                      eventTimeRangeFormat: () => '',
+                      eventTimeRangeStartFormat: () => '',
+                      eventTimeRangeEndFormat: () => '',
+                      selectRangeFormat: () => '',
+                      dayFormat: 'dddd M/D',
+                      timeGutterFormat: 'h:mm A',
+                    }}
+                  />
+                </DndProvider>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
