@@ -512,17 +512,22 @@ export default function Students() {
 
   return (
     <div className="flex-1 overflow-auto">
-      {/* Header */}
-      <header className="bg-white border-b border-border px-6 py-4">
+      {/* Header with Enhanced Styling */}
+      <header className="bg-white border-b border-border px-6 py-4 animate-fade-in">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">🧑‍🎓 Students</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+          <div className="animate-slide-up">
+            <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2 hover:text-primary transition-colors duration-200">
+              🧑‍🎓 Students
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
               Manage your student profiles and session history.
             </p>
           </div>
-          <Button onClick={() => setIsAddStudentOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
+          <Button 
+            onClick={() => setIsAddStudentOpen(true)}
+            className="hover-lift click-scale bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200 animate-scale-in"
+          >
+            <Plus className="w-4 h-4 mr-2 animate-bounce-subtle" />
             Add Student
           </Button>
         </div>

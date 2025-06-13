@@ -90,58 +90,72 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
   };
 
   return (
-    <div className="flex h-full w-64 flex-col bg-white border-r border-border">
-      {/* Logo/Brand Header */}
-      <div className="flex items-center gap-3 px-6 py-6 border-b border-border">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <GraduationCap className="h-4 w-4 text-primary-foreground" />
+    <div className="flex h-full w-64 flex-col bg-white border-r border-border animate-slide-up">
+      {/* Logo/Brand Header with Hover Effect */}
+      <div className="flex items-center gap-3 px-6 py-6 border-b border-border hover-lift cursor-pointer group">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 group-hover:scale-110 transition-all duration-300 animate-pulse-glow">
+          <GraduationCap className="h-4 w-4 text-white group-hover:animate-bounce-subtle" />
         </div>
-        <span className="text-xl font-bold text-foreground">TutorTrack</span>
+        <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-200">TutorTrack</span>
       </div>
 
-      {/* Navigation Menu */}
+      {/* Navigation Menu with Enhanced Interactions */}
       <nav className="flex-1 space-y-2 px-4 py-6">
-        {navigation.map((item) => {
+        {navigation.map((item, index) => {
           const isActive = location === item.href;
           return (
             <Link key={item.name} href={item.href}>
               <div
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 group hover-lift relative overflow-hidden",
+                  "animate-slide-up",
                   isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-md"
                 )}
+                style={{animationDelay: `${index * 0.1}s`}}
               >
-                <item.icon className="h-4 w-4" />
-                {item.name}
+                <item.icon className={cn(
+                  "h-4 w-4 transition-all duration-300",
+                  isActive ? "animate-bounce-subtle" : "group-hover:scale-110"
+                )} />
+                <span className="group-hover:translate-x-1 transition-transform duration-200">
+                  {item.name}
+                </span>
+                {isActive && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 animate-pulse" />
+                )}
               </div>
             </Link>
           );
         })}
 
-        <Separator className="my-6" />
+        <Separator className="my-6 animate-fade-in" style={{animationDelay: '0.5s'}} />
 
-        {/* Quick Actions */}
-        <div className="space-y-2">
-          <Button onClick={handleScheduleSession} className="w-full">
-            <Plus className="h-4 w-4 mr-2" />
+        {/* Quick Actions with Enhanced Styling */}
+        <div className="space-y-2 animate-slide-up" style={{animationDelay: '0.6s'}}>
+          <Button 
+            onClick={handleScheduleSession} 
+            className="w-full hover-lift click-scale bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            <Plus className="h-4 w-4 mr-2 animate-bounce-subtle" />
             Schedule Session
           </Button>
         </div>
       </nav>
 
-      {/* User Profile Section */}
-      <div className="border-t border-border p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <Avatar className="h-10 w-10">
+      {/* User Profile Section with Micro-interactions */}
+      <div className="border-t border-border p-4 animate-fade-in" style={{animationDelay: '0.8s'}}>
+        <div className="flex items-center gap-3 mb-3 group hover-lift cursor-pointer p-2 rounded-lg transition-all duration-200 hover:bg-accent/50">
+          <Avatar className="h-10 w-10 hover-scale transition-all duration-300 group-hover:shadow-lg">
             {tutorProfile?.avatar_url ? (
               <AvatarImage 
                 src={tutorProfile.avatar_url} 
                 alt={tutorProfile.full_name || "Profile"} 
+                className="transition-all duration-300"
               />
             ) : null}
-            <AvatarFallback>
+            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white font-semibold">
               {tutorProfile?.full_name 
                 ? tutorProfile.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
                 : 'TU'
@@ -149,10 +163,10 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
+            <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors duration-200">
               {tutorProfile?.full_name || 'Tutor'}
             </p>
-            <p className="text-xs text-muted-foreground truncate">
+            <p className="text-xs text-muted-foreground truncate group-hover:text-muted-foreground/80 transition-colors duration-200">
               {tutorProfile?.email || 'TutorTrack User'}
             </p>
           </div>
@@ -162,9 +176,9 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full text-xs justify-start"
+              className="w-full text-xs justify-start hover-lift click-scale group transition-all duration-200 hover:bg-blue-50 hover:text-blue-700"
             >
-              <Settings className="h-3 w-3 mr-2" />
+              <Settings className="h-3 w-3 mr-2 group-hover:rotate-90 transition-transform duration-300" />
               Profile Settings
             </Button>
           </Link>

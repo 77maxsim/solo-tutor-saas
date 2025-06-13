@@ -1177,7 +1177,7 @@ export default function Calendar() {
     };
   };
 
-  // Custom event component with enhanced tooltip
+  // Enhanced event component with micro-interactions
   const EventComponent = ({ event }: { event: CalendarEvent }) => {
     const { student_name, duration, time, rate, date, created_at, notes } = event.resource;
     const startTime = new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1194,27 +1194,35 @@ export default function Calendar() {
 
     const tooltipText = `${student_name}${isLoggedLate ? ' (Logged Late)' : ''}\n${startTime} - ${duration} min\nRate: ${formatCurrency(rate, tutorCurrency)}/hr\nEarning: ${formatCurrency(earning, tutorCurrency)}${hasNotes ? '\nHas notes' : ''}`;
 
-    // For very short sessions, return just the name to avoid display issues
+    // For very short sessions, return enhanced compact view
     if (duration <= 30) {
       return (
-        <span title={tooltipText} className="text-white font-medium text-xs flex items-center gap-1">
-          {student_name}
-          {isLoggedLate && " ⚠"}
-          {hasNotes && " 📄"}
+        <span 
+          title={tooltipText} 
+          className="text-white font-medium text-xs flex items-center gap-1 hover:scale-105 transition-transform duration-200 cursor-pointer group p-1 rounded"
+        >
+          <span className="group-hover:animate-bounce-subtle">{student_name}</span>
+          {isLoggedLate && <span className="animate-pulse text-yellow-300">⚠</span>}
+          {hasNotes && <span className="group-hover:animate-wiggle">📄</span>}
         </span>
       );
     }
 
     return (
-      <div title={tooltipText} className="calendar-event-content">
-        <div className="calendar-event-title flex items-center gap-1">
-          {student_name}
-          {isLoggedLate && <span className="text-xs">⚠</span>}
-          {hasNotes && <span className="text-xs">📄</span>}
+      <div 
+        title={tooltipText} 
+        className="calendar-event-content group hover:scale-105 transition-all duration-200 cursor-pointer p-2 rounded h-full"
+      >
+        <div className="calendar-event-title flex items-center gap-1 group-hover:text-white/90">
+          <span className="group-hover:animate-bounce-subtle font-semibold">{student_name}</span>
+          {isLoggedLate && <span className="text-xs animate-pulse text-yellow-300">⚠</span>}
+          {hasNotes && <span className="text-xs group-hover:animate-wiggle">📄</span>}
         </div>
-        <div className="calendar-event-details">
-          {duration}min • {formatCurrency(rate, tutorCurrency)}
+        <div className="calendar-event-details text-xs opacity-90 group-hover:opacity-100 transition-opacity duration-200">
+          <span className="group-hover:font-medium">{duration}min</span> • 
+          <span className="group-hover:font-medium ml-1">{formatCurrency(rate, tutorCurrency)}</span>
         </div>
+        <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-all duration-200 rounded pointer-events-none" />
       </div>
     );
   };
