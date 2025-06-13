@@ -1541,15 +1541,11 @@ export default function Calendar() {
         </Dialog>
         
         {/* Schedule Session Modal */}
-        <SessionDetailsModal
-          open={showSessionDetailsModal}
-          onOpenChange={setShowSessionDetailsModal}
-          session={sessionForDetails}
-          onEdit={handleEditSession}
-          onEditSeries={handleEditSeries}
-          onCancel={handleCancelSession}
-          onCancelSeries={handleCancelSeries}
-          currency={tutorCurrency}
+        <ScheduleSessionModal
+          open={showScheduleSessionModal}
+          onOpenChange={setShowScheduleSessionModal}
+          selectedDate={selectedDate}
+          selectedTime={selectedTime}
         />
       </div>
     );
@@ -1865,6 +1861,14 @@ export default function Calendar() {
           setTimeout(() => setPreventSlotSelection(false), 100);
         }}
         session={sessionForDetails}
+      />
+
+      {/* Schedule Session Modal */}
+      <ScheduleSessionModal
+        open={showScheduleSessionModal}
+        onOpenChange={setShowScheduleSessionModal}
+        selectedDate={selectedDate}
+        selectedTime={selectedTime}
       />
     </div>
   );
