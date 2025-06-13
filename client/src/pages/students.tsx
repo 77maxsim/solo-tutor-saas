@@ -563,14 +563,18 @@ export default function Students() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {studentSummaries.map((student) => (
-                    <TableRow key={student.name} className="group hover:bg-accent/50 transition-colors">
+                  {studentSummaries.map((student, index) => (
+                    <TableRow 
+                      key={student.name} 
+                      className="group hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-300 hover:shadow-md hover-lift animate-fade-in"
+                      style={{animationDelay: `${index * 0.1}s`}}
+                    >
                       <TableCell>
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => handleEditAvatar(student)}
-                              className="h-10 w-10 rounded-full hover:opacity-80 transition-opacity cursor-pointer"
+                              className="h-10 w-10 rounded-full hover-scale transition-all duration-300 cursor-pointer group-hover:shadow-lg hover:ring-2 hover:ring-blue-200"
                               title="Click to edit avatar"
                             >
                               {(() => {
@@ -682,22 +686,33 @@ export default function Students() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditStudent(student)}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 hover-scale click-scale transition-all duration-200 hover:shadow-md"
+                            title="Edit student details"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4 hover:rotate-12 transition-transform duration-200" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewHistory(student)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50 hover-scale click-scale transition-all duration-200 hover:shadow-md"
+                            title="View session history"
+                          >
+                            <Calendar className="h-4 w-4 hover:animate-bounce-subtle transition-transform duration-200" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteStudent(student.name)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 hover-scale click-scale transition-all duration-200 hover:shadow-md"
+                            title="Delete student"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 hover:animate-wiggle transition-transform duration-200" />
                           </Button>
                         </div>
                       </TableCell>
