@@ -637,14 +637,7 @@ export default function Students() {
                             </div>
                           </div>
                           
-                          {/* Class History Button - appears on hover */}
-                          <button
-                            onClick={() => handleViewHistory(student)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 px-3 py-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary text-sm font-medium"
-                            title="View session history"
-                          >
-                            📅 Class History
-                          </button>
+
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
