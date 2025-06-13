@@ -107,27 +107,33 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
 
 
 
-  // Fetch tutor's currency preference
-  const { data: tutorCurrency = 'USD' } = useQuery({
-    queryKey: ['tutor-currency'],
+  // Fetch tutor's currency and time format preferences
+  const { data: tutorPreferences = { currency: 'USD', time_format: '24h' } } = useQuery({
+    queryKey: ['tutor-preferences'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
         .from('tutors')
-        .select('currency')
+        .select('currency, time_format')
         .eq('user_id', user.id)
         .single();
 
       if (error) {
-        console.error('Error fetching tutor currency:', error);
-        return 'USD'; // Fallback to USD
+        console.error('Error fetching tutor preferences:', error);
+        return { currency: 'USD', time_format: '24h' };
       }
 
-      return data?.currency || 'USD';
+      return {
+        currency: data?.currency || 'USD',
+        time_format: data?.time_format || '24h'
+      };
     },
   });
+
+  const tutorCurrency = tutorPreferences.currency;
+  const timeFormat = tutorPreferences.time_format;
 
   // Fetch students from Supabase for current user
   const { data: students, isLoading: studentsLoading } = useQuery({
