@@ -10,9 +10,10 @@ interface TimePickerProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  timeFormat?: '24h' | '12h';
 }
 
-export function TimePicker({ value, onChange, placeholder = "Select time", className }: TimePickerProps) {
+export function TimePicker({ value, onChange, placeholder = "Select time", className, timeFormat = '12h' }: TimePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [selectedHour, setSelectedHour] = React.useState(12);
   const [selectedMinute, setSelectedMinute] = React.useState(0);
@@ -22,14 +23,19 @@ export function TimePicker({ value, onChange, placeholder = "Select time", class
   React.useEffect(() => {
     if (value) {
       const [hours, minutes] = value.split(':').map(Number);
-      const period = hours >= 12 ? 'PM' : 'AM';
-      const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-
-      setSelectedHour(displayHours);
-      setSelectedMinute(minutes);
-      setSelectedPeriod(period);
+      
+      if (timeFormat === '24h') {
+        setSelectedHour(hours);
+        setSelectedMinute(minutes);
+      } else {
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+        setSelectedHour(displayHours);
+        setSelectedMinute(minutes);
+        setSelectedPeriod(period);
+      }
     }
-  }, [value]);
+  }, [value, timeFormat]);
 
   const formatTime = (hours: number, minutes: number, period: 'AM' | 'PM') => {
     const hour24 = period === 'AM' 
@@ -42,9 +48,14 @@ export function TimePicker({ value, onChange, placeholder = "Select time", class
   const formatDisplayTime = (timeStr: string) => {
     if (!timeStr) return '';
     const [hours, minutes] = timeStr.split(':').map(Number);
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    
+    if (timeFormat === '24h') {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    } else {
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+      return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    }
   };
 
   const handleTimeChange = (newHours?: number, newMinutes?: number, newPeriod?: 'AM' | 'PM') => {
@@ -56,12 +67,20 @@ export function TimePicker({ value, onChange, placeholder = "Select time", class
     setSelectedMinute(minutes);
     setSelectedPeriod(period);
 
-    const formattedTime = formatTime(hours, minutes, period);
-    onChange(formattedTime);
+    if (timeFormat === '24h') {
+      // For 24h format, hours is already in 24h format
+      const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      onChange(formattedTime);
+    } else {
+      const formattedTime = formatTime(hours, minutes, period);
+      onChange(formattedTime);
+    }
   };
 
-  // Generate hour options (1-12)
-  const hourOptions = Array.from({ length: 12 }, (_, i) => i + 1);
+  // Generate hour options based on format
+  const hourOptions = timeFormat === '24h' 
+    ? Array.from({ length: 24 }, (_, i) => i) // 0-23 for 24h
+    : Array.from({ length: 12 }, (_, i) => i + 1); // 1-12 for 12h
 
   // Generate minute options (0-59)
   const minuteOptions = Array.from({ length: 60 }, (_, i) => i);
@@ -87,12 +106,15 @@ export function TimePicker({ value, onChange, placeholder = "Select time", class
           <div className="text-center">
             <h3 className="font-semibold">Select Time</h3>
             <div className="text-2xl font-bold text-primary mt-2">
-              {selectedHour}:{selectedMinute.toString().padStart(2, '0')} {selectedPeriod}
+              {timeFormat === '24h' 
+                ? `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`
+                : `${selectedHour}:${selectedMinute.toString().padStart(2, '0')} ${selectedPeriod}`
+              }
             </div>
           </div>
 
           {/* Time Controls */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className={`grid gap-3 ${timeFormat === '24h' ? 'grid-cols-2' : 'grid-cols-3'}`}>
             {/* Hour */}
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground">Hour</label>
@@ -103,7 +125,7 @@ export function TimePicker({ value, onChange, placeholder = "Select time", class
               >
                 {hourOptions.map((hour) => (
                   <option key={hour} value={hour}>
-                    {hour}
+                    {timeFormat === '24h' ? hour.toString().padStart(2, '0') : hour}
                   </option>
                 ))}
               </select>
@@ -125,18 +147,20 @@ export function TimePicker({ value, onChange, placeholder = "Select time", class
               </select>
             </div>
 
-            {/* Period */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Period</label>
-              <select
-                value={selectedPeriod}
-                onChange={(e) => handleTimeChange(undefined, undefined, e.target.value as 'AM' | 'PM')}
-                className="w-full p-2 border rounded-md text-sm"
-              >
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
-            </div>
+            {/* Period - only show for 12h format */}
+            {timeFormat === '12h' && (
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Period</label>
+                <select
+                  value={selectedPeriod}
+                  onChange={(e) => handleTimeChange(undefined, undefined, e.target.value as 'AM' | 'PM')}
+                  className="w-full p-2 border rounded-md text-sm"
+                >
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Quick Actions */}

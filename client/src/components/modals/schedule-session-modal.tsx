@@ -44,6 +44,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { TimePicker } from "@/components/ui/time-picker";
 import { triggerSuccessConfetti, triggerStudentConfetti } from "@/lib/confetti";
+import { formatTimeDisplay, parseTimeInput, generateTimeOptions } from "@/lib/timeFormat";
 
 const scheduleSessionSchema = z.object({
   studentId: z.string().min(1, "Please select a student"),
