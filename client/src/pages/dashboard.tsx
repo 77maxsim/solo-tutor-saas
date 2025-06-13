@@ -8,6 +8,7 @@ import { ExpectedEarnings } from "@/components/dashboard/expected-earnings";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
@@ -387,13 +388,29 @@ export default function Dashboard() {
       {/* Header - Hidden on mobile since we have MobileHeader */}
       <header className="hidden md:block bg-white border-b border-border px-4 sm:px-6 py-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
-              Welcome back, {tutorInfo?.full_name || 'Tutor'}!
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Here's what's happening with your tutoring business today.
-            </p>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-12 w-12">
+              {tutorInfo?.avatar_url ? (
+                <AvatarImage 
+                  src={tutorInfo.avatar_url} 
+                  alt={tutorInfo.full_name || "Profile"} 
+                />
+              ) : null}
+              <AvatarFallback>
+                {tutorInfo?.full_name 
+                  ? tutorInfo.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
+                  : 'TU'
+                }
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
+                Welcome back, {tutorInfo?.full_name || 'Tutor'}!
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Here's what's happening with your tutoring business today.
+              </p>
+            </div>
           </div>
           <Button onClick={handleScheduleSession} size="sm">
             <Plus className="w-4 h-4 mr-2" />

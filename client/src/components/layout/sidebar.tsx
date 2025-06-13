@@ -1,8 +1,9 @@
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -31,6 +32,28 @@ interface SidebarProps {
 export function Sidebar({ onScheduleSession }: SidebarProps) {
   const [location] = useLocation();
   const { toast } = useToast();
+
+  // Fetch tutor profile data including avatar
+  const { data: tutorProfile } = useQuery({
+    queryKey: ['tutor-profile-sidebar'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('tutors')
+        .select('id, full_name, email, avatar_url')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching tutor profile:', error);
+        throw error;
+      }
+
+      return data;
+    },
+  });
 
   const handleScheduleSession = () => {
     if (onScheduleSession) {
@@ -112,14 +135,25 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
       <div className="border-t border-border p-4">
         <div className="flex items-center gap-3 mb-3">
           <Avatar className="h-10 w-10">
-            <AvatarFallback>TU</AvatarFallback>
+            {tutorProfile?.avatar_url ? (
+              <AvatarImage 
+                src={tutorProfile.avatar_url} 
+                alt={tutorProfile.full_name || "Profile"} 
+              />
+            ) : null}
+            <AvatarFallback>
+              {tutorProfile?.full_name 
+                ? tutorProfile.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
+                : 'TU'
+              }
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">
-              Tutor
+              {tutorProfile?.full_name || 'Tutor'}
             </p>
             <p className="text-xs text-muted-foreground truncate">
-              TutorTrack User
+              {tutorProfile?.email || 'TutorTrack User'}
             </p>
           </div>
         </div>
