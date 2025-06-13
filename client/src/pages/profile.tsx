@@ -93,43 +93,28 @@ export default function Profile() {
 
       setIsUploadingAvatar(true);
 
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/avatar.${fileExt}`;
-      
       console.log('User ID for upload:', user.id);
-      console.log('Upload path:', filePath);
 
-      const { error: uploadError } = await supabase.storage
-        .from('tutor-avatars')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true,
-        });
+      // Create FormData for multipart upload
+      const formData = new FormData();
+      formData.append('avatar', file);
+      formData.append('userId', user.id);
 
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        throw uploadError;
+      // Upload through backend API
+      const response = await fetch('/api/upload/avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
       }
 
-      const { data } = supabase.storage
-        .from('tutor-avatars')
-        .getPublicUrl(filePath);
-      const publicUrl = data?.publicUrl;
+      const result = await response.json();
+      console.log('Upload successful:', result);
 
-      console.log('Generated public URL:', publicUrl);
-
-      // Update tutor profile with avatar_url
-      const { error: updateError } = await supabase
-        .from('tutors')
-        .update({ avatar_url: publicUrl })
-        .eq('user_id', user.id);
-
-      if (updateError) {
-        console.error('Database update error:', updateError);
-        throw updateError;
-      }
-
-      return publicUrl;
+      return result.avatarUrl;
     },
     onSuccess: (avatarUrl) => {
       toast({
