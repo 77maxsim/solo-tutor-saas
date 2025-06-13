@@ -626,6 +626,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                         handleFieldChange('time');
                       }}
                       placeholder="Select time"
+                      timeFormat={timeFormat}
                     />
                   </FormControl>
                   <FormMessage />
