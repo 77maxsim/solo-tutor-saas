@@ -1,9 +1,91 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { createClient } from "@supabase/supabase-js";
+import multer from "multer";
 import { storage } from "./storage";
 import { insertStudentSchema, insertSessionSchema, insertPaymentSchema } from "@shared/schema";
 
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Avatar upload endpoint
+  app.post("/api/upload/avatar", upload.single('avatar'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+
+      // Get file extension from original filename
+      const fileExt = req.file.originalname.split('.').pop();
+      const filePath = `${userId}/avatar.${fileExt}`;
+
+      console.log('Backend upload - User ID:', userId);
+      console.log('Backend upload - File path:', filePath);
+
+      // Upload to Supabase Storage using service role (bypasses RLS)
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('tutor-avatars')
+        .upload(filePath, req.file.buffer, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: req.file.mimetype
+        });
+
+      if (uploadError) {
+        console.error('Backend upload error:', uploadError);
+        return res.status(500).json({ error: "Upload failed", details: uploadError });
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('tutor-avatars')
+        .getPublicUrl(filePath);
+
+      console.log('Backend upload successful, public URL:', publicUrl);
+
+      // Update tutor profile with avatar_url
+      const { error: updateError } = await supabase
+        .from('tutors')
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', userId);
+
+      if (updateError) {
+        console.error('Database update error:', updateError);
+        return res.status(500).json({ error: "Failed to update profile", details: updateError });
+      }
+
+      res.json({ 
+        success: true, 
+        avatarUrl: publicUrl,
+        message: "Avatar uploaded successfully" 
+      });
+
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Dashboard stats endpoint
   app.get("/api/dashboard/stats/:tutorId", async (req, res) => {
     try {
