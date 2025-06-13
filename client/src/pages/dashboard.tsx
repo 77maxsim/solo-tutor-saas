@@ -120,13 +120,17 @@ export default function Dashboard() {
 
       const { data, error } = await supabase
         .from('tutors')
-        .select('full_name, currency')
+        .select('full_name, currency, avatar_url')
         .eq('user_id', user.id)
         .single();
 
       if (error) {
         console.error('Error fetching tutor info:', error);
-        return { full_name: user.email?.split('@')[0] || 'Tutor', currency: 'USD' };
+        return { 
+          full_name: user.email?.split('@')[0] || 'Tutor', 
+          currency: 'USD', 
+          avatar_url: null as string | null 
+        };
       }
 
       return data;
