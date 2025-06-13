@@ -23,7 +23,7 @@ import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { Calendar as BigCalendarBase, momentLocalizer, Views } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { Plus, Calendar as CalendarIcon, Filter, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Filter, Edit, Trash2, ChevronLeft, ChevronRight, Maximize, Minimize } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -105,8 +105,27 @@ export default function Calendar() {
   const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [preventSlotSelection, setPreventSlotSelection] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Handle escape key for exiting full screen
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isFullScreen) {
+        setIsFullScreen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isFullScreen]);
+
+  const toggleFullScreen = () => {
+    setIsFullScreen(!isFullScreen);
+  };
 
   // Fetch tutor's currency preference
   const { data: tutorCurrency = 'USD' } = useQuery({
@@ -1277,6 +1296,266 @@ export default function Calendar() {
     );
   }
 
+  // Full screen layout
+  if (isFullScreen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 flex flex-col">
+        {/* Full Screen Calendar Header */}
+        <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">📅 Calendar</h1>
+              
+              {/* View Toggle in Full Screen */}
+              <div className="flex bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden p-1">
+                <Button
+                  variant={calendarView === 'week' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                    calendarView === 'week'
+                      ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                  }`}
+                  onClick={() => setCalendarView('week')}
+                >
+                  Week
+                </Button>
+                <Button
+                  variant={calendarView === 'month' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                    calendarView === 'month'
+                      ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                  }`}
+                  onClick={() => setCalendarView('month')}
+                >
+                  Month
+                </Button>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={handleScheduleSession}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Schedule Session
+              </Button>
+              
+              {/* Exit Full Screen */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleFullScreen}
+                className="h-9 w-9 p-0"
+                title="Exit Full Screen"
+              >
+                <Minimize className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Week Navigation in Full Screen */}
+          {calendarView === 'week' && (
+            <div className="flex items-center justify-center gap-2 mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousWeek}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[180px] text-center">
+                {getWeekRange()}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextWeek}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToday}
+                className="ml-2 px-3 h-8 text-xs"
+              >
+                Today
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Full Screen Calendar Content */}
+        <div className="flex-1 p-4 overflow-hidden">
+          {isMobile ? (
+            <MobileCalendarView
+              sessions={sessions || []}
+              onSelectSlot={(date: Date) => handleSelectSlot({ start: date, end: date })}
+              onSelectEvent={(session: SessionWithStudent) => {
+                const calendarEvent = {
+                  id: session.id,
+                  title: session.student_name,
+                  start: new Date(`${session.date}T${session.time}`),
+                  end: new Date(new Date(`${session.date}T${session.time}`).getTime() + session.duration * 60000),
+                  resource: session
+                };
+                handleSelectEvent(calendarEvent);
+              }}
+            />
+          ) : (
+            <div className="calendar-container h-full bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+              <DndProvider backend={HTML5Backend}>
+                <DragAndDropCalendar
+                  localizer={localizer}
+                  events={events}
+                  startAccessor={(event: any) => event.start}
+                  endAccessor={(event: any) => event.end}
+                  defaultView={calendarView === 'week' ? Views.WEEK : Views.MONTH}
+                  view={calendarView === 'week' ? Views.WEEK : Views.MONTH}
+                  date={currentDate}
+                  onNavigate={(date: Date) => setCurrentDate(date)}
+                  onView={(view: any) => setCalendarView(view === Views.WEEK ? 'week' : 'month')}
+                  onSelectEvent={(event: any) => handleSelectEvent(event)}
+                  onSelectSlot={handleSelectSlot}
+                  onEventDrop={(args: any) => handleEventDrop(args)}
+                  onEventResize={(args: any) => handleEventResize(args)}
+                  selectable
+                  resizable
+                  draggableAccessor={() => true}
+                  views={[Views.WEEK, Views.MONTH]}
+                  step={15}
+                  timeslots={4}
+                  showMultiDayTimes
+                  eventPropGetter={(event: any) => eventStyleGetter(event)}
+                  toolbar={false}
+                  popup={true}
+                  style={{ height: '100%' }}
+                  components={{
+                    toolbar: () => null,
+                    event: (props: any) => <EventComponent event={props.event} />,
+                  }}
+                  formats={{
+                    eventTimeRangeFormat: () => '',
+                    eventTimeRangeStartFormat: () => '',
+                    eventTimeRangeEndFormat: () => '',
+                    selectRangeFormat: () => '',
+                    dayFormat: 'dddd M/D',
+                    timeGutterFormat: 'h:mm A',
+                  }}
+                />
+              </DndProvider>
+            </div>
+          )}
+        </div>
+        
+        {/* Session Details Modal */}
+        <Dialog open={showSessionModal} onOpenChange={handleModalOpenChange}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {modalView === 'details' ? 'Session Details' : 
+                 modalView === 'editSession' ? 'Edit Session' : 'Edit Recurring Series'}
+              </DialogTitle>
+            </DialogHeader>
+
+            {selectedSession && (
+              <div className="space-y-4">
+                {modalView === 'details' ? (
+                  <>
+                    <div className="space-y-2">
+                      <p><strong>Student:</strong> {selectedSession.student_name}</p>
+                      <p><strong>Date:</strong> {new Date(selectedSession.date).toLocaleDateString()}</p>
+                      <p><strong>Time:</strong> {selectedSession.time}</p>
+                      <p><strong>Duration:</strong> {selectedSession.duration} minutes</p>
+                      <p><strong>Rate:</strong> {formatCurrency(selectedSession.rate, tutorCurrency)}/hour</p>
+                      <p><strong>Earning:</strong> {formatCurrency(selectedSession.rate * selectedSession.duration / 60, tutorCurrency)}</p>
+                      {selectedSession.recurrence_id && (
+                        <p className="text-sm text-muted-foreground">
+                          <strong>Note:</strong> This is part of a recurring series
+                        </p>
+                      )}
+                    </div>
+
+                    <DialogFooter className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setModalView('editSession')}
+                        className="flex-1"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Session
+                      </Button>
+                      
+                      {selectedSession.recurrence_id && (
+                        <Button
+                          variant="outline"
+                          onClick={() => setModalView('editSeries')}
+                          className="flex-1"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Series
+                        </Button>
+                      )}
+                      
+                      <Button
+                        variant="destructive"
+                        onClick={handleCancelSession}
+                        disabled={deleteSessionMutation.isPending}
+                        className="flex-1"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {deleteSessionMutation.isPending ? "Canceling..." : "Cancel Session"}
+                      </Button>
+                      
+                      {selectedSession.recurrence_id && (
+                        <Button
+                          variant="destructive"
+                          onClick={handleCancelSeries}
+                          disabled={deleteSeriesMutation.isPending}
+                          className="flex-1"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          {deleteSeriesMutation.isPending ? "Canceling..." : "Cancel Series"}
+                        </Button>
+                      )}
+                    </DialogFooter>
+                  </>
+                ) : modalView === 'editSession' ? (
+                  <EditSessionForm />
+                ) : (
+                  <EditSeriesForm />
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+        
+        {/* Schedule Session Modal */}
+        <SessionDetailsModal
+          open={showSessionDetailsModal}
+          onOpenChange={setShowSessionDetailsModal}
+          session={sessionForDetails}
+          onEdit={handleEditSession}
+          onEditSeries={handleEditSeries}
+          onCancel={handleCancelSession}
+          onCancelSeries={handleCancelSeries}
+          currency={tutorCurrency}
+        />
+      </div>
+    );
+  }
+
+  // Normal layout
   return (
     <div className="flex-1 overflow-auto w-full">
       {/* Enhanced Header - Hidden on mobile since we have MobileHeader */}
@@ -1309,8 +1588,8 @@ export default function Calendar() {
                   {calendarView === 'week' ? 'Weekly Schedule' : 'Monthly Schedule'}
                 </CardTitle>
                 
-                {/* View Toggle */}
-                <div className="flex items-center gap-2 self-start sm:self-auto">
+                {/* View Toggle and Full Screen */}
+                <div className="flex items-center gap-3 self-start sm:self-auto">
                   <CalendarIcon className="h-4 w-4 text-gray-500 dark:text-gray-400 hidden sm:block" />
                   <div className="flex bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden p-1">
                     <Button
@@ -1338,6 +1617,21 @@ export default function Calendar() {
                       Month
                     </Button>
                   </div>
+                  
+                  {/* Full Screen Toggle */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleFullScreen}
+                    className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
+                  >
+                    {isFullScreen ? (
+                      <Minimize className="h-4 w-4" />
+                    ) : (
+                      <Maximize className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
               </div>
               
