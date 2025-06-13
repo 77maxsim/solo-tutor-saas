@@ -93,25 +93,30 @@ export default function Profile() {
 
       setIsUploadingAvatar(true);
 
-      // Upload file to Supabase Storage
+      // Upload file to Supabase Storage using user's UID as folder name
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
+      const filePath = `${user.id}/avatar.${fileExt}`;
+      
+      console.log('User ID for upload:', user.id);
+      console.log('Upload path:', filePath);
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('tutor-avatars')
-        .upload(fileName, file, { upsert: true });
+        .upload(filePath, file, { upsert: true });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
         throw uploadError;
       }
 
-      // Get public URL
+      // Get public URL using the same file path
       const { data: { publicUrl } } = supabase.storage
         .from('tutor-avatars')
-        .getPublicUrl(fileName);
+        .getPublicUrl(filePath);
 
-      // Update avatar_url in database
+      console.log('Generated public URL:', publicUrl);
+
+      // Update avatar_url in database using user_id (Supabase UID)
       const { error: updateError } = await supabase
         .from('tutors')
         .update({ avatar_url: publicUrl })
