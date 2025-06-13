@@ -1197,30 +1197,34 @@ export default function Calendar() {
     // For very short sessions, return enhanced compact view
     if (duration <= 30) {
       return (
-        <span 
+        <div 
           title={tooltipText} 
-          className="text-white font-medium text-xs flex items-center gap-1 hover:scale-105 transition-transform duration-200 cursor-pointer group p-1 rounded"
+          className="text-white font-medium text-xs flex items-center justify-center gap-1 hover:scale-105 transition-transform duration-200 cursor-pointer group p-1 rounded h-full w-full overflow-hidden"
         >
-          <span className="group-hover:animate-bounce-subtle">{student_name}</span>
-          {isLoggedLate && <span className="animate-pulse text-yellow-300">⚠</span>}
-          {hasNotes && <span className="group-hover:animate-wiggle">📄</span>}
-        </span>
+          <span className="group-hover:animate-bounce-subtle truncate flex-1 text-center">{student_name.split(' ')[0]}</span>
+          {isLoggedLate && <span className="animate-pulse text-yellow-300 flex-shrink-0">⚠</span>}
+          {hasNotes && <span className="group-hover:animate-wiggle flex-shrink-0">📄</span>}
+        </div>
       );
     }
 
     return (
       <div 
         title={tooltipText} 
-        className="calendar-event-content group hover:scale-105 transition-all duration-200 cursor-pointer p-2 rounded h-full"
+        className="calendar-event-content group hover:scale-105 transition-all duration-200 cursor-pointer p-1 rounded h-full flex flex-col justify-start overflow-hidden"
       >
-        <div className="calendar-event-title flex items-center gap-1 group-hover:text-white/90">
-          <span className="group-hover:animate-bounce-subtle font-semibold">{student_name}</span>
-          {isLoggedLate && <span className="text-xs animate-pulse text-yellow-300">⚠</span>}
-          {hasNotes && <span className="text-xs group-hover:animate-wiggle">📄</span>}
+        <div className="calendar-event-title flex items-start gap-1 group-hover:text-white/90 min-h-0 mb-0.5">
+          <span className="group-hover:animate-bounce-subtle font-semibold text-xs leading-tight truncate flex-1">{student_name}</span>
+          <div className="flex gap-0.5 flex-shrink-0">
+            {isLoggedLate && <span className="text-xs animate-pulse text-yellow-300">⚠</span>}
+            {hasNotes && <span className="text-xs group-hover:animate-wiggle">📄</span>}
+          </div>
         </div>
-        <div className="calendar-event-details text-xs opacity-90 group-hover:opacity-100 transition-opacity duration-200">
-          <span className="group-hover:font-medium">{duration}min</span> • 
-          <span className="group-hover:font-medium ml-1">{formatCurrency(rate, tutorCurrency)}</span>
+        <div className="calendar-event-details text-xs opacity-90 group-hover:opacity-100 transition-opacity duration-200 leading-tight">
+          <div className="truncate">
+            <span className="group-hover:font-medium">{duration}min</span> • 
+            <span className="group-hover:font-medium">{formatCurrency(rate, tutorCurrency)}</span>
+          </div>
         </div>
         <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-all duration-200 rounded pointer-events-none" />
       </div>
