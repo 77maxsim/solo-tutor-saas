@@ -1540,13 +1540,7 @@ export default function Calendar() {
           </DialogContent>
         </Dialog>
         
-        {/* Schedule Session Modal */}
-        <ScheduleSessionModal
-          open={showScheduleSessionModal}
-          onOpenChange={setShowScheduleSessionModal}
-          selectedDate={selectedDate}
-          selectedTime={selectedTime}
-        />
+
       </div>
     );
   }
@@ -1863,13 +1857,7 @@ export default function Calendar() {
         session={sessionForDetails}
       />
 
-      {/* Schedule Session Modal */}
-      <ScheduleSessionModal
-        open={showScheduleSessionModal}
-        onOpenChange={setShowScheduleSessionModal}
-        selectedDate={selectedDate}
-        selectedTime={selectedTime}
-      />
+
     </div>
   );
 }
