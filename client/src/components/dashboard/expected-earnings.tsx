@@ -138,11 +138,11 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
   const expectedEarnings = getExpectedEarnings();
 
   return (
-    <Card>
+    <Card className="hover-lift cursor-pointer transition-all duration-300 group hover:shadow-lg hover:shadow-green-100/50 border-2 hover:border-green-200">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Expected Earnings</CardTitle>
+        <CardTitle className="text-sm font-medium group-hover:text-green-600 transition-colors duration-200">Expected Earnings</CardTitle>
         <div className="flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-green-600" />
+          <TrendingUp className="h-4 w-4 text-green-600 group-hover:scale-110 group-hover:animate-bounce-subtle transition-all duration-300" />
           <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
             <button
               onClick={() => setExpectedTimeframe('next30days')}
@@ -178,10 +178,10 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-green-600">
+        <div className="text-2xl font-bold text-green-600 group-hover:scale-105 transition-transform duration-200">
           {isLoadingUpcoming ? "..." : formatCurrency(expectedEarnings.total, currency)}
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground group-hover:text-green-600/70 transition-colors duration-200">
           from {expectedEarnings.count} upcoming sessions • {getTimeframeLabel()}
         </p>
       </CardContent>

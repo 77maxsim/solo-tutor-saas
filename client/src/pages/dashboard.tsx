@@ -316,12 +316,12 @@ export default function Dashboard() {
         return <ExpectedEarnings currency={tutorInfo?.currency || 'USD'} />;
       case 'earnings_summary':
         return (
-          <Card>
+          <Card className="hover-lift cursor-pointer transition-all duration-300 group hover:shadow-lg hover:shadow-green-100/50 border-2 hover:border-green-200">
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-                <CardTitle className="text-sm font-medium">Earnings</CardTitle>
+                <CardTitle className="text-sm font-medium group-hover:text-green-600 transition-colors duration-200">Earnings</CardTitle>
                 <div className="flex items-center gap-2">
-                  <Coins className="h-4 w-4 text-green-600" />
+                  <Coins className="h-4 w-4 text-green-600 group-hover:scale-110 group-hover:animate-bounce-subtle transition-all duration-300" />
                   <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
                     <button
                       onClick={() => setEarningsView('today')}
@@ -361,7 +361,7 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-lg sm:text-2xl font-bold text-green-600">
+              <div className="text-lg sm:text-2xl font-bold text-green-600 group-hover:scale-105 transition-transform duration-200">
                 {isLoading ? "..." : formatCurrency(
                   earningsView === 'today' 
                     ? dashboardStats?.todayEarnings || 0
@@ -371,7 +371,7 @@ export default function Dashboard() {
                   tutorInfo?.currency || 'USD'
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground group-hover:text-green-600/70 transition-colors duration-200">
                 {earningsView === 'today' ? 'Earned Today' : earningsView === 'week' ? 'Earned This Week' : 'Earned This Month'}
               </p>
             </CardContent>

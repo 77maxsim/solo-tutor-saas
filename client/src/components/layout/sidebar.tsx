@@ -136,7 +136,7 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
         <div className="space-y-2 animate-slide-up" style={{animationDelay: '0.6s'}}>
           <Button 
             onClick={handleScheduleSession} 
-            className="w-full hover-lift click-scale bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-md hover:shadow-lg transition-all duration-200"
+            className="w-full hover-lift click-scale bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200"
           >
             <Plus className="h-4 w-4 mr-2 animate-bounce-subtle" />
             Schedule Session
@@ -146,42 +146,35 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
 
       {/* User Profile Section with Micro-interactions */}
       <div className="border-t border-border p-4 animate-fade-in" style={{animationDelay: '0.8s'}}>
-        <div className="flex items-center gap-3 mb-3 group hover-lift cursor-pointer p-2 rounded-lg transition-all duration-200 hover:bg-accent/50">
-          <Avatar className="h-10 w-10 hover-scale transition-all duration-300 group-hover:shadow-lg">
-            {tutorProfile?.avatar_url ? (
-              <AvatarImage 
-                src={tutorProfile.avatar_url} 
-                alt={tutorProfile.full_name || "Profile"} 
-                className="transition-all duration-300"
-              />
-            ) : null}
-            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white font-semibold">
-              {tutorProfile?.full_name 
-                ? tutorProfile.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
-                : 'TU'
-              }
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors duration-200">
-              {tutorProfile?.full_name || 'Tutor'}
-            </p>
-            <p className="text-xs text-muted-foreground truncate group-hover:text-muted-foreground/80 transition-colors duration-200">
-              {tutorProfile?.email || 'TutorTrack User'}
-            </p>
+        <Link href="/profile">
+          <div className="flex items-center gap-3 mb-3 group hover-lift cursor-pointer p-2 rounded-lg transition-all duration-200 hover:bg-accent/50">
+            <Avatar className="h-10 w-10 hover-scale transition-all duration-300 group-hover:shadow-lg">
+              {tutorProfile?.avatar_url ? (
+                <AvatarImage 
+                  src={tutorProfile.avatar_url} 
+                  alt={tutorProfile.full_name || "Profile"} 
+                  className="transition-all duration-300"
+                />
+              ) : null}
+              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white font-semibold">
+                {tutorProfile?.full_name 
+                  ? tutorProfile.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
+                  : 'TU'
+                }
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors duration-200">
+                {tutorProfile?.full_name || 'Tutor'}
+              </p>
+              <p className="text-xs text-muted-foreground truncate group-hover:text-muted-foreground/80 transition-colors duration-200">
+                {tutorProfile?.email || 'TutorTrack User'}
+              </p>
+            </div>
+            <Settings className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:rotate-[360deg] transition-all duration-500" />
           </div>
-        </div>
+        </Link>
         <div className="space-y-2">
-          <Link href="/profile">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full text-xs justify-start hover-lift click-scale group transition-all duration-200 hover:bg-blue-50 hover:text-blue-700"
-            >
-              <Settings className="h-3 w-3 mr-2 group-hover:rotate-90 transition-transform duration-300" />
-              Profile Settings
-            </Button>
-          </Link>
           <Button
             variant="outline"
             size="sm"
