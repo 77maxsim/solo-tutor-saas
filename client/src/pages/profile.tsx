@@ -29,6 +29,9 @@ import { Loader2, Save, User } from "lucide-react";
 const profileSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
   currency: z.string().min(1, "Currency is required"),
+  time_format: z.enum(["24h", "12h"], {
+    required_error: "Time format is required",
+  }),
 });
 
 type ProfileForm = z.infer<typeof profileSchema>;
@@ -47,7 +50,7 @@ export default function Profile() {
 
       const { data, error } = await supabase
         .from('tutors')
-        .select('id, full_name, email, currency')
+        .select('id, full_name, email, currency, time_format')
         .eq('user_id', user.id)
         .single();
 
@@ -65,6 +68,7 @@ export default function Profile() {
     defaultValues: {
       full_name: "",
       currency: "USD",
+      time_format: "24h",
     },
   });
 
@@ -74,6 +78,7 @@ export default function Profile() {
       form.reset({
         full_name: tutorProfile.full_name || "",
         currency: tutorProfile.currency || "USD",
+        time_format: tutorProfile.time_format || "24h",
       });
     }
   }, [tutorProfile, form]);
@@ -89,6 +94,7 @@ export default function Profile() {
         .update({
           full_name: data.full_name.trim(),
           currency: data.currency,
+          time_format: data.time_format,
         })
         .eq('user_id', user.id);
 
@@ -258,6 +264,36 @@ export default function Profile() {
                         <FormMessage />
                         <p className="text-xs text-muted-foreground">
                           This currency will be used for all session rates and earnings calculations.
+                        </p>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Time Format */}
+                  <FormField
+                    control={form.control}
+                    name="time_format"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preferred Time Format</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={isLoading}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select time format" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="24h">24-Hour (e.g., 14:00)</SelectItem>
+                              <SelectItem value="12h">12-Hour (e.g., 2:00 PM)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-xs text-muted-foreground">
+                          This will be used throughout the app for displaying times.
                         </p>
                       </FormItem>
                     )}
