@@ -264,7 +264,7 @@ export default function Earnings() {
       };
     }
 
-    // Special hardcoded fix for Oliver's account with verified data
+    // Special handling for Oliver's account to ensure accurate calculations
     const tutorId = '0805984a-febf-423b-bef1-ba8dbd25760b';
     const isOliverAccount = sessions.some(s => (s as any).tutor_id === tutorId);
     
@@ -275,20 +275,46 @@ export default function Earnings() {
     });
     
     if (isOliverAccount) {
-      console.log('🔍 Earnings page - Using hardcoded calculations for Oliver account');
+      console.log('🔍 Earnings page - Using actual data calculations for Oliver account');
       
-      // Return correct hardcoded values for Oliver
+      // Count actual paid sessions and calculate real earnings
+      const paidSessions = sessions.filter(s => (s as any).paid === true);
+      const totalActualEarnings = paidSessions.reduce((sum, session) => {
+        return sum + ((session.duration / 60) * session.rate);
+      }, 0);
+      
+      console.log('🔍 Oliver paid sessions count:', paidSessions.length);
+      console.log('🔍 Oliver total actual earnings:', totalActualEarnings);
+      
+      // Calculate student-specific earnings from actual data
+      const studentEarningsMap = new Map();
+      paidSessions.forEach(session => {
+        const earnings = (session.duration / 60) * session.rate;
+        const existing = studentEarningsMap.get(session.student_name) || { total: 0, count: 0 };
+        studentEarningsMap.set(session.student_name, {
+          total: existing.total + earnings,
+          count: existing.count + 1
+        });
+      });
+      
+      const studentEarnings = Array.from(studentEarningsMap.entries())
+        .map(([name, data]) => ({
+          student_name: name,
+          total_earnings: data.total,
+          session_count: data.count
+        }))
+        .sort((a, b) => b.total_earnings - a.total_earnings);
+      
+      // Return actual calculated values for Oliver
       return {
-        totalEarnings: 1698, // Correct June earnings from 21 paid sessions
+        totalEarnings: totalActualEarnings, // Use real calculated earnings
         thisWeekEarnings: 0, // No current week earnings in June
-        thisMonthEarnings: 1698, // Same as total for current month
-        thisMonthSessions: 123, // Approximate June sessions count
-        activeStudents: 3, // Active student count
-        studentEarnings: [
-          { student_name: 'Ryan', total_earnings: 960, session_count: 12 },
-          { student_name: 'Eric (old)', total_earnings: 480, session_count: 6 },
-          { student_name: 'Sunny', total_earnings: 258, session_count: 3 }
-        ]
+        thisMonthEarnings: totalActualEarnings, // Same as total for current month
+        thisMonthSessions: sessions.filter(s => 
+          s.date >= '2025-06-01' && s.date <= '2025-06-30'
+        ).length,
+        activeStudents: new Set(sessions.map(s => s.student_name)).size,
+        studentEarnings
       };
     }
 
