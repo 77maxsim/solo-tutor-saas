@@ -213,14 +213,41 @@ export default function Dashboard() {
       const activeStudentsSet = new Set<string>();
       const unpaidStudentsSet = new Set<string>();
 
+      // Debug: Count June paid sessions and calculate expected earnings
+      let juneDebugEarnings = 0;
+      let juneDebugCount = 0;
+      sessionsWithNames.forEach(session => {
+        const sessionDate = new Date(session.date);
+        const isJune = sessionDate.getMonth() === 5 && sessionDate.getFullYear() === 2025;
+        const paidValue = (session as any).paid;
+        const isPaid = Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
+        
+        if (isJune && isPaid) {
+          juneDebugCount++;
+          juneDebugEarnings += (session.duration / 60) * session.rate;
+        }
+      });
+      
+      console.log('🔍 JUNE DEBUG - Paid sessions found:', juneDebugCount);
+      console.log('🔍 JUNE DEBUG - Expected total earnings:', juneDebugEarnings);
+      console.log('🔍 JUNE DEBUG - Month boundaries:', {
+        first: firstDayOfCurrentMonth.toISOString(),
+        last: lastDayOfCurrentMonth.toISOString()
+      });
+
 
 
 
 
       sessionsWithNames.forEach((session: SessionWithStudent) => {
-        // Parse session date ensuring consistent timezone handling
-        const sessionDate = new Date(session.date);
-        sessionDate.setHours(12, 0, 0, 0); // Set to midday to avoid timezone edge cases
+        // Parse session date in local timezone to avoid UTC conversion
+        const dateParts = session.date.split('-');
+        const sessionDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+        
+        // Debug specific June dates
+        if (session.date.startsWith('2025-06') && (session as any).paid) {
+          console.log(`🔍 June session: ${session.date} - Parsed: ${sessionDate.toDateString()}`);
+        }
         const earnings = (session.duration / 60) * session.rate;
         // Handle different paid field formats - more comprehensive check
         const paidValue = (session as any).paid;
@@ -250,6 +277,9 @@ export default function Dashboard() {
         // Current month earnings (only paid sessions in current month)
         if (sessionDate >= firstDayOfCurrentMonth && sessionDate <= lastDayOfCurrentMonth && isPaid) {
           currentMonthEarnings += earnings;
+          console.log(`✅ ADDING: ${session.date} - ¥${earnings} (Total: ¥${currentMonthEarnings})`);
+        } else if (isPaid) {
+          console.log(`❌ EXCLUDED: ${session.date} - ¥${earnings} (Not in current month)`);
         }
 
         // Last month earnings (only paid sessions in last month)
@@ -269,7 +299,10 @@ export default function Dashboard() {
         }
       });
 
-
+      console.log('🔍 FINAL COMPARISON:');
+      console.log('  Expected June earnings:', juneDebugEarnings);
+      console.log('  Calculated current month earnings:', currentMonthEarnings);
+      console.log('  Missing earnings:', juneDebugEarnings - currentMonthEarnings);
 
       unpaidStudentsCount = unpaidStudentsSet.size;
 
