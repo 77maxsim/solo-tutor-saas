@@ -66,8 +66,7 @@ const defaultCardOrder: EarningsCard[] = [
 ];
 
 export default function Earnings() {
-  // 🧪 DIAGNOSTIC LOGGING FOR COMPONENT MOUNTING
-  console.log("🧪 [Earnings] Component mounted");
+  console.log("🧪 [Earnings] Component mounted - START");
   
   const queryClient = useQueryClient();
   const [cards, setCards] = useState<EarningsCard[]>(defaultCardOrder);
