@@ -178,7 +178,14 @@ export default function Earnings() {
       const { data, error } = await supabase
         .from('sessions')
         .select(`
-          *,
+          id,
+          student_id,
+          date,
+          time,
+          duration,
+          rate,
+          paid,
+          created_at,
           students (
             name
           )
