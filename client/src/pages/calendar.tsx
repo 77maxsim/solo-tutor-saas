@@ -20,6 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
+import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from "@/lib/queryOptimizer";
 import { Calendar as BigCalendarBase, momentLocalizer, Views } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -157,102 +158,14 @@ export default function Calendar() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // For Oliver's account, use the same optimized query pattern
-      if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b') {
-        console.log('🔍 Calendar - Using optimized query for Oliver account');
-        
-        // Get paid sessions
-        const { data: paidSessions, error: paidError } = await supabase
-          .from('sessions')
-          .select('id, student_id, date, time, duration, rate, paid, notes, color, recurrence_id, created_at')
-          .eq('tutor_id', tutorId)
-          .eq('paid', true)
-          .order('date', { ascending: true });
-
-        if (paidError) {
-          console.error('Error fetching Oliver paid sessions for calendar:', paidError);
-          throw paidError;
-        }
-
-        // Get unpaid sessions for context
-        const { data: unpaidSessions, error: unpaidError } = await supabase
-          .from('sessions')
-          .select('id, student_id, date, time, duration, rate, paid, notes, color, recurrence_id, created_at')
-          .eq('tutor_id', tutorId)
-          .eq('paid', false)
-          .order('date', { ascending: true })
-          .limit(200);
-
-        if (unpaidError) {
-          console.error('Error fetching unpaid sessions for calendar:', unpaidError);
-        }
-
-        // Get student data separately
-        const { data: students, error: studentsError } = await supabase
-          .from('students')
-          .select('id, name')
-          .eq('tutor_id', tutorId);
-
-        if (studentsError) {
-          console.error('Error fetching students for calendar:', studentsError);
-          throw studentsError;
-        }
-
-        // Create student name map
-        const studentNameMap = new Map();
-        students?.forEach(student => {
-          studentNameMap.set(student.id, student.name);
-        });
-
-        // Combine paid and unpaid sessions with student names
-        const allSessions = [
-          ...(paidSessions || []),
-          ...(unpaidSessions || [])
-        ].map((session: any) => ({
-          ...session,
-          student_name: studentNameMap.get(session.student_id) || 'Unknown Student'
-        }));
-
-        console.log('🔍 Calendar - Oliver sessions loaded:', allSessions.length);
-        console.log('🔍 Calendar - Oliver paid sessions:', allSessions.filter(s => s.paid === true).length);
-
-        return allSessions as SessionWithStudent[];
+      // Automatically determine if optimization is needed based on dataset size
+      const useOptimized = await shouldUseOptimizedQuery(tutorId);
+      
+      if (useOptimized) {
+        return await getOptimizedSessions(tutorId);
+      } else {
+        return await getStandardSessions(tutorId);
       }
-
-      // For other tutors, use standard query
-      const { data, error } = await supabase
-        .from('sessions')
-        .select(`
-          id,
-          student_id,
-          date,
-          time,
-          duration,
-          rate,
-          paid,
-          notes,
-          color,
-          recurrence_id,
-          created_at,
-          students (
-            name
-          )
-        `)
-        .eq('tutor_id', tutorId)
-        .order('date', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching calendar sessions:', error);
-        throw error;
-      }
-
-      // Transform the data to include student_name
-      const sessionsWithNames = data?.map((session: any) => ({
-        ...session,
-        student_name: session.students?.name || 'Unknown Student'
-      })) || [];
-
-      return sessionsWithNames as SessionWithStudent[];
     },
     refetchOnWindowFocus: true,
     staleTime: 0, // Always consider data stale to force refresh
