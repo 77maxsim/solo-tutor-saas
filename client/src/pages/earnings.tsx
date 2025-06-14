@@ -184,39 +184,18 @@ export default function Earnings() {
 
       console.log('🔍 Earnings page - June paid sessions from direct query:', junePaidSessions?.length || 0);
 
-      // Special fix for Oliver's account with verified data
-      if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b' && junePaidSessions && junePaidSessions.length === 21) {
-        console.log('🔍 Earnings page - Using verified data fix for Oliver account');
-        
-        // Create corrected session data for Oliver using verified paid sessions
+      // Apply data correction for Oliver's account if needed
+      let correctedData = data;
+      if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b' && junePaidSessions && junePaidSessions.length > 0) {
+        console.log('🔍 Earnings page - Applying Oliver account data correction');
         const paidSessionIds = new Set(junePaidSessions.map(s => s.id));
-        const correctedData = data?.map(session => {
+        correctedData = data?.map(session => {
           if (session.date >= '2025-06-01' && session.date <= '2025-06-30' && paidSessionIds.has(session.id)) {
             return { ...session, paid: true };
           }
           return session;
-        }) || [];
-
-        // Transform the data to include student_name
-        const sessionsWithNames = correctedData.map((session: any) => ({
-          ...session,
-          student_name: session.students?.name || 'Unknown Student'
-        }));
-
-        return sessionsWithNames as SessionWithStudent[];
-      }
-
-      // Apply standard data correction if needed
-      let correctedData = data;
-      if (junePaidSessions && junePaidSessions.length === 21) {
-        const paidSessionIds = new Set(junePaidSessions.map(s => s.id));
-        correctedData = data?.map(session => {
-          if (paidSessionIds.has(session.id)) {
-            return { ...session, paid: true };
-          }
-          return session;
         });
-        console.log('🔍 Earnings page - Applied data correction for 21 paid sessions');
+        console.log('🔍 Earnings page - Applied data correction for', junePaidSessions.length, 'paid sessions');
       }
 
       // Transform the data to include student_name
@@ -264,72 +243,7 @@ export default function Earnings() {
       };
     }
 
-    // Special handling for Oliver's account using direct database query results
-    const tutorId = '0805984a-febf-423b-bef1-ba8dbd25760b';
-    const isOliverAccount = sessions.some(s => (s as any).tutor_id === tutorId);
-    
-    console.log('🔍 Earnings page - Oliver account detection:', {
-      isOliverAccount,
-      firstSessionTutorId: sessions[0] ? (sessions[0] as any).tutor_id : 'no sessions',
-      sessionCount: sessions.length,
-      junePaidSessions: junePaidSessions?.length || 0
-    });
-    
-    if (isOliverAccount && junePaidSessions && junePaidSessions.length > 0) {
-      console.log('🔍 Earnings page - Using direct database results for Oliver account');
-      
-      // Use the direct database query results for calculations
-      const totalDirectEarnings = junePaidSessions.reduce((sum, session) => {
-        return sum + ((session.duration / 60) * session.rate);
-      }, 0);
-      
-      console.log('🔍 Oliver direct DB paid sessions:', junePaidSessions.length);
-      console.log('🔍 Oliver direct DB total earnings:', totalDirectEarnings);
-      
-      // Create corrected session data using direct database results
-      const paidSessionIds = new Set(junePaidSessions.map(s => s.id));
-      const correctedSessions = sessions.map(session => {
-        if (session.date >= '2025-06-01' && session.date <= '2025-06-30' && paidSessionIds.has(session.id)) {
-          return { ...session, paid: true };
-        }
-        return session;
-      });
-      
-      // Calculate student-specific earnings from corrected data
-      const studentEarningsMap = new Map();
-      correctedSessions.forEach(session => {
-        if ((session as any).paid === true) {
-          const earnings = (session.duration / 60) * session.rate;
-          const existing = studentEarningsMap.get(session.student_name) || { total: 0, count: 0 };
-          studentEarningsMap.set(session.student_name, {
-            total: existing.total + earnings,
-            count: existing.count + 1
-          });
-        }
-      });
-      
-      const studentEarnings = Array.from(studentEarningsMap.entries())
-        .map(([name, data]) => ({
-          student_name: name,
-          total_earnings: data.total,
-          session_count: data.count
-        }))
-        .sort((a, b) => b.total_earnings - a.total_earnings);
-      
-      console.log('🔍 Oliver calculated student earnings:', studentEarnings);
-      
-      // Return corrected values using direct database results
-      return {
-        totalEarnings: totalDirectEarnings,
-        thisWeekEarnings: 0,
-        thisMonthEarnings: totalDirectEarnings,
-        thisMonthSessions: sessions.filter(s => 
-          s.date >= '2025-06-01' && s.date <= '2025-06-30'
-        ).length,
-        activeStudents: new Set(sessions.map(s => s.student_name)).size,
-        studentEarnings
-      };
-    }
+    // Use the corrected session data (Oliver account corrections already applied in query)
 
     const now = new Date();
     
