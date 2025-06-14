@@ -2,7 +2,7 @@ import { supabase } from "./supabaseClient";
 
 export async function getCurrentTutorId(): Promise<string | null> {
   try {
-    console.log("🧪 [getCurrentTutorId] Starting tutor ID lookup");
+    console.log("🧪 [getCurrentTutorId] Starting user ID lookup");
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     console.log("🧪 [getCurrentTutorId] Auth user found:", user?.id);
@@ -11,45 +11,46 @@ export async function getCurrentTutorId(): Promise<string | null> {
       return null;
     }
 
-    // Check if tutor record exists
-    console.log("🧪 [getCurrentTutorId] Looking up tutor with user_id:", user.id);
-    const { data: tutor, error } = await supabase
-      .from('tutors')
+    // Look up user record in users table
+    console.log("🧪 [getCurrentTutorId] Looking up user record with id:", user.id);
+    const { data: userRecord, error } = await supabase
+      .from('users')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single();
 
     if (error) {
-      console.log("🧪 [getCurrentTutorId] Tutor lookup error:", error.code, error.message);
-      // If tutor doesn't exist, create one
+      console.log("🧪 [getCurrentTutorId] User lookup error:", error.code, error.message);
+      // If user doesn't exist in users table, create one
       if (error.code === 'PGRST116') { // No rows returned
-        console.log("🧪 [getCurrentTutorId] No tutor found, creating new record");
-        const { data: newTutor, error: createError } = await supabase
-          .from('tutors')
+        console.log("🧪 [getCurrentTutorId] No user record found, creating new record");
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
           .insert([{
-            user_id: user.id,
+            id: user.id,
+            username: user.email?.split('@')[0] || 'user',
             email: user.email,
-            full_name: user.email?.split('@')[0] || 'Tutor',
+            full_name: user.email?.split('@')[0] || 'User',
             created_at: new Date().toISOString(),
           }])
           .select('id')
           .single();
 
         if (createError) {
-          console.error('🧪 [getCurrentTutorId] Error creating tutor record:', createError);
+          console.error('🧪 [getCurrentTutorId] Error creating user record:', createError);
           return null;
         }
 
-        console.log("🧪 [getCurrentTutorId] Created new tutor with ID:", newTutor.id);
-        return newTutor.id;
+        console.log("🧪 [getCurrentTutorId] Created new user with ID:", newUser.id);
+        return newUser.id;
       }
       
-      console.error('🧪 [getCurrentTutorId] Error fetching tutor:', error);
+      console.error('🧪 [getCurrentTutorId] Error fetching user:', error);
       return null;
     }
 
-    console.log("🧪 [getCurrentTutorId] Found existing tutor with ID:", tutor.id);
-    return tutor.id;
+    console.log("🧪 [getCurrentTutorId] Found existing user with ID:", userRecord.id);
+    return userRecord.id;
   } catch (error) {
     console.error('Error getting current tutor ID:', error);
     return null;
