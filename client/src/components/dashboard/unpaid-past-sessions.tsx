@@ -185,28 +185,28 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="dark:bg-card dark:shadow-md dark:border-gray-700">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
+          <CardTitle className="text-lg font-semibold flex items-center gap-2 dark:text-gray-100">
+            <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             Payment Overview
           </CardTitle>
-          <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
-            <Skeleton className="h-6 w-16" />
-            <Skeleton className="h-6 w-16 ml-1" />
+          <div className="flex rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-1">
+            <Skeleton className="h-6 w-16 dark:bg-gray-600" />
+            <Skeleton className="h-6 w-16 ml-1 dark:bg-gray-600" />
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center gap-3 p-3">
-                <Skeleton className="h-4 w-4 rounded-full" />
+                <Skeleton className="h-4 w-4 rounded-full dark:bg-gray-600" />
                 <div className="flex-1 space-y-1">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-4 w-32 dark:bg-gray-600" />
+                  <Skeleton className="h-3 w-24 dark:bg-gray-600" />
                 </div>
-                <Skeleton className="h-6 w-16" />
-                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-16 dark:bg-gray-600" />
+                <Skeleton className="h-6 w-20 dark:bg-gray-600" />
               </div>
             ))}
           </div>

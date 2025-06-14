@@ -625,7 +625,7 @@ export default function Dashboard() {
   return (
     <div className="flex-1 overflow-auto w-full">
       {/* Header with Micro-interactions - Hidden on mobile since we have MobileHeader */}
-      <header className="hidden md:block bg-white border-b border-border px-4 sm:px-6 py-4 animate-fade-in">
+      <header className="hidden md:block bg-white dark:bg-card border-b border-border px-4 sm:px-6 py-4 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-12 w-12 hover-scale cursor-pointer transition-all duration-300 hover:shadow-lg">
@@ -644,10 +644,10 @@ export default function Dashboard() {
               </AvatarFallback>
             </Avatar>
             <div className="animate-slide-up">
-              <h1 className="text-xl sm:text-2xl font-semibold text-foreground hover:text-primary transition-colors duration-200">
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground dark:text-gray-100 hover:text-primary dark:hover:text-blue-400 transition-colors duration-200">
                 Welcome back, {tutorInfo?.full_name || 'Tutor'}!
               </h1>
-              <p className="text-sm text-muted-foreground mt-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
+              <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
                 Here's what's happening with your tutoring business today.
               </p>
             </div>

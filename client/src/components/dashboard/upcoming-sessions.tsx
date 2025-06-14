@@ -185,11 +185,11 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="dark:bg-card dark:shadow-md dark:border-gray-700">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">🗓️ Upcoming Sessions</CardTitle>
+          <CardTitle className="text-lg font-semibold flex items-center gap-2 dark:text-gray-100">🗓️ Upcoming Sessions</CardTitle>
           {showViewAll && (
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm" asChild className="dark:hover:bg-gray-700 dark:text-gray-300">
               <Link href="/upcoming-sessions">View all</Link>
             </Button>
           )}
@@ -197,13 +197,13 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
         <CardContent>
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <Skeleton className="w-2 h-2 rounded-full" />
+              <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 dark:bg-gray-800/50">
+                <Skeleton className="w-2 h-2 rounded-full dark:bg-gray-600" />
                 <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-4 w-3/4 dark:bg-gray-600" />
+                  <Skeleton className="h-3 w-1/2 dark:bg-gray-600" />
                 </div>
-                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="h-6 w-16 rounded-full dark:bg-gray-600" />
               </div>
             ))}
           </div>
@@ -234,17 +234,17 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
 
   if (!sessions || sessions.length === 0) {
     return (
-      <Card>
+      <Card className="dark:bg-card dark:shadow-md dark:border-gray-700">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">🗓️ Upcoming Sessions</CardTitle>
+          <CardTitle className="text-lg font-semibold flex items-center gap-2 dark:text-gray-100">🗓️ Upcoming Sessions</CardTitle>
           {showViewAll && (
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm" asChild className="dark:hover:bg-gray-700 dark:text-gray-300">
               <Link href="/upcoming-sessions">View all</Link>
             </Button>
           )}
         </CardHeader>
         <CardContent>
-          <p className="text-center text-muted-foreground py-6">
+          <p className="text-center text-muted-foreground dark:text-gray-400 py-6">
             No upcoming sessions scheduled
           </p>
         </CardContent>
@@ -253,11 +253,11 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
   }
 
   return (
-    <Card>
+    <Card className="dark:bg-card dark:shadow-md dark:border-gray-700">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">🗓️ Upcoming Sessions</CardTitle>
+        <CardTitle className="text-lg font-semibold flex items-center gap-2 dark:text-gray-100">🗓️ Upcoming Sessions</CardTitle>
         {showViewAll && (
-          <Button variant="ghost" size="sm" asChild>
+          <Button variant="ghost" size="sm" asChild className="dark:hover:bg-gray-700 dark:text-gray-300">
             <Link href="/upcoming-sessions">View all</Link>
           </Button>
         )}
@@ -276,44 +276,44 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
             const isLoggedLate = createdDate > sessionDateTime && now > sessionDateTime;
             
             return (
-              <div key={session.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+              <div key={session.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 dark:bg-gray-800/50 hover:bg-muted/70 dark:hover:bg-gray-800/70 transition-colors">
                 <div className={`w-2 h-2 rounded-full ${
                   index === 0 ? 'bg-blue-500' : 
                   index === 1 ? 'bg-green-500' : 'bg-purple-500'
                 }`} />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="text-sm font-medium text-foreground dark:text-gray-100">
                       {session.student_name}
                     </p>
                     {session.recurrence_id && (
                       <div title="Recurring session">
-                        <Repeat className="h-3 w-3 text-blue-500" />
+                        <Repeat className="h-3 w-3 text-blue-500 dark:text-blue-400" />
                       </div>
                     )}
                     {isLoggedLate && (
-                      <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full font-medium">
+                      <span className="text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-full font-medium">
                         Logged Late
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground dark:text-gray-400">
                     {session.date} at {session.time} ({session.duration} min)
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full font-medium">
+                  <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full font-medium">
                     {formatCurrency(calculatedPrice, currency)}
                   </span>
                   {session.paid ? (
-                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full font-medium">
+                    <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full font-medium">
                       Paid
                     </span>
                   ) : (
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-6 text-xs px-2 text-green-600 border-green-200 hover:bg-green-50"
+                      className="h-6 text-xs px-2 text-green-600 dark:text-green-400 border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
                       onClick={() => handleMarkAsPaid(session.id, session.student_name)}
                       disabled={markAsPaidMutation.isPending}
                     >
