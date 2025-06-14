@@ -1442,7 +1442,7 @@ export default function Calendar() {
                 <Button
                   variant={calendarView === 'week' ? 'default' : 'ghost'}
                   size="sm"
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                  className={`px-2 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
                     calendarView === 'week'
                       ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
@@ -1454,7 +1454,7 @@ export default function Calendar() {
                 <Button
                   variant={calendarView === 'month' ? 'default' : 'ghost'}
                   size="sm"
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                  className={`px-2 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
                     calendarView === 'month'
                       ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
@@ -1462,6 +1462,18 @@ export default function Calendar() {
                   onClick={() => setCalendarView('month')}
                 >
                   Month
+                </Button>
+                <Button
+                  variant={calendarView === 'agenda' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`px-2 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
+                    calendarView === 'agenda'
+                      ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                  }`}
+                  onClick={() => setCalendarView('agenda')}
+                >
+                  Agenda
                 </Button>
               </div>
             </div>
@@ -1528,7 +1540,22 @@ export default function Calendar() {
 
         {/* Full Screen Calendar Content */}
         <div className="flex-1 p-4 overflow-hidden">
-          {isMobile ? (
+          {calendarView === 'agenda' ? (
+            <AgendaView
+              sessions={filteredSessions}
+              onSelectSession={(session: SessionWithStudent) => {
+                const calendarEvent = {
+                  id: session.id,
+                  title: session.student_name,
+                  start: new Date(`${session.date}T${session.time}`),
+                  end: new Date(new Date(`${session.date}T${session.time}`).getTime() + session.duration * 60000),
+                  resource: session
+                };
+                handleSelectEvent(calendarEvent);
+              }}
+              tutorCurrency={tutorCurrency}
+            />
+          ) : isMobile ? (
             <MobileCalendarView
               sessions={sessions || []}
               onSelectSlot={(date: Date) => handleSelectSlot({ start: date, end: date })}
