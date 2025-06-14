@@ -1,347 +1,222 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
-import { getCurrentTutorId } from "@/lib/tutorHelpers";
-import { formatCurrency } from "@/lib/utils";
-import { 
-  Coins, 
-  TrendingUp, 
-  Calendar,
-  Users
-} from "lucide-react";
-
-interface SessionData {
-  id: string;
-  student_id: string;
-  date: string;
-  time: string;
-  duration: number;
-  rate: number;
-  paid: boolean;
-  created_at: string;
-  students: { name: string } | null;
-}
-
-interface SessionWithStudent extends SessionData {
-  student_name: string;
-}
 
 export default function EarningsFixed() {
-  console.log("🧪 [EarningsFixed] Component mounted successfully");
+  console.log("🧪 [EarningsFixed] Component mounting");
 
-  // Fetch tutor's currency preference
-  const { data: tutorCurrency = 'USD', isLoading: isCurrencyLoading } = useQuery({
-    queryKey: ['tutor-currency'],
+  // Direct authentication and session fetch without getCurrentTutorId
+  const { data: sessions, isLoading, error } = useQuery({
+    queryKey: ['earnings-fixed'],
     queryFn: async () => {
-      console.log("🧪 [EarningsFixed] Fetching tutor currency...");
+      console.log("🧪 [EarningsFixed] Starting direct session fetch");
+      
+      // Get current user directly
       const { data: { user } } = await supabase.auth.getUser();
-      console.log("🧪 [EarningsFixed] Current user from auth:", user?.id, user?.email);
+      console.log("🧪 [EarningsFixed] Auth user:", user?.id);
       
-      if (!user) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase
-        .from('tutors')
-        .select('currency')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching tutor currency:', error);
-        return 'USD';
+      if (!user) {
+        console.log("🧪 [EarningsFixed] No authenticated user - redirecting to auth");
+        window.location.href = '/auth';
+        return [];
       }
 
-      console.log("🧪 [EarningsFixed] Tutor currency fetched:", data?.currency);
-      return data?.currency || 'USD';
-    },
-  });
-
-  // Use the exact same query pattern as the working Dashboard
-  const { data: sessions, isLoading, error } = useQuery<SessionWithStudent[]>({
-    queryKey: ['earnings-sessions-fixed'],
-    queryFn: async () => {
-      console.log("🧪 [EarningsFixed] Sessions queryFn started executing");
-      const tutorId = await getCurrentTutorId();
-      console.log("🧪 [EarningsFixed] Current tutor ID:", tutorId);
+      // Query sessions directly with user.id - try different field names
+      console.log("🧪 [EarningsFixed] Fetching sessions for user:", user.id);
       
-      if (!tutorId) {
-        throw new Error('User not authenticated or tutor record not found');
-      }
-
-      // Copy the exact query from the working Dashboard Expected Earnings component
-      const { data, error } = await supabase
+      // First try with tutor_id field
+      let { data, error } = await supabase
         .from('sessions')
-        .select(`
-          id,
-          student_id,
-          date,
-          time,
-          duration,
-          rate,
-          paid,
-          created_at,
-          students (
-            name
-          )
-        `)
-        .eq('tutor_id', tutorId)
+        .select('id, student_id, date, time, duration, rate, paid, students(name)')
+        .eq('tutor_id', user.id)
         .order('date', { ascending: false });
 
-      console.log("🧪 [EarningsFixed] Raw fetched session data:", data);
-      console.log("🧪 [EarningsFixed] Any errors from Supabase:", error);
-      console.log("🧪 [EarningsFixed] Number of sessions fetched:", data?.length || 0);
-
       if (error) {
-        console.error('Error fetching earnings data:', error);
-        throw error;
+        console.log("🧪 [EarningsFixed] tutor_id query failed, trying user_id:", error.message);
+        
+        // If that fails, try with user_id field
+        const result = await supabase
+          .from('sessions')
+          .select('id, student_id, date, time, duration, rate, paid, students(name)')
+          .eq('user_id', user.id)
+          .order('date', { ascending: false });
+        
+        data = result.data;
+        error = result.error;
       }
 
-      // Transform the data to include student_name (same as Dashboard)
-      const sessionsWithNames = data?.map((session: any) => ({
-        ...session,
-        student_name: session.students?.name || 'Unknown Student'
-      })) || [];
+      if (error) {
+        console.log("🧪 [EarningsFixed] Sessions query error:", error);
+        throw error;
+      }
+      
+      console.log("🧪 [EarningsFixed] Raw sessions found:", data?.length || 0);
+      
+      // Log session details
+      data?.forEach((session: any, index: number) => {
+        if (index < 5) {
+          console.log(`🧪 [EarningsFixed] Session ${index + 1}:`, {
+            id: session.id,
+            date: session.date,
+            time: session.time,
+            duration: session.duration,
+            rate: session.rate,
+            paid: session.paid,
+            student: session.students?.name
+          });
+        }
+      });
 
-      console.log("🧪 [EarningsFixed] Transformed sessions with names:", sessionsWithNames);
-      return sessionsWithNames as SessionWithStudent[];
+      return data || [];
     },
   });
 
-  // Calculate earnings using the same logic as Dashboard but for all paid sessions
-  const calculateEarnings = (sessions: SessionWithStudent[]) => {
-    console.log("🧪 [EarningsFixed] Calculating earnings for sessions:", sessions?.length);
-    
-    if (!sessions || sessions.length === 0) {
-      console.log("🧪 [EarningsFixed] No sessions found, returning zero earnings");
-      return {
-        totalEarnings: 0,
-        thisWeekEarnings: 0,
-        thisMonthEarnings: 0,
-        thisMonthSessions: 0,
-        activeStudents: 0,
-        studentEarnings: []
-      };
-    }
-
-    const now = new Date();
-    
-    // Calculate total earnings from ALL paid sessions
-    const totalEarnings = sessions.reduce((total, session) => {
-      if (session.paid) {
-        const earnings = (session.duration / 60) * session.rate; // duration in minutes, rate per hour
-        console.log(`🧪 [EarningsFixed] Session ${session.id}: duration=${session.duration}min, rate=${session.rate}, earnings=${earnings}`);
-        return total + earnings;
-      }
-      return total;
-    }, 0);
-
-    // Calculate this week's earnings
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-    
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
-
-    const thisWeekEarnings = sessions.reduce((total, session) => {
-      const sessionDate = new Date(session.date);
-      if (session.paid && sessionDate >= startOfWeek && sessionDate <= endOfWeek) {
-        return total + (session.duration / 60) * session.rate;
-      }
-      return total;
-    }, 0);
-
-    // Calculate this month's earnings
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    endOfMonth.setHours(23, 59, 59, 999);
-
-    const thisMonthEarnings = sessions.reduce((total, session) => {
-      const sessionDate = new Date(session.date);
-      if (session.paid && sessionDate >= startOfMonth && sessionDate <= endOfMonth) {
-        return total + (session.duration / 60) * session.rate;
-      }
-      return total;
-    }, 0);
-
-    const thisMonthSessions = sessions.filter(session => {
-      const sessionDate = new Date(session.date);
-      return sessionDate >= startOfMonth && sessionDate <= endOfMonth;
-    }).length;
-
-    const activeStudents = new Set(sessions.map(s => s.student_id)).size;
-
-    const result = {
-      totalEarnings,
-      thisWeekEarnings,
-      thisMonthEarnings,
-      thisMonthSessions,
-      activeStudents,
-      studentEarnings: []
-    };
-
-    console.log("🧪 [EarningsFixed] Final earnings calculation:", result);
-    return result;
-  };
-
-  const earnings = sessions ? calculateEarnings(sessions) : null;
-
-  if (isLoading || isCurrencyLoading) {
-    return (
-      <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Earnings</h1>
-          <p className="text-muted-foreground">Track your income and payment history.</p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-[100px]" />
-                <Skeleton className="h-4 w-4" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-[120px]" />
-                <Skeleton className="h-3 w-[80px] mt-2" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+  if (isLoading) {
+    console.log("🧪 [EarningsFixed] Loading sessions...");
+    return <div className="p-6">Loading earnings...</div>;
   }
-
+  
   if (error) {
-    return (
-      <div className="p-6">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold">Error loading earnings data</h2>
-          <p className="text-sm text-muted-foreground mt-2">{error.message}</p>
-        </div>
-      </div>
-    );
+    console.log("🧪 [EarningsFixed] Error:", error);
+    return <div className="p-6">Error loading earnings: {error.message}</div>;
   }
+
+  // Calculate earnings
+  console.log("🧪 [EarningsFixed] Calculating earnings for", sessions?.length || 0, "sessions");
+  
+  const totalEarnings = sessions?.reduce((sum: number, session: any) => {
+    if (session.paid) {
+      const earnings = (session.duration / 60) * session.rate;
+      console.log(`🧪 [EarningsFixed] Paid session ${session.id}: ${session.duration}min × ¥${session.rate}/hr = ¥${earnings}`);
+      return sum + earnings;
+    }
+    return sum;
+  }, 0) || 0;
+
+  const paidSessions = sessions?.filter((s: any) => s.paid) || [];
+  const unpaidSessions = sessions?.filter((s: any) => !s.paid) || [];
+  
+  console.log("🧪 [EarningsFixed] Final calculations:", {
+    totalSessions: sessions?.length || 0,
+    paidSessions: paidSessions.length,
+    unpaidSessions: unpaidSessions.length,
+    totalEarnings
+  });
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Earnings</h1>
-        <p className="text-muted-foreground">Track your income and payment history.</p>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">💰 Earnings</h1>
+        <p className="text-sm text-gray-500">Track your income and payment history</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Earnings Summary */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Earnings Summary</CardTitle>
-            <Coins className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(earnings?.thisWeekEarnings || 0, tutorCurrency)}
-            </div>
-            <p className="text-xs text-muted-foreground">Earned This Week</p>
-          </CardContent>
-        </Card>
-
-        {/* Total Earnings */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(earnings?.totalEarnings || 0, tutorCurrency)}
-            </div>
-            <p className="text-xs text-muted-foreground">From all sessions</p>
-          </CardContent>
-        </Card>
-
-        {/* Sessions This Month */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sessions This Month</CardTitle>
-            <Calendar className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {earnings?.thisMonthSessions || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">Current month</p>
-          </CardContent>
-        </Card>
-
-        {/* Active Students */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Students</CardTitle>
-            <Users className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {earnings?.activeStudents || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">Last 30 days</p>
-          </CardContent>
-        </Card>
+      {/* Earnings Summary */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-lg text-white">
+          <h3 className="text-lg font-medium opacity-90">Total Earnings</h3>
+          <div className="text-3xl font-bold mt-2">¥{totalEarnings.toLocaleString()}</div>
+          <p className="text-sm opacity-80 mt-1">From all sessions</p>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-medium text-gray-700">Paid Sessions</h3>
+          <div className="text-3xl font-bold text-green-600 mt-2">{paidSessions.length}</div>
+          <p className="text-sm text-gray-500 mt-1">Completed payments</p>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-medium text-gray-700">Pending Sessions</h3>
+          <div className="text-3xl font-bold text-orange-500 mt-2">{unpaidSessions.length}</div>
+          <p className="text-sm text-gray-500 mt-1">Awaiting payment</p>
+        </div>
       </div>
 
-      {/* Debug Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Debug Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-sm">
-            <div><strong>Total Sessions:</strong> {sessions?.length || 0}</div>
-            <div><strong>Paid Sessions:</strong> {sessions?.filter(s => s.paid).length || 0}</div>
-            <div><strong>This Month Earnings:</strong> {formatCurrency(earnings?.thisMonthEarnings || 0, tutorCurrency)}</div>
-            <div><strong>Currency:</strong> {tutorCurrency}</div>
+      {/* Session Breakdown */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Paid Sessions */}
+        <div className="bg-white rounded-lg border border-gray-200">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">✅ Paid Sessions</h2>
+            <p className="text-sm text-gray-500">Recent completed payments</p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="p-6">
+            {paidSessions.length > 0 ? (
+              <div className="space-y-4">
+                {paidSessions.slice(0, 10).map((session: any) => (
+                  <div key={session.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {session.students?.name || 'Unknown Student'}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {session.date} at {session.time} • {session.duration} min
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-green-600">
+                        ¥{((session.duration / 60) * session.rate).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ¥{session.rate}/hr
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <div className="text-4xl mb-2">💸</div>
+                <p>No paid sessions yet</p>
+              </div>
+            )}
+          </div>
+        </div>
 
-      {/* Session Data Table */}
-      {sessions && sessions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Sessions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-auto max-h-96">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Date</th>
-                    <th className="text-left p-2">Student</th>
-                    <th className="text-left p-2">Duration</th>
-                    <th className="text-left p-2">Rate</th>
-                    <th className="text-left p-2">Paid</th>
-                    <th className="text-left p-2">Earnings</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessions.slice(0, 10).map((session) => (
-                    <tr key={session.id} className="border-b">
-                      <td className="p-2">{session.date}</td>
-                      <td className="p-2">{session.student_name}</td>
-                      <td className="p-2">{session.duration} min</td>
-                      <td className="p-2">{formatCurrency(session.rate, tutorCurrency)}/hr</td>
-                      <td className="p-2">{session.paid ? '✅' : '❌'}</td>
-                      <td className="p-2">
-                        {session.paid ? formatCurrency((session.duration / 60) * session.rate, tutorCurrency) : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {/* Unpaid Sessions */}
+        <div className="bg-white rounded-lg border border-gray-200">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">⏳ Pending Sessions</h2>
+            <p className="text-sm text-gray-500">Sessions awaiting payment</p>
+          </div>
+          <div className="p-6">
+            {unpaidSessions.length > 0 ? (
+              <div className="space-y-4">
+                {unpaidSessions.slice(0, 10).map((session: any) => (
+                  <div key={session.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {session.students?.name || 'Unknown Student'}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {session.date} at {session.time} • {session.duration} min
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-orange-500">
+                        ¥{((session.duration / 60) * session.rate).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ¥{session.rate}/hr
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <div className="text-4xl mb-2">✨</div>
+                <p>All sessions are paid!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Debug Info */}
+      <div className="bg-gray-50 p-4 rounded border text-xs text-gray-600">
+        <strong>Debug Info:</strong> Found {sessions?.length || 0} total sessions, 
+        {paidSessions.length} paid, {unpaidSessions.length} unpaid. 
+        Total earnings: ¥{totalEarnings.toLocaleString()}
+      </div>
     </div>
   );
 }
