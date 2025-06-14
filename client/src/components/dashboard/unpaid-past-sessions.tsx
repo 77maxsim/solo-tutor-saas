@@ -217,15 +217,15 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
 
   if (error) {
     return (
-      <Card>
+      <Card className="dark:bg-card dark:shadow-md dark:border-gray-700">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
+          <CardTitle className="text-lg font-semibold flex items-center gap-2 dark:text-gray-100">
+            <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             Payment Overview
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-center text-red-500 py-6">
+          <p className="text-center text-red-500 dark:text-red-400 py-6">
             Error loading payment data
           </p>
         </CardContent>
@@ -234,16 +234,16 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
   }
 
   return (
-    <Card>
+    <Card className="dark:bg-card dark:shadow-md dark:border-gray-700">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
+        <CardTitle className="text-lg font-semibold flex items-center gap-2 dark:text-gray-100">
           🧾 Overdue Payments
-          <span className="text-lg font-bold text-orange-600">
+          <span className="text-lg font-bold text-orange-600 dark:text-orange-400">
             {formatCurrency(totalOverdue, currency)}
           </span>
         </CardTitle>
         {showViewAll && unpaidSessions && unpaidSessions.length > 0 && (
-          <Button variant="ghost" size="sm" asChild>
+          <Button variant="ghost" size="sm" asChild className="dark:hover:bg-gray-700 dark:text-gray-300">
             <Link to="/unpaid-sessions">View all</Link>
           </Button>
         )}
