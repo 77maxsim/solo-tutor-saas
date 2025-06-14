@@ -1,0 +1,26 @@
+🔍 Oliver direct DB paid sessions: 17
+🔍 Oliver direct DB earnings: 1410
+🔍 Oliver stats from direct DB: 
+Object {sessionsThisWeek: 0, todayEarnings: 0, currentWeekEarnings: 0, currentMonthEarnings: 1410, lastMonthEarnings: 0, …}
+🔍 Dashboard query state: 
+Object {isLoading: false, hasData: true, dashboardStats: "{"sessionsThisWeek":0,"todayEarnings":0,"currentWeekEarnings":0,"currentMonthEarnings":1410…", error: null}
+🔍 Dashboard query state: 
+Object {isLoading: false, hasData: true, dashboardStats: "{"sessionsThisWeek":0,"todayEarnings":0,"currentWeekEarnings":0,"currentMonthEarnings":1410…", error: null}
+🔍 Dashboard query state: 
+Object {isLoading: false, hasData: true, dashboardStats: "{"sessionsThisWeek":0,"todayEarnings":0,"currentWeekEarnings":0,"currentMonthEarnings":1410…", error: null}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 0, firstSessionPaidStatus: "no sessions", sampleJuneSessions: Array(0)}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 0, firstSessionPaidStatus: "no sessions", sampleJuneSessions: Array(0)}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 0, firstSessionPaidStatus: "no sessions", sampleJuneSessions: Array(0)}
+🔍 Earnings page - Using alternative query for Oliver account
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 0, firstSessionPaidStatus: "no sessions", sampleJuneSessions: Array(0)}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 0, firstSessionPaidStatus: "no sessions", sampleJuneSessions: Array(0)}
+🔍 Oliver alternative query returned: 1000 sessions
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 1000, firstSessionPaidStatus: false, sampleJuneSessions: Array(3)}
+🔍 Earnings page - Final earnings results: 
+Object {totalEarnings: 0, thisMonthEarnings: 0, thisWeekEarnings: 0, sessionsCount: 1000}

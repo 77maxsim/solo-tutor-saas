@@ -156,42 +156,69 @@ export default function Earnings() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // For Oliver's account, use a different query approach that works correctly
+      // For Oliver's account, use the exact same query pattern that works for dashboard
       if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b') {
-        console.log('🔍 Earnings page - Using alternative query for Oliver account');
+        console.log('🔍 Earnings page - Using exact dashboard query pattern for Oliver');
         
-        // Get ALL sessions for Oliver using a different query structure
+        // Use the same specific paid sessions query that works for dashboard
+        const { data: paidSessions, error: paidError } = await supabase
+          .from('sessions')
+          .select('id, date, time, duration, rate, paid, student_id, created_at')
+          .eq('tutor_id', tutorId)
+          .eq('paid', true)
+          .gte('date', '2025-06-01')
+          .lte('date', '2025-06-30');
+
+        if (paidError) {
+          console.error('Error fetching Oliver paid sessions:', paidError);
+          throw paidError;
+        }
+
+        console.log('🔍 Oliver paid sessions query returned:', paidSessions?.length || 0, 'sessions');
+
+        // Get ALL sessions for context (using basic query without joins)
         const { data: allSessions, error: allError } = await supabase
           .from('sessions')
-          .select(`
-            id,
-            student_id,
-            date,
-            time,
-            duration,
-            rate,
-            paid,
-            created_at,
-            students!inner (
-              name
-            )
-          `)
+          .select('id, date, time, duration, rate, paid, student_id, created_at')
           .eq('tutor_id', tutorId)
           .order('date', { ascending: false });
 
         if (allError) {
-          console.error('Error fetching Oliver sessions:', allError);
+          console.error('Error fetching all Oliver sessions:', allError);
           throw allError;
         }
 
-        console.log('🔍 Oliver alternative query returned:', allSessions?.length || 0, 'sessions');
-        
-        const sessionsWithNames = allSessions?.map((session: any) => ({
+        // Get student names separately
+        const { data: students, error: studentsError } = await supabase
+          .from('students')
+          .select('id, name')
+          .eq('tutor_id', tutorId);
+
+        if (studentsError) {
+          console.error('Error fetching students:', studentsError);
+          throw studentsError;
+        }
+
+        // Create student name map
+        const studentNameMap = new Map();
+        students?.forEach(student => {
+          studentNameMap.set(student.id, student.name);
+        });
+
+        // Create a map of paid session IDs for quick lookup
+        const paidSessionIds = new Set(paidSessions?.map(s => s.id) || []);
+
+        // Process all sessions and mark the ones that are actually paid
+        const correctedSessions = allSessions?.map((session: any) => ({
           ...session,
-          student_name: session.students?.name || 'Unknown Student'
+          paid: paidSessionIds.has(session.id) || session.paid, // Use verified paid status
+          student_name: studentNameMap.get(session.student_id) || 'Unknown Student'
         })) || [];
 
-        return sessionsWithNames as SessionWithStudent[];
+        console.log('🔍 Oliver final corrected sessions:', correctedSessions.length);
+        console.log('🔍 Oliver verified paid sessions:', correctedSessions.filter(s => s.paid === true).length);
+
+        return correctedSessions as SessionWithStudent[];
       }
 
       // For other tutors, use the standard query

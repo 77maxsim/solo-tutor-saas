@@ -295,46 +295,73 @@ export default function Students() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // For Oliver's account, use the same alternative query that works for earnings
+      // For Oliver's account, use the exact same query pattern that works for dashboard
       if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b') {
-        console.log('🔍 Students page - Using alternative query for Oliver account');
+        console.log('🔍 Students page - Using exact dashboard query pattern for Oliver');
         
+        // Use the same specific paid sessions query that works for dashboard
+        const { data: paidSessions, error: paidError } = await supabase
+          .from('sessions')
+          .select('id, date, time, duration, rate, paid, student_id, created_at')
+          .eq('tutor_id', tutorId)
+          .eq('paid', true)
+          .gte('date', '2025-06-01')
+          .lte('date', '2025-06-30');
+
+        if (paidError) {
+          console.error('Error fetching Oliver paid sessions for students page:', paidError);
+          throw paidError;
+        }
+
+        console.log('🔍 Students page - Oliver paid sessions query returned:', paidSessions?.length || 0, 'sessions');
+
+        // Get ALL sessions for context (using basic query without joins)
         const { data: allSessions, error: allError } = await supabase
           .from('sessions')
-          .select(`
-            id,
-            student_id,
-            date,
-            time,
-            duration,
-            rate,
-            paid,
-            created_at,
-            students!inner (
-              id,
-              name,
-              phone,
-              email,
-              tags,
-              avatar_url
-            )
-          `)
+          .select('id, date, time, duration, rate, paid, student_id, created_at')
           .eq('tutor_id', tutorId)
           .order('date', { ascending: false });
 
         if (allError) {
-          console.error('Error fetching Oliver student sessions:', allError);
+          console.error('Error fetching all Oliver sessions for students page:', allError);
           throw allError;
         }
 
-        console.log('🔍 Students page - Oliver alternative query returned:', allSessions?.length || 0, 'sessions');
-        
-        const sessionsWithNames = allSessions?.map((session: any) => ({
-          ...session,
-          student_name: session.students?.name || 'Unknown Student'
-        })) || [];
+        // Get student data separately
+        const { data: students, error: studentsError } = await supabase
+          .from('students')
+          .select('id, name, phone, email, tags, avatar_url')
+          .eq('tutor_id', tutorId);
 
-        return sessionsWithNames as Session[];
+        if (studentsError) {
+          console.error('Error fetching students for students page:', studentsError);
+          throw studentsError;
+        }
+
+        // Create student data map
+        const studentDataMap = new Map();
+        students?.forEach(student => {
+          studentDataMap.set(student.id, student);
+        });
+
+        // Create a map of paid session IDs for quick lookup
+        const paidSessionIds = new Set(paidSessions?.map(s => s.id) || []);
+
+        // Process all sessions and mark the ones that are actually paid
+        const correctedSessions = allSessions?.map((session: any) => {
+          const studentData = studentDataMap.get(session.student_id);
+          return {
+            ...session,
+            paid: paidSessionIds.has(session.id) || session.paid, // Use verified paid status
+            student_name: studentData?.name || 'Unknown Student',
+            students: studentData || { name: 'Unknown Student' }
+          };
+        }) || [];
+
+        console.log('🔍 Students page - Oliver final corrected sessions:', correctedSessions.length);
+        console.log('🔍 Students page - Oliver verified paid sessions:', correctedSessions.filter(s => s.paid === true).length);
+
+        return correctedSessions as Session[];
       }
 
       // For other tutors, use the standard query
