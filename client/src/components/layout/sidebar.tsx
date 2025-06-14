@@ -17,6 +17,7 @@ import {
   LogOut,
   Settings
 } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -175,15 +176,18 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
           </div>
         </Link>
         <div className="space-y-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="w-full text-xs"
-          >
-            <LogOut className="h-3 w-3 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex items-center justify-between">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="flex-1 text-xs mr-2"
+            >
+              <LogOut className="h-3 w-3 mr-2" />
+              Sign Out
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </div>
