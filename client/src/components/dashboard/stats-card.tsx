@@ -36,7 +36,8 @@ export function StatsCard({
     <Card 
       className={cn(
         "hover-lift cursor-pointer transition-all duration-300 group animate-scale-in",
-        "hover:shadow-lg hover:shadow-blue-100/50 border-2 hover:border-blue-200",
+        "hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20 border-2 hover:border-blue-200 dark:hover:border-blue-700",
+        "dark:bg-card dark:shadow-md dark:border-gray-700",
         isClicked && "animate-bounce-subtle",
         isLoading && "shimmer"
       )}
@@ -49,14 +50,14 @@ export function StatsCard({
           <div className="flex-1">
             <p className={cn(
               "text-sm font-medium transition-colors duration-200",
-              isHovered ? "text-blue-600" : "text-muted-foreground"
+              isHovered ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground dark:text-gray-400"
             )}>
               {title}
             </p>
             <p className={cn(
               "text-2xl font-bold transition-all duration-300",
-              isHovered ? "text-blue-700 scale-105" : "text-foreground",
-              isLoading && "animate-pulse text-muted-foreground"
+              isHovered ? "text-blue-700 dark:text-blue-300 scale-105" : "text-foreground dark:text-gray-100",
+              isLoading && "animate-pulse text-muted-foreground dark:text-gray-500"
             )}>
               {value}
             </p>
@@ -64,11 +65,13 @@ export function StatsCard({
           <div className={cn(
             "h-12 w-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110",
             iconBgColor,
-            isHovered && "shadow-lg animate-pulse-glow"
+            "dark:bg-opacity-20 dark:border dark:border-gray-600",
+            isHovered && "shadow-lg animate-pulse-glow dark:shadow-gray-900/50"
           )}>
             <Icon className={cn(
               "h-6 w-6 transition-all duration-300",
               iconColor,
+              "dark:brightness-125",
               isHovered && "animate-bounce-subtle"
             )} />
           </div>
@@ -78,9 +81,9 @@ export function StatsCard({
             <span
               className={cn(
                 "text-sm font-medium transition-all duration-200 hover:scale-105 inline-block",
-                changeType === "positive" && "text-green-600 hover:text-green-700",
-                changeType === "negative" && "text-red-600 hover:text-red-700",
-                changeType === "neutral" && "text-muted-foreground hover:text-foreground"
+                changeType === "positive" && "text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300",
+                changeType === "negative" && "text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300",
+                changeType === "neutral" && "text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200"
               )}
             >
               {change}

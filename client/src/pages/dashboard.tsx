@@ -551,19 +551,19 @@ export default function Dashboard() {
         return <ExpectedEarnings currency={tutorInfo?.currency || 'USD'} />;
       case 'earnings_summary':
         return (
-          <Card className="hover-lift cursor-pointer transition-all duration-300 group hover:shadow-lg hover:shadow-green-100/50 border-2 hover:border-green-200">
+          <Card className="hover-lift cursor-pointer transition-all duration-300 group hover:shadow-lg hover:shadow-green-100/50 dark:hover:shadow-green-900/20 border-2 hover:border-green-200 dark:hover:border-green-700 dark:bg-card dark:shadow-md dark:border-gray-700">
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-                <CardTitle className="text-sm font-medium group-hover:text-green-600 transition-colors duration-200">Earnings</CardTitle>
+                <CardTitle className="text-sm font-medium group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-200 dark:text-gray-200">Earnings</CardTitle>
                 <div className="flex items-center gap-2">
-                  <Coins className="h-4 w-4 text-green-600 group-hover:scale-110 group-hover:animate-bounce-subtle transition-all duration-300" />
-                  <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
+                  <Coins className="h-4 w-4 text-green-600 dark:text-green-400 group-hover:scale-110 group-hover:animate-bounce-subtle transition-all duration-300" />
+                  <div className="flex rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-1">
                     <button
                       onClick={() => setEarningsView('today')}
                       className={`px-1.5 sm:px-2 py-1 text-xs font-medium rounded-md transition-colors ${
                         earningsView === 'today'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
                       }`}
                     >
                       <span className="hidden sm:inline">Today</span>
@@ -573,8 +573,8 @@ export default function Dashboard() {
                       onClick={() => setEarningsView('week')}
                       className={`px-1.5 sm:px-2 py-1 text-xs font-medium rounded-md transition-colors ${
                         earningsView === 'week'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
                       }`}
                     >
                       <span className="hidden sm:inline">Week</span>
@@ -584,8 +584,8 @@ export default function Dashboard() {
                       onClick={() => setEarningsView('month')}
                       className={`px-1.5 sm:px-2 py-1 text-xs font-medium rounded-md transition-colors ${
                         earningsView === 'month'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
                       }`}
                     >
                       <span className="hidden sm:inline">Month</span>
@@ -596,7 +596,7 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-lg sm:text-2xl font-bold text-green-600 group-hover:scale-105 transition-transform duration-200">
+              <div className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400 group-hover:scale-105 transition-transform duration-200">
                 {isLoading ? "..." : formatCurrency(
                   earningsView === 'today' 
                     ? dashboardStats?.todayEarnings || 0
@@ -606,7 +606,7 @@ export default function Dashboard() {
                   tutorInfo?.currency || 'USD'
                 )}
               </div>
-              <p className="text-xs text-muted-foreground group-hover:text-green-600/70 transition-colors duration-200">
+              <p className="text-xs text-muted-foreground dark:text-gray-400 group-hover:text-green-600/70 dark:group-hover:text-green-400/70 transition-colors duration-200">
                 {earningsView === 'today' ? 'Earned Today' : earningsView === 'week' ? 'Earned This Week' : 'Earned This Month'}
               </p>
             </CardContent>

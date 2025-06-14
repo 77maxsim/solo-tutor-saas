@@ -39,37 +39,37 @@
 }
 
 .dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
+  --background: 218 27% 8%;  /* #111827 - Rich dark background */
+  --foreground: 210 11% 91%; /* #e5e7eb - Soft foreground */
+  --card: 218 27% 12%;       /* #1f2937 - Card background */
+  --card-foreground: 210 11% 91%; /* #e5e7eb */
+  --popover: 218 27% 12%;
+  --popover-foreground: 210 11% 91%;
   --primary: 221.2 83.2% 53.3%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
+  --secondary: 215 25% 15%;  /* Slightly lighter secondary */
+  --secondary-foreground: 210 6% 82%; /* #d1d5db */
+  --muted: 215 25% 15%;
+  --muted-foreground: 215 13% 58%; /* Better contrast */
+  --accent: 215 25% 18%;     /* Distinct accent */
+  --accent-foreground: 210 11% 91%;
+  --destructive: 0 75% 55%;  /* Brighter destructive */
   --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
+  --border: 215 19% 35%;     /* #6b7280 - Visible borders */
+  --input: 218 27% 12%;
+  --ring: 221.2 83.2% 53.3%;
   --chart-1: 220 70% 50%;
   --chart-2: 160 60% 45%;
   --chart-3: 30 80% 55%;
   --chart-4: 280 65% 60%;
   --chart-5: 340 75% 55%;
-  --sidebar-background: 240 5.9% 10%;
-  --sidebar-foreground: 240 4.8% 95.9%;
+  --sidebar-background: 218 27% 8%; /* Match main background */
+  --sidebar-foreground: 210 11% 91%;
   --sidebar-primary: 224.3 76.3% 94.1%;
   --sidebar-primary-foreground: 240 5.9% 10%;
-  --sidebar-accent: 240 3.7% 15.9%;
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 3.7% 15.9%;
+  --sidebar-accent: 215 25% 15%;
+  --sidebar-accent-foreground: 210 11% 91%;
+  --sidebar-border: 215 19% 35%;
   --sidebar-ring: 217.2 91.2% 59.8%;
 }
 
@@ -101,80 +101,92 @@
 
 /* React Big Calendar Dark Mode Styles */
 .dark .rbc-calendar {
-  @apply bg-background text-foreground;
+  @apply bg-background text-gray-100 shadow-lg rounded-lg;
 }
 
 .dark .rbc-header {
-  @apply bg-muted/50 text-foreground border-border;
+  @apply bg-card text-gray-100 border-gray-700 font-medium;
 }
 
 .dark .rbc-month-view,
 .dark .rbc-time-view {
-  @apply bg-background border-border;
+  @apply bg-background border-gray-700;
 }
 
 .dark .rbc-day-bg {
-  @apply bg-background;
+  @apply bg-card border-gray-700;
 }
 
 .dark .rbc-day-bg.rbc-off-range-bg {
-  @apply bg-muted/20;
+  @apply bg-muted/30 text-gray-500;
 }
 
 .dark .rbc-today {
-  @apply bg-primary/10;
+  @apply bg-primary/20 border-primary/40;
 }
 
 .dark .rbc-event {
-  @apply bg-primary text-primary-foreground;
+  @apply bg-primary text-white shadow-md rounded-md border border-primary/20;
 }
 
 .dark .rbc-event.rbc-selected {
-  @apply bg-primary/80;
+  @apply bg-primary/90 ring-2 ring-primary/50;
 }
 
 .dark .rbc-slot-selection {
-  @apply bg-primary/20;
+  @apply bg-primary/30 border-primary/50;
 }
 
 .dark .rbc-time-header-content {
-  @apply border-border;
+  @apply border-gray-700 bg-card;
 }
 
 .dark .rbc-time-content {
-  @apply border-border;
+  @apply border-gray-700;
 }
 
 .dark .rbc-time-slot {
-  @apply border-border;
+  @apply border-gray-700/50 text-gray-300;
 }
 
 .dark .rbc-timeslot-group {
-  @apply border-border;
+  @apply border-gray-700;
 }
 
 .dark .rbc-current-time-indicator {
-  @apply bg-primary;
+  @apply bg-red-500 shadow-md;
 }
 
 .dark .rbc-toolbar {
-  @apply text-foreground;
+  @apply text-gray-100 bg-card rounded-lg p-2 shadow-md mb-4;
 }
 
 .dark .rbc-toolbar button {
-  @apply text-foreground border-border;
+  @apply text-gray-100 border-gray-600 bg-transparent hover:bg-gray-700 rounded-md px-3 py-1 transition-colors;
 }
 
 .dark .rbc-toolbar button:hover {
-  @apply bg-muted/50;
+  @apply bg-gray-700 text-white;
 }
 
 .dark .rbc-toolbar button.rbc-active {
-  @apply bg-primary text-primary-foreground;
+  @apply bg-primary text-white border-primary;
 }
 
 .dark .rbc-btn-group button {
-  @apply border-border;
+  @apply border-gray-600;
+}
+
+.dark .rbc-time-view .rbc-time-gutter {
+  @apply bg-card border-gray-700;
+}
+
+.dark .rbc-time-header {
+  @apply border-gray-700;
+}
+
+.dark .rbc-allday-cell {
+  @apply border-gray-700;
 }
 
 @layer utilities {
