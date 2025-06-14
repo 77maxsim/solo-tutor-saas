@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -95,9 +97,148 @@ interface CalendarEvent {
   resource: SessionWithStudent;
 }
 
+interface AgendaViewProps {
+  sessions: SessionWithStudent[];
+  onSelectSession: (session: SessionWithStudent) => void;
+  tutorCurrency: string;
+}
+
+// Helper function to group sessions by date
+const groupSessionsByDate = (sessions: SessionWithStudent[]) => {
+  const grouped: { [key: string]: SessionWithStudent[] } = {};
+  
+  sessions.forEach(session => {
+    const dateKey = session.date;
+    if (!grouped[dateKey]) {
+      grouped[dateKey] = [];
+    }
+    grouped[dateKey].push(session);
+  });
+
+  // Sort sessions within each day by time
+  Object.keys(grouped).forEach(date => {
+    grouped[date].sort((a, b) => a.time.localeCompare(b.time));
+  });
+
+  // Return sorted array of { date, sessions }
+  return Object.keys(grouped)
+    .sort()
+    .map(date => ({
+      date,
+      sessions: grouped[date]
+    }));
+};
+
+// Get initials from name for avatar fallback
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map(word => word.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProps) => {
+  const groupedSessions = groupSessionsByDate(sessions);
+
+  if (sessions.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <CalendarIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No sessions scheduled</h3>
+        <p className="text-gray-500 dark:text-gray-400">Schedule your first session to get started.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 max-h-[600px] overflow-y-auto">
+      {groupedSessions.map(({ date, sessions: daySessions }) => (
+        <div key={date} className="space-y-3">
+          {/* Date Header */}
+          <div className="sticky top-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600 py-3 px-4 -mx-4 rounded-lg mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {new Date(date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {daySessions.length} session{daySessions.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+
+          {/* Sessions for this day */}
+          <div className="space-y-2">
+            {daySessions.map(session => (
+              <Card
+                key={session.id}
+                className="cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.02] border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
+                onClick={() => onSelectSession(session)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    {/* Student Avatar */}
+                    <Avatar className="h-12 w-12 ring-2 ring-gray-200 dark:ring-gray-600">
+                      <AvatarImage 
+                        src={session.avatarUrl} 
+                        alt={session.student_name}
+                      />
+                      <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 font-medium">
+                        {getInitials(session.student_name)}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    {/* Session Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                          {session.student_name}
+                        </h4>
+                        <Badge 
+                          variant={session.paid ? "default" : "secondary"}
+                          className={`text-xs ${
+                            session.paid 
+                              ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300" 
+                              : "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
+                          }`}
+                        >
+                          {session.paid ? 'Paid' : 'Unpaid'}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          🕐 {session.time} ({session.duration}min)
+                        </span>
+                        <span className="flex items-center gap-1">
+                          💰 {formatCurrency(session.rate * session.duration / 60, tutorCurrency)}
+                        </span>
+                      </div>
+
+                      {session.notes && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">
+                          📝 {session.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export default function Calendar() {
   const isMobile = useIsMobile();
-  const [calendarView, setCalendarView] = useState<'week' | 'month'>('week');
+  const [calendarView, setCalendarView] = useState<'week' | 'month' | 'agenda'>('week');
   const [selectedStudent, setSelectedStudent] = useState<string>('all');
   const [selectedSession, setSelectedSession] = useState<SessionWithStudent | null>(null);
   const [showSessionModal, setShowSessionModal] = useState(false);
@@ -1563,7 +1704,8 @@ export default function Calendar() {
             <div className="flex flex-col space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {calendarView === 'week' ? 'Weekly Schedule' : 'Monthly Schedule'}
+                  {calendarView === 'week' ? 'Weekly Schedule' : 
+                   calendarView === 'month' ? 'Monthly Schedule' : 'Agenda View'}
                 </CardTitle>
                 
                 {/* View Toggle and Full Screen */}
@@ -1573,7 +1715,7 @@ export default function Calendar() {
                     <Button
                       variant={calendarView === 'week' ? 'default' : 'ghost'}
                       size="sm"
-                      className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                      className={`px-2 sm:px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                         calendarView === 'week'
                           ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
                           : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-600/50'
@@ -1585,7 +1727,7 @@ export default function Calendar() {
                     <Button
                       variant={calendarView === 'month' ? 'default' : 'ghost'}
                       size="sm"
-                      className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                      className={`px-2 sm:px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                         calendarView === 'month'
                           ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
                           : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-600/50'
@@ -1593,6 +1735,18 @@ export default function Calendar() {
                       onClick={() => setCalendarView('month')}
                     >
                       Month
+                    </Button>
+                    <Button
+                      variant={calendarView === 'agenda' ? 'default' : 'ghost'}
+                      size="sm"
+                      className={`px-2 sm:px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                        calendarView === 'agenda'
+                          ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-600/50'
+                      }`}
+                      onClick={() => setCalendarView('agenda')}
+                    >
+                      Agenda
                     </Button>
                   </div>
                   
@@ -1669,7 +1823,22 @@ export default function Calendar() {
             </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
-            {isMobile ? (
+            {calendarView === 'agenda' ? (
+              <AgendaView
+                sessions={filteredSessions}
+                onSelectSession={(session: SessionWithStudent) => {
+                  const calendarEvent = {
+                    id: session.id,
+                    title: session.student_name,
+                    start: new Date(`${session.date}T${session.time}`),
+                    end: new Date(new Date(`${session.date}T${session.time}`).getTime() + session.duration * 60000),
+                    resource: session
+                  };
+                  handleSelectEvent(calendarEvent);
+                }}
+                tutorCurrency={tutorCurrency}
+              />
+            ) : isMobile ? (
               <MobileCalendarView
                 sessions={sessions || []}
                 onSelectSlot={(date: Date) => handleSelectSlot({ start: date, end: date })}
