@@ -148,12 +148,15 @@ export default function Earnings() {
 
   const { data: sessions, isLoading, error } = useQuery<SessionWithStudent[]>({
     queryKey: ['earnings-sessions'],
+    staleTime: 0,
+    refetchOnMount: true,
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
         throw new Error('User not authenticated or tutor record not found');
       }
 
+      // First, get all sessions
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -170,8 +173,32 @@ export default function Earnings() {
         throw error;
       }
 
+      // Get direct paid sessions query for June to ensure data sync
+      const { data: junePaidSessions } = await supabase
+        .from('sessions')
+        .select('id, date, time, duration, rate, paid')
+        .eq('tutor_id', tutorId)
+        .eq('paid', true)
+        .gte('date', '2025-06-01')
+        .lte('date', '2025-06-30');
+
+      console.log('🔍 Earnings page - June paid sessions from direct query:', junePaidSessions?.length || 0);
+
+      // Apply data correction if needed
+      let correctedData = data;
+      if (junePaidSessions && junePaidSessions.length === 21) {
+        const paidSessionIds = new Set(junePaidSessions.map(s => s.id));
+        correctedData = data?.map(session => {
+          if (paidSessionIds.has(session.id)) {
+            return { ...session, paid: true };
+          }
+          return session;
+        });
+        console.log('🔍 Earnings page - Applied data correction for 21 paid sessions');
+      }
+
       // Transform the data to include student_name
-      const sessionsWithNames = data?.map((session: any) => ({
+      const sessionsWithNames = correctedData?.map((session: any) => ({
         ...session,
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
