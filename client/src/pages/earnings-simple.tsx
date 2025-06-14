@@ -54,6 +54,22 @@ export default function EarningsSimple() {
       if (error) throw error;
 
       console.log("🧪 [EarningsSimple] Sessions fetched:", data?.length);
+      
+      // Log detailed session data to check time format issues
+      data?.forEach((session: any, index: number) => {
+        if (index < 3) { // Log first 3 sessions for debugging
+          console.log(`🧪 [EarningsSimple] Session ${index + 1}:`, {
+            id: session.id,
+            date: session.date,
+            time: session.time,
+            duration: session.duration,
+            rate: session.rate,
+            paid: session.paid,
+            student_name: session.students?.name
+          });
+        }
+      });
+
       return data?.map((session: any) => ({
         ...session,
         student_name: session.students?.name || 'Unknown Student'
@@ -73,11 +89,16 @@ export default function EarningsSimple() {
     const totalEarnings = sessions.reduce((sum: number, session: any) => {
       if (session.paid) {
         const earnings = (session.duration / 60) * session.rate;
-        console.log(`🧪 [EarningsSimple] Session ${session.id}: ${session.duration}min × ${session.rate}/hr = ${earnings}`);
+        console.log(`🧪 [EarningsSimple] Paid Session ${session.id}: date=${session.date}, time=${session.time}, duration=${session.duration}min, rate=${session.rate}/hr, earnings=${earnings}`);
         return sum + earnings;
+      } else {
+        console.log(`🧪 [EarningsSimple] Unpaid Session ${session.id}: date=${session.date}, time=${session.time}, paid=${session.paid}`);
       }
       return sum;
     }, 0);
+
+    console.log(`🧪 [EarningsSimple] Total paid sessions: ${sessions.filter((s: any) => s.paid).length}`);
+    console.log(`🧪 [EarningsSimple] Total calculated earnings: ${totalEarnings}`);
 
     // This week's earnings
     const startOfWeek = new Date(now);
