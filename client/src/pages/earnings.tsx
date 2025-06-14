@@ -150,9 +150,15 @@ export default function Earnings() {
     queryKey: ['earnings-sessions'],
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
+      console.log("🧪 [Earnings] Current tutor ID from getCurrentTutorId():", tutorId);
+      
       if (!tutorId) {
         throw new Error('User not authenticated or tutor record not found');
       }
+
+      // 🧪 Log the query parameters before execution
+      console.log("🧪 [Earnings] About to execute query with tutor_id:", tutorId);
+      console.log("🧪 [Earnings] Query: supabase.from('sessions').select('*, students(name)').eq('tutor_id', tutorId)");
 
       const { data, error } = await supabase
         .from('sessions')
@@ -164,6 +170,11 @@ export default function Earnings() {
         `)
         .eq('tutor_id', tutorId)
         .order('date', { ascending: false });
+
+      // 🧪 Log raw results immediately after query
+      console.log("🧪 [Earnings] Raw fetched session data:", data);
+      console.log("🧪 [Earnings] Any errors from Supabase:", error);
+      console.log("🧪 [Earnings] Number of sessions fetched:", data?.length || 0);
 
       if (error) {
         console.error('Error fetching earnings data:', error);
