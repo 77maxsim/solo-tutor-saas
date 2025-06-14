@@ -4,10 +4,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
-import { useTheme } from "@/hooks/use-theme";
 import { queryClient } from "@/lib/queryClient";
 import { 
   LayoutDashboard, 
@@ -17,9 +15,7 @@ import {
   GraduationCap,
   Plus,
   LogOut,
-  Settings,
-  Moon,
-  Sun
+  Settings
 } from "lucide-react";
 
 const navigation = [
@@ -36,7 +32,6 @@ interface SidebarProps {
 export function Sidebar({ onScheduleSession }: SidebarProps) {
   const [location] = useLocation();
   const { toast } = useToast();
-  const { theme, toggleTheme } = useTheme();
 
   // Fetch tutor profile data including avatar
   const { data: tutorProfile } = useQuery({
@@ -179,26 +174,6 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
             <Settings className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:rotate-[360deg] transition-all duration-500" />
           </div>
         </Link>
-        
-        {/* Theme Toggle */}
-        <div className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 transition-all duration-200 mb-2">
-          <div className="flex items-center gap-2">
-            {theme === 'light' ? (
-              <Sun className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <Moon className="h-4 w-4 text-muted-foreground" />
-            )}
-            <span className="text-sm font-medium text-foreground">
-              {theme === 'light' ? 'Light' : 'Dark'} Mode
-            </span>
-          </div>
-          <Switch
-            checked={theme === 'dark'}
-            onCheckedChange={toggleTheme}
-            className="data-[state=checked]:bg-primary"
-          />
-        </div>
-        
         <div className="space-y-2">
           <Button
             variant="outline"
