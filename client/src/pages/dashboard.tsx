@@ -139,9 +139,10 @@ export default function Dashboard() {
 
   // Fetch dashboard statistics from real session data
   const { data: dashboardStats, isLoading } = useQuery({
-    queryKey: ['dashboard-stats'],
+    queryKey: ['dashboard-stats', Date.now()], // Force unique query key
     staleTime: 0,
     refetchOnMount: true,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
@@ -151,6 +152,7 @@ export default function Dashboard() {
       // Debug: Log the tutor ID being used for the query
       console.log('🔍 Oliver tutor ID used for query:', tutorId);
 
+      // Force a fresh query by bypassing any caching
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -169,6 +171,24 @@ export default function Dashboard() {
         `)
         .eq('tutor_id', tutorId)
         .order('date', { ascending: false });
+
+      console.log('🔍 Raw session count from database:', data?.length || 0);
+      
+      // Count paid sessions directly from raw data
+      const rawPaidSessions = data?.filter(s => s.paid === true) || [];
+      console.log('🔍 Raw paid sessions from DB:', rawPaidSessions.length);
+      
+      // Check June 12-14 specifically in raw data
+      const rawJune12to14Paid = data?.filter(s => 
+        s.paid === true && 
+        s.date >= '2025-06-12' && 
+        s.date <= '2025-06-14'
+      ) || [];
+      console.log('🔍 Raw June 12-14 paid sessions:', rawJune12to14Paid.length);
+      
+      if (rawJune12to14Paid.length > 0) {
+        console.log('🔍 Sample raw June 12-14 sessions:', rawJune12to14Paid.slice(0, 3));
+      }
 
       // Debug: Also check what the tutor email is
       const { data: tutorData } = await supabase
