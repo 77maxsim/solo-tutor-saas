@@ -79,7 +79,7 @@ export async function getOptimizedSessions(tutorId: string) {
     // Get student data separately
     const { data: students, error: studentsError } = await supabase
       .from('students')
-      .select('id, name')
+      .select('id, name, avatar_url')
       .eq('tutor_id', tutorId);
 
     if (studentsError) {
@@ -91,17 +91,24 @@ export async function getOptimizedSessions(tutorId: string) {
       }));
     }
 
-    // Create student name map
-    const studentNameMap = new Map();
+    // Create student data map
+    const studentDataMap = new Map();
     students?.forEach(student => {
-      studentNameMap.set(student.id, student.name);
+      studentDataMap.set(student.id, {
+        name: student.name,
+        avatar_url: student.avatar_url
+      });
     });
 
-    // Add student names to all sessions
-    const sessionsWithNames = (allSessions || []).map((session: any) => ({
-      ...session,
-      student_name: studentNameMap.get(session.student_id) || 'Unknown Student'
-    }));
+    // Add student names and avatars to all sessions
+    const sessionsWithNames = (allSessions || []).map((session: any) => {
+      const studentData = studentDataMap.get(session.student_id);
+      return {
+        ...session,
+        student_name: studentData?.name || 'Unknown Student',
+        avatarUrl: studentData?.avatar_url
+      };
+    });
 
     // Track performance metrics
     await datasetMonitor.trackQueryPerformance(tutorId, 'optimized', startTime, sessionsWithNames.length);
@@ -144,7 +151,8 @@ export async function getStandardSessions(tutorId: string) {
         recurrence_id,
         created_at,
         students (
-          name
+          name,
+          avatar_url
         )
       `)
       .eq('tutor_id', tutorId)
@@ -155,10 +163,11 @@ export async function getStandardSessions(tutorId: string) {
       throw error;
     }
 
-    // Transform the data to include student_name
+    // Transform the data to include student_name and avatarUrl
     const sessionsWithNames = data?.map((session: any) => ({
       ...session,
-      student_name: session.students?.name || 'Unknown Student'
+      student_name: session.students?.name || 'Unknown Student',
+      avatarUrl: session.students?.avatar_url
     })) || [];
 
     // Track performance metrics

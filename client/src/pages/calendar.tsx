@@ -87,6 +87,8 @@ interface SessionWithStudent {
   color?: string;
   created_at: string;
   recurrence_id?: string;
+  paid?: boolean;
+  avatarUrl?: string;
 }
 
 interface CalendarEvent {
@@ -199,14 +201,14 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
                           {session.student_name}
                         </h4>
                         <Badge 
-                          variant={session.paid ? "default" : "secondary"}
+                          variant={session.paid === true ? "default" : "secondary"}
                           className={`text-xs ${
-                            session.paid 
+                            session.paid === true
                               ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300" 
                               : "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
                           }`}
                         >
-                          {session.paid ? 'Paid' : 'Unpaid'}
+                          {session.paid === true ? 'Paid' : 'Unpaid'}
                         </Badge>
                       </div>
                       

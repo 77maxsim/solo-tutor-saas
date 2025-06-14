@@ -16,6 +16,8 @@ interface SessionWithStudent {
   color?: string;
   created_at: string;
   recurrence_id?: string;
+  paid?: boolean;
+  avatarUrl?: string;
 }
 
 interface MobileCalendarViewProps {
