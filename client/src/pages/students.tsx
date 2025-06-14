@@ -295,11 +295,11 @@ export default function Students() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // For Oliver's account, use the exact same query pattern that works for dashboard
+      // For Oliver's account, use only the working paid sessions query
       if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b') {
-        console.log('🔍 Students page - Using exact dashboard query pattern for Oliver');
+        console.log('🔍 Students page - Using only verified paid sessions for Oliver');
         
-        // Use the same specific paid sessions query that works for dashboard
+        // Get the working paid sessions
         const { data: paidSessions, error: paidError } = await supabase
           .from('sessions')
           .select('id, date, time, duration, rate, paid, student_id, created_at')
@@ -313,18 +313,19 @@ export default function Students() {
           throw paidError;
         }
 
-        console.log('🔍 Students page - Oliver paid sessions query returned:', paidSessions?.length || 0, 'sessions');
+        console.log('🔍 Students page - Oliver paid sessions found:', paidSessions?.length || 0);
 
-        // Get ALL sessions for context (using basic query without joins)
-        const { data: allSessions, error: allError } = await supabase
+        // Get unpaid sessions for context
+        const { data: unpaidSessions, error: unpaidError } = await supabase
           .from('sessions')
           .select('id, date, time, duration, rate, paid, student_id, created_at')
           .eq('tutor_id', tutorId)
-          .order('date', { ascending: false });
+          .eq('paid', false)
+          .order('date', { ascending: false })
+          .limit(100);
 
-        if (allError) {
-          console.error('Error fetching all Oliver sessions for students page:', allError);
-          throw allError;
+        if (unpaidError) {
+          console.error('Error fetching unpaid sessions:', unpaidError);
         }
 
         // Get student data separately
@@ -344,24 +345,23 @@ export default function Students() {
           studentDataMap.set(student.id, student);
         });
 
-        // Create a map of paid session IDs for quick lookup
-        const paidSessionIds = new Set(paidSessions?.map(s => s.id) || []);
-
-        // Process all sessions and mark the ones that are actually paid
-        const correctedSessions = allSessions?.map((session: any) => {
+        // Combine paid and unpaid sessions with student data
+        const allSessions = [
+          ...(paidSessions || []),
+          ...(unpaidSessions || [])
+        ].map((session: any) => {
           const studentData = studentDataMap.get(session.student_id);
           return {
             ...session,
-            paid: paidSessionIds.has(session.id) || session.paid, // Use verified paid status
             student_name: studentData?.name || 'Unknown Student',
             students: studentData || { name: 'Unknown Student' }
           };
-        }) || [];
+        });
 
-        console.log('🔍 Students page - Oliver final corrected sessions:', correctedSessions.length);
-        console.log('🔍 Students page - Oliver verified paid sessions:', correctedSessions.filter(s => s.paid === true).length);
+        console.log('🔍 Students page - Oliver combined sessions:', allSessions.length);
+        console.log('🔍 Students page - Oliver confirmed paid sessions:', allSessions.filter(s => s.paid === true).length);
 
-        return correctedSessions as Session[];
+        return allSessions as Session[];
       }
 
       // For other tutors, use the standard query

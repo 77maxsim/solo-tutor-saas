@@ -156,11 +156,11 @@ export default function Earnings() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // For Oliver's account, use the exact same query pattern that works for dashboard
+      // For Oliver's account, use only the working paid sessions query and bypass broken session mapping
       if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b') {
-        console.log('🔍 Earnings page - Using exact dashboard query pattern for Oliver');
+        console.log('🔍 Earnings page - Using only verified paid sessions for Oliver');
         
-        // Use the same specific paid sessions query that works for dashboard
+        // Get the working paid sessions
         const { data: paidSessions, error: paidError } = await supabase
           .from('sessions')
           .select('id, date, time, duration, rate, paid, student_id, created_at')
@@ -174,18 +174,19 @@ export default function Earnings() {
           throw paidError;
         }
 
-        console.log('🔍 Oliver paid sessions query returned:', paidSessions?.length || 0, 'sessions');
+        console.log('🔍 Oliver paid sessions found:', paidSessions?.length || 0);
 
-        // Get ALL sessions for context (using basic query without joins)
-        const { data: allSessions, error: allError } = await supabase
+        // Get all unpaid sessions from a different time period for context
+        const { data: unpaidSessions, error: unpaidError } = await supabase
           .from('sessions')
           .select('id, date, time, duration, rate, paid, student_id, created_at')
           .eq('tutor_id', tutorId)
-          .order('date', { ascending: false });
+          .eq('paid', false)
+          .order('date', { ascending: false })
+          .limit(100); // Limit to avoid performance issues
 
-        if (allError) {
-          console.error('Error fetching all Oliver sessions:', allError);
-          throw allError;
+        if (unpaidError) {
+          console.error('Error fetching unpaid sessions:', unpaidError);
         }
 
         // Get student names separately
@@ -205,20 +206,19 @@ export default function Earnings() {
           studentNameMap.set(student.id, student.name);
         });
 
-        // Create a map of paid session IDs for quick lookup
-        const paidSessionIds = new Set(paidSessions?.map(s => s.id) || []);
-
-        // Process all sessions and mark the ones that are actually paid
-        const correctedSessions = allSessions?.map((session: any) => ({
+        // Combine paid and unpaid sessions with student names
+        const allSessions = [
+          ...(paidSessions || []),
+          ...(unpaidSessions || [])
+        ].map((session: any) => ({
           ...session,
-          paid: paidSessionIds.has(session.id) || session.paid, // Use verified paid status
           student_name: studentNameMap.get(session.student_id) || 'Unknown Student'
-        })) || [];
+        }));
 
-        console.log('🔍 Oliver final corrected sessions:', correctedSessions.length);
-        console.log('🔍 Oliver verified paid sessions:', correctedSessions.filter(s => s.paid === true).length);
+        console.log('🔍 Oliver combined sessions:', allSessions.length);
+        console.log('🔍 Oliver confirmed paid sessions:', allSessions.filter(s => s.paid === true).length);
 
-        return correctedSessions as SessionWithStudent[];
+        return allSessions as SessionWithStudent[];
       }
 
       // For other tutors, use the standard query
