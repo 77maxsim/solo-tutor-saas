@@ -242,7 +242,10 @@ export default function Earnings() {
 
     // Debug logging for earnings calculation
     console.log('🧪 Earnings - All sessions:', sessions?.length || 0);
-    const paidSessionsEarnings = sessions?.filter(s => (s as any).paid === true) || [];
+    const paidSessionsEarnings = sessions?.filter(s => {
+      const paidValue = (s as any).paid;
+      return Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
+    }) || [];
     console.log('🧪 Earnings - Paid sessions:', paidSessionsEarnings.length, paidSessionsEarnings.slice(0, 3));
 
     sessions.forEach(session => {
