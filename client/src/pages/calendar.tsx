@@ -155,11 +155,11 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
   }
 
   return (
-    <div className="space-y-6 max-h-[600px] overflow-y-auto">
+    <div className="relative space-y-6 max-h-[600px] overflow-y-auto overflow-x-hidden">
       {groupedSessions.map(({ date, sessions: daySessions }) => (
-        <div key={date} className="space-y-3">
+        <div key={date} className="relative space-y-3 z-0">
           {/* Date Header */}
-          <div className="sticky top-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600 py-3 px-4 -mx-4 rounded-lg mb-4">
+          <div className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600 py-3 px-4 rounded-lg mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {new Date(date).toLocaleDateString('en-US', {
                 weekday: 'long',
@@ -174,22 +174,23 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
           </div>
 
           {/* Sessions for this day */}
-          <div className="space-y-2">
+          <div className="space-y-2 relative">
             {daySessions.map(session => (
               <Card
                 key={session.id}
-                className="cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.02] border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
+                className="cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.02] border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 relative overflow-hidden"
                 onClick={() => onSelectSession(session)}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
+                <CardContent className="p-4 relative">
+                  <div className="flex items-center gap-4 relative">
                     {/* Student Avatar */}
-                    <Avatar className="h-12 w-12 ring-2 ring-gray-200 dark:ring-gray-600">
+                    <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-600">
                       <AvatarImage 
                         src={session.avatarUrl} 
                         alt={session.student_name}
+                        className="object-cover rounded-full"
                       />
-                      <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 font-medium">
+                      <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 font-medium text-sm rounded-full">
                         {getInitials(session.student_name)}
                       </AvatarFallback>
                     </Avatar>
