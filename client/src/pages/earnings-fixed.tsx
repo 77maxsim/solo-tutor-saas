@@ -6,7 +6,7 @@ export default function EarningsFixed() {
 
   // Direct authentication and session fetch without getCurrentTutorId
   const { data: sessions, isLoading, error } = useQuery({
-    queryKey: ['earnings-tutor-fixed', Date.now()],
+    queryKey: ['earnings-final-fixed', Date.now()],
     queryFn: async () => {
       console.log("🧪 [EarningsFixed] Starting direct session fetch");
       
