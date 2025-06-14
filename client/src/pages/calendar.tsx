@@ -157,6 +157,69 @@ export default function Calendar() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
+      // For Oliver's account, use the same optimized query pattern
+      if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b') {
+        console.log('🔍 Calendar - Using optimized query for Oliver account');
+        
+        // Get paid sessions
+        const { data: paidSessions, error: paidError } = await supabase
+          .from('sessions')
+          .select('id, student_id, date, time, duration, rate, paid, notes, color, recurrence_id, created_at')
+          .eq('tutor_id', tutorId)
+          .eq('paid', true)
+          .order('date', { ascending: true });
+
+        if (paidError) {
+          console.error('Error fetching Oliver paid sessions for calendar:', paidError);
+          throw paidError;
+        }
+
+        // Get unpaid sessions for context
+        const { data: unpaidSessions, error: unpaidError } = await supabase
+          .from('sessions')
+          .select('id, student_id, date, time, duration, rate, paid, notes, color, recurrence_id, created_at')
+          .eq('tutor_id', tutorId)
+          .eq('paid', false)
+          .order('date', { ascending: true })
+          .limit(200);
+
+        if (unpaidError) {
+          console.error('Error fetching unpaid sessions for calendar:', unpaidError);
+        }
+
+        // Get student data separately
+        const { data: students, error: studentsError } = await supabase
+          .from('students')
+          .select('id, name')
+          .eq('tutor_id', tutorId);
+
+        if (studentsError) {
+          console.error('Error fetching students for calendar:', studentsError);
+          throw studentsError;
+        }
+
+        // Create student name map
+        const studentNameMap = new Map();
+        students?.forEach(student => {
+          studentNameMap.set(student.id, student.name);
+        });
+
+        // Combine paid and unpaid sessions with student names
+        const allSessions = [
+          ...(paidSessions || []),
+          ...(unpaidSessions || [])
+        ].map((session: any) => ({
+          ...session,
+          student_name: studentNameMap.get(session.student_id) || 'Unknown Student'
+        }));
+
+        console.log('🔍 Calendar - Oliver sessions loaded:', allSessions.length);
+        console.log('🔍 Calendar - Oliver paid sessions:', allSessions.filter(s => s.paid === true).length);
+
+        return allSessions as SessionWithStudent[];
+      }
+
+      // For other tutors, use standard query
       const { data, error } = await supabase
         .from('sessions')
         .select(`
