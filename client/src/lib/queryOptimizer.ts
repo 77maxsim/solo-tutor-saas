@@ -10,7 +10,9 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
   const now = Date.now();
   
   if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-    return cached.count > 500; // Threshold for optimization
+    const shouldOptimize = cached.count > 500;
+    console.log(`📊 Using cached count for tutor: ${cached.count} sessions, optimized: ${shouldOptimize}`);
+    return shouldOptimize;
   }
 
   try {
@@ -34,7 +36,10 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
     });
 
     // Use optimized query if session count exceeds threshold
-    return sessionCount > 500;
+    const shouldOptimize = sessionCount > 500;
+    console.log(`📊 Dataset analysis: ${sessionCount} sessions, optimization ${shouldOptimize ? 'enabled' : 'disabled'}`);
+    
+    return shouldOptimize;
   } catch (error) {
     console.error('Error in shouldUseOptimizedQuery:', error);
     return false;
@@ -44,30 +49,16 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
 export async function getOptimizedSessions(tutorId: string) {
   console.log('🔧 Using optimized query pattern for large dataset');
   
-  // Get paid sessions
-  const { data: paidSessions, error: paidError } = await supabase
+  // Get ALL sessions without joins to avoid performance issues
+  const { data: allSessions, error } = await supabase
     .from('sessions')
     .select('id, student_id, date, time, duration, rate, paid, notes, color, recurrence_id, created_at')
     .eq('tutor_id', tutorId)
-    .eq('paid', true)
     .order('date', { ascending: true });
 
-  if (paidError) {
-    console.error('Error fetching paid sessions:', paidError);
-    throw paidError;
-  }
-
-  // Get recent unpaid sessions for context (limit to avoid performance issues)
-  const { data: unpaidSessions, error: unpaidError } = await supabase
-    .from('sessions')
-    .select('id, student_id, date, time, duration, rate, paid, notes, color, recurrence_id, created_at')
-    .eq('tutor_id', tutorId)
-    .eq('paid', false)
-    .order('date', { ascending: false })
-    .limit(200);
-
-  if (unpaidError) {
-    console.error('Error fetching unpaid sessions:', unpaidError);
+  if (error) {
+    console.error('Error fetching sessions:', error);
+    throw error;
   }
 
   // Get student data separately
@@ -87,22 +78,19 @@ export async function getOptimizedSessions(tutorId: string) {
     studentNameMap.set(student.id, student.name);
   });
 
-  // Combine paid and unpaid sessions with student names
-  const allSessions = [
-    ...(paidSessions || []),
-    ...(unpaidSessions || [])
-  ].map((session: any) => ({
+  // Add student names to all sessions
+  const sessionsWithNames = (allSessions || []).map((session: any) => ({
     ...session,
     student_name: studentNameMap.get(session.student_id) || 'Unknown Student'
   }));
 
   console.log('🔧 Optimized query results:', {
-    totalSessions: allSessions.length,
-    paidSessions: allSessions.filter(s => s.paid === true).length,
-    unpaidSessions: allSessions.filter(s => s.paid === false).length
+    totalSessions: sessionsWithNames.length,
+    paidSessions: sessionsWithNames.filter(s => s.paid === true).length,
+    unpaidSessions: sessionsWithNames.filter(s => s.paid === false).length
   });
 
-  return allSessions;
+  return sessionsWithNames;
 }
 
 export async function getStandardSessions(tutorId: string) {
