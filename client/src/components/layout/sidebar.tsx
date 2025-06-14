@@ -153,7 +153,7 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
         {/* Quick Actions with Enhanced Styling */}
         <div className="space-y-2 animate-slide-up" style={{animationDelay: '0.6s'}}>
           <Button 
-            onClick={handleScheduleSession} 
+            onClick={handleScheduleSessionClick} 
             className="w-full hover-lift click-scale bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200"
           >
             <Plus className="h-4 w-4 mr-2 animate-bounce-subtle" />

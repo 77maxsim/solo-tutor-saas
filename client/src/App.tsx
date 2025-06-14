@@ -428,7 +428,10 @@ function AppLayout() {
               </div>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-64">
-              <Sidebar onScheduleSession={handleScheduleSession} />
+              <Sidebar 
+                onScheduleSession={handleScheduleSession} 
+                onCloseMobile={() => setSidebarOpen(false)}
+              />
             </SheetContent>
           </Sheet>
 
