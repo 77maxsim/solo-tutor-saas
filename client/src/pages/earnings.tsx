@@ -287,7 +287,7 @@ export default function Earnings() {
 
     const now = new Date();
     
-    // Current week boundaries (Sunday to Saturday) - December 2024
+    // Current week boundaries (Sunday to Saturday)
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
@@ -296,15 +296,9 @@ export default function Earnings() {
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
     
-    // Current month boundaries - December 2024
+    // Current month boundaries
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    
-    console.log('📅 Date boundaries:', {
-      currentWeek: `${startOfWeek.toDateString()} - ${endOfWeek.toDateString()}`,
-      currentMonth: `${firstDayOfMonth.toDateString()} - ${lastDayOfMonth.toDateString()}`,
-      sampleSessionDate: sessions[0]?.date
-    });
     
     // 30 days ago for active students
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
