@@ -155,12 +155,12 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
   }
 
   return (
-    <div className="relative space-y-6 max-h-[600px] overflow-y-auto overflow-x-hidden">
+    <div className="relative space-y-4 sm:space-y-6 max-h-[600px] sm:max-h-[600px] h-screen sm:h-auto overflow-y-auto overflow-x-hidden">
       {groupedSessions.map(({ date, sessions: daySessions }) => (
-        <div key={date} className="relative space-y-3 z-0">
+        <div key={date} className="relative space-y-2 sm:space-y-3 z-0">
           {/* Date Header */}
-          <div className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600 py-3 px-4 rounded-lg mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <div className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600 py-2 sm:py-3 px-3 sm:px-4 rounded-lg mb-2 sm:mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
               {new Date(date).toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
@@ -168,7 +168,7 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
                 day: 'numeric'
               })}
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               {daySessions.length} session{daySessions.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -178,13 +178,42 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
             {daySessions.map(session => (
               <Card
                 key={session.id}
-                className="cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.02] border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 relative overflow-hidden"
+                className="cursor-pointer hover:shadow-md transition-all duration-200 sm:hover:scale-[1.02] border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 relative overflow-hidden"
                 onClick={() => onSelectSession(session)}
               >
-                <CardContent className="p-4 relative">
-                  <div className="flex items-center gap-4 relative">
-                    {/* Student Avatar */}
-                    <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-600">
+                <CardContent className="p-3 sm:p-4 relative">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 relative">
+                    {/* Mobile: Avatar and Name Row */}
+                    <div className="flex items-center gap-3 sm:hidden">
+                      <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-600">
+                        <AvatarImage 
+                          src={session.avatarUrl} 
+                          alt={session.student_name}
+                          className="object-cover rounded-full"
+                        />
+                        <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 font-medium text-xs rounded-full">
+                          {getInitials(session.student_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                          {session.student_name}
+                        </h4>
+                        <Badge 
+                          variant={session.paid === true ? "default" : "secondary"}
+                          className={`text-xs mt-1 ${
+                            session.paid === true
+                              ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300" 
+                              : "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
+                          }`}
+                        >
+                          {session.paid === true ? 'Paid' : 'Unpaid'}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Desktop: Avatar */}
+                    <Avatar className="hidden sm:block h-12 w-12 flex-shrink-0 ring-2 ring-gray-200 dark:ring-gray-600">
                       <AvatarImage 
                         src={session.avatarUrl} 
                         alt={session.student_name}
@@ -197,7 +226,8 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
 
                     {/* Session Details */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      {/* Desktop: Name and Badge */}
+                      <div className="hidden sm:flex items-center gap-2 mb-1">
                         <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate">
                           {session.student_name}
                         </h4>
@@ -213,7 +243,8 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
                         </Badge>
                       </div>
                       
-                      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                      {/* Time and Earnings */}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                         <span className="flex items-center gap-1">
                           🕐 {session.time} ({session.duration}min)
                         </span>
@@ -223,7 +254,7 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
                       </div>
 
                       {session.notes && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 sm:mt-1 truncate">
                           📝 {session.notes}
                         </p>
                       )}
@@ -241,7 +272,7 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
 
 export default function Calendar() {
   const isMobile = useIsMobile();
-  const [calendarView, setCalendarView] = useState<'week' | 'month' | 'agenda'>('week');
+  const [calendarView, setCalendarView] = useState<'week' | 'month' | 'agenda'>(isMobile ? 'agenda' : 'week');
   const [selectedStudent, setSelectedStudent] = useState<string>('all');
   const [selectedSession, setSelectedSession] = useState<SessionWithStudent | null>(null);
   const [showSessionModal, setShowSessionModal] = useState(false);
@@ -1540,22 +1571,24 @@ export default function Calendar() {
         </div>
 
         {/* Full Screen Calendar Content */}
-        <div className="flex-1 p-4 overflow-hidden">
-          {calendarView === 'agenda' ? (
-            <AgendaView
-              sessions={filteredSessions}
-              onSelectSession={(session: SessionWithStudent) => {
-                const calendarEvent = {
-                  id: session.id,
-                  title: session.student_name,
-                  start: new Date(`${session.date}T${session.time}`),
-                  end: new Date(new Date(`${session.date}T${session.time}`).getTime() + session.duration * 60000),
-                  resource: session
-                };
-                handleSelectEvent(calendarEvent);
-              }}
-              tutorCurrency={tutorCurrency}
-            />
+        <div className="flex-1 p-3 sm:p-4 overflow-hidden">
+          {calendarView === 'agenda' || (isMobile && calendarView !== 'week' && calendarView !== 'month') ? (
+            <div className="h-full">
+              <AgendaView
+                sessions={filteredSessions}
+                onSelectSession={(session: SessionWithStudent) => {
+                  const calendarEvent = {
+                    id: session.id,
+                    title: session.student_name,
+                    start: new Date(`${session.date}T${session.time}`),
+                    end: new Date(new Date(`${session.date}T${session.time}`).getTime() + session.duration * 60000),
+                    resource: session
+                  };
+                  handleSelectEvent(calendarEvent);
+                }}
+                tutorCurrency={tutorCurrency}
+              />
+            </div>
           ) : isMobile ? (
             <MobileCalendarView
               sessions={sessions || []}
@@ -1741,7 +1774,21 @@ export default function Calendar() {
                 {/* View Toggle and Full Screen */}
                 <div className="flex items-center gap-3 self-start sm:self-auto">
                   <CalendarIcon className="h-4 w-4 text-gray-500 dark:text-gray-400 hidden sm:block" />
-                  <div className="flex bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden p-1">
+                  {/* Mobile: Dropdown for view selection */}
+                  <div className="sm:hidden">
+                    <Select value={calendarView} onValueChange={(value: 'week' | 'month' | 'agenda') => setCalendarView(value)}>
+                      <SelectTrigger className="w-32 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="agenda">Agenda</SelectItem>
+                        <SelectItem value="week">Week</SelectItem>
+                        <SelectItem value="month">Month</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {/* Desktop: Button group */}
+                  <div className="hidden sm:flex bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden p-1">
                     <Button
                       variant={calendarView === 'week' ? 'default' : 'ghost'}
                       size="sm"
@@ -1852,8 +1899,8 @@ export default function Calendar() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            {calendarView === 'agenda' ? (
+          <CardContent className="p-3 sm:p-4 md:p-6">
+            {calendarView === 'agenda' || (isMobile && calendarView !== 'week' && calendarView !== 'month') ? (
               <AgendaView
                 sessions={filteredSessions}
                 onSelectSession={(session: SessionWithStudent) => {
