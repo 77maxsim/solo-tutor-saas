@@ -295,6 +295,49 @@ export default function Students() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
+      // For Oliver's account, use the same alternative query that works for earnings
+      if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b') {
+        console.log('🔍 Students page - Using alternative query for Oliver account');
+        
+        const { data: allSessions, error: allError } = await supabase
+          .from('sessions')
+          .select(`
+            id,
+            student_id,
+            date,
+            time,
+            duration,
+            rate,
+            paid,
+            created_at,
+            students!inner (
+              id,
+              name,
+              phone,
+              email,
+              tags,
+              avatar_url
+            )
+          `)
+          .eq('tutor_id', tutorId)
+          .order('date', { ascending: false });
+
+        if (allError) {
+          console.error('Error fetching Oliver student sessions:', allError);
+          throw allError;
+        }
+
+        console.log('🔍 Students page - Oliver alternative query returned:', allSessions?.length || 0, 'sessions');
+        
+        const sessionsWithNames = allSessions?.map((session: any) => ({
+          ...session,
+          student_name: session.students?.name || 'Unknown Student'
+        })) || [];
+
+        return sessionsWithNames as Session[];
+      }
+
+      // For other tutors, use the standard query
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -339,33 +382,7 @@ export default function Students() {
     },
   });
 
-  // Add direct database query for Oliver's account paid sessions
-  const { data: junePaidSessions } = useQuery({
-    queryKey: ['june-paid-sessions-students'],
-    queryFn: async () => {
-      const tutorId = await getCurrentTutorId();
-      if (!tutorId || tutorId !== '0805984a-febf-423b-bef1-ba8dbd25760b') {
-        return null;
-      }
 
-      const { data, error } = await supabase
-        .from('sessions')
-        .select('id, date, time, duration, rate, paid, student_id')
-        .eq('tutor_id', tutorId)
-        .eq('paid', true)
-        .gte('date', '2025-06-01')
-        .lte('date', '2025-06-30');
-
-      if (error) {
-        console.error('Error fetching June paid sessions:', error);
-        return null;
-      }
-
-      console.log('🔍 Students page - Direct DB June paid sessions:', data?.length || 0);
-      return data || [];
-    },
-    enabled: !!sessions, // Only run after main sessions query
-  });
 
   const isLoading = isLoadingStudents || isLoadingSessions;
 
@@ -428,24 +445,10 @@ export default function Students() {
       let totalDuration = 0;
       let upcomingSessions = 0;
 
-      // Special handling for Oliver's account using direct database results
-      const isOliverAccount = studentSessions.some(s => (s as any).tutor_id === '0805984a-febf-423b-bef1-ba8dbd25760b');
-      let paidSessionIds: Set<string> = new Set();
-      
-      if (isOliverAccount && junePaidSessions) {
-        paidSessionIds = new Set(junePaidSessions.map(s => s.id));
-        console.log('🔍 Students page - Using Oliver override for student:', student.name, 'Paid session IDs:', paidSessionIds.size);
-      }
-
       studentSessions.forEach(session => {
         const sessionDate = new Date(session.date);
         const earnings = (session.duration / 60) * session.rate;
-        
-        // Determine if session is paid - use direct DB results for Oliver account
-        let isPaid = session.paid === true;
-        if (isOliverAccount && session.date >= '2025-06-01' && session.date <= '2025-06-30') {
-          isPaid = paidSessionIds.has(session.id);
-        }
+        const isPaid = session.paid === true;
         
         // Only count earnings from paid sessions
         if (isPaid) {

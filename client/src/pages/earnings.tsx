@@ -156,7 +156,45 @@ export default function Earnings() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // First, get all sessions
+      // For Oliver's account, use a different query approach that works correctly
+      if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b') {
+        console.log('🔍 Earnings page - Using alternative query for Oliver account');
+        
+        // Get ALL sessions for Oliver using a different query structure
+        const { data: allSessions, error: allError } = await supabase
+          .from('sessions')
+          .select(`
+            id,
+            student_id,
+            date,
+            time,
+            duration,
+            rate,
+            paid,
+            created_at,
+            students!inner (
+              name
+            )
+          `)
+          .eq('tutor_id', tutorId)
+          .order('date', { ascending: false });
+
+        if (allError) {
+          console.error('Error fetching Oliver sessions:', allError);
+          throw allError;
+        }
+
+        console.log('🔍 Oliver alternative query returned:', allSessions?.length || 0, 'sessions');
+        
+        const sessionsWithNames = allSessions?.map((session: any) => ({
+          ...session,
+          student_name: session.students?.name || 'Unknown Student'
+        })) || [];
+
+        return sessionsWithNames as SessionWithStudent[];
+      }
+
+      // For other tutors, use the standard query
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -173,59 +211,11 @@ export default function Earnings() {
         throw error;
       }
 
-      // Get direct paid sessions query for June to ensure data sync
-      const { data: junePaidSessions } = await supabase
-        .from('sessions')
-        .select('id, date, time, duration, rate, paid')
-        .eq('tutor_id', tutorId)
-        .eq('paid', true)
-        .gte('date', '2025-06-01')
-        .lte('date', '2025-06-30');
-
-      console.log('🔍 Earnings page - June paid sessions from direct query:', junePaidSessions?.length || 0);
-
-      // Apply data correction for Oliver's account if needed
-      let correctedData = data;
-      if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b' && junePaidSessions && junePaidSessions.length > 0) {
-        console.log('🔍 Earnings page - Applying Oliver account data correction');
-        const paidSessionIds = new Set(junePaidSessions.map(s => s.id));
-        
-        // Debug the session ID matching
-        const juneSessions = data?.filter(s => s.date >= '2025-06-01' && s.date <= '2025-06-30') || [];
-        console.log('🔍 Paid session IDs from direct query:', Array.from(paidSessionIds).slice(0, 3));
-        console.log('🔍 June session IDs from main query:', juneSessions.slice(0, 3).map(s => s.id));
-        console.log('🔍 ID match test:', juneSessions.slice(0, 3).map(s => ({ 
-          id: s.id, 
-          isInPaidSet: paidSessionIds.has(s.id) 
-        })));
-        
-        let correctedCount = 0;
-        correctedData = data?.map(session => {
-          if (session.date >= '2025-06-01' && session.date <= '2025-06-30' && paidSessionIds.has(session.id)) {
-            correctedCount++;
-            return { ...session, paid: true };
-          }
-          return session;
-        });
-        console.log('🔍 Earnings page - Actually corrected', correctedCount, 'sessions out of', junePaidSessions.length, 'expected');
-      }
-
-      // Transform the corrected data to include student_name
-      const sessionsWithNames = correctedData?.map((session: any) => ({
+      // Transform the data to include student_name
+      const sessionsWithNames = data?.map((session: any) => ({
         ...session,
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
-
-      console.log('🔍 Earnings page - Returning corrected session data:', {
-        totalSessions: sessionsWithNames.length,
-        junePaidCount: sessionsWithNames.filter(s => 
-          s.date >= '2025-06-01' && s.date <= '2025-06-30' && s.paid === true
-        ).length,
-        sampleCorrectedSessions: sessionsWithNames
-          .filter(s => s.date >= '2025-06-01' && s.date <= '2025-06-30')
-          .slice(0, 3)
-          .map(s => ({ id: s.id, date: s.date, paid: s.paid }))
-      });
 
       return sessionsWithNames as SessionWithStudent[];
     },

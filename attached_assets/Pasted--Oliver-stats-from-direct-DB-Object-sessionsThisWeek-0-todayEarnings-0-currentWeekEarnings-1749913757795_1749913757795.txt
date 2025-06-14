@@ -1,0 +1,29 @@
+🔍 Oliver stats from direct DB: 
+Object {sessionsThisWeek: 0, todayEarnings: 0, currentWeekEarnings: 0, currentMonthEarnings: 1410, lastMonthEarnings: 0, …}
+🔍 Dashboard query state: 
+Object {isLoading: false, hasData: true, dashboardStats: "{"sessionsThisWeek":0,"todayEarnings":0,"currentWeekEarnings":0,"currentMonthEarnings":1410…", error: null}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 0, firstSessionPaidStatus: "no sessions", sampleJuneSessions: Array(0)}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 0, firstSessionPaidStatus: "no sessions", sampleJuneSessions: Array(0)}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 0, firstSessionPaidStatus: "no sessions", sampleJuneSessions: Array(0)}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 0, firstSessionPaidStatus: "no sessions", sampleJuneSessions: Array(0)}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 0, firstSessionPaidStatus: "no sessions", sampleJuneSessions: Array(0)}
+🔍 Earnings page - June paid sessions from direct query: 17
+🔍 Earnings page - Applying Oliver account data correction
+🔍 Paid session IDs from direct query: 
+(3) ["7108042c-9628-4fbc-8c77-cf2d1c4318cf", "c80c98d4-5901-4d25-89bc-6d7528258c40", "24363700-02b2-4ac3-b6c6-96f1e373ebe5"]
+🔍 June session IDs from main query: 
+(3) ["2e7abda2-3d0d-416a-92dc-cfa42661251c", "1f59c63e-2050-4cdb-aa8a-321b4c8ff4ff", "f9a9c43a-620b-4672-8e0b-9ac6a953e783"]
+🔍 ID match test: 
+(3) [{…}, {…}, {…}]
+🔍 Earnings page - Actually corrected 0 sessions out of 17 expected
+🔍 Earnings page - Returning corrected session data: 
+Object {totalSessions: 1000, junePaidCount: 0, sampleCorrectedSessions: Array(3)}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 1000, firstSessionPaidStatus: false, sampleJuneSessions: Array(3)}
+🔍 Earnings page - Final earnings results: 
+Object {totalEarnings: 0, thisMonthEarnings: 0, thisWeekEarnings: 0, sessionsCount: 1000}
