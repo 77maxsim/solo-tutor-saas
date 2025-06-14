@@ -332,6 +332,13 @@ export default function Earnings() {
     };
   };
 
+  // Add debugging to see what sessions data we're actually using
+  console.log('🔍 Earnings page - Sessions data being used for calculations:', {
+    sessionCount: sessions?.length || 0,
+    firstSessionPaidStatus: sessions?.[0] ? (sessions[0] as any).paid : 'no sessions',
+    sampleJuneSessions: sessions?.filter(s => s.date >= '2025-06-01' && s.date <= '2025-06-30')?.slice(0, 3)?.map(s => ({ id: s.id, date: s.date, paid: (s as any).paid })) || []
+  });
+
   const earnings = sessions ? calculateEarnings(sessions) : null;
   
   // Debug earnings calculation results
