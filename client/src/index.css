@@ -273,6 +273,11 @@
     font-family: inherit;
   }
 
+  /* Dark mode calendar improvements */
+  .dark .rbc-calendar {
+    @apply bg-gray-900;
+  }
+
   /* Time Gutter Styling - Left Time Column */
   .rbc-time-gutter {
     @apply bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700;
@@ -312,6 +317,39 @@
 
   .rbc-day-slot {
     @apply border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800;
+  }
+
+  /* Dark mode specific calendar styling */
+  .dark .rbc-time-gutter {
+    @apply bg-gray-800 border-gray-600;
+  }
+
+  .dark .rbc-time-content {
+    @apply bg-gray-800;
+  }
+
+  .dark .rbc-day-slot {
+    @apply bg-gray-800 border-gray-600;
+  }
+
+  .dark .rbc-header {
+    @apply bg-gray-800 border-gray-600 text-gray-100;
+  }
+
+  .dark .rbc-time-slot {
+    @apply border-gray-600;
+  }
+
+  .dark .rbc-timeslot-group {
+    @apply border-gray-600;
+  }
+
+  .dark .rbc-timeslot-group:nth-child(even) {
+    @apply bg-gray-850;
+  }
+
+  .dark .rbc-timeslot-group:nth-child(odd) {
+    @apply bg-gray-800;
   }
 
   /* Time Slots */
@@ -592,6 +630,26 @@
     background: #1f2937;
     border: 1px solid #374151;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Dark mode calendar text colors */
+  .dark .rbc-label {
+    @apply text-gray-300;
+  }
+
+  /* Dark mode current time indicator */
+  .dark .rbc-current-time-indicator {
+    @apply bg-red-400;
+  }
+
+  /* Dark mode today highlighting */
+  .dark .rbc-today {
+    @apply bg-blue-900 bg-opacity-40;
+  }
+
+  /* Dark mode show more link */
+  .dark .rbc-show-more {
+    @apply text-blue-400;
   }
 
   .rbc-overlay-header {
