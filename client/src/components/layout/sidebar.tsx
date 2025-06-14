@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -28,11 +29,30 @@ const navigation = [
 
 interface SidebarProps {
   onScheduleSession?: () => void;
+  onCloseMobile?: () => void;
 }
 
-export function Sidebar({ onScheduleSession }: SidebarProps) {
+export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
   const [location] = useLocation();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+
+  // Handle navigation click on mobile
+  const handleNavClick = () => {
+    if (isMobile && onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
+  // Handle schedule session with mobile close
+  const handleScheduleSessionClick = () => {
+    if (onScheduleSession) {
+      onScheduleSession();
+    }
+    if (isMobile && onCloseMobile) {
+      onCloseMobile();
+    }
+  };
 
   // Fetch tutor profile data including avatar
   const { data: tutorProfile } = useQuery({
@@ -56,11 +76,7 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
     },
   });
 
-  const handleScheduleSession = () => {
-    if (onScheduleSession) {
-      onScheduleSession();
-    }
-  };
+
 
   const handleLogout = async () => {
     try {
@@ -115,6 +131,7 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-md"
                 )}
                 style={{animationDelay: `${index * 0.1}s`}}
+                onClick={handleNavClick}
               >
                 <item.icon className={cn(
                   "h-4 w-4 transition-all duration-300",
@@ -148,7 +165,10 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
       {/* User Profile Section with Micro-interactions */}
       <div className="border-t border-border p-4 animate-fade-in" style={{animationDelay: '0.8s'}}>
         <Link href="/profile">
-          <div className="flex items-center gap-3 mb-3 group hover-lift cursor-pointer p-2 rounded-lg transition-all duration-200 hover:bg-accent/50">
+          <div 
+            className="flex items-center gap-3 mb-3 group hover-lift cursor-pointer p-2 rounded-lg transition-all duration-200 hover:bg-accent/50"
+            onClick={handleNavClick}
+          >
             <Avatar className="h-10 w-10 hover-scale transition-all duration-300 group-hover:shadow-lg">
               {tutorProfile?.avatar_url ? (
                 <AvatarImage 
