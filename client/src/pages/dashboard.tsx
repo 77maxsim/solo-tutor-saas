@@ -146,9 +146,6 @@ export default function Dashboard() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // Debug: Check which tutor ID we're using
-      console.log('🧪 Dashboard - Querying sessions for tutor ID:', tutorId);
-
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -160,7 +157,6 @@ export default function Dashboard() {
           rate,
           paid,
           created_at,
-          tutor_id,
           students (
             name
           )
@@ -218,68 +214,7 @@ export default function Dashboard() {
       const activeStudentsSet = new Set<string>();
       const unpaidStudentsSet = new Set<string>();
 
-      // Debug logging for Oliver's account specifically
-      console.log('🧪 Dashboard - All sessions for earnings calculation:', sessionsWithNames.length);
-      const paidSessions = sessionsWithNames.filter((s: SessionWithStudent) => s.paid === true);
-      console.log('🧪 Dashboard - Paid sessions:', paidSessions.length, paidSessions);
-      
-      // Check for different paid field formats
-      const paidVariations = sessionsWithNames.filter((s: any) => s.paid || s.paid === 1 || s.paid === "true");
-      console.log('🧪 Dashboard - Paid variations check:', paidVariations.length);
-      
-      // Count June paid sessions specifically
-      const junePaidSessions = sessionsWithNames.filter((s: any) => {
-        const sessionDate = new Date(s.date + 'T00:00:00');
-        const isJune = sessionDate.getMonth() === 5 && sessionDate.getFullYear() === 2025;
-        const paidValue = s.paid;
-        const isPaid = Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
-        return isJune && isPaid;
-      });
-      console.log('🧪 Dashboard - June paid sessions:', junePaidSessions.length, junePaidSessions.slice(0, 3));
-      
-      // Look for any paid sessions at all
-      const anyPaidSessions = sessionsWithNames.filter((s: any) => {
-        const paidValue = s.paid;
-        return Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
-      });
-      console.log('🧪 Dashboard - Any paid sessions found:', anyPaidSessions.length, anyPaidSessions.slice(0, 3));
-      
-      // Check tutor IDs in the fetched sessions
-      const tutorIds = sessionsWithNames.map((s: any) => s.tutor_id);
-      const uniqueTutorIds = tutorIds.filter((id, index) => tutorIds.indexOf(id) === index);
-      console.log('🧪 Dashboard - Tutor IDs found in fetched sessions:', uniqueTutorIds);
-      
-      // Search specifically for June 12-14 sessions to match the database query
-      const june12to14Sessions = sessionsWithNames.filter((s: any) => {
-        const sessionDate = s.date;
-        return sessionDate >= '2025-06-12' && sessionDate <= '2025-06-14';
-      });
-      console.log('🧪 Dashboard - June 12-14 sessions found:', june12to14Sessions.length);
-      if (june12to14Sessions.length > 0) {
-        console.log('🧪 Dashboard - June 12-14 sample sessions:', june12to14Sessions.slice(0, 3));
-      }
-      
-      // Log sample session structure to see the paid field
-      if (sessionsWithNames.length > 0) {
-        console.log('🧪 Dashboard - Sample session structure:', sessionsWithNames[0]);
-        console.log('🧪 Dashboard - Paid field type:', typeof sessionsWithNames[0].paid, sessionsWithNames[0].paid);
-        
-        // Check first 5 sessions with paid = true from database
-        const firstFewSessions = sessionsWithNames.slice(0, 10);
-        firstFewSessions.forEach((s, i) => {
-          console.log(`🧪 Dashboard - Session ${i}:`, {
-            date: s.date,
-            paid: s.paid,
-            paidType: typeof s.paid,
-            student: s.student_name
-          });
-        });
-      }
-      
-      if (paidSessions.length > 0) {
-        console.log('🧪 Dashboard - First paid session:', paidSessions[0]);
-        console.log('🧪 Dashboard - Sample calculation:', (paidSessions[0].duration / 60) * paidSessions[0].rate);
-      }
+
 
       sessionsWithNames.forEach((session: SessionWithStudent) => {
         // Parse session date consistently - ensure we're getting the correct date
