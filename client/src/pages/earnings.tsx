@@ -176,6 +176,26 @@ export default function Earnings() {
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
 
+      // 🧪 DIAGNOSTIC LOGGING FOR EARNINGS PAGE
+      console.log("🧪 Earnings Page - Current tutor ID:", tutorId);
+      console.log("🧪 Earnings Page - All fetched sessions:", sessionsWithNames);
+      
+      // 🧪 Check June 2025 paid sessions specifically
+      const juneSessions = sessionsWithNames.filter(s => {
+        const date = new Date(s.date);
+        return s.paid && date >= new Date('2025-06-01') && date < new Date('2025-07-01');
+      });
+      console.log("🧪 Earnings Page - June paid sessions:", juneSessions);
+
+      // 🧪 Check if filtering is mistakenly using created_at
+      if (sessionsWithNames.length > 0) {
+        console.log("🧪 Earnings Page - First session created_at vs date:", sessionsWithNames[0]?.created_at, sessionsWithNames[0]?.date);
+      }
+
+      // 🧪 All tutor IDs from fetched sessions
+      const tutorIds = [...new Set(sessionsWithNames.map(s => s.tutor_id))];
+      console.log("🧪 Earnings Page - Tutor IDs found in fetched sessions:", tutorIds);
+
       return sessionsWithNames as SessionWithStudent[];
     },
   });
