@@ -142,8 +142,6 @@ export default function Dashboard() {
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
-      console.log("🧪 Current tutor ID (from context):", tutorId);
-      
       if (!tutorId) {
         throw new Error('User not authenticated or tutor record not found');
       }
@@ -159,7 +157,6 @@ export default function Dashboard() {
           rate,
           paid,
           created_at,
-          tutor_id,
           students (
             name
           )
@@ -177,25 +174,6 @@ export default function Dashboard() {
         ...session,
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
-
-      // 🧪 DIAGNOSTIC LOGGING FOR DASHBOARD
-      console.log("🧪 Dashboard - All fetched sessions:", sessionsWithNames);
-      
-      // 🧪 Check June 2025 paid sessions specifically
-      const juneSessions = sessionsWithNames.filter(s => {
-        const date = new Date(s.date);
-        return s.paid && date >= new Date('2025-06-01') && date < new Date('2025-07-01');
-      });
-      console.log("🧪 Dashboard - June paid sessions:", juneSessions);
-
-      // 🧪 Check if filtering is mistakenly using created_at
-      if (sessionsWithNames.length > 0) {
-        console.log("🧪 Dashboard - First session created_at vs date:", sessionsWithNames[0]?.created_at, sessionsWithNames[0]?.date);
-      }
-
-      // 🧪 All tutor IDs from fetched sessions
-      const tutorIds = [...new Set(sessionsWithNames.map(s => s.tutor_id))];
-      console.log("🧪 Dashboard - Tutor IDs found in fetched sessions:", tutorIds);
 
       // Calculate statistics with correct business logic
       const now = new Date();

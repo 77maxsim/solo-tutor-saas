@@ -40,11 +40,6 @@ interface SessionWithStudent {
   duration: number;
   rate: number;
   created_at: string;
-  tutor_id?: string;
-  paid?: boolean;
-  notes?: string;
-  color?: string;
-  recurrence_id?: string;
 }
 
 interface StudentEarnings {
@@ -66,8 +61,6 @@ const defaultCardOrder: EarningsCard[] = [
 ];
 
 export default function Earnings() {
-  console.log("🧪 [Earnings] Component mounted - START");
-  
   const queryClient = useQueryClient();
   const [cards, setCards] = useState<EarningsCard[]>(defaultCardOrder);
   
@@ -135,10 +128,7 @@ export default function Earnings() {
   const { data: tutorCurrency = 'USD', isLoading: isCurrencyLoading } = useQuery({
     queryKey: ['tutor-currency'],
     queryFn: async () => {
-      console.log("🧪 [Earnings] Fetching tutor currency...");
       const { data: { user } } = await supabase.auth.getUser();
-      console.log("🧪 [Earnings] Current user from auth:", user?.id, user?.email);
-      
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
@@ -152,50 +142,28 @@ export default function Earnings() {
         return 'USD'; // Fallback to USD on error
       }
 
-      console.log("🧪 [Earnings] Tutor currency fetched:", data?.currency);
       return data?.currency || 'USD';
     },
   });
 
-  console.log("🧪 [Earnings] About to define sessions query");
-  
   const { data: sessions, isLoading, error } = useQuery<SessionWithStudent[]>({
     queryKey: ['earnings-sessions'],
     queryFn: async () => {
-      console.log("🧪 [Earnings] Sessions queryFn started executing");
       const tutorId = await getCurrentTutorId();
-      console.log("🧪 [Earnings] Current tutor ID from getCurrentTutorId():", tutorId);
-      
       if (!tutorId) {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // 🧪 Log the query parameters before execution
-      console.log("🧪 [Earnings] About to execute query with tutor_id:", tutorId);
-      console.log("🧪 [Earnings] Query: supabase.from('sessions').select('*, students(name)').eq('tutor_id', tutorId)");
-
       const { data, error } = await supabase
         .from('sessions')
         .select(`
-          id,
-          student_id,
-          date,
-          time,
-          duration,
-          rate,
-          paid,
-          created_at,
+          *,
           students (
             name
           )
         `)
         .eq('tutor_id', tutorId)
         .order('date', { ascending: false });
-
-      // 🧪 Log raw results immediately after query
-      console.log("🧪 [Earnings] Raw fetched session data:", data);
-      console.log("🧪 [Earnings] Any errors from Supabase:", error);
-      console.log("🧪 [Earnings] Number of sessions fetched:", data?.length || 0);
 
       if (error) {
         console.error('Error fetching earnings data:', error);
@@ -207,26 +175,6 @@ export default function Earnings() {
         ...session,
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
-
-      // 🧪 DIAGNOSTIC LOGGING FOR EARNINGS PAGE
-      console.log("🧪 Earnings Page - Current tutor ID:", tutorId);
-      console.log("🧪 Earnings Page - All fetched sessions:", sessionsWithNames);
-      
-      // 🧪 Check June 2025 paid sessions specifically
-      const juneSessions = sessionsWithNames.filter(s => {
-        const date = new Date(s.date);
-        return s.paid && date >= new Date('2025-06-01') && date < new Date('2025-07-01');
-      });
-      console.log("🧪 Earnings Page - June paid sessions:", juneSessions);
-
-      // 🧪 Check if filtering is mistakenly using created_at
-      if (sessionsWithNames.length > 0) {
-        console.log("🧪 Earnings Page - First session created_at vs date:", sessionsWithNames[0]?.created_at, sessionsWithNames[0]?.date);
-      }
-
-      // 🧪 All tutor IDs from fetched sessions
-      const tutorIds = Array.from(new Set(sessionsWithNames.map((s: any) => s.tutor_id)));
-      console.log("🧪 Earnings Page - Tutor IDs found in fetched sessions:", tutorIds);
 
       return sessionsWithNames as SessionWithStudent[];
     },
@@ -257,11 +205,7 @@ export default function Earnings() {
 
   // Calculate earnings metrics with correct business logic
   const calculateEarnings = (sessions: SessionWithStudent[]) => {
-    // 🧪 DIAGNOSTIC LOGGING
-    console.log("🧪 All fetched sessions:", sessions);
-    
     if (!sessions || sessions.length === 0) {
-      console.log("🧪 No sessions found, returning zero earnings");
       return {
         totalEarnings: 0,
         thisWeekEarnings: 0,
@@ -270,24 +214,6 @@ export default function Earnings() {
         studentEarnings: []
       };
     }
-
-    // 🧪 Check June 2025 paid sessions specifically
-    const juneSessions = sessions.filter(s => {
-      const date = new Date(s.date);
-      return s.paid && date >= new Date('2025-06-01') && date < new Date('2025-07-01');
-    });
-    console.log("🧪 June paid sessions:", juneSessions);
-
-    // 🧪 Check if filtering is mistakenly using created_at
-    if (sessions.length > 0) {
-      console.log("🧪 First session created_at vs date:", sessions[0]?.created_at, sessions[0]?.date);
-    }
-
-    // 🧪 All tutor IDs from fetched sessions
-    const tutorIdSet = new Set(sessions.map((s: any) => s.tutor_id));
-    const tutorIds: string[] = [];
-    tutorIdSet.forEach(id => id && tutorIds.push(id));
-    console.log("🧪 Tutor IDs found in fetched sessions:", tutorIds);
 
     const now = new Date();
     

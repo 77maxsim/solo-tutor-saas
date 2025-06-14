@@ -16,12 +16,6 @@ import type { User } from "@supabase/supabase-js";
 import Dashboard from "@/pages/dashboard";
 import Calendar from "@/pages/calendar";
 import Earnings from "@/pages/earnings";
-import EarningsTest from "@/pages/earnings-test";
-import DebugData from "@/pages/debug-data";
-import EarningsFixed from "@/pages/earnings-fixed";
-import PaymentFix from "@/pages/payment-fix";
-import EarningsWorking from "@/pages/earnings-working";
-import EarningsSimple from "@/pages/earnings-simple";
 import Students from "@/pages/students";
 import Profile from "@/pages/profile";
 import Activity from "@/pages/activity";
@@ -104,22 +98,16 @@ const ProtectedCalendar = () => {
 };
 
 const ProtectedEarnings = () => {
-  console.log("🧪 [ProtectedEarnings] Wrapper component mounting - ENTRY POINT");
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    console.log("🧪 [ProtectedEarnings] useEffect running, checking auth session");
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("🧪 [ProtectedEarnings] Auth session result:", session?.user?.id);
       setUser(session?.user ?? null);
       setLoading(false);
       if (!session?.user) {
-        console.log("🧪 [ProtectedEarnings] No user found, redirecting to auth");
         setLocation('/auth');
-      } else {
-        console.log("🧪 [ProtectedEarnings] User authenticated, proceeding to Earnings");
       }
     });
 
@@ -135,7 +123,6 @@ const ProtectedEarnings = () => {
   }, [setLocation]);
 
   if (loading) {
-    console.log("🧪 [ProtectedEarnings] Still loading, showing spinner");
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
@@ -143,7 +130,6 @@ const ProtectedEarnings = () => {
     );
   }
 
-  console.log("🧪 [ProtectedEarnings] Loading complete, user:", user?.id, "rendering:", user ? "Earnings component" : "null");
   return user ? <Earnings /> : null;
 };
 
@@ -330,9 +316,7 @@ function Router() {
       <Route path="/" component={ProtectedDashboard} />
       <Route path="/dashboard" component={ProtectedDashboard} />
       <Route path="/calendar" component={ProtectedCalendar} />
-      <Route path="/earnings" component={EarningsWorking} />
-      <Route path="/earnings-fixed" component={EarningsFixed} />
-      <Route path="/payment-fix" component={PaymentFix} />
+      <Route path="/earnings" component={ProtectedEarnings} />
       <Route path="/students" component={ProtectedStudents} />
       <Route path="/profile" component={ProtectedProfile} />
       <Route path="/activity" component={ProtectedActivity} />
