@@ -1,8 +1,14 @@
 import { supabase } from "@/lib/supabaseClient";
+import { datasetMonitor } from "@/lib/datasetMonitor";
 
 // Cache for tutor session counts to avoid repeated queries
 const sessionCountCache = new Map<string, { count: number; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Configuration constants for optimization thresholds
+const OPTIMIZATION_THRESHOLD = 500; // Sessions count to trigger optimization
+const MAX_UNPAID_SESSIONS_LIMIT = 1000; // Safety limit for unpaid sessions
+const QUERY_TIMEOUT = 30000; // 30 seconds timeout for queries
 
 export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean> {
   // Check cache first
@@ -10,7 +16,7 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
   const now = Date.now();
   
   if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-    const shouldOptimize = cached.count > 500;
+    const shouldOptimize = cached.count > OPTIMIZATION_THRESHOLD;
     console.log(`📊 Using cached count for tutor: ${cached.count} sessions, optimized: ${shouldOptimize}`);
     return shouldOptimize;
   }
@@ -36,7 +42,7 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
     });
 
     // Use optimized query if session count exceeds threshold
-    const shouldOptimize = sessionCount > 500;
+    const shouldOptimize = sessionCount > OPTIMIZATION_THRESHOLD;
     console.log(`📊 Dataset analysis: ${sessionCount} sessions, optimization ${shouldOptimize ? 'enabled' : 'disabled'}`);
     
     return shouldOptimize;
@@ -47,84 +53,122 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
 }
 
 export async function getOptimizedSessions(tutorId: string) {
+  const startTime = Date.now();
   console.log('🔧 Using optimized query pattern for large dataset');
   
-  // Get ALL sessions without joins to avoid performance issues
-  const { data: allSessions, error } = await supabase
-    .from('sessions')
-    .select('id, student_id, date, time, duration, rate, paid, notes, color, recurrence_id, created_at')
-    .eq('tutor_id', tutorId)
-    .order('date', { ascending: true });
+  try {
+    // Get ALL sessions without joins to avoid performance issues
+    const { data: allSessions, error } = await supabase
+      .from('sessions')
+      .select('id, student_id, date, time, duration, rate, paid, notes, color, recurrence_id, created_at')
+      .eq('tutor_id', tutorId)
+      .order('date', { ascending: true });
 
-  if (error) {
-    console.error('Error fetching sessions:', error);
-    throw error;
+    if (error) {
+      console.error('Error fetching optimized sessions:', error);
+      // Fallback to standard query on error
+      console.log('🔄 Falling back to standard query due to optimization error');
+      return await getStandardSessions(tutorId);
+    }
+
+    // Safety check: If we get an unexpectedly large dataset, log a warning
+    if (allSessions && allSessions.length > 10000) {
+      console.warn(`⚠️ Very large dataset detected: ${allSessions.length} sessions. Consider additional optimization.`);
+    }
+
+    // Get student data separately
+    const { data: students, error: studentsError } = await supabase
+      .from('students')
+      .select('id, name')
+      .eq('tutor_id', tutorId);
+
+    if (studentsError) {
+      console.error('Error fetching students for optimization:', studentsError);
+      // Continue with sessions data but without student names
+      return (allSessions || []).map((session: any) => ({
+        ...session,
+        student_name: 'Loading...'
+      }));
+    }
+
+    // Create student name map
+    const studentNameMap = new Map();
+    students?.forEach(student => {
+      studentNameMap.set(student.id, student.name);
+    });
+
+    // Add student names to all sessions
+    const sessionsWithNames = (allSessions || []).map((session: any) => ({
+      ...session,
+      student_name: studentNameMap.get(session.student_id) || 'Unknown Student'
+    }));
+
+    // Track performance metrics
+    await datasetMonitor.trackQueryPerformance(tutorId, 'optimized', startTime, sessionsWithNames.length);
+
+    // Check if archiving is recommended
+    datasetMonitor.checkArchivingRecommendation(tutorId);
+
+    console.log('🔧 Optimized query results:', {
+      totalSessions: sessionsWithNames.length,
+      paidSessions: sessionsWithNames.filter(s => s.paid === true).length,
+      unpaidSessions: sessionsWithNames.filter(s => s.paid === false).length,
+      studentsCount: students?.length || 0
+    });
+
+    return sessionsWithNames;
+  } catch (error) {
+    console.error('Critical error in optimized query:', error);
+    // Ultimate fallback to standard query
+    console.log('🔄 Critical fallback to standard query');
+    return await getStandardSessions(tutorId);
   }
-
-  // Get student data separately
-  const { data: students, error: studentsError } = await supabase
-    .from('students')
-    .select('id, name')
-    .eq('tutor_id', tutorId);
-
-  if (studentsError) {
-    console.error('Error fetching students:', studentsError);
-    throw studentsError;
-  }
-
-  // Create student name map
-  const studentNameMap = new Map();
-  students?.forEach(student => {
-    studentNameMap.set(student.id, student.name);
-  });
-
-  // Add student names to all sessions
-  const sessionsWithNames = (allSessions || []).map((session: any) => ({
-    ...session,
-    student_name: studentNameMap.get(session.student_id) || 'Unknown Student'
-  }));
-
-  console.log('🔧 Optimized query results:', {
-    totalSessions: sessionsWithNames.length,
-    paidSessions: sessionsWithNames.filter(s => s.paid === true).length,
-    unpaidSessions: sessionsWithNames.filter(s => s.paid === false).length
-  });
-
-  return sessionsWithNames;
 }
 
 export async function getStandardSessions(tutorId: string) {
-  const { data, error } = await supabase
-    .from('sessions')
-    .select(`
-      id,
-      student_id,
-      date,
-      time,
-      duration,
-      rate,
-      paid,
-      notes,
-      color,
-      recurrence_id,
-      created_at,
-      students (
-        name
-      )
-    `)
-    .eq('tutor_id', tutorId)
-    .order('date', { ascending: true });
+  const startTime = Date.now();
+  
+  try {
+    const { data, error } = await supabase
+      .from('sessions')
+      .select(`
+        id,
+        student_id,
+        date,
+        time,
+        duration,
+        rate,
+        paid,
+        notes,
+        color,
+        recurrence_id,
+        created_at,
+        students (
+          name
+        )
+      `)
+      .eq('tutor_id', tutorId)
+      .order('date', { ascending: true });
 
-  if (error) {
-    console.error('Error fetching sessions:', error);
-    throw error;
+    if (error) {
+      console.error('Error fetching standard sessions:', error);
+      throw error;
+    }
+
+    // Transform the data to include student_name
+    const sessionsWithNames = data?.map((session: any) => ({
+      ...session,
+      student_name: session.students?.name || 'Unknown Student'
+    })) || [];
+
+    // Track performance metrics
+    await datasetMonitor.trackQueryPerformance(tutorId, 'standard', startTime, sessionsWithNames.length);
+
+    return sessionsWithNames;
+  } catch (error) {
+    console.error('Critical error in standard query:', error);
+    // Last resort fallback - return empty array to prevent app crash
+    console.log('🔄 Returning empty sessions array to prevent application crash');
+    return [];
   }
-
-  // Transform the data to include student_name
-  const sessionsWithNames = data?.map((session: any) => ({
-    ...session,
-    student_name: session.students?.name || 'Unknown Student'
-  })) || [];
-
-  return sessionsWithNames;
 }
