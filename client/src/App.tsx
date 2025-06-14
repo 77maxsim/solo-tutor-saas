@@ -98,7 +98,7 @@ const ProtectedCalendar = () => {
 };
 
 const ProtectedEarnings = () => {
-  console.log("🧪 [ProtectedEarnings] Wrapper component mounting");
+  console.log("🧪 [ProtectedEarnings] Wrapper component mounting - ENTRY POINT");
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [, setLocation] = useLocation();
@@ -324,7 +324,7 @@ function Router() {
       <Route path="/" component={ProtectedDashboard} />
       <Route path="/dashboard" component={ProtectedDashboard} />
       <Route path="/calendar" component={ProtectedCalendar} />
-      <Route path="/earnings" component={ProtectedEarnings} />
+      <Route path="/earnings" component={Earnings} />
       <Route path="/students" component={ProtectedStudents} />
       <Route path="/profile" component={ProtectedProfile} />
       <Route path="/activity" component={ProtectedActivity} />
