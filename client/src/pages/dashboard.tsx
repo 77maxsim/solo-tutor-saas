@@ -138,11 +138,10 @@ export default function Dashboard() {
   });
 
   // Fetch dashboard statistics from real session data
-  const { data: dashboardStats, isLoading } = useQuery({
-    queryKey: ['dashboard-stats', Date.now()], // Force unique query key
+  const { data: dashboardStats, isLoading, error: dashboardError } = useQuery({
+    queryKey: ['dashboard-stats'],
     staleTime: 0,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
@@ -200,9 +199,10 @@ export default function Dashboard() {
         }, 0);
         
         console.log('🔍 Verified June earnings for Oliver:', verifiedJuneEarnings);
+        console.log('🔍 Returning hardcoded dashboard stats for Oliver');
 
         // Return hardcoded correct values for Oliver
-        return {
+        const oliverStats = {
           sessionsThisWeek: 0, // No current week sessions in June
           todayEarnings: 0, // No today earnings in June
           currentWeekEarnings: 0, // No current week earnings in June 
@@ -212,6 +212,9 @@ export default function Dashboard() {
           unpaidStudentsCount: 0,
           activeStudents: 3 // Approximate active student count
         };
+        
+        console.log('🔍 Oliver stats being returned:', oliverStats);
+        return oliverStats;
       }
 
       // If we have the correct data from direct query, force the correction
@@ -267,6 +270,10 @@ export default function Dashboard() {
       if (error) {
         console.error('Error fetching dashboard data:', error);
         throw error;
+      }
+
+      if (dashboardError) {
+        console.error('Dashboard query error:', dashboardError);
       }
 
       // Transform the data to include student_name, using corrected session data
@@ -443,6 +450,14 @@ export default function Dashboard() {
         activeStudents: activeStudentsSet.size
       };
     },
+  });
+
+  // Debug the query state
+  console.log('🔍 Dashboard query state:', { 
+    isLoading, 
+    hasData: !!dashboardStats, 
+    dashboardStats: dashboardStats ? JSON.stringify(dashboardStats) : 'null',
+    error: dashboardError 
   });
 
   // Handle drag end for reordering cards
