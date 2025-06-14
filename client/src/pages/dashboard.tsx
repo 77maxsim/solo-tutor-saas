@@ -202,11 +202,42 @@ export default function Dashboard() {
           console.log('🔍 Oliver direct DB paid sessions:', junePaidSessions.length);
           console.log('🔍 Oliver direct DB earnings:', directJuneEarnings);
 
+          // Calculate week boundaries for current week (June 8-14, 2025)
+          const now = new Date();
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          startOfWeek.setHours(0, 0, 0, 0);
+          
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(startOfWeek.getDate() + 6);
+          endOfWeek.setHours(23, 59, 59, 999);
+
+          // Calculate week earnings from paid sessions
+          let currentWeekEarnings = 0;
+          let todayEarnings = 0;
+          
+          const today = now.toISOString().split('T')[0];
+          
+          junePaidSessions.forEach(session => {
+            const sessionDate = new Date(session.date);
+            const earnings = (session.duration / 60) * session.rate;
+            
+            // Check if session is in current week
+            if (sessionDate >= startOfWeek && sessionDate <= endOfWeek) {
+              currentWeekEarnings += earnings;
+            }
+            
+            // Check if session is today
+            if (session.date === today) {
+              todayEarnings += earnings;
+            }
+          });
+
           // Return values based on direct database query
           const oliverStats = {
             sessionsThisWeek: 0,
-            todayEarnings: 0,
-            currentWeekEarnings: 0,
+            todayEarnings,
+            currentWeekEarnings,
             currentMonthEarnings: directJuneEarnings, // Use direct DB result
             lastMonthEarnings: 0,
             pendingPayments: 0,
