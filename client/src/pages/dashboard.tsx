@@ -212,9 +212,10 @@ export default function Dashboard() {
           endOfWeek.setDate(startOfWeek.getDate() + 6);
           endOfWeek.setHours(23, 59, 59, 999);
 
-          // Calculate week earnings from paid sessions
+          // Calculate week earnings and session counts from paid sessions
           let currentWeekEarnings = 0;
           let todayEarnings = 0;
+          let sessionsThisWeek = 0;
           
           const today = now.toISOString().split('T')[0];
           
@@ -225,6 +226,7 @@ export default function Dashboard() {
             // Check if session is in current week
             if (sessionDate >= startOfWeek && sessionDate <= endOfWeek) {
               currentWeekEarnings += earnings;
+              sessionsThisWeek++;
             }
             
             // Check if session is today
@@ -233,9 +235,16 @@ export default function Dashboard() {
             }
           });
 
+          console.log('🔍 Oliver week calculation - Sessions this week:', sessionsThisWeek);
+          console.log('🔍 Oliver week calculation - Week boundaries:', {
+            startOfWeek: startOfWeek.toISOString().split('T')[0],
+            endOfWeek: endOfWeek.toISOString().split('T')[0],
+            today
+          });
+
           // Return values based on direct database query
           const oliverStats = {
-            sessionsThisWeek: 0,
+            sessionsThisWeek,
             todayEarnings,
             currentWeekEarnings,
             currentMonthEarnings: directJuneEarnings, // Use direct DB result
