@@ -213,39 +213,7 @@ export default function Dashboard() {
       const activeStudentsSet = new Set<string>();
       const unpaidStudentsSet = new Set<string>();
 
-      // Debug: Check total paid sessions and June sessions
-      const allPaidSessions = sessionsWithNames.filter((s: any) => {
-        const paidValue = s.paid;
-        return Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
-      });
-      
-      const juneSessions = sessionsWithNames.filter((s: any) => {
-        const sessionDate = new Date(s.date);
-        return sessionDate.getMonth() === 5 && sessionDate.getFullYear() === 2025;
-      });
-      
-      const junePaidSessions = juneSessions.filter((s: any) => {
-        const paidValue = s.paid;
-        return Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
-      });
 
-      console.log('🔍 DEBUG - Total sessions:', sessionsWithNames.length);
-      console.log('🔍 DEBUG - All paid sessions:', allPaidSessions.length);
-      console.log('🔍 DEBUG - June sessions total:', juneSessions.length);
-      console.log('🔍 DEBUG - June paid sessions:', junePaidSessions.length);
-      console.log('🔍 DEBUG - Sample June paid sessions:', junePaidSessions.slice(0, 3));
-      
-      // Calculate expected earnings from June paid sessions
-      let expectedJuneEarnings = 0;
-      junePaidSessions.forEach(session => {
-        expectedJuneEarnings += (session.duration / 60) * session.rate;
-      });
-      console.log('🔍 DEBUG - Expected June earnings:', expectedJuneEarnings);
-      console.log('🔍 DEBUG - Month boundaries:', {
-        firstDay: firstDayOfCurrentMonth.toDateString(),
-        lastDay: lastDayOfCurrentMonth.toDateString(),
-        today: now.toDateString()
-      });
 
 
 
@@ -282,20 +250,6 @@ export default function Dashboard() {
         // Current month earnings (only paid sessions in current month)
         if (sessionDate >= firstDayOfCurrentMonth && sessionDate <= lastDayOfCurrentMonth && isPaid) {
           currentMonthEarnings += earnings;
-          console.log('✅ Adding to current month earnings:', earnings, 'Session:', session.date, 'Total now:', currentMonthEarnings);
-        } else if (isPaid) {
-          console.log('❌ Paid session excluded from current month:', {
-            date: session.date,
-            sessionDate: sessionDate.toDateString(),
-            sessionDateValue: sessionDate.getTime(),
-            firstDay: firstDayOfCurrentMonth.toDateString(),
-            firstDayValue: firstDayOfCurrentMonth.getTime(),
-            lastDay: lastDayOfCurrentMonth.toDateString(),
-            lastDayValue: lastDayOfCurrentMonth.getTime(),
-            earnings: earnings,
-            isAfterFirst: sessionDate >= firstDayOfCurrentMonth,
-            isBeforeLast: sessionDate <= lastDayOfCurrentMonth
-          });
         }
 
         // Last month earnings (only paid sessions in last month)
@@ -315,9 +269,7 @@ export default function Dashboard() {
         }
       });
 
-      console.log('🔍 DEBUG - Final current month earnings:', currentMonthEarnings);
-      console.log('🔍 DEBUG - Final current week earnings:', currentWeekEarnings);
-      console.log('🔍 DEBUG - Final total earnings:', todayEarnings);
+
 
       unpaidStudentsCount = unpaidStudentsSet.size;
 
