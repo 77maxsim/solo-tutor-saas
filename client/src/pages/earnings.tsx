@@ -240,6 +240,11 @@ export default function Earnings() {
     const studentEarningsMap = new Map<string, { total: number; count: number }>();
     const activeStudentsSet = new Set<string>();
 
+    // Debug logging for earnings calculation
+    console.log('🧪 Earnings - All sessions:', sessions?.length || 0);
+    const paidSessionsEarnings = sessions?.filter(s => (s as any).paid === true) || [];
+    console.log('🧪 Earnings - Paid sessions:', paidSessionsEarnings.length, paidSessionsEarnings.slice(0, 3));
+
     sessions.forEach(session => {
       const sessionDate = new Date(session.date);
       const earnings = (session.duration / 60) * session.rate;

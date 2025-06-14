@@ -191,6 +191,12 @@ export default function Dashboard() {
       const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       
+      console.log('🧪 Dashboard - Current month boundaries:', {
+        firstDay: firstDayOfCurrentMonth.toISOString(),
+        lastDay: lastDayOfCurrentMonth.toISOString(),
+        currentDate: now.toISOString()
+      });
+      
       // Last month boundaries for comparison
       const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -208,8 +214,19 @@ export default function Dashboard() {
       const activeStudentsSet = new Set<string>();
       const unpaidStudentsSet = new Set<string>();
 
+      // Debug logging for Oliver's account specifically
+      console.log('🧪 Dashboard - All sessions for earnings calculation:', sessionsWithNames.length);
+      const paidSessions = sessionsWithNames.filter((s: SessionWithStudent) => s.paid === true);
+      console.log('🧪 Dashboard - Paid sessions:', paidSessions.length, paidSessions);
+      
+      if (paidSessions.length > 0) {
+        console.log('🧪 Dashboard - First paid session:', paidSessions[0]);
+        console.log('🧪 Dashboard - Sample calculation:', (paidSessions[0].duration / 60) * paidSessions[0].rate);
+      }
+
       sessionsWithNames.forEach((session: SessionWithStudent) => {
-        const sessionDate = new Date(session.date);
+        // Parse session date consistently - ensure we're getting the correct date
+        const sessionDate = new Date(session.date + 'T00:00:00');
         const earnings = (session.duration / 60) * session.rate;
         const isPaid = session.paid === true;
         const isPastSession = sessionDate < now;
@@ -237,6 +254,17 @@ export default function Dashboard() {
         // Current month earnings (only paid sessions in current month)
         if (sessionDate >= firstDayOfCurrentMonth && sessionDate <= lastDayOfCurrentMonth && isPaid) {
           currentMonthEarnings += earnings;
+          console.log('🧪 Dashboard - Adding to current month earnings:', earnings, 'Total now:', currentMonthEarnings, 'Session date:', session.date);
+        } else if (isPaid) {
+          console.log('🧪 Dashboard - Paid session NOT counted for current month:', {
+            sessionDate: sessionDate.toISOString(),
+            date: session.date,
+            isPaid,
+            firstDay: firstDayOfCurrentMonth.toISOString(),
+            lastDay: lastDayOfCurrentMonth.toISOString(),
+            isAfterFirst: sessionDate >= firstDayOfCurrentMonth,
+            isBeforeLast: sessionDate <= lastDayOfCurrentMonth
+          });
         }
 
         // Last month earnings (only paid sessions in last month)
