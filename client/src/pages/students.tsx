@@ -516,10 +516,10 @@ export default function Students() {
   if (isLoading) {
     return (
       <div className="flex-1 overflow-auto">
-        <header className="bg-white border-b border-border px-6 py-4">
+        <header className="bg-white dark:bg-gray-900 border-b border-border dark:border-gray-700 px-6 py-4 transition-colors duration-300 shadow-sm dark:shadow-gray-900/20">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">🧑‍🎓 Students</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-2xl font-semibold text-foreground dark:text-gray-100 flex items-center gap-2">🧑‍🎓 Students</h1>
+            <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1">
               Manage your student profiles and session history.
             </p>
           </div>
@@ -558,10 +558,10 @@ export default function Students() {
   if (error) {
     return (
       <div className="flex-1 overflow-auto">
-        <header className="bg-white border-b border-border px-6 py-4">
+        <header className="bg-white dark:bg-gray-900 border-b border-border dark:border-gray-700 px-6 py-4 transition-colors duration-300 shadow-sm dark:shadow-gray-900/20">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">🧑‍🎓 Students</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-2xl font-semibold text-foreground dark:text-gray-100 flex items-center gap-2">🧑‍🎓 Students</h1>
+            <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1">
               Manage your student profiles and session history.
             </p>
           </div>
@@ -585,13 +585,13 @@ export default function Students() {
   return (
     <div className="flex-1 overflow-auto">
       {/* Header with Enhanced Styling */}
-      <header className="bg-white border-b border-border px-6 py-4 animate-fade-in">
+      <header className="bg-white dark:bg-gray-900 border-b border-border dark:border-gray-700 px-6 py-4 animate-fade-in transition-colors duration-300 shadow-sm dark:shadow-gray-900/20">
         <div className="flex items-center justify-between">
           <div className="animate-slide-up">
-            <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2 hover:text-primary transition-colors duration-200">
+            <h1 className="text-2xl font-semibold text-foreground dark:text-gray-100 flex items-center gap-2 hover:text-primary dark:hover:text-blue-400 transition-colors duration-200">
               🧑‍🎓 Students
             </h1>
-            <p className="text-sm text-muted-foreground mt-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
+            <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
               Manage your student profiles and session history.
             </p>
           </div>
@@ -607,10 +607,10 @@ export default function Students() {
 
       {/* Students Content */}
       <div className="p-6">
-        <Card>
+        <Card className="dark:bg-card dark:shadow-lg dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 dark:text-gray-100">
+              <User className="h-5 w-5 dark:text-gray-300" />
               Student Overview ({studentSummaries.length} students)
             </CardTitle>
           </CardHeader>
@@ -638,7 +638,7 @@ export default function Students() {
                   {studentSummaries.map((student, index) => (
                     <TableRow 
                       key={student.name} 
-                      className="group hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-300 hover:shadow-md hover-lift animate-fade-in"
+                      className="group hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 hover:shadow-md hover-lift animate-fade-in"
                       style={{animationDelay: `${index * 0.1}s`}}
                     >
                       <TableCell>
@@ -751,7 +751,7 @@ export default function Students() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <div className="flex items-center justify-center gap-1 opacity-100 transition-all duration-300">
                           <Button
                             variant="ghost"
                             size="sm"

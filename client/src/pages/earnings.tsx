@@ -598,12 +598,12 @@ export default function Earnings() {
   return (
     <div className="flex-1 overflow-auto">
       {/* Header with Enhanced Styling */}
-      <header className="bg-white border-b border-border px-6 py-4 animate-fade-in">
+      <header className="bg-white dark:bg-gray-900 border-b border-border dark:border-gray-700 px-6 py-4 animate-fade-in transition-colors duration-300 shadow-sm dark:shadow-gray-900/20">
         <div className="animate-slide-up">
-          <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2 hover:text-primary transition-colors duration-200">
+          <h1 className="text-2xl font-semibold text-foreground dark:text-gray-100 flex items-center gap-2 hover:text-primary dark:hover:text-blue-400 transition-colors duration-200">
             💰 Earnings
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
+          <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
             Track your income and payment history.
           </p>
         </div>
