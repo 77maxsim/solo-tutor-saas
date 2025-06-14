@@ -61,6 +61,9 @@ const defaultCardOrder: EarningsCard[] = [
 ];
 
 export default function Earnings() {
+  // 🧪 DIAGNOSTIC LOGGING FOR COMPONENT MOUNTING
+  console.log("🧪 [Earnings] Component mounted");
+  
   const queryClient = useQueryClient();
   const [cards, setCards] = useState<EarningsCard[]>(defaultCardOrder);
   
@@ -128,7 +131,10 @@ export default function Earnings() {
   const { data: tutorCurrency = 'USD', isLoading: isCurrencyLoading } = useQuery({
     queryKey: ['tutor-currency'],
     queryFn: async () => {
+      console.log("🧪 [Earnings] Fetching tutor currency...");
       const { data: { user } } = await supabase.auth.getUser();
+      console.log("🧪 [Earnings] Current user from auth:", user?.id, user?.email);
+      
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
@@ -142,13 +148,17 @@ export default function Earnings() {
         return 'USD'; // Fallback to USD on error
       }
 
+      console.log("🧪 [Earnings] Tutor currency fetched:", data?.currency);
       return data?.currency || 'USD';
     },
   });
 
+  console.log("🧪 [Earnings] About to define sessions query");
+  
   const { data: sessions, isLoading, error } = useQuery<SessionWithStudent[]>({
     queryKey: ['earnings-sessions'],
     queryFn: async () => {
+      console.log("🧪 [Earnings] Sessions queryFn started executing");
       const tutorId = await getCurrentTutorId();
       console.log("🧪 [Earnings] Current tutor ID from getCurrentTutorId():", tutorId);
       
