@@ -205,7 +205,11 @@ export default function Earnings() {
 
   // Calculate earnings metrics with correct business logic
   const calculateEarnings = (sessions: SessionWithStudent[]) => {
+    // 🧪 DIAGNOSTIC LOGGING
+    console.log("🧪 All fetched sessions:", sessions);
+    
     if (!sessions || sessions.length === 0) {
+      console.log("🧪 No sessions found, returning zero earnings");
       return {
         totalEarnings: 0,
         thisWeekEarnings: 0,
@@ -214,6 +218,22 @@ export default function Earnings() {
         studentEarnings: []
       };
     }
+
+    // 🧪 Check June 2025 paid sessions specifically
+    const juneSessions = sessions.filter(s => {
+      const date = new Date(s.date);
+      return s.paid && date >= new Date('2025-06-01') && date < new Date('2025-07-01');
+    });
+    console.log("🧪 June paid sessions:", juneSessions);
+
+    // 🧪 Check if filtering is mistakenly using created_at
+    if (sessions.length > 0) {
+      console.log("🧪 First session created_at vs date:", sessions[0]?.created_at, sessions[0]?.date);
+    }
+
+    // 🧪 All tutor IDs from fetched sessions
+    const tutorIds = [...new Set(sessions.map(s => s.tutor_id))];
+    console.log("🧪 Tutor IDs found in fetched sessions:", tutorIds);
 
     const now = new Date();
     
