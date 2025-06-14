@@ -194,13 +194,22 @@ export default function Dashboard() {
       let sessionsData = data;
       if (junePaidSessions && junePaidSessions.length === 21) {
         console.log('✓ Using direct database query result with 21 paid June sessions');
+        // Create a set of paid session IDs for faster lookup
+        const paidSessionIds = new Set(junePaidSessions.map(jps => jps.id));
+        
         // Override the paid sessions data for calculations
         if (sessionsData) {
           sessionsData = sessionsData.map(session => {
-            const isJunePaid = junePaidSessions.some(jps => jps.id === session.id);
-            return isJunePaid ? { ...session, paid: true } : session;
+            if (paidSessionIds.has(session.id)) {
+              return { ...session, paid: true };
+            }
+            return session;
           });
         }
+        
+        // Verify the correction worked
+        const correctedPaidCount = sessionsData?.filter(s => s.paid === true).length || 0;
+        console.log('🔍 Corrected paid sessions count:', correctedPaidCount);
       }
 
       // Debug: Also check what the tutor email is
@@ -362,6 +371,13 @@ export default function Dashboard() {
 
 
       unpaidStudentsCount = unpaidStudentsSet.size;
+
+      // Add final debugging before return
+      console.log('🔍 Final calculation results:', {
+        currentMonthEarnings,
+        allJunePaidCount: allJunePaidSessions.length,
+        expectedJuneEarnings
+      });
 
       return {
         sessionsThisWeek,
