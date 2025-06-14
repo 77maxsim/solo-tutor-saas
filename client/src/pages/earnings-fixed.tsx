@@ -6,7 +6,7 @@ export default function EarningsFixed() {
 
   // Direct authentication and session fetch without getCurrentTutorId
   const { data: sessions, isLoading, error } = useQuery({
-    queryKey: ['earnings-fixed'],
+    queryKey: ['earnings-tutor-fixed', Date.now()],
     queryFn: async () => {
       console.log("🧪 [EarningsFixed] Starting direct session fetch");
       
@@ -26,7 +26,7 @@ export default function EarningsFixed() {
       const { data, error } = await supabase
         .from('sessions')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('tutor_id', user.id)
         .order('date', { ascending: false });
 
       if (error) {
