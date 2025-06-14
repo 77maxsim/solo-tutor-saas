@@ -19,6 +19,7 @@ import Earnings from "@/pages/earnings";
 import EarningsTest from "@/pages/earnings-test";
 import DebugData from "@/pages/debug-data";
 import EarningsFixed from "@/pages/earnings-fixed";
+import PaymentFix from "@/pages/payment-fix";
 import EarningsSimple from "@/pages/earnings-simple";
 import Students from "@/pages/students";
 import Profile from "@/pages/profile";
@@ -329,6 +330,7 @@ function Router() {
       <Route path="/dashboard" component={ProtectedDashboard} />
       <Route path="/calendar" component={ProtectedCalendar} />
       <Route path="/earnings" component={EarningsFixed} />
+      <Route path="/payment-fix" component={PaymentFix} />
       <Route path="/students" component={ProtectedStudents} />
       <Route path="/profile" component={ProtectedProfile} />
       <Route path="/activity" component={ProtectedActivity} />

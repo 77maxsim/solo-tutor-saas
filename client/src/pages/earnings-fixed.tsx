@@ -70,6 +70,16 @@ export default function EarningsFixed() {
   // Calculate earnings
   console.log("🧪 [EarningsFixed] Calculating earnings for", sessions?.length || 0, "sessions");
   
+  // Check payment status distribution
+  const paidCount = sessions?.filter((s: any) => s.paid).length || 0;
+  const unpaidCount = sessions?.filter((s: any) => !s.paid).length || 0;
+  console.log(`🧪 [EarningsFixed] Payment status: ${paidCount} paid, ${unpaidCount} unpaid`);
+  
+  // Show sample of recent sessions with payment status
+  sessions?.slice(0, 10).forEach((session: any, index: number) => {
+    console.log(`🧪 [EarningsFixed] Recent session ${index + 1}: Date=${session.date}, Paid=${session.paid}, Rate=${session.rate}, Duration=${session.duration}`);
+  });
+  
   const totalEarnings = sessions?.reduce((sum: number, session: any) => {
     if (session.paid) {
       const earnings = (session.duration / 60) * session.rate;
@@ -81,6 +91,13 @@ export default function EarningsFixed() {
 
   const paidSessions = sessions?.filter((s: any) => s.paid) || [];
   const unpaidSessions = sessions?.filter((s: any) => !s.paid) || [];
+  
+  // CRITICAL: If no paid sessions found but you mentioned there are paid sessions today,
+  // let's check if there's a data integrity issue
+  if (paidSessions.length === 0 && sessions && sessions.length > 0) {
+    console.log("🧪 [EarningsFixed] ⚠️ NO PAID SESSIONS FOUND - This may be a data integrity issue");
+    console.log("🧪 [EarningsFixed] All sessions are marked as unpaid in database");
+  }
   
   console.log("🧪 [EarningsFixed] Final calculations:", {
     totalSessions: sessions?.length || 0,
