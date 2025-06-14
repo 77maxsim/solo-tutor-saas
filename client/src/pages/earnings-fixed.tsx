@@ -20,29 +20,14 @@ export default function EarningsFixed() {
         return [];
       }
 
-      // Query sessions directly with user.id - try different field names
+      // Query sessions directly with user.id
       console.log("🧪 [EarningsFixed] Fetching sessions for user:", user.id);
       
-      // First try with tutor_id field
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from('sessions')
-        .select('id, student_id, date, time, duration, rate, paid, students(name)')
-        .eq('tutor_id', user.id)
+        .select('*')
+        .eq('user_id', user.id)
         .order('date', { ascending: false });
-
-      if (error) {
-        console.log("🧪 [EarningsFixed] tutor_id query failed, trying user_id:", error.message);
-        
-        // If that fails, try with user_id field
-        const result = await supabase
-          .from('sessions')
-          .select('id, student_id, date, time, duration, rate, paid, students(name)')
-          .eq('user_id', user.id)
-          .order('date', { ascending: false });
-        
-        data = result.data;
-        error = result.error;
-      }
 
       if (error) {
         console.log("🧪 [EarningsFixed] Sessions query error:", error);
@@ -51,7 +36,8 @@ export default function EarningsFixed() {
       
       console.log("🧪 [EarningsFixed] Raw sessions found:", data?.length || 0);
       
-      // Log session details
+      // Log session details and structure
+      console.log("🧪 [EarningsFixed] Session data structure:", data?.[0]);
       data?.forEach((session: any, index: number) => {
         if (index < 5) {
           console.log(`🧪 [EarningsFixed] Session ${index + 1}:`, {
@@ -61,7 +47,8 @@ export default function EarningsFixed() {
             duration: session.duration,
             rate: session.rate,
             paid: session.paid,
-            student: session.students?.name
+            student_id: session.student_id,
+            user_id: session.user_id
           });
         }
       });
@@ -145,7 +132,7 @@ export default function EarningsFixed() {
                   <div key={session.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
                     <div>
                       <div className="font-medium text-gray-900">
-                        {session.students?.name || 'Unknown Student'}
+                        Session #{session.id}
                       </div>
                       <div className="text-sm text-gray-500">
                         {session.date} at {session.time} • {session.duration} min
@@ -184,7 +171,7 @@ export default function EarningsFixed() {
                   <div key={session.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
                     <div>
                       <div className="font-medium text-gray-900">
-                        {session.students?.name || 'Unknown Student'}
+                        Session #{session.id}
                       </div>
                       <div className="text-sm text-gray-500">
                         {session.date} at {session.time} • {session.duration} min
