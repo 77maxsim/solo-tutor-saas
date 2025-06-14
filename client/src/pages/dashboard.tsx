@@ -140,11 +140,16 @@ export default function Dashboard() {
   // Fetch dashboard statistics from real session data
   const { data: dashboardStats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
+    staleTime: 0,
+    refetchOnMount: true,
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
         throw new Error('User not authenticated or tutor record not found');
       }
+
+      // Debug: Log the tutor ID being used for the query
+      console.log('🔍 Oliver tutor ID used for query:', tutorId);
 
       const { data, error } = await supabase
         .from('sessions')
@@ -157,12 +162,22 @@ export default function Dashboard() {
           rate,
           paid,
           created_at,
+          tutor_id,
           students (
             name
           )
         `)
         .eq('tutor_id', tutorId)
         .order('date', { ascending: false });
+
+      // Debug: Also check what the tutor email is
+      const { data: tutorData } = await supabase
+        .from('tutors')
+        .select('email')
+        .eq('id', tutorId)
+        .single();
+      
+      console.log('🔍 Tutor email for this ID:', tutorData?.email);
 
       if (error) {
         console.error('Error fetching dashboard data:', error);
@@ -212,6 +227,32 @@ export default function Dashboard() {
       let unpaidStudentsCount = 0;
       const activeStudentsSet = new Set<string>();
       const unpaidStudentsSet = new Set<string>();
+
+      // Debug: Check June 12-14 paid sessions specifically
+      const june12to14Sessions = sessionsWithNames.filter(session => {
+        const sessionDate = session.date;
+        const paidValue = (session as any).paid;
+        const isPaid = Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
+        return sessionDate >= '2025-06-12' && sessionDate <= '2025-06-14' && isPaid;
+      });
+      
+      console.log('🔍 June 12-14 paid sessions found in app:', june12to14Sessions.length);
+      console.log('🔍 Sample June 12-14 sessions:', june12to14Sessions.slice(0, 5).map(s => ({
+        date: s.date,
+        paid: (s as any).paid,
+        rate: s.rate,
+        duration: s.duration
+      })));
+
+      // Check if we're missing sessions from database vs app
+      const allJuneSessions = sessionsWithNames.filter(s => s.date.startsWith('2025-06'));
+      const allJunePaidSessions = allJuneSessions.filter(s => {
+        const paidValue = (s as any).paid;
+        return Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
+      });
+      
+      console.log('🔍 All June sessions in app:', allJuneSessions.length);
+      console.log('🔍 All June paid sessions in app:', allJunePaidSessions.length);
 
 
 
