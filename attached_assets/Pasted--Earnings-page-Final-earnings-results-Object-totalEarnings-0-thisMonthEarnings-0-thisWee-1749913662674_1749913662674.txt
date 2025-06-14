@@ -1,0 +1,32 @@
+🔍 Earnings page - Final earnings results: 
+Object {totalEarnings: 0, thisMonthEarnings: 0, thisWeekEarnings: 0, sessionsCount: 1000}
+Session data structure: 
+Object {id: "a208ef60-e899-4e31-94e5-4fb77947cc38", student_id: "76be2678-b407-4494-b910-4617d8cc1573", date: "2025-09-05", time: "19:00", duration: 30, …}
+Student data in session: 
+Object {id: "76be2678-b407-4494-b910-4617d8cc1573", name: "Eric (old)", tags: Array(0), email: null, phone: null, …}
+🔍 Students page - Direct DB June paid sessions: 17
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 1000, firstSessionPaidStatus: false, sampleJuneSessions: Array(3)}
+🔍 Earnings page - Final earnings results: 
+Object {totalEarnings: 0, thisMonthEarnings: 0, thisWeekEarnings: 0, sessionsCount: 1000}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 1000, firstSessionPaidStatus: false, sampleJuneSessions: Array(3)}
+🔍 Earnings page - Final earnings results: 
+Object {totalEarnings: 0, thisMonthEarnings: 0, thisWeekEarnings: 0, sessionsCount: 1000}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 1000, firstSessionPaidStatus: false, sampleJuneSessions: Array(3)}
+🔍 Earnings page - Final earnings results: 
+Object {totalEarnings: 0, thisMonthEarnings: 0, thisWeekEarnings: 0, sessionsCount: 1000}
+🔍 Earnings page - June paid sessions from direct query: 17
+🔍 Earnings page - Applying Oliver account data correction
+🔍 Earnings page - Applied data correction for 17 paid sessions
+🔍 Earnings page - Returning corrected session data: 
+Object {totalSessions: 1000, junePaidCount: 0, sampleCorrectedSessions: Array(3)}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 1000, firstSessionPaidStatus: false, sampleJuneSessions: Array(3)}
+🔍 Earnings page - Final earnings results: 
+Object {totalEarnings: 0, thisMonthEarnings: 0, thisWeekEarnings: 0, sessionsCount: 1000}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 1000, firstSessionPaidStatus: false, sampleJuneSessions: Array(3)}
+🔍 Earnings page - Final earnings results: 
+Object {totalEarnings: 0, thisMonthEarnings: 0, thisWeekEarnings: 0, sessionsCount: 1000}

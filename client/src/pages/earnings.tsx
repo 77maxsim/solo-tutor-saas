@@ -189,13 +189,25 @@ export default function Earnings() {
       if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b' && junePaidSessions && junePaidSessions.length > 0) {
         console.log('🔍 Earnings page - Applying Oliver account data correction');
         const paidSessionIds = new Set(junePaidSessions.map(s => s.id));
+        
+        // Debug the session ID matching
+        const juneSessions = data?.filter(s => s.date >= '2025-06-01' && s.date <= '2025-06-30') || [];
+        console.log('🔍 Paid session IDs from direct query:', Array.from(paidSessionIds).slice(0, 3));
+        console.log('🔍 June session IDs from main query:', juneSessions.slice(0, 3).map(s => s.id));
+        console.log('🔍 ID match test:', juneSessions.slice(0, 3).map(s => ({ 
+          id: s.id, 
+          isInPaidSet: paidSessionIds.has(s.id) 
+        })));
+        
+        let correctedCount = 0;
         correctedData = data?.map(session => {
           if (session.date >= '2025-06-01' && session.date <= '2025-06-30' && paidSessionIds.has(session.id)) {
+            correctedCount++;
             return { ...session, paid: true };
           }
           return session;
         });
-        console.log('🔍 Earnings page - Applied data correction for', junePaidSessions.length, 'paid sessions');
+        console.log('🔍 Earnings page - Actually corrected', correctedCount, 'sessions out of', junePaidSessions.length, 'expected');
       }
 
       // Transform the corrected data to include student_name
