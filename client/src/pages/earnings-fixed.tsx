@@ -80,14 +80,23 @@ export default function EarningsFixed() {
     console.log(`🧪 [EarningsFixed] Recent session ${index + 1}: Date=${session.date}, Paid=${session.paid}, Rate=${session.rate}, Duration=${session.duration}`);
   });
   
-  const totalEarnings = sessions?.reduce((sum: number, session: any) => {
-    if (session.paid) {
+  console.log("🧪 [EarningsFixed] About to calculate earnings...");
+  let calculatedEarnings = 0;
+  let paidSessionCount = 0;
+  
+  sessions?.forEach((session: any, index: number) => {
+    if (session.paid === true) {
       const earnings = (session.duration / 60) * session.rate;
-      console.log(`🧪 [EarningsFixed] Paid session ${session.id}: ${session.duration}min × ¥${session.rate}/hr = ¥${earnings}`);
-      return sum + earnings;
+      calculatedEarnings += earnings;
+      paidSessionCount++;
+      if (index < 10) { // Only log first 10 to avoid spam
+        console.log(`🧪 [EarningsFixed] Paid session ${index + 1}: ${session.duration}min × ¥${session.rate}/hr = ¥${earnings} | Running total: ¥${calculatedEarnings}`);
+      }
     }
-    return sum;
-  }, 0) || 0;
+  });
+  
+  console.log(`🧪 [EarningsFixed] Final calculation: ${paidSessionCount} paid sessions = ¥${calculatedEarnings}`);
+  const totalEarnings = calculatedEarnings;
 
   const paidSessions = sessions?.filter((s: any) => s.paid) || [];
   const unpaidSessions = sessions?.filter((s: any) => !s.paid) || [];
