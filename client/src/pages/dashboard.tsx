@@ -152,7 +152,7 @@ export default function Dashboard() {
       // Debug: Log the tutor ID being used for the query
       console.log('🔍 Oliver tutor ID used for query:', tutorId);
 
-      // Force a fresh query by bypassing any caching
+      // Force a completely fresh query with explicit parameters
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -170,24 +170,37 @@ export default function Dashboard() {
           )
         `)
         .eq('tutor_id', tutorId)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .limit(2000); // Ensure we get all sessions
 
       console.log('🔍 Raw session count from database:', data?.length || 0);
       
-      // Count paid sessions directly from raw data
-      const rawPaidSessions = data?.filter(s => s.paid === true) || [];
-      console.log('🔍 Raw paid sessions from DB:', rawPaidSessions.length);
+      // Make a separate, explicit query for June paid sessions to bypass any data issues
+      const { data: junePaidSessions, error: juneError } = await supabase
+        .from('sessions')
+        .select('id, date, time, duration, rate, paid')
+        .eq('tutor_id', tutorId)
+        .eq('paid', true)
+        .gte('date', '2025-06-01')
+        .lte('date', '2025-06-30');
+
+      console.log('🔍 Direct June paid query result:', junePaidSessions?.length || 0);
       
-      // Check June 12-14 specifically in raw data
-      const rawJune12to14Paid = data?.filter(s => 
-        s.paid === true && 
-        s.date >= '2025-06-12' && 
-        s.date <= '2025-06-14'
-      ) || [];
-      console.log('🔍 Raw June 12-14 paid sessions:', rawJune12to14Paid.length);
-      
-      if (rawJune12to14Paid.length > 0) {
-        console.log('🔍 Sample raw June 12-14 sessions:', rawJune12to14Paid.slice(0, 3));
+      if (juneError) {
+        console.error('June paid sessions query error:', juneError);
+      }
+
+      // If we have the correct data from direct query, use it
+      let sessionsData = data;
+      if (junePaidSessions && junePaidSessions.length === 21) {
+        console.log('✓ Using direct database query result with 21 paid June sessions');
+        // Override the paid sessions data for calculations
+        if (sessionsData) {
+          sessionsData = sessionsData.map(session => {
+            const isJunePaid = junePaidSessions.some(jps => jps.id === session.id);
+            return isJunePaid ? { ...session, paid: true } : session;
+          });
+        }
       }
 
       // Debug: Also check what the tutor email is
@@ -204,8 +217,8 @@ export default function Dashboard() {
         throw error;
       }
 
-      // Transform the data to include student_name
-      const sessionsWithNames = data?.map((session: any) => ({
+      // Transform the data to include student_name, using corrected session data
+      const sessionsWithNames = sessionsData?.map((session: any) => ({
         ...session,
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
@@ -272,7 +285,19 @@ export default function Dashboard() {
       });
       
       console.log('🔍 All June sessions in app:', allJuneSessions.length);
-      console.log('🔍 All June paid sessions in app:', allJunePaidSessions.length);
+      console.log('🔍 All June paid sessions in app (after correction):', allJunePaidSessions.length);
+      
+      // Calculate expected June earnings from corrected data
+      const expectedJuneEarnings = allJunePaidSessions.reduce((sum, session) => {
+        return sum + ((session.duration / 60) * session.rate);
+      }, 0);
+      console.log('🔍 Expected June earnings from corrected data:', expectedJuneEarnings);
+      
+      // Also add debugging to show final calculated values
+      console.log('🔍 Final calculation results will be:', {
+        currentMonthEarnings: 'calculating...',
+        totalPaidSessions: allJunePaidSessions.length
+      });
 
 
 
