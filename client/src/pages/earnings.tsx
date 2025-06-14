@@ -40,6 +40,11 @@ interface SessionWithStudent {
   duration: number;
   rate: number;
   created_at: string;
+  tutor_id?: string;
+  paid?: boolean;
+  notes?: string;
+  color?: string;
+  recurrence_id?: string;
 }
 
 interface StudentEarnings {
@@ -214,7 +219,7 @@ export default function Earnings() {
       }
 
       // 🧪 All tutor IDs from fetched sessions
-      const tutorIds = [...new Set(sessionsWithNames.map(s => s.tutor_id))];
+      const tutorIds = Array.from(new Set(sessionsWithNames.map((s: any) => s.tutor_id)));
       console.log("🧪 Earnings Page - Tutor IDs found in fetched sessions:", tutorIds);
 
       return sessionsWithNames as SessionWithStudent[];
@@ -273,7 +278,9 @@ export default function Earnings() {
     }
 
     // 🧪 All tutor IDs from fetched sessions
-    const tutorIds = [...new Set(sessions.map(s => s.tutor_id))];
+    const tutorIdSet = new Set(sessions.map((s: any) => s.tutor_id));
+    const tutorIds: string[] = [];
+    tutorIdSet.forEach(id => id && tutorIds.push(id));
     console.log("🧪 Tutor IDs found in fetched sessions:", tutorIds);
 
     const now = new Date();
