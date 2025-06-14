@@ -98,16 +98,22 @@ const ProtectedCalendar = () => {
 };
 
 const ProtectedEarnings = () => {
+  console.log("🧪 [ProtectedEarnings] Wrapper component mounting");
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
+    console.log("🧪 [ProtectedEarnings] useEffect running, checking auth session");
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("🧪 [ProtectedEarnings] Auth session result:", session?.user?.id);
       setUser(session?.user ?? null);
       setLoading(false);
       if (!session?.user) {
+        console.log("🧪 [ProtectedEarnings] No user found, redirecting to auth");
         setLocation('/auth');
+      } else {
+        console.log("🧪 [ProtectedEarnings] User authenticated, proceeding to Earnings");
       }
     });
 
