@@ -91,7 +91,7 @@ export function Sidebar({ onScheduleSession }: SidebarProps) {
   };
 
   return (
-    <div className="flex h-full w-64 flex-col bg-white border-r border-border animate-slide-up">
+    <div className="flex h-full w-64 flex-col bg-card border-r border-border animate-slide-up">
       {/* Logo/Brand Header with Hover Effect */}
       <div className="flex items-center gap-3 px-6 py-6 border-b border-border hover-lift cursor-pointer group">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 group-hover:scale-110 transition-all duration-300 animate-pulse-glow">

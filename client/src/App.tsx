@@ -408,7 +408,7 @@ function AppLayout() {
   }
 
   return (
-    <div className={cn("h-screen bg-slate-50", !showNavigation && "flex flex-col")}>
+    <div className={cn("h-screen bg-background", !showNavigation && "flex flex-col")}>
       {showNavigation ? (
         // Authenticated layout with sidebar
         <div className="flex h-full">
