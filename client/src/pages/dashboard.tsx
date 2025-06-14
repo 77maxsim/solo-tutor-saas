@@ -219,6 +219,36 @@ export default function Dashboard() {
       const paidSessions = sessionsWithNames.filter((s: SessionWithStudent) => s.paid === true);
       console.log('🧪 Dashboard - Paid sessions:', paidSessions.length, paidSessions);
       
+      // Check for different paid field formats
+      const paidVariations = sessionsWithNames.filter((s: any) => s.paid || s.paid === 1 || s.paid === "true");
+      console.log('🧪 Dashboard - Paid variations check:', paidVariations.length);
+      
+      // Count June paid sessions specifically
+      const junePaidSessions = sessionsWithNames.filter((s: any) => {
+        const sessionDate = new Date(s.date + 'T00:00:00');
+        const isJune = sessionDate.getMonth() === 5 && sessionDate.getFullYear() === 2025;
+        const isPaid = s.paid === true || s.paid === "true" || s.paid === 1;
+        return isJune && isPaid;
+      });
+      console.log('🧪 Dashboard - June paid sessions:', junePaidSessions);
+      
+      // Log sample session structure to see the paid field
+      if (sessionsWithNames.length > 0) {
+        console.log('🧪 Dashboard - Sample session structure:', sessionsWithNames[0]);
+        console.log('🧪 Dashboard - Paid field type:', typeof sessionsWithNames[0].paid, sessionsWithNames[0].paid);
+        
+        // Check first 5 sessions with paid = true from database
+        const firstFewSessions = sessionsWithNames.slice(0, 10);
+        firstFewSessions.forEach((s, i) => {
+          console.log(`🧪 Dashboard - Session ${i}:`, {
+            date: s.date,
+            paid: s.paid,
+            paidType: typeof s.paid,
+            student: s.student_name
+          });
+        });
+      }
+      
       if (paidSessions.length > 0) {
         console.log('🧪 Dashboard - First paid session:', paidSessions[0]);
         console.log('🧪 Dashboard - Sample calculation:', (paidSessions[0].duration / 60) * paidSessions[0].rate);
@@ -228,7 +258,9 @@ export default function Dashboard() {
         // Parse session date consistently - ensure we're getting the correct date
         const sessionDate = new Date(session.date + 'T00:00:00');
         const earnings = (session.duration / 60) * session.rate;
-        const isPaid = session.paid === true;
+        // Handle different paid field formats - more comprehensive check
+        const paidValue = (session as any).paid;
+        const isPaid = Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
         const isPastSession = sessionDate < now;
 
         // Sessions this week count (regardless of payment status, but only current week)

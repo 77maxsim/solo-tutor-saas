@@ -248,7 +248,9 @@ export default function Earnings() {
     sessions.forEach(session => {
       const sessionDate = new Date(session.date);
       const earnings = (session.duration / 60) * session.rate;
-      const isPaid = (session as any).paid === true;
+      // Handle different paid field formats - more comprehensive check
+      const paidValue = (session as any).paid;
+      const isPaid = Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
       
       // Total earnings (only from paid sessions)
       if (isPaid) {
