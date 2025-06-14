@@ -198,11 +198,22 @@ export default function Earnings() {
         console.log('🔍 Earnings page - Applied data correction for', junePaidSessions.length, 'paid sessions');
       }
 
-      // Transform the data to include student_name
+      // Transform the corrected data to include student_name
       const sessionsWithNames = correctedData?.map((session: any) => ({
         ...session,
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
+
+      console.log('🔍 Earnings page - Returning corrected session data:', {
+        totalSessions: sessionsWithNames.length,
+        junePaidCount: sessionsWithNames.filter(s => 
+          s.date >= '2025-06-01' && s.date <= '2025-06-30' && s.paid === true
+        ).length,
+        sampleCorrectedSessions: sessionsWithNames
+          .filter(s => s.date >= '2025-06-01' && s.date <= '2025-06-30')
+          .slice(0, 3)
+          .map(s => ({ id: s.id, date: s.date, paid: s.paid }))
+      });
 
       return sessionsWithNames as SessionWithStudent[];
     },

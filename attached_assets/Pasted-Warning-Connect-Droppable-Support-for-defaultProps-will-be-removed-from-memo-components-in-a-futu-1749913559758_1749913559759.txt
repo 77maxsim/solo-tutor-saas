@@ -1,0 +1,40 @@
+Warning: Connect(Droppable): Support for defaultProps will be removed from memo components in a future major release. Use JavaScript default parameters instead.
+    at Provider (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=c8e46518:382:20)
+    at App (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=c8e46518:6919:25)
+    at ErrorBoundary2 (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=c8e46518:1416:35)
+    at DragDropContext (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=c8e46518:7039:19)
+    at div
+    at div
+    at Earnings (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/pages/earnings.tsx:47:23)
+    at ProtectedEarnings (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/App.tsx?v=vGr_VCX0Dwfp7yrINCTNy:128:27)
+    at Route (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=c8e46518:323:16)
+    at Switch (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=c8e46518:379:17)
+    at Router (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/App.tsx?v=vGr_VCX0Dwfp7yrINCTNy:343:27)
+    at div
+    at div
+    at div
+    at AppLayout (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/App.tsx?v=vGr_VCX0Dwfp7yrINCTNy:446:41)
+    at Provider (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-KCIZDHHO.js?v=c8e46518:38:15)
+    at TooltipProvider (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=c8e46518:62:5)
+    at QueryClientProvider (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=c8e46518:2805:3)
+    at App
+Session data structure: 
+Object {id: "a208ef60-e899-4e31-94e5-4fb77947cc38", student_id: "76be2678-b407-4494-b910-4617d8cc1573", date: "2025-09-05", time: "19:00", duration: 30, …}
+Student data in session: 
+Object {id: "76be2678-b407-4494-b910-4617d8cc1573", name: "Eric (old)", tags: Array(0), email: null, phone: null, …}
+🔍 Students page - Direct DB June paid sessions: 17
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 1000, firstSessionPaidStatus: false, sampleJuneSessions: Array(3)}
+🔍 Earnings page - Final earnings results: 
+Object {totalEarnings: 0, thisMonthEarnings: 0, thisWeekEarnings: 0, sessionsCount: 1000}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 1000, firstSessionPaidStatus: false, sampleJuneSessions: Array(3)}
+🔍 Earnings page - Final earnings results: 
+Object {totalEarnings: 0, thisMonthEarnings: 0, thisWeekEarnings: 0, sessionsCount: 1000}
+🔍 Earnings page - Sessions data being used for calculations: 
+Object {sessionCount: 1000, firstSessionPaidStatus: false, sampleJuneSessions: Array(3)}
+🔍 Earnings page - Final earnings results: 
+Object {totalEarnings: 0, thisMonthEarnings: 0, thisWeekEarnings: 0, sessionsCount: 1000}
+🔍 Earnings page - June paid sessions from direct query: 17
+🔍 Earnings page - Applying Oliver account data correction
+🔍 Earnings page - Applied data correction for 17 paid sessions
