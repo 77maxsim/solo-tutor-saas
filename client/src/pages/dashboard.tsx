@@ -191,11 +191,7 @@ export default function Dashboard() {
       const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       
-      console.log('🧪 Dashboard - Current month boundaries:', {
-        firstDay: firstDayOfCurrentMonth.toISOString(),
-        lastDay: lastDayOfCurrentMonth.toISOString(),
-        currentDate: now.toISOString()
-      });
+
       
       // Last month boundaries for comparison
       const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -217,8 +213,8 @@ export default function Dashboard() {
 
 
       sessionsWithNames.forEach((session: SessionWithStudent) => {
-        // Parse session date consistently - ensure we're getting the correct date
-        const sessionDate = new Date(session.date + 'T00:00:00');
+        // Parse session date in local timezone to avoid UTC conversion issues
+        const sessionDate = new Date(session.date);
         const earnings = (session.duration / 60) * session.rate;
         // Handle different paid field formats - more comprehensive check
         const paidValue = (session as any).paid;
@@ -248,17 +244,6 @@ export default function Dashboard() {
         // Current month earnings (only paid sessions in current month)
         if (sessionDate >= firstDayOfCurrentMonth && sessionDate <= lastDayOfCurrentMonth && isPaid) {
           currentMonthEarnings += earnings;
-          console.log('🧪 Dashboard - Adding to current month earnings:', earnings, 'Total now:', currentMonthEarnings, 'Session date:', session.date);
-        } else if (isPaid) {
-          console.log('🧪 Dashboard - Paid session NOT counted for current month:', {
-            sessionDate: sessionDate.toISOString(),
-            date: session.date,
-            isPaid,
-            firstDay: firstDayOfCurrentMonth.toISOString(),
-            lastDay: lastDayOfCurrentMonth.toISOString(),
-            isAfterFirst: sessionDate >= firstDayOfCurrentMonth,
-            isBeforeLast: sessionDate <= lastDayOfCurrentMonth
-          });
         }
 
         // Last month earnings (only paid sessions in last month)
