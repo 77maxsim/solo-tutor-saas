@@ -246,7 +246,10 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
 
   // Prefill form when editing a session
   useEffect(() => {
-    if (editMode && editSession && open) {
+    if (editSession && open) {
+      // Auto-detect edit mode if session has an ID
+      const isEditMode = editMode || !!editSession.id;
+      
       form.setValue('studentId', editSession.student_id);
       form.setValue('date', new Date(editSession.date));
       form.setValue('time', editSession.time);
@@ -393,7 +396,10 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      if (editMode && editSession) {
+      // Auto-detect edit mode if session has an ID
+      const isEditMode = editMode || (editSession && editSession.id);
+
+      if (isEditMode && editSession) {
         // Update existing session
         const { error } = await supabase
           .from('sessions')
@@ -508,7 +514,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         setNewStudentName("");
         setShowNotes(false);
         onOpenChange(false);
-      }, editMode ? 100 : 500);
+      }, (editMode || (editSession && editSession.id)) ? 100 : 500);
 
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -540,10 +546,10 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] w-[95vw] sm:w-full flex flex-col p-0 gap-0">
         <DialogHeader className="shrink-0 p-4 sm:p-6 pb-2">
           <DialogTitle className="text-lg">
-            {editMode ? "Edit Session" : "Schedule a Session"}
+            {(editMode || (editSession && editSession.id)) ? "Edit Session" : "Schedule a Session"}
           </DialogTitle>
           <DialogDescription className="text-sm">
-            {editMode 
+            {(editMode || (editSession && editSession.id))
               ? "Update the session details below."
               : "Fill out the details below to schedule a new tutoring session."
             }
@@ -806,7 +812,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
             />
 
             {/* Recurring Session Options - Hidden in edit mode */}
-            {!editMode && (
+            {!(editMode || (editSession && editSession.id)) && (
               <>
                 <FormField
                   control={form.control}
@@ -942,8 +948,8 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
               </Button>
               <Button type="submit" disabled={isSubmitting} className="flex-1 sm:flex-none">
                 {isSubmitting 
-                  ? (editMode ? "Updating..." : "Scheduling...") 
-                  : (editMode ? "Update Session" : "Schedule Session")
+                  ? ((editMode || (editSession && editSession.id)) ? "Updating..." : "Scheduling...") 
+                  : ((editMode || (editSession && editSession.id)) ? "Update Session" : "Schedule Session")
                 }
               </Button>
             </DialogFooter>
