@@ -285,6 +285,7 @@ export default function Calendar() {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [newStudentName, setNewStudentName] = useState("");
   const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
+  const [showPendingSections, setShowPendingSections] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [preventSlotSelection, setPreventSlotSelection] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
