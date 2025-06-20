@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/collapsible";
 import { Calendar, Clock, DollarSign, CheckCircle, XCircle, ChevronDown, ChevronRight, FolderOpen, Folder } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SessionDetailsModal } from "./session-details-modal";
+import { ScheduleSessionModal } from "./schedule-session-modal";
 
 interface Session {
   id: string;
@@ -62,6 +63,8 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
   const [pastSectionsOpen, setPastSectionsOpen] = useState(false);
   const [sessionDetailsOpen, setSessionDetailsOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionForDetails | null>(null);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [editSession, setEditSession] = useState<SessionForDetails | null>(null);
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: ['student-session-history', student?.id],
@@ -119,6 +122,52 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
     
     setSelectedSession(sessionForDetails);
     setSessionDetailsOpen(true);
+  };
+
+  // Add event listeners for session edit actions
+  useEffect(() => {
+    const handleEditSession = (event: CustomEvent) => {
+      const session = event.detail.session;
+      // Close session details modal
+      setSessionDetailsOpen(false);
+      setSelectedSession(null);
+      
+      // Convert to format expected by ScheduleSessionModal
+      const editSessionData = {
+        id: session.id,
+        student_id: session.student_id,
+        date: session.date,
+        time: session.time,
+        duration: session.duration,
+        rate: session.rate,
+        notes: session.notes,
+        color: session.color,
+        recurrence_id: session.recurrence_id,
+      };
+      
+      setEditSession(editSessionData);
+      setScheduleModalOpen(true);
+    };
+
+    const handleCancelSession = (event: CustomEvent) => {
+      // Close session details modal
+      setSessionDetailsOpen(false);
+      setSelectedSession(null);
+      // Handle session cancellation here if needed
+    };
+
+    window.addEventListener('editSession', handleEditSession as EventListener);
+    window.addEventListener('cancelSession', handleCancelSession as EventListener);
+
+    return () => {
+      window.removeEventListener('editSession', handleEditSession as EventListener);
+      window.removeEventListener('cancelSession', handleCancelSession as EventListener);
+    };
+  }, []);
+
+  const handleScheduleModalClose = () => {
+    setScheduleModalOpen(false);
+    setEditSession(null);
   };
 
   const SessionItem = ({ session }: { session: Session }) => {
@@ -278,6 +327,14 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
           setSelectedSession(null);
         }}
         session={selectedSession}
+      />
+
+      {/* Schedule Session Modal for Editing */}
+      <ScheduleSessionModal
+        open={scheduleModalOpen}
+        onOpenChange={setScheduleModalOpen}
+        editSession={editSession}
+        editMode={true}
       />
     </>
   );
