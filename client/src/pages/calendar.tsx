@@ -27,19 +27,6 @@ import { Calendar as BigCalendarBase, momentLocalizer, Views } from "react-big-c
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Plus, Calendar as CalendarIcon, Filter, Edit, Trash2, ChevronLeft, ChevronRight, Maximize, Minimize } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -754,21 +741,28 @@ export default function Calendar() {
     const end = new Date(start);
     end.setMinutes(end.getMinutes() + session.duration);
 
-    // Truncate student name based on session duration
-    let displayName = session.student_name;
-    if (session.duration < 60) {
-      // For sessions less than 60 min, show full name (like Google Calendar)
+    const isPending = session.status === 'pending';
+    
+    // Determine display name
+    let displayName;
+    if (isPending) {
+      displayName = session.unassigned_name || 'Pending Request';
+    } else {
       displayName = session.student_name;
-    } else if (session.duration >= 60 && session.duration <= 120) {
-      // For 60-120 min, show first name + last initial
-      const nameParts = session.student_name.split(' ');
-      if (nameParts.length > 1) {
-        displayName = `${nameParts[0]} ${nameParts[nameParts.length - 1].charAt(0)}.`;
-      } else {
-        displayName = nameParts[0]; // If only one name, just show it
+      // Truncate student name based on session duration
+      if (session.duration < 60) {
+        // For sessions less than 60 min, show full name
+        displayName = session.student_name;
+      } else if (session.duration >= 60 && session.duration <= 120) {
+        // For 60-120 min, show first name + last initial
+        const nameParts = session.student_name.split(' ');
+        if (nameParts.length > 1) {
+          displayName = `${nameParts[0]} ${nameParts[nameParts.length - 1].charAt(0)}.`;
+        } else {
+          displayName = nameParts[0];
+        }
       }
     }
-    // For 120+ min sessions, show full name (no change needed)
 
     // For 30-minute sessions, use empty title to force custom component usage
     const eventTitle = session.duration <= 30 
@@ -780,7 +774,10 @@ export default function Calendar() {
       title: eventTitle,
       start,
       end,
-      resource: session
+      resource: {
+        ...session,
+        isPending
+      }
     };
   });
 
