@@ -1794,9 +1794,99 @@ export default function Calendar() {
         </div>
       </header>
 
+      {/* Pending Sessions Section */}
+      {pendingSessions.length > 0 && (
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-amber-50 dark:bg-amber-950/20 mx-3 sm:mx-4 rounded-t-lg">
+          <div className="px-4 sm:px-6 py-4">
+            <button
+              onClick={() => setShowPendingSections(!showPendingSections)}
+              className="flex items-center gap-2 text-amber-800 dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100 transition-colors font-medium"
+            >
+              {showPendingSections ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+              <span className="text-base">
+                🕒 Pending Session Requests ({pendingSessions.length})
+              </span>
+            </button>
+
+            {showPendingSections && (
+              <div className="mt-4 space-y-3">
+                {pendingSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-amber-200 dark:border-amber-800 shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-1">
+                          <div className="w-9 h-9 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center">
+                            <UserIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                          </div>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                            {session.unassigned_name || 'Unknown Student'}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            <span className="flex items-center gap-1.5">
+                              <CalendarIcon className="h-3.5 w-3.5" />
+                              {moment(session.date).format('MMM D, YYYY')}
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <ClockIcon className="h-3.5 w-3.5" />
+                              {session.time} ({session.duration}min)
+                            </span>
+                          </div>
+                          {session.notes && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                              {session.notes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => scrollToSession(session)}
+                          className="text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                        >
+                          <MapPin className="h-3 w-3 mr-1.5" />
+                          🔎 View in Calendar
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => setSelectedPendingSession(session)}
+                          className="bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+                        >
+                          ✅ Review
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {pendingSessions.length === 0 && (
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 mx-3 sm:mx-4 rounded-t-lg">
+          <div className="px-4 sm:px-6 py-3">
+            <div className="text-center text-gray-500 dark:text-gray-400 text-sm">
+              No pending requests at the moment.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Calendar Content */}
       <div className="p-3 sm:p-4 w-full">
-        <Card className="shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <Card className="shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-none">
           <CardHeader className="pb-2">
             <div className="flex flex-col gap-y-3">
               {/* Title Row */}
