@@ -848,8 +848,8 @@ export default function Calendar() {
   const handleSelectEvent = (event: CalendarEvent) => {
     // Check if this is a pending session without assigned student
     if (event.resource.status === 'pending' && event.resource.student_id === null) {
-      // Open PendingRequestsModal for unassigned pending sessions and highlight the specific request
-      setSelectedPendingSession(event.resource);
+      // Store the session to pass its ID for highlighting, then open PendingRequestsModal
+      setSessionForDetails(event.resource);
       setShowPendingRequestsModal(true);
     } else if (event.resource.isPending || event.resource.status === 'pending') {
       setSelectedPendingSession(event.resource);
@@ -2266,7 +2266,7 @@ export default function Calendar() {
       <PendingRequestsModal
         open={showPendingRequestsModal}
         onOpenChange={setShowPendingRequestsModal}
-        highlightSessionId={selectedPendingSession?.id}
+        highlightSessionId={sessionForDetails?.id}
       />
 
     </div>

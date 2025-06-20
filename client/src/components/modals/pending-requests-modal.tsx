@@ -302,20 +302,23 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
     };
   };
 
-  // Auto-scroll to highlighted session when modal opens
+  // Auto-scroll to highlighted session when modal opens or when highlightSessionId changes
   useEffect(() => {
     if (open && highlightSessionId && pendingRequests.length > 0) {
-      setTimeout(() => {
+      // Add a delay to ensure the modal content is fully rendered
+      const timer = setTimeout(() => {
         const element = document.getElementById(`pending-request-${highlightSessionId}`);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
           // Add temporary highlight effect
-          element.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-50');
+          element.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-75');
           setTimeout(() => {
-            element.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50');
+            element.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-75');
           }, 3000);
         }
-      }, 300);
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
   }, [open, highlightSessionId, pendingRequests]);
 
