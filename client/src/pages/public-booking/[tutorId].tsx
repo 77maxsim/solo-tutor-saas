@@ -11,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
-import { Calendar, Clock, User, CheckCircle, AlertCircle } from "lucide-react";
+import { Calendar, Clock, User, CheckCircle, AlertCircle, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, parseISO, isFuture } from "date-fns";
 
 // Form validation schema
@@ -56,6 +57,7 @@ export default function PublicBookingPage() {
   const [selectedStartTime, setSelectedStartTime] = useState<string>("");
   const [selectedDuration, setSelectedDuration] = useState<number>(60);
   const [availableStartTimes, setAvailableStartTimes] = useState<string[]>([]);
+  const [showTimePickerModal, setShowTimePickerModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
@@ -290,8 +292,12 @@ export default function PublicBookingPage() {
       
       // Reset time selection
       setSelectedStartTime("");
+      setSelectedDuration(60);
       setValue("selectedStartTime", "");
       setValue("selectedDuration", 60);
+      
+      // Open time picker modal
+      setShowTimePickerModal(true);
     }
   };
 
@@ -373,9 +379,31 @@ export default function PublicBookingPage() {
     });
   };
 
+  const handleTimePickerSubmit = () => {
+    if (!selectedStartTime || !selectedDuration) {
+      toast({
+        variant: "destructive",
+        title: "Missing Selection",
+        description: "Please select both start time and duration.",
+      });
+      return;
+    }
+    
+    setValue("selectedStartTime", selectedStartTime);
+    setValue("selectedDuration", selectedDuration);
+    setShowTimePickerModal(false);
+    
+    console.log('Time picker selection:', {
+      startTime: selectedStartTime,
+      duration: selectedDuration,
+      slot: selectedSlot
+    });
+  };
+
   const onSubmit = async (data: BookingFormData) => {
     try {
       setSubmitting(true);
+      console.log('Form submission started:', data);
 
       const slot = bookingSlots.find(s => s.id === data.selectedSlotId);
       if (!slot) {
@@ -418,6 +446,12 @@ export default function PublicBookingPage() {
       };
 
       console.log("Submitting session:", sessionPayload);
+      
+      // Add debug toast
+      toast({
+        title: "Submitting Booking...",
+        description: `Booking ${data.name} for ${time} (${duration} min)`,
+      });
 
       // Create session record
       const { error: sessionError } = await supabase
@@ -648,6 +682,127 @@ export default function PublicBookingPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Time Picker Modal */}
+        <Dialog open={showTimePickerModal} onOpenChange={setShowTimePickerModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Select Your Session Time
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6 pt-4">
+              {selectedSlot && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                    Selected Date
+                  </p>
+                  <p className="text-blue-600 dark:text-blue-300">
+                    {format(parseISO(bookingSlots.find(s => s.id === selectedSlot)?.start_time || ''), 'EEEE, MMMM d, yyyy')}
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    Available: {format(parseISO(bookingSlots.find(s => s.id === selectedSlot)?.start_time || ''), 'h:mm a')} - {format(parseISO(bookingSlots.find(s => s.id === selectedSlot)?.end_time || ''), 'h:mm a')}
+                  </p>
+                </div>
+              )}
+
+              {/* Start Time Selection */}
+              <div>
+                <Label className="text-base font-semibold mb-3 block">
+                  Choose Start Time
+                </Label>
+                <Select value={selectedStartTime} onValueChange={setSelectedStartTime}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select start time..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableStartTimes.map((time) => {
+                      const isAvailable = isTimeSlotAvailable(time, selectedDuration);
+                      return (
+                        <SelectItem 
+                          key={time} 
+                          value={time}
+                          disabled={!isAvailable}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            {format(new Date(`2000-01-01T${time}`), 'h:mm a')}
+                            {!isAvailable && <span className="text-xs text-red-500">(Unavailable)</span>}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Duration Selection */}
+              {selectedStartTime && (
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">
+                    Choose Duration
+                  </Label>
+                  <Select value={selectedDuration.toString()} onValueChange={(value) => setSelectedDuration(parseInt(value))}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select duration..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailableDurations(selectedStartTime).map((duration) => (
+                        <SelectItem key={duration} value={duration.toString()}>
+                          {duration} minutes
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Session Summary */}
+              {selectedStartTime && selectedDuration && (
+                <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-green-800 dark:text-green-200">
+                        Session Summary
+                      </p>
+                      <p className="text-sm text-green-600 dark:text-green-300 mt-1">
+                        You are booking with {tutor?.full_name}
+                      </p>
+                      <p className="text-sm text-green-600 dark:text-green-300">
+                        {format(new Date(`2000-01-01T${selectedStartTime}`), 'h:mm a')} - {' '}
+                        {format(
+                          new Date(new Date(`2000-01-01T${selectedStartTime}`).getTime() + selectedDuration * 60 * 1000),
+                          'h:mm a'
+                        )} ({selectedDuration} minutes)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Modal Actions */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowTimePickerModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleTimePickerSubmit}
+                  disabled={!selectedStartTime || !selectedDuration}
+                  className="flex-1"
+                >
+                  Confirm Time
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
