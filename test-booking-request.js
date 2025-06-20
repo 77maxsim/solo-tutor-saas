@@ -9,15 +9,30 @@ async function testBookingRequest() {
   try {
     console.log('Testing public booking functionality...');
     
-    const tutorId = '7bf25f7b-f16e-4d75-9847-087276da4e0b';
-    
-    // 1. Test fetching tutor details (should work with public access)
-    console.log('\n1. Testing tutor fetch...');
-    const { data: tutor, error: tutorError } = await supabase
+    // 1. Find available tutors first
+    console.log('\n1. Finding available tutors...');
+    const { data: tutorData, error: tutorError } = await supabase
       .from('tutors')
       .select('id, full_name, email')
-      .eq('id', tutorId)
-      .single();
+      .limit(5);
+    
+    if (tutorError) {
+      console.log('❌ Tutor fetch failed:', tutorError.message);
+      return;
+    }
+    
+    if (!tutorData || tutorData.length === 0) {
+      console.log('❌ No tutors found in database');
+      return;
+    }
+    
+    console.log('✅ Found', tutorData.length, 'tutors:');
+    tutorData.forEach((t, i) => {
+      console.log(`   ${i + 1}. ${t.full_name} (ID: ${t.id})`);
+    });
+    
+    const tutor = tutorData[0];
+    const tutorId = tutor.id;
     
     if (tutorError) {
       console.log('❌ Tutor fetch failed:', tutorError.message);
