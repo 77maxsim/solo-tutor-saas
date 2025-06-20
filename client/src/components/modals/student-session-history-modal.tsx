@@ -18,7 +18,7 @@ import {
 import { Calendar, Clock, DollarSign, CheckCircle, XCircle, ChevronDown, ChevronRight, FolderOpen, Folder } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
 import { useState } from "react";
-import { ScheduleSessionModal } from "./schedule-session-modal";
+import { SessionDetailsModal } from "./session-details-modal";
 
 interface Session {
   id: string;
@@ -28,6 +28,19 @@ interface Session {
   rate: number;
   paid: boolean;
   created_at: string;
+  notes?: string;
+  color?: string;
+  recurrence_id?: string;
+}
+
+interface SessionForDetails {
+  id: string;
+  student_id: string;
+  student_name: string;
+  date: string;
+  time: string;
+  duration: number;
+  rate: number;
   notes?: string;
   color?: string;
   recurrence_id?: string;
@@ -47,8 +60,8 @@ interface StudentSessionHistoryModalProps {
 export function StudentSessionHistoryModal({ isOpen, onClose, student }: StudentSessionHistoryModalProps) {
   const [futureSectionsOpen, setFutureSectionsOpen] = useState(false);
   const [pastSectionsOpen, setPastSectionsOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [sessionDetailsOpen, setSessionDetailsOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<SessionForDetails | null>(null);
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: ['student-session-history', student?.id],
@@ -90,8 +103,22 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
   }) || [];
 
   const handleSessionClick = (session: Session) => {
-    setSelectedSession(session);
-    setEditModalOpen(true);
+    // Format session data for SessionDetailsModal
+    const sessionForDetails: SessionForDetails = {
+      id: session.id,
+      student_id: student?.id || '',
+      student_name: student?.name || '',
+      date: session.date,
+      time: session.time,
+      duration: session.duration,
+      rate: session.rate,
+      notes: session.notes,
+      color: session.color,
+      recurrence_id: session.recurrence_id,
+    };
+    
+    setSelectedSession(sessionForDetails);
+    setSessionDetailsOpen(true);
   };
 
   const SessionItem = ({ session }: { session: Session }) => {
@@ -243,17 +270,14 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
         </DialogContent>
       </Dialog>
 
-      {/* Edit Session Modal */}
-      <ScheduleSessionModal
-        open={editModalOpen}
-        onOpenChange={(open) => {
-          setEditModalOpen(open);
-          if (!open) {
-            setSelectedSession(null);
-          }
+      {/* Session Details Modal */}
+      <SessionDetailsModal
+        isOpen={sessionDetailsOpen}
+        onClose={() => {
+          setSessionDetailsOpen(false);
+          setSelectedSession(null);
         }}
-        editSession={selectedSession}
-        editMode={true}
+        session={selectedSession}
       />
     </>
   );
