@@ -27,6 +27,19 @@ import { Calendar as BigCalendarBase, momentLocalizer, Views } from "react-big-c
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Plus, Calendar as CalendarIcon, Filter, Edit, Trash2, ChevronLeft, ChevronRight, Maximize, Minimize } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -341,11 +354,18 @@ export default function Calendar() {
       // Automatically determine if optimization is needed based on dataset size
       const useOptimized = await shouldUseOptimizedQuery(tutorId);
       
+      let allSessions;
       if (useOptimized) {
-        return await getOptimizedSessions(tutorId);
+        allSessions = await getOptimizedSessions(tutorId);
       } else {
-        return await getStandardSessions(tutorId);
+        allSessions = await getStandardSessions(tutorId);
       }
+
+      // Ensure we have the status field and handle pending sessions
+      return allSessions.map(session => ({
+        ...session,
+        status: session.status || 'confirmed'
+      }));
     },
     refetchOnWindowFocus: true,
     staleTime: 0, // Always consider data stale to force refresh
@@ -812,8 +832,12 @@ export default function Calendar() {
 
   // Handle event click to show session details modal
   const handleSelectEvent = (event: CalendarEvent) => {
-    setSessionForDetails(event.resource);
-    setShowSessionDetailsModal(true);
+    if (event.resource.isPending || event.resource.status === 'pending') {
+      setSelectedPendingSession(event.resource);
+    } else {
+      setSessionForDetails(event.resource);
+      setShowSessionDetailsModal(true);
+    }
   };
 
   // Handle slot click to schedule new session

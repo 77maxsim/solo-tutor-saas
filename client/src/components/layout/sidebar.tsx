@@ -20,9 +20,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useQuery } from "@tanstack/react-query";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
-import { supabase } from "@/lib/supabaseClient";
 
 import { usePendingSessions } from "@/hooks/use-pending-sessions";
 
@@ -151,6 +149,14 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
                 <span className="group-hover:translate-x-1 transition-transform duration-200">
                   {item.name}
                 </span>
+                {showBadge && (
+                  <Badge 
+                    variant="destructive" 
+                    className="ml-auto text-xs px-1.5 py-0.5 min-w-[1.25rem] h-5 flex items-center justify-center"
+                  >
+                    {pendingCount}
+                  </Badge>
+                )}
                 {isActive && (
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 animate-pulse" />
                 )}
