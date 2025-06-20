@@ -24,6 +24,7 @@ import UpcomingSessions from "./pages/upcoming-sessions";
 import UnpaidSessions from "./pages/unpaid-sessions";
 import NotFound from "./pages/not-found";
 import AuthPage from "./pages/AuthPage.tsx";
+import PublicBookingPage from "./pages/public-booking/[tutorId].tsx";
 
 // Create protected versions of each component
 const ProtectedDashboard = () => {
@@ -314,6 +315,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      <Route path="/booking/:tutorId" component={PublicBookingPage} />
       <Route path="/" component={ProtectedDashboard} />
       <Route path="/dashboard" component={ProtectedDashboard} />
       <Route path="/calendar" component={ProtectedCalendar} />
