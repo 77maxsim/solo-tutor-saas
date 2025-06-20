@@ -25,6 +25,7 @@ const navigation = [
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Earnings", href: "/earnings", icon: DollarSign },
   { name: "Students", href: "/students", icon: Users },
+  { name: "Availability", href: "/availability", icon: Calendar },
 ];
 
 interface SidebarProps {

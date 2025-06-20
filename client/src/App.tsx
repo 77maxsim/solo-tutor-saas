@@ -22,6 +22,7 @@ import Profile from "@/pages/profile";
 import Activity from "@/pages/activity";
 import UpcomingSessions from "./pages/upcoming-sessions";
 import UnpaidSessions from "./pages/unpaid-sessions";
+import Availability from "./pages/availability";
 import NotFound from "./pages/not-found";
 import AuthPage from "./pages/AuthPage.tsx";
 import PublicBookingPage from "./pages/public-booking/[tutorId].tsx";
@@ -279,6 +280,42 @@ const ProtectedUpcomingSessions = () => {
   return user ? <UpcomingSessions /> : null;
 };
 
+const ProtectedAvailability = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      if (!session?.user) {
+        setLocation('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setLocation]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+      </div>
+    );
+  }
+
+  return user ? <Availability /> : null;
+};
+
 function Router() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -325,6 +362,7 @@ function Router() {
       <Route path="/activity" component={ProtectedActivity} />
       <Route path="/upcoming-sessions" component={ProtectedUpcomingSessions} />
       <Route path="/unpaid-sessions" component={UnpaidSessions} />
+      <Route path="/availability" component={ProtectedAvailability} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -370,6 +408,8 @@ function AppLayout() {
         return "Activity";
       case "/upcoming-sessions":
         return "Upcoming Sessions";
+      case "/availability":
+        return "Availability";
       default:
         return "TutorTrack";
     }
