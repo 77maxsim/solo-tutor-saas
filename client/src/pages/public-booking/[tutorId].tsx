@@ -76,66 +76,150 @@ export default function PublicBookingPage() {
     fetchTutorAndSlots();
   }, [tutorId]);
 
-  const fetchTutorAndSlots = async () => {
+  const fetchTutorAndSlots = async (retryCount = 0) => {
     try {
       setLoading(true);
+      console.log(`Mobile booking - Attempt ${retryCount + 1} for tutor ID: ${tutorId}`);
 
-      // Fetch tutor details
-      const { data: tutorData, error: tutorError } = await supabase
-        .from('tutors')
-        .select('id, full_name, email')
-        .eq('id', tutorId)
-        .single();
+      // Retry logic with progressive delays for mobile reliability
+      const maxRetries = 3;
+      let tutorData = null;
+      let tutorError = null;
 
-      if (tutorError) {
-        throw new Error('Tutor not found');
+      // Fetch tutor details with retry
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          console.log(`Fetching tutor data - attempt ${attempt + 1}`);
+          const result = await supabase
+            .from('tutors')
+            .select('id, full_name, email')
+            .eq('id', tutorId)
+            .single();
+
+          if (result.error) {
+            tutorError = result.error;
+            console.error(`Tutor fetch attempt ${attempt + 1} failed:`, result.error);
+            
+            // Wait before retry (except on last attempt)
+            if (attempt < maxRetries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+              continue;
+            }
+          } else {
+            tutorData = result.data;
+            console.log('Tutor data fetched successfully:', tutorData);
+            break;
+          }
+        } catch (err) {
+          console.error(`Tutor fetch attempt ${attempt + 1} exception:`, err);
+          if (attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+            continue;
+          }
+          tutorError = err;
+        }
+      }
+
+      if (!tutorData) {
+        throw new Error(`Tutor not found after ${maxRetries} attempts: ${tutorError?.message || 'Unknown error'}`);
       }
 
       setTutor(tutorData);
 
-      // Fetch available booking slots
-      const { data: slotsData, error: slotsError } = await supabase
-        .from('booking_slots')
-        .select('id, start_time, end_time, is_active, tutor_id')
-        .eq('tutor_id', tutorId)
-        .eq('is_active', true)
-        .order('start_time', { ascending: true });
+      // Fetch available booking slots with retry
+      let slotsData = [];
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          console.log(`Fetching booking slots - attempt ${attempt + 1}`);
+          const result = await supabase
+            .from('booking_slots')
+            .select('id, start_time, end_time, is_active, tutor_id')
+            .eq('tutor_id', tutorId)
+            .eq('is_active', true)
+            .order('start_time', { ascending: true });
 
-      if (slotsError) {
-        console.error('Error fetching booking slots:', slotsError);
-        setBookingSlots([]);
-      } else {
-        // Filter out past slots
-        const futureSlots = (slotsData || []).filter(slot => 
-          isFuture(parseISO(slot.start_time))
-        );
-        setBookingSlots(futureSlots);
+          if (result.error) {
+            console.error(`Slots fetch attempt ${attempt + 1} failed:`, result.error);
+            if (attempt < maxRetries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+              continue;
+            }
+          } else {
+            slotsData = result.data || [];
+            console.log('Booking slots fetched successfully:', slotsData.length);
+            break;
+          }
+        } catch (err) {
+          console.error(`Slots fetch attempt ${attempt + 1} exception:`, err);
+          if (attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+            continue;
+          }
+        }
       }
 
-      // Fetch existing sessions to check for conflicts
-      const { data: sessionsData, error: sessionsError } = await supabase
-        .from('sessions')
-        .select('date, time')
-        .eq('tutor_id', tutorId);
+      // Filter out past slots
+      const futureSlots = slotsData.filter(slot => 
+        isFuture(parseISO(slot.start_time))
+      );
+      setBookingSlots(futureSlots);
 
-      if (sessionsError) {
-        console.error('Error fetching existing sessions:', sessionsError);
-        setExistingSessions([]);
-      } else {
-        // Convert date/time format to match booking slots
-        const sessions = (sessionsData || []).map(session => ({
-          start_time: `${session.date}T${session.time}:00`,
-          status: 'booked',
-        }));
-        setExistingSessions(sessions);
+      // Fetch existing sessions to check for conflicts (with retry)
+      let sessionsData = [];
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          console.log(`Fetching existing sessions - attempt ${attempt + 1}`);
+          const result = await supabase
+            .from('sessions')
+            .select('date, time')
+            .eq('tutor_id', tutorId);
+
+          if (result.error) {
+            console.error(`Sessions fetch attempt ${attempt + 1} failed:`, result.error);
+            if (attempt < maxRetries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+              continue;
+            }
+          } else {
+            sessionsData = result.data || [];
+            console.log('Existing sessions fetched successfully:', sessionsData.length);
+            break;
+          }
+        } catch (err) {
+          console.error(`Sessions fetch attempt ${attempt + 1} exception:`, err);
+          if (attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+            continue;
+          }
+        }
       }
+
+      // Convert date/time format to match booking slots
+      const sessions = sessionsData.map(session => ({
+        start_time: `${session.date}T${session.time}:00`,
+        status: 'booked',
+      }));
+      setExistingSessions(sessions);
+
+      console.log('Mobile booking - All data fetched successfully');
 
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Mobile booking - Error fetching data:', error);
+      
+      // Only show error after all retries failed
+      if (retryCount === 0) {
+        // First failure - automatically retry once more after short delay
+        setTimeout(() => {
+          console.log('Mobile booking - Auto-retrying after error...');
+          fetchTutorAndSlots(1);
+        }, 1000);
+        return;
+      }
+      
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Could not load booking information. Please try again.",
+        title: "Connection Error",
+        description: "Could not load booking information. Please check your connection and try again.",
       });
     } finally {
       setLoading(false);
@@ -228,6 +312,11 @@ export default function PublicBookingPage() {
               <Skeleton className="h-24 w-full" />
               <Skeleton className="h-24 w-full" />
               <Skeleton className="h-24 w-full" />
+              <div className="text-center text-sm text-gray-500 mt-4">
+                Loading booking information...
+                <br />
+                <span className="text-xs">This may take a moment on mobile devices</span>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -245,9 +334,22 @@ export default function PublicBookingPage() {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 Tutor Not Found
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 The tutor you're looking for could not be found.
               </p>
+              <p className="text-sm text-red-500 mb-6">
+                Error: Could not load booking information. Please try again.
+              </p>
+              <Button 
+                onClick={() => {
+                  setTutor(null);
+                  setLoading(true);
+                  fetchTutorAndSlots();
+                }}
+                variant="outline"
+              >
+                Retry
+              </Button>
             </CardContent>
           </Card>
         </div>
