@@ -793,7 +793,8 @@ export default function Calendar() {
       end,
       resource: {
         ...session,
-        isPending
+        isPending,
+        student_name: displayName
       }
     };
   });
@@ -846,14 +847,22 @@ export default function Calendar() {
 
   // Handle event click to show session details modal
   const handleSelectEvent = (event: CalendarEvent) => {
+    console.log('Clicked session:', event.resource);
+    console.log('Session status:', event.resource.status);
+    console.log('Session student_id:', event.resource.student_id);
+    console.log('Is pending + no student:', event.resource.status === 'pending' && event.resource.student_id === null);
+    
     // Check if this is a pending session without assigned student
     if (event.resource.status === 'pending' && event.resource.student_id === null) {
+      console.log('Opening PendingRequestsModal with session ID:', event.resource.id);
       // Store the session to pass its ID for highlighting, then open PendingRequestsModal
       setSessionForDetails(event.resource);
       setShowPendingRequestsModal(true);
     } else if (event.resource.isPending || event.resource.status === 'pending') {
+      console.log('Opening old pending session modal');
       setSelectedPendingSession(event.resource);
     } else {
+      console.log('Opening regular session details modal');
       setSessionForDetails(event.resource);
       setShowSessionDetailsModal(true);
     }
