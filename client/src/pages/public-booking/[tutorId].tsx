@@ -115,9 +115,8 @@ export default function PublicBookingPage() {
       // Fetch existing sessions to check for conflicts
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('sessions')
-        .select('date, time, status')
-        .eq('tutor_id', tutorId)
-        .neq('status', 'declined');
+        .select('date, time')
+        .eq('tutor_id', tutorId);
 
       if (sessionsError) {
         console.error('Error fetching existing sessions:', sessionsError);
@@ -126,7 +125,7 @@ export default function PublicBookingPage() {
         // Convert date/time format to match booking slots
         const sessions = (sessionsData || []).map(session => ({
           start_time: `${session.date}T${session.time}:00`,
-          status: session.status,
+          status: 'booked',
         }));
         setExistingSessions(sessions);
       }
@@ -187,7 +186,6 @@ export default function PublicBookingPage() {
           duration: duration,
           rate: 0, // Default rate, tutor can update later
           paid: false,
-          status: 'pending',
           unassigned_name: data.name,
           notes: `Booking request from ${data.name}`,
         });
