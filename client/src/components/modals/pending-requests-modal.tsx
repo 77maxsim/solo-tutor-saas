@@ -38,6 +38,7 @@ interface Student {
   id: string;
   first_name: string;
   last_name: string;
+  full_name: string;
   email?: string;
 }
 
@@ -82,13 +83,13 @@ export function PendingRequestsModal({ open, onOpenChange }: PendingRequestsModa
   const { data: students = [], isLoading: loadingStudents } = useQuery({
     queryKey: ['students-for-assignment'],
     queryFn: async () => {
-      const tutorId = await getCurrentTutorId();
-      if (!tutorId) return [];
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
 
       const { data, error } = await supabase
         .from('students')
         .select('id, first_name, last_name, email')
-        .eq('tutor_id', tutorId)
+        .eq('tutor_id', user.id)
         .eq('is_active', true)
         .order('first_name');
 
@@ -97,7 +98,11 @@ export function PendingRequestsModal({ open, onOpenChange }: PendingRequestsModa
         throw error;
       }
 
-      return data as Student[];
+      // Add full_name for easier display
+      return data.map(student => ({
+        ...student,
+        full_name: `${student.first_name} ${student.last_name}`
+      })) as Student[];
     },
     enabled: open,
   });
@@ -219,7 +224,7 @@ export function PendingRequestsModal({ open, onOpenChange }: PendingRequestsModa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto z-50">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -305,20 +310,36 @@ export function PendingRequestsModal({ open, onOpenChange }: PendingRequestsModa
                           onValueChange={(value) => handleStudentSelect(request.id, value)}
                           disabled={isProcessing || loadingStudents}
                         >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select student..." />
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a student..." />
                           </SelectTrigger>
-                          <SelectContent>
-                            {students.map((student) => (
-                              <SelectItem key={student.id} value={student.id}>
-                                {student.first_name} {student.last_name}
-                                {student.email && (
-                                  <span className="text-xs text-muted-foreground ml-2">
-                                    ({student.email})
-                                  </span>
-                                )}
+                          <SelectContent 
+                            className="z-[60]" 
+                            position="popper"
+                            sideOffset={5}
+                          >
+                            {loadingStudents ? (
+                              <SelectItem value="loading" disabled>
+                                Loading students...
                               </SelectItem>
-                            ))}
+                            ) : students.length === 0 ? (
+                              <SelectItem value="no-students" disabled>
+                                No active students found
+                              </SelectItem>
+                            ) : (
+                              students.map((student) => (
+                                <SelectItem key={student.id} value={student.id}>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{student.full_name}</span>
+                                    {student.email && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {student.email}
+                                      </span>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
 
