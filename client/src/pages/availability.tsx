@@ -36,7 +36,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
-import { Calendar, Clock, Plus, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Calendar, Clock, Plus, Trash2, ToggleLeft, ToggleRight, Share2 } from "lucide-react";
 import { format, parseISO, isBefore, isAfter, isWithinInterval } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -66,6 +66,10 @@ interface BookingSlot {
 
 export default function AvailabilityPage() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
+  const [tutorId, setTutorId] = useState<string | null>(null);
 
   // Fetch current tutor ID
   useEffect(() => {
@@ -93,9 +97,6 @@ export default function AvailabilityPage() {
 
     fetchTutorId();
   }, []);
-  const queryClient = useQueryClient();
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
 
   const form = useForm<SlotFormData>({
     resolver: zodResolver(slotFormSchema),
@@ -260,6 +261,41 @@ export default function AvailabilityPage() {
     deleteSlotMutation.mutate(slotId);
   };
 
+  // Handle sharing booking link
+  const handleShareBookingLink = async () => {
+    if (!tutorId) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Unable to get tutor information.",
+      });
+      return;
+    }
+
+    const bookingUrl = `${window.location.origin}/booking/${tutorId}`;
+    
+    try {
+      await navigator.clipboard.writeText(bookingUrl);
+      toast({
+        title: "Booking link copied to clipboard!",
+        description: "Share this link with students to let them book sessions.",
+      });
+    } catch (error) {
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement('textarea');
+      textArea.value = bookingUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      toast({
+        title: "Booking link copied to clipboard!",
+        description: "Share this link with students to let them book sessions.",
+      });
+    }
+  };
+
   // Generate default datetime values for form
   const getDefaultDateTime = (hoursOffset: number = 1) => {
     const date = new Date();
@@ -340,13 +376,26 @@ export default function AvailabilityPage() {
             </p>
           </div>
 
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Slot
-              </Button>
-            </DialogTrigger>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              onClick={handleShareBookingLink}
+              variant="outline"
+              size="sm"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+              title="Copy your public booking link"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Share Booking Link</span>
+              <span className="sm:hidden">Share Link</span>
+            </Button>
+            
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Slot
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Add New Booking Slot</DialogTitle>
@@ -408,7 +457,8 @@ export default function AvailabilityPage() {
                 </form>
               </Form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
       </header>
 
