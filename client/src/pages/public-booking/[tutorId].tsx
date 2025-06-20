@@ -12,12 +12,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Calendar, Clock, User, CheckCircle, AlertCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, parseISO, isFuture } from "date-fns";
 
 // Form validation schema
 const bookingFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name too long"),
   selectedSlotId: z.string().min(1, "Please select a time slot"),
+  selectedStartTime: z.string().min(1, "Please select a start time"),
+  selectedDuration: z.number().min(30, "Duration must be at least 30 minutes"),
 });
 
 type BookingFormData = z.infer<typeof bookingFormSchema>;
@@ -50,6 +53,9 @@ export default function PublicBookingPage() {
   const [bookingSlots, setBookingSlots] = useState<BookingSlot[]>([]);
   const [existingSessions, setExistingSessions] = useState<ExistingSession[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string>("");
+  const [selectedStartTime, setSelectedStartTime] = useState<string>("");
+  const [selectedDuration, setSelectedDuration] = useState<number>(60);
+  const [availableStartTimes, setAvailableStartTimes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
@@ -65,10 +71,14 @@ export default function PublicBookingPage() {
     defaultValues: {
       name: "",
       selectedSlotId: "",
+      selectedStartTime: "",
+      selectedDuration: 60,
     },
   });
 
   const watchedSlotId = watch("selectedSlotId");
+  const watchedStartTime = watch("selectedStartTime");
+  const watchedDuration = watch("selectedDuration");
 
   useEffect(() => {
     if (!tutorId) return;
@@ -271,6 +281,96 @@ export default function PublicBookingPage() {
   const handleSlotSelect = (slotId: string) => {
     setSelectedSlot(slotId);
     setValue("selectedSlotId", slotId);
+    
+    // Generate available start times for this slot
+    const slot = bookingSlots.find(s => s.id === slotId);
+    if (slot) {
+      const startTimes = generateAvailableStartTimes(slot);
+      setAvailableStartTimes(startTimes);
+      
+      // Reset time selection
+      setSelectedStartTime("");
+      setValue("selectedStartTime", "");
+      setValue("selectedDuration", 60);
+    }
+  };
+
+  const generateAvailableStartTimes = (slot: BookingSlot): string[] => {
+    const startDateTime = parseISO(slot.start_time);
+    const endDateTime = parseISO(slot.end_time);
+    const times: string[] = [];
+    
+    // Generate 30-minute intervals
+    let current = new Date(startDateTime);
+    while (current < endDateTime) {
+      const timeString = format(current, 'HH:mm');
+      times.push(timeString);
+      current.setMinutes(current.getMinutes() + 30);
+    }
+    
+    return times;
+  };
+
+  const getAvailableDurations = (startTime: string): number[] => {
+    if (!selectedSlot || !startTime) return [];
+    
+    const slot = bookingSlots.find(s => s.id === selectedSlot);
+    if (!slot) return [];
+    
+    const slotStartDateTime = parseISO(slot.start_time);
+    const slotEndDateTime = parseISO(slot.end_time);
+    
+    // Create selected start datetime
+    const selectedStartDateTime = new Date(slotStartDateTime);
+    const [hours, minutes] = startTime.split(':').map(Number);
+    selectedStartDateTime.setHours(hours, minutes, 0, 0);
+    
+    // Calculate available durations
+    const maxMinutes = Math.floor((slotEndDateTime.getTime() - selectedStartDateTime.getTime()) / (1000 * 60));
+    const durations: number[] = [];
+    
+    // Add 30-minute intervals up to the maximum
+    for (let duration = 30; duration <= maxMinutes && duration <= 120; duration += 30) {
+      durations.push(duration);
+    }
+    
+    return durations;
+  };
+
+  const handleStartTimeSelect = (startTime: string) => {
+    setSelectedStartTime(startTime);
+    setValue("selectedStartTime", startTime);
+    
+    // Reset duration and set to maximum available or 60 minutes
+    const availableDurations = getAvailableDurations(startTime);
+    const defaultDuration = availableDurations.includes(60) ? 60 : availableDurations[0] || 30;
+    setSelectedDuration(defaultDuration);
+    setValue("selectedDuration", defaultDuration);
+  };
+
+  const handleDurationSelect = (duration: number) => {
+    setSelectedDuration(duration);
+    setValue("selectedDuration", duration);
+  };
+
+  const isTimeSlotAvailable = (startTime: string, duration: number): boolean => {
+    if (!selectedSlot) return false;
+    
+    const slot = bookingSlots.find(s => s.id === selectedSlot);
+    if (!slot) return false;
+    
+    const slotDate = format(parseISO(slot.start_time), 'yyyy-MM-dd');
+    const sessionStartTime = `${slotDate}T${startTime}:00`;
+    
+    // Check if this exact time conflicts with existing sessions
+    return !existingSessions.some(session => {
+      const sessionStart = new Date(session.start_time);
+      const requestedStart = new Date(sessionStartTime);
+      const requestedEnd = new Date(requestedStart.getTime() + duration * 60 * 1000);
+      
+      // Simple overlap check - for now we'll just check start times
+      return Math.abs(sessionStart.getTime() - requestedStart.getTime()) < 30 * 60 * 1000; // 30 min buffer
+    });
   };
 
   const onSubmit = async (data: BookingFormData) => {
@@ -282,14 +382,26 @@ export default function PublicBookingPage() {
         throw new Error('Selected slot not found');
       }
 
-      // Split start_time into date and time components
-      const startDateTime = parseISO(slot.start_time);
-      const endDateTime = parseISO(slot.end_time);
-      const date = format(startDateTime, 'yyyy-MM-dd');
-      const time = format(startDateTime, 'HH:mm');
+      // Validate that start time and duration are selected
+      if (!data.selectedStartTime || !data.selectedDuration) {
+        throw new Error('Please select a start time and duration');
+      }
 
-      // Calculate duration in minutes
-      const duration = Math.round((endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60));
+      // Check if the selected time is still available
+      if (!isTimeSlotAvailable(data.selectedStartTime, data.selectedDuration)) {
+        toast({
+          variant: "destructive",
+          title: "Time Slot Unavailable",
+          description: "This time slot is no longer available. Please select a different time.",
+        });
+        return;
+      }
+
+      // Use selected date from slot and selected time from user
+      const slotDate = format(parseISO(slot.start_time), 'yyyy-MM-dd');
+      const date = slotDate;
+      const time = data.selectedStartTime;
+      const duration = data.selectedDuration;
 
       // Prepare session payload
       const sessionPayload = {
@@ -521,7 +633,7 @@ export default function PublicBookingPage() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  disabled={submitting || !watchedSlotId}
+                  disabled={submitting || !watchedSlotId || !watchedStartTime || !watchedDuration}
                   className="w-full"
                   size="lg"
                 >
