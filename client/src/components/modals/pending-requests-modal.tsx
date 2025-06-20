@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,9 +44,10 @@ interface Student {
 interface PendingRequestsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  highlightSessionId?: string;
 }
 
-export function PendingRequestsModal({ open, onOpenChange }: PendingRequestsModalProps) {
+export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }: PendingRequestsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedStudents, setSelectedStudents] = useState<Record<string, string>>({});
@@ -301,6 +302,23 @@ export function PendingRequestsModal({ open, onOpenChange }: PendingRequestsModa
     };
   };
 
+  // Auto-scroll to highlighted session when modal opens
+  useEffect(() => {
+    if (open && highlightSessionId && pendingRequests.length > 0) {
+      setTimeout(() => {
+        const element = document.getElementById(`pending-request-${highlightSessionId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Add temporary highlight effect
+          element.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-50');
+          setTimeout(() => {
+            element.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50');
+          }, 3000);
+        }
+      }, 300);
+    }
+  }, [open, highlightSessionId, pendingRequests]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto z-50">
@@ -333,7 +351,13 @@ export function PendingRequestsModal({ open, onOpenChange }: PendingRequestsModa
               const isProcessing = processingRequests.has(request.id);
 
               return (
-                <Card key={request.id} className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
+                <Card 
+                  key={request.id} 
+                  id={`pending-request-${request.id}`}
+                  className={`border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20 transition-all duration-300 ${
+                    highlightSessionId === request.id ? 'shadow-lg scale-105' : ''
+                  }`}
+                >
                   <CardContent className="p-6">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                       {/* Request Details */}
