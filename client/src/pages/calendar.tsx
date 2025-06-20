@@ -732,9 +732,12 @@ export default function Calendar() {
       : sessions.filter(session => session.student_name === selectedStudent)
     : [];
 
-  // Get pending sessions only
+  // Get pending sessions only (status = 'pending' AND student_id IS NULL for unassigned requests)
   const pendingSessions = sessions ? 
-    sessions.filter(session => session.status === 'pending')
+    sessions.filter(session => 
+      session.status === 'pending' && 
+      (session.student_id === null || session.unassigned_name)
+    )
       .sort((a, b) => new Date(a.date + ' ' + a.time).getTime() - new Date(b.date + ' ' + b.time).getTime())
     : [];
 
@@ -1877,9 +1880,14 @@ export default function Calendar() {
       {pendingSessions.length === 0 && (
         <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 mx-3 sm:mx-4 rounded-t-lg">
           <div className="px-4 sm:px-6 py-3">
-            <div className="text-center text-gray-500 dark:text-gray-400 text-sm">
-              No pending requests at the moment.
-            </div>
+            <button
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 w-full justify-center"
+              disabled
+            >
+              <span className="text-sm">
+                No pending requests at the moment.
+              </span>
+            </button>
           </div>
         </div>
       )}
