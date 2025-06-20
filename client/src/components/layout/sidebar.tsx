@@ -41,7 +41,9 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
   const [location] = useLocation();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const { data: pendingCount = 0 } = usePendingSessions();
+  const { data: pendingCount = 0, isLoading: isPendingLoading } = usePendingSessions();
+  
+
 
   // Handle navigation click on mobile
   const handleNavClick = () => {

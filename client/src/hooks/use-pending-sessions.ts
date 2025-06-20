@@ -20,9 +20,9 @@ export function usePendingSessions() {
         return 0;
       }
 
-      // Only count sessions that are truly pending (unassigned booking requests)
+      // Only count sessions that are truly pending (have unassigned_name from public booking)
       const truePendingCount = data?.filter(session => 
-        session.student_id === null || session.unassigned_name
+        session.unassigned_name
       ).length || 0;
 
       return truePendingCount;

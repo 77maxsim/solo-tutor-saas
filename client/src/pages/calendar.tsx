@@ -732,14 +732,14 @@ export default function Calendar() {
       : sessions.filter(session => session.student_name === selectedStudent)
     : [];
 
-  // Get pending sessions only (status = 'pending' AND student_id IS NULL for unassigned requests)
+  // Get pending sessions only (sessions with unassigned_name are pending booking requests)
   const pendingSessions = sessions ? 
     sessions.filter(session => 
-      session.status === 'pending' && 
-      (session.student_id === null || session.unassigned_name)
+      session.status === 'pending' && session.unassigned_name
     )
       .sort((a, b) => new Date(a.date + ' ' + a.time).getTime() - new Date(b.date + ' ' + b.time).getTime())
     : [];
+
 
   // Convert sessions to calendar events
   const events: CalendarEvent[] = filteredSessions.map(session => {
