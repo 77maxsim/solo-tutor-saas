@@ -19,7 +19,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, User, Calendar, Check, X, Loader2 } from "lucide-react";
+import { Clock, User, Calendar, Check, X, Loader2, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
 import moment from "moment";
 
@@ -36,10 +37,8 @@ interface PendingRequest {
 
 interface Student {
   id: string;
-  first_name: string;
-  last_name: string;
-  full_name: string;
-  email?: string;
+  name: string;
+  created_at: string;
 }
 
 interface PendingRequestsModalProps {
@@ -52,6 +51,8 @@ export function PendingRequestsModal({ open, onOpenChange }: PendingRequestsModa
   const queryClient = useQueryClient();
   const [selectedStudents, setSelectedStudents] = useState<Record<string, string>>({});
   const [processingRequests, setProcessingRequests] = useState<Set<string>>(new Set());
+  const [showAddStudent, setShowAddStudent] = useState<Record<string, boolean>>({});
+  const [newStudentNames, setNewStudentNames] = useState<Record<string, string>>({});
 
   // Fetch pending requests
   const { data: pendingRequests = [], isLoading: loadingRequests } = useQuery({
@@ -79,32 +80,89 @@ export function PendingRequestsModal({ open, onOpenChange }: PendingRequestsModa
     enabled: open,
   });
 
-  // Fetch students for dropdown
+  // Fetch students from Supabase for current user (same as Schedule Session modal)
   const { data: students = [], isLoading: loadingStudents } = useQuery({
-    queryKey: ['students-for-assignment'],
+    queryKey: ['students'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
+      }
 
       const { data, error } = await supabase
         .from('students')
-        .select('id, first_name, last_name, email')
-        .eq('tutor_id', user.id)
-        .eq('is_active', true)
-        .order('first_name');
+        .select('id, name')
+        .eq('tutor_id', tutorId)
+        .order('name', { ascending: true });
 
       if (error) {
         console.error('Error fetching students:', error);
         throw error;
       }
 
-      // Add full_name for easier display
-      return data.map(student => ({
-        ...student,
-        full_name: `${student.first_name} ${student.last_name}`
-      })) as Student[];
+      return data as Student[];
     },
     enabled: open,
+  });
+
+  // Add new student mutation (same as Schedule Session modal)
+  const addStudentMutation = useMutation({
+    mutationFn: async ({ name, requestId }: { name: string; requestId: string }) => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated or tutor record not found');
+      }
+
+      const { data, error } = await supabase
+        .from('students')
+        .insert([{ 
+          name: name.trim(),
+          tutor_id: tutorId 
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding student:', error);
+        throw error;
+      }
+
+      return { student: data as Student, requestId };
+    },
+    onSuccess: ({ student, requestId }) => {
+      // Refresh students list
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      
+      // Auto-select the new student for this request
+      setSelectedStudents(prev => ({
+        ...prev,
+        [requestId]: student.id
+      }));
+      
+      // Reset add student form for this request
+      setNewStudentNames(prev => ({
+        ...prev,
+        [requestId]: ""
+      }));
+      setShowAddStudent(prev => ({
+        ...prev,
+        [requestId]: false
+      }));
+      
+      // Show success message
+      toast({
+        title: "Student added successfully",
+        description: `${student.name} has been added and selected.`,
+      });
+    },
+    onError: (error) => {
+      console.error('Error adding student:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add student. Please try again.",
+      });
+    },
   });
 
   // Accept request mutation
@@ -207,10 +265,31 @@ export function PendingRequestsModal({ open, onOpenChange }: PendingRequestsModa
   };
 
   const handleStudentSelect = (requestId: string, studentId: string) => {
-    setSelectedStudents(prev => ({
-      ...prev,
-      [requestId]: studentId
-    }));
+    if (studentId === "add-new") {
+      setShowAddStudent(prev => ({
+        ...prev,
+        [requestId]: true
+      }));
+    } else {
+      setSelectedStudents(prev => ({
+        ...prev,
+        [requestId]: studentId
+      }));
+    }
+  };
+
+  const handleAddStudent = (requestId: string) => {
+    const name = newStudentNames[requestId];
+    if (!name?.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Student name cannot be empty.",
+      });
+      return;
+    }
+    
+    addStudentMutation.mutate({ name, requestId });
   };
 
   const formatDateTime = (date: string, time: string) => {
@@ -324,24 +403,74 @@ export function PendingRequestsModal({ open, onOpenChange }: PendingRequestsModa
                               </SelectItem>
                             ) : students.length === 0 ? (
                               <SelectItem value="no-students" disabled>
-                                No active students found
+                                No students found. Please add one.
                               </SelectItem>
                             ) : (
-                              students.map((student) => (
-                                <SelectItem key={student.id} value={student.id}>
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">{student.full_name}</span>
-                                    {student.email && (
-                                      <span className="text-xs text-muted-foreground">
-                                        {student.email}
-                                      </span>
-                                    )}
+                              <>
+                                {students.map((student) => (
+                                  <SelectItem key={student.id} value={student.id}>
+                                    {student.name}
+                                  </SelectItem>
+                                ))}
+                                <SelectItem value="add-new" className="text-blue-600 font-medium">
+                                  <div className="flex items-center gap-2">
+                                    <Plus className="h-4 w-4" />
+                                    Add New Student
                                   </div>
                                 </SelectItem>
-                              ))
+                              </>
                             )}
                           </SelectContent>
                         </Select>
+
+                        {/* Add New Student Form for this request */}
+                        {showAddStudent[request.id] && (
+                          <div className="mt-3 p-3 border rounded-lg bg-muted/50">
+                            <h4 className="text-sm font-medium mb-2">Add New Student</h4>
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Enter student name"
+                                value={newStudentNames[request.id] || ""}
+                                onChange={(e) => setNewStudentNames(prev => ({
+                                  ...prev,
+                                  [request.id]: e.target.value
+                                }))}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddStudent(request.id);
+                                  }
+                                }}
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => handleAddStudent(request.id)}
+                                disabled={addStudentMutation.isPending || !newStudentNames[request.id]?.trim()}
+                              >
+                                {addStudentMutation.isPending ? "Adding..." : "Add"}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setShowAddStudent(prev => ({
+                                    ...prev,
+                                    [request.id]: false
+                                  }));
+                                  setNewStudentNames(prev => ({
+                                    ...prev,
+                                    [request.id]: ""
+                                  }));
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        )}
 
                         <div className="flex gap-2">
                           <Button
