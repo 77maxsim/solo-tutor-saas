@@ -1761,10 +1761,11 @@ export default function Calendar() {
       </header>
 
       {/* Calendar Content */}
-      <div className="p-4 sm:p-6 w-full">
+      <div className="p-3 sm:p-4 w-full">
         <Card className="shadow-sm border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <CardHeader className="pb-4">
-            <div className="flex flex-col space-y-4">
+          <CardHeader className="pb-2">
+            <div className="flex flex-col gap-y-3">
+              {/* Title Row */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {calendarView === 'week' ? 'Weekly Schedule' : 
@@ -1772,7 +1773,7 @@ export default function Calendar() {
                 </CardTitle>
                 
                 {/* View Toggle and Full Screen */}
-                <div className="flex items-center gap-3 self-start sm:self-auto">
+                <div className="flex items-center gap-x-3 self-start sm:self-auto">
                   <CalendarIcon className="h-4 w-4 text-gray-500 dark:text-gray-400 hidden sm:block" />
                   {/* Mobile: Dropdown for view selection */}
                   <div className="sm:hidden">
@@ -1844,58 +1845,61 @@ export default function Calendar() {
                 </div>
               </div>
               
-              {/* Week Navigation - only show in week view */}
-              {calendarView === 'week' && (
-                <div className="flex items-center justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePreviousWeek}
-                    className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[160px] sm:min-w-[180px] text-center">
-                    {getWeekRange()}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleNextWeek}
-                    className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleToday}
-                    className="ml-2 px-3 h-9 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    Today
-                  </Button>
+              {/* Combined Filter and Navigation Controls Row */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-y-3 gap-x-4">
+                {/* Student Filter - Left side */}
+                <div className="flex items-center gap-x-2">
+                  <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400 hidden sm:block" />
+                  <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                    <SelectTrigger className="w-full sm:w-44 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                      <SelectValue placeholder="Filter by student" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Students</SelectItem>
+                      {uniqueStudents.map(student => (
+                        <SelectItem key={student} value={student}>
+                          {student}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
-              
-              {/* Student Filter */}
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400 hidden sm:block" />
-                <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                  <SelectTrigger className="w-full sm:w-44 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
-                    <SelectValue placeholder="Filter by student" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Students</SelectItem>
-                    {uniqueStudents.map(student => (
-                      <SelectItem key={student} value={student}>
-                        {student}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                
+                {/* Week Navigation - Right side, only show in week view */}
+                {calendarView === 'week' && (
+                  <div className="flex items-center gap-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePreviousWeek}
+                      className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[160px] sm:min-w-[180px] text-center">
+                      {getWeekRange()}
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleNextWeek}
+                      className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleToday}
+                      className="ml-2 px-3 h-9 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      Today
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </CardHeader>
