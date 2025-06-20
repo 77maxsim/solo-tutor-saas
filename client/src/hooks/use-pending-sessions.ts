@@ -11,7 +11,7 @@ export function usePendingSessions() {
 
       const { data, error } = await supabase
         .from('sessions')
-        .select('id')
+        .select('id, student_id, unassigned_name')
         .eq('tutor_id', tutorId)
         .eq('status', 'pending');
 
@@ -20,8 +20,14 @@ export function usePendingSessions() {
         return 0;
       }
 
-      return data.length;
+      // Only count sessions that are truly pending (unassigned booking requests)
+      const truePendingCount = data?.filter(session => 
+        session.student_id === null || session.unassigned_name
+      ).length || 0;
+
+      return truePendingCount;
     },
     refetchInterval: 30000, // Refetch every 30 seconds
+    staleTime: 10000, // Consider data stale after 10 seconds
   });
 }
