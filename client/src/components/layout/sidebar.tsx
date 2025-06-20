@@ -24,6 +24,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { supabase } from "@/lib/supabaseClient";
 
+import { usePendingSessions } from "@/hooks/use-pending-sessions";
+
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Calendar", href: "/calendar", icon: Calendar },
@@ -41,6 +43,7 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
   const [location] = useLocation();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { data: pendingCount = 0 } = usePendingSessions();
 
   // Handle navigation click on mobile
   const handleNavClick = () => {
@@ -125,6 +128,9 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
       <nav className="flex-1 space-y-2 px-4 py-6">
         {navigation.map((item, index) => {
           const isActive = location === item.href;
+          const isCalendar = item.name === "Calendar";
+          const showBadge = isCalendar && pendingCount > 0;
+          
           return (
             <Link key={item.name} href={item.href}>
               <div

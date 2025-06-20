@@ -280,6 +280,9 @@ export default function Calendar() {
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [modalView, setModalView] = useState<'details' | 'editSeries' | 'editSession'>('details');
   const [sessionForDetails, setSessionForDetails] = useState<SessionWithStudent | null>(null);
+  const [selectedPendingSession, setSelectedPendingSession] = useState<any>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+  const [newStudentName, setNewStudentName] = useState("");
   const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [preventSlotSelection, setPreventSlotSelection] = useState(false);
