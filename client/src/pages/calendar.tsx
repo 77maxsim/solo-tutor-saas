@@ -291,8 +291,12 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [preventSlotSelection, setPreventSlotSelection] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [showPendingRequestsModal, setShowPendingRequestsModal] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Get pending sessions count for the button
+  const { data: pendingCount = 0 } = usePendingSessions();
 
   // Handle escape key for exiting full screen
   useEffect(() => {
@@ -1550,6 +1554,17 @@ export default function Calendar() {
             </div>
             
             <div className="flex items-center gap-2">
+              {pendingCount > 0 && (
+                <Button 
+                  onClick={() => setShowPendingRequestsModal(true)}
+                  size="sm"
+                  variant="outline"
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-950/20"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Review Pending ({pendingCount})
+                </Button>
+              )}
               <Button 
                 onClick={handleScheduleSession}
                 size="sm"
@@ -1788,14 +1803,27 @@ export default function Calendar() {
               Manage your tutoring schedule and upcoming sessions.
             </p>
           </div>
-          <Button 
-            onClick={handleScheduleSession}
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Schedule Session
-          </Button>
+          <div className="flex items-center gap-2">
+            {pendingCount > 0 && (
+              <Button 
+                onClick={() => setShowPendingRequestsModal(true)}
+                size="sm"
+                variant="outline"
+                className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-950/20"
+              >
+                <User className="w-4 h-4 mr-2" />
+                Review Pending ({pendingCount})
+              </Button>
+            )}
+            <Button 
+              onClick={handleScheduleSession}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Schedule Session
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -2229,6 +2257,11 @@ export default function Calendar() {
         session={sessionForDetails}
       />
 
+      {/* Pending Requests Modal */}
+      <PendingRequestsModal
+        open={showPendingRequestsModal}
+        onOpenChange={setShowPendingRequestsModal}
+      />
 
     </div>
   );
