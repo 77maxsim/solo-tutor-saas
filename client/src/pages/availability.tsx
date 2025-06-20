@@ -66,6 +66,33 @@ interface BookingSlot {
 
 export default function AvailabilityPage() {
   const { toast } = useToast();
+
+  // Fetch current tutor ID
+  useEffect(() => {
+    const fetchTutorId = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: tutor, error } = await supabase
+          .from('tutors')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching tutor:', error);
+          return;
+        }
+
+        setTutorId(tutor.id);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+    fetchTutorId();
+  }, []);
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
