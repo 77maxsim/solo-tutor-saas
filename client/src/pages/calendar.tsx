@@ -1741,11 +1741,11 @@ export default function Calendar() {
   return (
     <div className="flex-1 overflow-auto w-full">
       {/* Enhanced Header - Hidden on mobile since we have MobileHeader */}
-      <header className="hidden md:block bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 sticky top-0 z-10 transition-colors duration-300 shadow-sm dark:shadow-gray-900/20">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <header className="hidden md:block bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-2 sticky top-0 z-10 transition-colors duration-300 shadow-sm dark:shadow-gray-900/20">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 hover:text-primary dark:hover:text-blue-400 transition-colors duration-200">📅 Calendar</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 hidden sm:block">
               Manage your tutoring schedule and upcoming sessions.
             </p>
           </div>
