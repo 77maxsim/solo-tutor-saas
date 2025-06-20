@@ -47,7 +47,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import MobileCalendarView from "@/components/MobileCalendarView";
+import { Clock, User, Check, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const localizer = momentLocalizer(moment);

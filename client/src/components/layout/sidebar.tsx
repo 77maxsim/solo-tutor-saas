@@ -18,7 +18,11 @@ import {
   LogOut,
   Settings
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useQuery } from "@tanstack/react-query";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
+import { supabase } from "@/lib/supabaseClient";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
