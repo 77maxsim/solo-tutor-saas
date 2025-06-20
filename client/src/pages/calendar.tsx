@@ -1828,7 +1828,7 @@ export default function Calendar() {
       </header>
 
       {/* Pending Sessions Section */}
-      {pendingSessions.length > 0 && (
+      {pendingCount > 0 && pendingSessions.length > 0 && (
         <div className="border-b border-gray-200 dark:border-gray-700 bg-amber-50 dark:bg-amber-950/20 mx-3 sm:mx-4 rounded-t-lg">
           <div className="px-4 sm:px-6 py-4">
             <button
@@ -1907,7 +1907,7 @@ export default function Calendar() {
         </div>
       )}
 
-      {pendingSessions.length === 0 && (
+      {pendingCount === 0 && (
         <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 mx-3 sm:mx-4 rounded-t-lg">
           <div className="px-4 sm:px-6 py-3">
             <button
