@@ -78,7 +78,9 @@ export default function PublicBookingPage() {
       url: import.meta.env.VITE_SUPABASE_URL?.substring(0, 30) + '...',
       anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Present' : 'Missing',
       anonKeyPrefix: import.meta.env.VITE_SUPABASE_ANON_KEY?.substring(0, 10) + '...',
-      tutorId: tutorId
+      tutorId: tutorId,
+      userAgent: navigator.userAgent,
+      isMobile: /Mobi|Android/i.test(navigator.userAgent)
     });
     
     fetchTutorAndSlots();
