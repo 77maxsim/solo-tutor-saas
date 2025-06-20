@@ -89,20 +89,33 @@ export default function PublicBookingPage() {
       // Fetch tutor details with retry
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-          console.log(`Fetching tutor data - attempt ${attempt + 1}`);
-          const result = await supabase
+          console.log(`Fetching tutor data - attempt ${attempt + 1}, tutorId: ${tutorId}`);
+          
+          // Add timeout for mobile reliability
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout')), 10000)
+          );
+          
+          const fetchPromise = supabase
             .from('tutors')
             .select('id, full_name, email')
             .eq('id', tutorId)
             .single();
+          
+          const result = await Promise.race([fetchPromise, timeoutPromise]);
 
           if (result.error) {
             tutorError = result.error;
-            console.error(`Tutor fetch attempt ${attempt + 1} failed:`, result.error);
+            console.error(`Tutor fetch attempt ${attempt + 1} failed:`, {
+              error: result.error,
+              code: result.error.code,
+              message: result.error.message,
+              details: result.error.details
+            });
             
             // Wait before retry (except on last attempt)
             if (attempt < maxRetries - 1) {
-              await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
               continue;
             }
           } else {
@@ -111,9 +124,13 @@ export default function PublicBookingPage() {
             break;
           }
         } catch (err) {
-          console.error(`Tutor fetch attempt ${attempt + 1} exception:`, err);
+          console.error(`Tutor fetch attempt ${attempt + 1} exception:`, {
+            error: err,
+            message: err.message,
+            stack: err.stack
+          });
           if (attempt < maxRetries - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
             continue;
           }
           tutorError = err;
@@ -204,23 +221,28 @@ export default function PublicBookingPage() {
       console.log('Mobile booking - All data fetched successfully');
 
     } catch (error) {
-      console.error('Mobile booking - Error fetching data:', error);
+      console.error('Mobile booking - Error fetching data:', {
+        error,
+        message: error.message,
+        retryCount,
+        tutorId
+      });
       
-      // Only show error after all retries failed
-      if (retryCount === 0) {
-        // First failure - automatically retry once more after short delay
-        setTimeout(() => {
-          console.log('Mobile booking - Auto-retrying after error...');
-          fetchTutorAndSlots(1);
-        }, 1000);
-        return;
-      }
-      
+      // Always show toast immediately for user feedback
       toast({
         variant: "destructive",
         title: "Connection Error",
         description: "Could not load booking information. Please check your connection and try again.",
       });
+      
+      // Only auto-retry on first failure
+      if (retryCount === 0) {
+        console.log('Mobile booking - Auto-retrying after error...');
+        setTimeout(() => {
+          fetchTutorAndSlots(1);
+        }, 2000);
+        return;
+      }
     } finally {
       setLoading(false);
     }
