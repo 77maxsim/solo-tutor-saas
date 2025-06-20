@@ -52,6 +52,8 @@ import { Label } from "@/components/ui/label";
 import MobileCalendarView from "@/components/MobileCalendarView";
 import { Clock, User, Check, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePendingSessions } from "@/hooks/use-pending-sessions";
+import { PendingRequestsModal } from "@/components/modals/pending-requests-modal";
 
 const localizer = momentLocalizer(moment);
 
