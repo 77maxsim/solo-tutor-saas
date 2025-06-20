@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
@@ -8,10 +9,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, DollarSign, CheckCircle, XCircle } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Calendar, Clock, DollarSign, CheckCircle, XCircle, ChevronDown, ChevronRight, FolderOpen, Folder } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
+import { useState } from "react";
+import { ScheduleSessionModal } from "./schedule-session-modal";
 
 interface Session {
   id: string;
@@ -21,6 +28,9 @@ interface Session {
   rate: number;
   paid: boolean;
   created_at: string;
+  notes?: string;
+  color?: string;
+  recurrence_id?: string;
 }
 
 interface Student {
@@ -35,6 +45,11 @@ interface StudentSessionHistoryModalProps {
 }
 
 export function StudentSessionHistoryModal({ isOpen, onClose, student }: StudentSessionHistoryModalProps) {
+  const [futureSectionsOpen, setFutureSectionsOpen] = useState(false);
+  const [pastSectionsOpen, setPastSectionsOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+
   const { data: sessions, isLoading } = useQuery({
     queryKey: ['student-session-history', student?.id],
     queryFn: async () => {
@@ -47,7 +62,7 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
 
       const { data, error } = await supabase
         .from('sessions')
-        .select('id, date, time, duration, rate, paid, created_at')
+        .select('id, date, time, duration, rate, paid, created_at, notes, color, recurrence_id')
         .eq('tutor_id', tutorId)
         .eq('student_id', student.id)
         .order('date', { ascending: false });
@@ -74,11 +89,19 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
     return sessionDateTime <= now;
   }) || [];
 
+  const handleSessionClick = (session: Session) => {
+    setSelectedSession(session);
+    setEditModalOpen(true);
+  };
+
   const SessionItem = ({ session }: { session: Session }) => {
     const earnings = (session.duration / 60) * session.rate;
     
     return (
-      <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+      <div 
+        className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+        onClick={() => handleSessionClick(session)}
+      >
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -108,80 +131,130 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            📅 Session History - {student?.name}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              📅 Session History - {student?.name}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-6">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                <p className="text-sm text-muted-foreground">Loading session history...</p>
+          <div className="flex-1 overflow-y-auto space-y-4">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                  <p className="text-sm text-muted-foreground">Loading session history...</p>
+                </div>
               </div>
-            </div>
-          ) : (
-            <>
-              {/* Upcoming Sessions */}
-              {upcomingSessions.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-foreground">Upcoming Sessions</h3>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                      {upcomingSessions.length}
-                    </Badge>
-                  </div>
-                  <div className="space-y-2">
-                    {upcomingSessions.map((session) => (
-                      <SessionItem key={session.id} session={session} />
-                    ))}
-                  </div>
-                </div>
-              )}
+            ) : (
+              <>
+                {/* Future Sessions Section */}
+                {upcomingSessions.length > 0 && (
+                  <Collapsible 
+                    open={futureSectionsOpen} 
+                    onOpenChange={setFutureSectionsOpen}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-3 h-auto hover:bg-accent/50"
+                      >
+                        <div className="flex items-center gap-2">
+                          {futureSectionsOpen ? (
+                            <FolderOpen className="h-4 w-4 text-blue-600" />
+                          ) : (
+                            <Folder className="h-4 w-4 text-blue-600" />
+                          )}
+                          <span className="font-medium">📁 Future Sessions</span>
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                            {upcomingSessions.length}
+                          </Badge>
+                        </div>
+                        {futureSectionsOpen ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-2 mt-2">
+                      {upcomingSessions.map((session) => (
+                        <SessionItem key={session.id} session={session} />
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
 
-              {/* Separator between sections */}
-              {upcomingSessions.length > 0 && pastSessions.length > 0 && (
-                <Separator className="my-4" />
-              )}
+                {/* Past Sessions Section */}
+                {pastSessions.length > 0 && (
+                  <Collapsible 
+                    open={pastSectionsOpen} 
+                    onOpenChange={setPastSectionsOpen}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-3 h-auto hover:bg-accent/50"
+                      >
+                        <div className="flex items-center gap-2">
+                          {pastSectionsOpen ? (
+                            <FolderOpen className="h-4 w-4 text-gray-600" />
+                          ) : (
+                            <Folder className="h-4 w-4 text-gray-600" />
+                          )}
+                          <span className="font-medium">📁 Past Sessions</span>
+                          <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+                            {pastSessions.length}
+                          </Badge>
+                        </div>
+                        {pastSectionsOpen ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-2 mt-2">
+                      {pastSessions.map((session) => (
+                        <SessionItem key={session.id} session={session} />
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
 
-              {/* Past Sessions */}
-              {pastSessions.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-foreground">Past Sessions</h3>
-                    <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                      {pastSessions.length}
-                    </Badge>
+                {/* No sessions message */}
+                {!sessions || sessions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">No sessions found for {student?.name}</p>
                   </div>
-                  <div className="space-y-2">
-                    {pastSessions.map((session) => (
-                      <SessionItem key={session.id} session={session} />
-                    ))}
-                  </div>
-                </div>
-              )}
+                ) : null}
+              </>
+            )}
+          </div>
 
-              {/* No sessions message */}
-              {!sessions || sessions.length === 0 ? (
-                <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">No sessions found for {student?.name}</p>
-                </div>
-              ) : null}
-            </>
-          )}
-        </div>
+          <div className="flex justify-end pt-4 border-t">
+            <Button onClick={onClose} variant="outline">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-        <div className="flex justify-end pt-4 border-t">
-          <Button onClick={onClose} variant="outline">
-            Close
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      {/* Edit Session Modal */}
+      <ScheduleSessionModal
+        open={editModalOpen}
+        onOpenChange={(open) => {
+          setEditModalOpen(open);
+          if (!open) {
+            setSelectedSession(null);
+          }
+        }}
+        editSession={selectedSession}
+        editMode={true}
+      />
+    </>
   );
 }

@@ -90,12 +90,26 @@ interface Student {
   created_at: string;
 }
 
+interface Session {
+  id: string;
+  date: string;
+  time: string;
+  duration: number;
+  rate: number;
+  notes?: string;
+  color?: string;
+  recurrence_id?: string;
+  student_id: string;
+}
+
 interface ScheduleSessionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editSession?: Session | null;
+  editMode?: boolean;
 }
 
-export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModalProps) {
+export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode = false }: ScheduleSessionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newStudentName, setNewStudentName] = useState("");
@@ -230,6 +244,30 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
     },
   });
 
+  // Prefill form when editing a session
+  useEffect(() => {
+    if (editMode && editSession && open) {
+      form.setValue('studentId', editSession.student_id);
+      form.setValue('date', new Date(editSession.date));
+      form.setValue('time', editSession.time);
+      form.setValue('duration', editSession.duration);
+      form.setValue('rate', editSession.rate);
+      form.setValue('color', editSession.color || "#3B82F6");
+      form.setValue('notes', editSession.notes || "");
+      form.setValue('repeatWeekly', false); // Don't allow editing recurring sessions
+      form.setValue('repeatWeeks', 1);
+      form.setValue('applyNotesToSeries', false);
+      
+      // Mark all fields as user-modified to prevent auto-prefilling
+      setUserModifiedFields(new Set(['studentId', 'date', 'time', 'duration', 'rate', 'color', 'notes']));
+      
+      // Show notes section if there are notes
+      if (editSession.notes) {
+        setShowNotes(true);
+      }
+    }
+  }, [editMode, editSession, open, form]);
+
   // Function to fetch student's most recent session data
   const fetchStudentLastSession = async (studentId: string) => {
     try {
@@ -355,84 +393,114 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // Generate recurrence ID if needed
-      const recurrenceId = data.repeatWeekly ? crypto.randomUUID() : null;
-      
-      // Prepare sessions to insert
-      const sessionsToInsert = [];
-      const baseDate = new Date(data.date);
-      
-      // Add the first session
-      sessionsToInsert.push({
-        student_id: data.studentId,
-        date: format(baseDate, "yyyy-MM-dd"),
-        time: data.time,
-        duration: data.duration,
-        rate: data.rate,
-        color: data.color,
-        notes: data.notes || null,
-        tutor_id: tutorId,
-        paid: false,
-        recurrence_id: recurrenceId,
-        created_at: new Date().toISOString(),
-      });
-
-      // If recurring, add additional sessions
-      if (data.repeatWeekly && data.repeatWeeks) {
-        for (let week = 1; week < data.repeatWeeks; week++) {
-          const sessionDate = new Date(baseDate);
-          sessionDate.setDate(sessionDate.getDate() + (week * 7));
-          
-          sessionsToInsert.push({
+      if (editMode && editSession) {
+        // Update existing session
+        const { error } = await supabase
+          .from('sessions')
+          .update({
             student_id: data.studentId,
-            date: format(sessionDate, "yyyy-MM-dd"),
+            date: format(data.date, "yyyy-MM-dd"),
             time: data.time,
             duration: data.duration,
             rate: data.rate,
             color: data.color,
-            notes: data.applyNotesToSeries ? (data.notes || null) : null,
-            tutor_id: tutorId,
-            paid: false,
-            recurrence_id: recurrenceId,
-            created_at: new Date().toISOString(),
+            notes: data.notes || null,
+          })
+          .eq('id', editSession.id);
+
+        if (error) {
+          console.error('Supabase error:', error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to update session. Please try again.",
           });
+          return;
         }
-      }
 
-      // Insert all sessions into Supabase
-      const { data: insertedData, error } = await supabase
-        .from('sessions')
-        .insert(sessionsToInsert)
-        .select();
-
-      if (error) {
-        console.error('Supabase error:', error);
         toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to schedule session. Please try again.",
+          title: "✅ Session Updated!",
+          description: "Session has been updated successfully.",
         });
-        return;
+
+        // Invalidate relevant queries
+        queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['student-session-history'] });
+
+      } else {
+        // Create new session(s) - existing logic
+        const recurrenceId = data.repeatWeekly ? crypto.randomUUID() : null;
+        const sessionsToInsert = [];
+        const baseDate = new Date(data.date);
+        
+        sessionsToInsert.push({
+          student_id: data.studentId,
+          date: format(baseDate, "yyyy-MM-dd"),
+          time: data.time,
+          duration: data.duration,
+          rate: data.rate,
+          color: data.color,
+          notes: data.notes || null,
+          tutor_id: tutorId,
+          paid: false,
+          recurrence_id: recurrenceId,
+          created_at: new Date().toISOString(),
+        });
+
+        if (data.repeatWeekly && data.repeatWeeks) {
+          for (let week = 1; week < data.repeatWeeks; week++) {
+            const sessionDate = new Date(baseDate);
+            sessionDate.setDate(sessionDate.getDate() + (week * 7));
+            
+            sessionsToInsert.push({
+              student_id: data.studentId,
+              date: format(sessionDate, "yyyy-MM-dd"),
+              time: data.time,
+              duration: data.duration,
+              rate: data.rate,
+              color: data.color,
+              notes: data.applyNotesToSeries ? (data.notes || null) : null,
+              tutor_id: tutorId,
+              paid: false,
+              recurrence_id: recurrenceId,
+              created_at: new Date().toISOString(),
+            });
+          }
+        }
+
+        const { data: insertedData, error } = await supabase
+          .from('sessions')
+          .insert(sessionsToInsert)
+          .select();
+
+        if (error) {
+          console.error('Supabase error:', error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to schedule session. Please try again.",
+          });
+          return;
+        }
+
+        triggerSuccessConfetti();
+        
+        const sessionCount = sessionsToInsert.length;
+        toast({
+          title: "🎉 Success!",
+          description: sessionCount > 1 
+            ? `${sessionCount} sessions scheduled successfully!`
+            : "Session scheduled successfully!",
+        });
+
+        queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+
+        console.log("Session created:", insertedData);
       }
-
-      // Success - trigger confetti celebration and show success message
-      triggerSuccessConfetti();
       
-      const sessionCount = sessionsToInsert.length;
-      toast({
-        title: "🎉 Success!",
-        description: sessionCount > 1 
-          ? `${sessionCount} sessions scheduled successfully!`
-          : "Session scheduled successfully!",
-      });
-
-      // Invalidate and refetch upcoming sessions and calendar
-      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
-
-      console.log("Session created:", insertedData);
-      
-      // Reset form and close modal after a brief delay to let confetti show
+      // Reset form and close modal
       setTimeout(() => {
         form.reset();
         setUserModifiedFields(new Set());
@@ -440,7 +508,7 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
         setNewStudentName("");
         setShowNotes(false);
         onOpenChange(false);
-      }, 500);
+      }, editMode ? 100 : 500);
 
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -471,9 +539,14 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] w-[95vw] sm:w-full flex flex-col p-0 gap-0">
         <DialogHeader className="shrink-0 p-4 sm:p-6 pb-2">
-          <DialogTitle className="text-lg">Schedule a Session</DialogTitle>
+          <DialogTitle className="text-lg">
+            {editMode ? "Edit Session" : "Schedule a Session"}
+          </DialogTitle>
           <DialogDescription className="text-sm">
-            Fill out the details below to schedule a new tutoring session.
+            {editMode 
+              ? "Update the session details below."
+              : "Fill out the details below to schedule a new tutoring session."
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -732,56 +805,60 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
               )}
             />
 
-            {/* Recurring Session Options */}
-            <FormField
-              control={form.control}
-              name="repeatWeekly"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      Repeat Weekly
-                    </FormLabel>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Recurring Session Options - Hidden in edit mode */}
+            {!editMode && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="repeatWeekly"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Repeat Weekly
+                        </FormLabel>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            {form.watch('repeatWeekly') && (
-              <FormField
-                control={form.control}
-                name="repeatWeeks"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Number of weeks to repeat</FormLabel>
-                    <FormControl>
-                      <Select 
-                        onValueChange={(value) => field.onChange(parseInt(value, 10))}
-                        value={field.value?.toString()}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select weeks" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: 12 }, (_, i) => i + 1).map((week) => (
-                            <SelectItem key={week} value={week.toString()}>
-                              {week} week{week > 1 ? 's' : ''}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                {form.watch('repeatWeekly') && (
+                  <FormField
+                    control={form.control}
+                    name="repeatWeeks"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Number of weeks to repeat</FormLabel>
+                        <FormControl>
+                          <Select 
+                            onValueChange={(value) => field.onChange(parseInt(value, 10))}
+                            value={field.value?.toString()}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select weeks" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 12 }, (_, i) => i + 1).map((week) => (
+                                <SelectItem key={week} value={week.toString()}>
+                                  {week} week{week > 1 ? 's' : ''}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
-              />
+              </>
             )}
 
             {/* Session Notes Section */}
@@ -864,7 +941,10 @@ export function ScheduleSessionModal({ open, onOpenChange }: ScheduleSessionModa
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting} className="flex-1 sm:flex-none">
-                {isSubmitting ? "Scheduling..." : "Schedule Session"}
+                {isSubmitting 
+                  ? (editMode ? "Updating..." : "Scheduling...") 
+                  : (editMode ? "Update Session" : "Schedule Session")
+                }
               </Button>
             </DialogFooter>
           </form>
