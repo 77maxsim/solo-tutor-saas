@@ -26,7 +26,8 @@ import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } fr
 import { Calendar as BigCalendarBase, momentLocalizer, Views } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { Plus, Calendar as CalendarIcon, Filter, Edit, Trash2, ChevronLeft, ChevronRight, Maximize, Minimize } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Filter, Edit, Trash2, ChevronLeft, ChevronRight, Maximize, Minimize, ChevronDown, ChevronUp, MapPin, Clock as ClockIcon, User as UserIcon } from "lucide-react";
+import { scroller } from "react-scroll";
 import { formatCurrency } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -728,6 +729,12 @@ export default function Calendar() {
     selectedStudent === 'all' 
       ? sessions 
       : sessions.filter(session => session.student_name === selectedStudent)
+    : [];
+
+  // Get pending sessions only
+  const pendingSessions = sessions ? 
+    sessions.filter(session => session.status === 'pending')
+      .sort((a, b) => new Date(a.date + ' ' + a.time).getTime() - new Date(b.date + ' ' + b.time).getTime())
     : [];
 
   // Convert sessions to calendar events
