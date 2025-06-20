@@ -73,6 +73,14 @@ export default function PublicBookingPage() {
   useEffect(() => {
     if (!tutorId) return;
     
+    // Log Supabase configuration for debugging mobile issues
+    console.log('Mobile booking page - Supabase config:', {
+      url: import.meta.env.VITE_SUPABASE_URL?.substring(0, 30) + '...',
+      anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Present' : 'Missing',
+      anonKeyPrefix: import.meta.env.VITE_SUPABASE_ANON_KEY?.substring(0, 10) + '...',
+      tutorId: tutorId
+    });
+    
     fetchTutorAndSlots();
   }, [tutorId]);
 
@@ -281,20 +289,26 @@ export default function PublicBookingPage() {
       // Calculate duration in minutes
       const duration = Math.round((endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60));
 
+      // Prepare session payload
+      const sessionPayload = {
+        tutor_id: tutorId,
+        student_id: null,
+        date: date,
+        time: time,
+        duration: duration,
+        rate: 0, // Default rate, tutor can update later
+        paid: false,
+        unassigned_name: data.name,
+        notes: `Booking request from ${data.name}`,
+        status: 'pending'
+      };
+
+      console.log("Submitting session:", sessionPayload);
+
       // Create session record
       const { error: sessionError } = await supabase
         .from('sessions')
-        .insert({
-          tutor_id: tutorId,
-          student_id: null,
-          date: date,
-          time: time,
-          duration: duration,
-          rate: 0, // Default rate, tutor can update later
-          paid: false,
-          unassigned_name: data.name,
-          notes: `Booking request from ${data.name}`,
-        });
+        .insert(sessionPayload);
 
       if (sessionError) {
         throw sessionError;
