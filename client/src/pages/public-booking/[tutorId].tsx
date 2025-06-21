@@ -757,10 +757,7 @@ export default function PublicBookingPage() {
                                   <div className="text-xs text-gray-500 dark:text-gray-400">
                                     {getTimezoneDisplayName(studentTimezone)}
                                   </div>
-                                  {/* Temporary debug display */}
-                                  <div className="text-xs text-red-500 font-mono">
-                                    UTC: {dayjs.utc(slot.start_time).format('HH:mm')} → Local: {localStartTime.format('HH:mm')}
-                                  </div>
+
                                 </div>
                               </div>
                               {isSelected && (
