@@ -131,6 +131,43 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
     updateSessionMutation.mutate({ notes, color: sessionColor, applyToSeries });
   };
 
+  // Delete session function - handles individual session deletion
+  const handleDeleteSession = async () => {
+    if (!session?.id) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('id', session.id);
+
+      if (error) throw error;
+
+      // Refresh calendar and other queries to remove deleted session
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['student-session-history'] });
+
+      toast({
+        title: "Session Deleted",
+        description: "The session has been successfully cancelled and removed."
+      });
+
+      onClose(); // Only close modal after successful deletion
+    } catch (error: any) {
+      console.error('Error deleting session:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to Delete Session",
+        description: error.message || "An error occurred while deleting the session."
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!session) return null;
 
   const { displayTime, durationMinutes } = getSessionDisplayInfo(session, tutorTimezone || undefined);
