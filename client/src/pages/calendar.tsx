@@ -353,21 +353,29 @@ export default function Calendar() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      console.log('🔍 Fetching sessions for tutor:', tutorId);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Fetching sessions for tutor:', tutorId);
+      }
 
       // Automatically determine if optimization is needed based on dataset size
       const useOptimized = await shouldUseOptimizedQuery(tutorId);
       
       let allSessions;
       if (useOptimized) {
-        console.log('📊 Using optimized query');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📊 Using optimized query');
+        }
         allSessions = await getOptimizedSessions(tutorId);
       } else {
-        console.log('📈 Using standard query');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📈 Using standard query');
+        }
         allSessions = await getStandardSessions(tutorId);
       }
 
-      console.log('📅 Raw sessions from database:', allSessions);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📅 Raw sessions from database:', allSessions);
+      }
 
       // Ensure we have the status field and handle pending sessions
       const processedSessions = allSessions.map(session => ({
@@ -375,7 +383,9 @@ export default function Calendar() {
         status: session.status || 'confirmed'
       }));
 
-      console.log('📅 Processed sessions for calendar:', processedSessions);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📅 Processed sessions for calendar:', processedSessions);
+      }
       return processedSessions;
     },
     refetchOnWindowFocus: true,
@@ -776,15 +786,17 @@ export default function Calendar() {
   // Convert sessions to calendar events
   const events: CalendarEvent[] = filteredSessions.map(session => {
     // Debug logging for session data
-    console.log('📅 Processing session for calendar:', {
-      id: session.id,
-      session_start: session.session_start,
-      session_end: session.session_end,
-      date: session.date,
-      time: session.time,
-      student_name: session.student_name,
-      status: session.status
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📅 Processing session for calendar:', {
+        id: session.id,
+        session_start: session.session_start,
+        session_end: session.session_end,
+        date: session.date,
+        time: session.time,
+        student_name: session.student_name,
+        status: session.status
+      });
+    }
 
     let start: Date, end: Date;
 
@@ -808,12 +820,14 @@ export default function Calendar() {
     }
 
     // Debug the parsed dates
-    console.log('📅 Parsed dates:', {
-      start: start.toISOString(),
-      end: end.toISOString(),
-      localStart: start.toLocaleString(),
-      localEnd: end.toLocaleString()
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📅 Parsed dates:', {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        localStart: start.toLocaleString(),
+        localEnd: end.toLocaleString()
+      });
+    }
 
     const isPending = session.status === 'pending';
     
@@ -866,17 +880,21 @@ export default function Calendar() {
       }
     };
 
-    console.log('📅 Created calendar event:', {
-      id: calendarEvent.id,
-      title: calendarEvent.title,
-      start: calendarEvent.start.toISOString(),
-      end: calendarEvent.end.toISOString()
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📅 Created calendar event:', {
+        id: calendarEvent.id,
+        title: calendarEvent.title,
+        start: calendarEvent.start.toISOString(),
+        end: calendarEvent.end.toISOString()
+      });
+    }
 
     return calendarEvent;
   }).filter(Boolean); // Remove any null events
 
-  console.log(`📅 Total calendar events created: ${events.length}`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`📅 Total calendar events created: ${events.length}`);
+  }
 
   const handleScheduleSession = () => {
     window.dispatchEvent(new CustomEvent('openScheduleModal'));

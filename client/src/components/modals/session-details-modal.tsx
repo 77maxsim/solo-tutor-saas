@@ -14,13 +14,16 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, DollarSign, Edit, Trash2 } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
+import { getSessionDisplayInfo, formatSessionTimeRange, utcToLocalDate } from "@/lib/dateUtils";
 
 interface SessionDetails {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  date?: string; // Legacy field
+  time?: string; // Legacy field
+  session_start?: string; // UTC timestamp
+  session_end?: string; // UTC timestamp
   duration: number;
   rate: number;
   notes?: string;
@@ -126,8 +129,8 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
 
   if (!session) return null;
 
-  const sessionDateTime = new Date(`${session.date}T${session.time}`);
-  const earnings = (session.duration / 60) * session.rate;
+  const { displayTime, durationMinutes } = getSessionDisplayInfo(session);
+  const earnings = (durationMinutes / 60) * session.rate;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
