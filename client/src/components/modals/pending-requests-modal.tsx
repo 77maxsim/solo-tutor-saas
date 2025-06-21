@@ -269,11 +269,16 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
       queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['student-session-history'] });
       
-      // Force immediate refetch to ensure data consistency
+      // Force immediate cache refresh (remove await since this is not async)
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
       queryClient.refetchQueries({ queryKey: ['calendar-sessions'] });
       queryClient.refetchQueries({ queryKey: ['sessions'] });
       
-      console.log('🔄 Forced cache refresh after accepting request');
+      // Also invalidate any student-related queries
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      
+      console.log('🔄 Cache refresh completed after accepting request');
     },
     onError: (error: any) => {
       toast({

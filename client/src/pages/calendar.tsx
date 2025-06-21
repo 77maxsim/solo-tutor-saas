@@ -180,7 +180,7 @@ export default function Calendar() {
       }
     },
     refetchInterval: 30000,
-    staleTime: 500, // Very fresh data for pending requests
+    staleTime: 0, // Always fresh data for newly accepted requests
   });
 
   // Get unique students for filter
@@ -205,6 +205,24 @@ export default function Calendar() {
   const filteredSessions = useMemo(() => {
     console.log('🔍 Filtering sessions - selected student:', selectedStudent);
     console.log('🔍 Raw sessions count:', sessions.length);
+    
+    // Check for newly accepted Jordan sessions
+    const jordanSessions = sessions.filter(s => 
+      s.unassigned_name && s.unassigned_name.includes('Jordan')
+    );
+    if (jordanSessions.length > 0) {
+      console.log('🔍 Jordan sessions found:', jordanSessions.length);
+      jordanSessions.forEach(s => {
+        console.log('Jordan session:', {
+          id: s.id?.substring(0, 8) + '...',
+          unassigned_name: s.unassigned_name,
+          student_id: s.student_id,
+          student_name: s.student_name,
+          status: s.status,
+          session_start: s.session_start
+        });
+      });
+    }
     
     if (selectedStudent === 'all') {
       console.log('🔍 Returning all sessions');
