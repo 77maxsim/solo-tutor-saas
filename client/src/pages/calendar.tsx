@@ -38,6 +38,7 @@ dayjs.extend(timezone);
 import MobileCalendarView from '@/components/MobileCalendarView';
 import { SessionDetailsModal } from '@/components/modals/session-details-modal';
 import { ScheduleSessionModal } from '@/components/modals/schedule-session-modal';
+import { EditSessionModal } from '@/components/modals/edit-session-modal';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePendingSessions } from "@/hooks/use-pending-sessions";
 import { PendingRequestsModal } from "@/components/modals/pending-requests-modal";
@@ -87,6 +88,8 @@ export default function Calendar() {
   const [calendarView, setCalendarView] = useState<'week' | 'month' | 'agenda'>('week');
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [editSession, setEditSession] = useState<SessionWithStudent | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isEditingRecurring, setIsEditingRecurring] = useState(false);
   const calendarRef = useRef<FullCalendar>(null);
   
   const isMobile = useIsMobile();
@@ -104,9 +107,10 @@ export default function Calendar() {
       setShowSessionDetailsModal(false);
       setSessionForDetails(null);
       
-      // Set edit session data and open schedule modal
+      // Set edit session data and open edit modal
       setEditSession(session);
-      setShowScheduleModal(true);
+      setIsEditingRecurring(false);
+      setShowEditModal(true);
     };
 
     const handleEditSeries = (event: CustomEvent) => {
@@ -117,9 +121,10 @@ export default function Calendar() {
       setShowSessionDetailsModal(false);
       setSessionForDetails(null);
       
-      // Set edit session data and open schedule modal
+      // Set edit session data and open edit modal for recurring
       setEditSession(session);
-      setShowScheduleModal(true);
+      setIsEditingRecurring(true);
+      setShowEditModal(true);
     };
 
     window.addEventListener('editSession', handleEditSession as EventListener);
@@ -668,8 +673,22 @@ export default function Calendar() {
             setEditSession(null);
           }
         }}
-        editSession={editSession}
-        editMode={!!editSession}
+        editSession={null}
+        editMode={false}
+      />
+
+      {/* Edit Session Modal */}
+      <EditSessionModal
+        open={showEditModal}
+        onOpenChange={(open) => {
+          setShowEditModal(open);
+          if (!open) {
+            setEditSession(null);
+            setIsEditingRecurring(false);
+          }
+        }}
+        session={editSession}
+        isRecurring={isEditingRecurring}
       />
 
       {/* Pending Requests Modal */}
