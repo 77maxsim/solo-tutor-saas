@@ -347,21 +347,30 @@ export default function Calendar() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
+      console.log('🔍 Fetching sessions for tutor:', tutorId);
+
       // Automatically determine if optimization is needed based on dataset size
       const useOptimized = await shouldUseOptimizedQuery(tutorId);
       
       let allSessions;
       if (useOptimized) {
+        console.log('📊 Using optimized query');
         allSessions = await getOptimizedSessions(tutorId);
       } else {
+        console.log('📈 Using standard query');
         allSessions = await getStandardSessions(tutorId);
       }
 
+      console.log('📅 Raw sessions from database:', allSessions);
+
       // Ensure we have the status field and handle pending sessions
-      return allSessions.map(session => ({
+      const processedSessions = allSessions.map(session => ({
         ...session,
         status: session.status || 'confirmed'
       }));
+
+      console.log('📅 Processed sessions for calendar:', processedSessions);
+      return processedSessions;
     },
     refetchOnWindowFocus: true,
     staleTime: 0, // Always consider data stale to force refresh
@@ -750,7 +759,11 @@ export default function Calendar() {
     sessions.filter(session => 
       session.status === 'pending' && session.student_id === null
     )
-      .sort((a, b) => new Date(a.session_start).getTime() - new Date(b.session_start).getTime())
+      .sort((a, b) => {
+        const aTime = session.session_start ? new Date(a.session_start).getTime() : new Date(a.date + ' ' + a.time).getTime();
+        const bTime = session.session_start ? new Date(b.session_start).getTime() : new Date(b.date + ' ' + b.time).getTime();
+        return aTime - bTime;
+      })
     : [];
 
 
@@ -761,13 +774,32 @@ export default function Calendar() {
       id: session.id,
       session_start: session.session_start,
       session_end: session.session_end,
+      date: session.date,
+      time: session.time,
       student_name: session.student_name,
       status: session.status
     });
 
-    // Use UTC timestamps directly
-    const start = new Date(session.session_start);
-    const end = new Date(session.session_end);
+    let start: Date, end: Date;
+
+    // Check if we have UTC timestamp columns
+    if (session.session_start && session.session_end) {
+      // Use UTC timestamps directly
+      start = new Date(session.session_start);
+      end = new Date(session.session_end);
+      console.log('📅 Using UTC timestamps');
+    } else if (session.date && session.time) {
+      // Fallback to legacy date/time fields
+      console.log('⚠️ Using legacy date/time fields');
+      const [hours, minutes] = session.time.split(':').map(Number);
+      start = new Date(session.date);
+      start.setHours(hours, minutes, 0, 0);
+      end = new Date(start);
+      end.setMinutes(end.getMinutes() + (session.duration || 60));
+    } else {
+      console.error('❌ Session missing both UTC timestamps and legacy date/time fields:', session);
+      return null;
+    }
 
     // Debug the parsed dates
     console.log('📅 Parsed dates:', {
@@ -786,7 +818,9 @@ export default function Calendar() {
     } else {
       displayName = session.student_name;
       // Calculate duration for name truncation logic
-      const sessionDuration = Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60));
+      const sessionDuration = session.session_end 
+        ? Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60))
+        : session.duration || 60;
       
       // Truncate student name based on session duration
       if (sessionDuration < 60) {
@@ -832,7 +866,7 @@ export default function Calendar() {
     });
 
     return calendarEvent;
-  });
+  }).filter(Boolean); // Remove any null events
 
   console.log(`📅 Total calendar events created: ${events.length}`);
 
