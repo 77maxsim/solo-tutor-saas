@@ -15,32 +15,57 @@ export function TimezoneProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetchTutorTimezone();
-  }, []);
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔄 Auth state changed:', event, !!session?.user);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        fetchTutorTimezone();
+      } else if (event === 'SIGNED_OUT') {
+        setTutorTimezone('Europe/Kyiv');
+      }
+    });
 
-  // Force refresh timezone on mount
-  useEffect(() => {
+    // Force refresh timezone after a delay to handle timing issues
     const timer = setTimeout(() => {
       fetchTutorTimezone();
-    }, 1000);
-    return () => clearTimeout(timer);
+    }, 2000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   const fetchTutorTimezone = async () => {
     try {
       console.log('🔍 Starting timezone fetch...');
       
-      // Get current session instead of just user
-      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      // Try multiple authentication methods
+      const [sessionResult, userResult] = await Promise.all([
+        supabase.auth.getSession(),
+        supabase.auth.getUser()
+      ]);
       
-      if (authError || !session?.user) {
-        console.log('No authenticated session, using default timezone Europe/Kyiv');
+      const session = sessionResult.data?.session;
+      const user = userResult.data?.user || session?.user;
+      
+      console.log('🔍 Auth state check:', {
+        hasSession: !!session,
+        hasUser: !!user,
+        userId: user?.id,
+        sessionError: sessionResult.error,
+        userError: userResult.error
+      });
+      
+      if (!user) {
+        console.log('No authenticated user found, using default timezone Europe/Kyiv');
         setTutorTimezone('Europe/Kyiv');
         setIsLoading(false);
         return;
       }
 
-      const user = session.user;
-      console.log('🔍 User session found, fetching tutor timezone for user_id:', user.id);
+      console.log('🔍 User authenticated, fetching tutor timezone for user_id:', user.id);
 
       const { data, error } = await supabase
         .from('tutors')
@@ -52,14 +77,10 @@ export function TimezoneProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Error fetching tutor timezone:', error);
-        // Retry with a small delay in case of timing issues
-        setTimeout(() => {
-          fetchTutorTimezone();
-        }, 1000);
-        return;
+        setTutorTimezone('Europe/Kyiv');
       } else {
         const timezone = data?.timezone || 'Europe/Kyiv';
-        console.log('🌍 Setting tutor timezone from profile:', timezone, 'for tutor:', data?.full_name);
+        console.log('🌍 Successfully set tutor timezone:', timezone, 'for tutor:', data?.full_name);
         setTutorTimezone(timezone);
       }
     } catch (error) {
