@@ -36,6 +36,7 @@ interface UpcomingSessionsProps {
 export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = true }: UpcomingSessionsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { tutorTimezone } = useTimezone();
 
   const { data: sessions, isLoading, error } = useQuery({
     queryKey: ['upcoming-sessions', limit],

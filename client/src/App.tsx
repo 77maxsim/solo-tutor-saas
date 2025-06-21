@@ -5,6 +5,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { TimezoneProvider } from "@/contexts/TimezoneContext";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { ScheduleSessionModal } from "@/components/modals/schedule-session-modal";
@@ -502,10 +503,12 @@ function App() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="tutortrack-ui-theme">
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <AppLayout />
-        </TooltipProvider>
+        <TimezoneProvider>
+          <TooltipProvider>
+            <Toaster />
+            <AppLayout />
+          </TooltipProvider>
+        </TimezoneProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

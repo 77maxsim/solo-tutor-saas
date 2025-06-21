@@ -30,6 +30,7 @@ interface MobileCalendarViewProps {
 
 export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEvent }: MobileCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const { tutorTimezone } = useTimezone();
 
   // Helper function to get duration from either UTC timestamps or legacy fields
   const getDurationMinutes = (session: SessionWithStudent): number => {
