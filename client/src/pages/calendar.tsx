@@ -280,6 +280,7 @@ export default function Calendar() {
     
     const validEvents = [];
     const skippedSessions = [];
+    const tutorTz = tutorTimezone || 'UTC';
     
     filteredSessions.forEach(session => {
       // Only process sessions with UTC timestamps - remove fallback logic
@@ -301,7 +302,6 @@ export default function Calendar() {
 
       // CRITICAL: Standardized timezone conversion
       // All session_start/session_end should be UTC, but verify and convert appropriately
-      const tutorTz = tutorTimezone || 'UTC';
       
       // Parse as UTC and convert to tutor timezone exactly once
       const sessionStartUTC = dayjs.utc(session.session_start);
