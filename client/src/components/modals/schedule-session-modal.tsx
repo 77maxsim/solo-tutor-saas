@@ -437,17 +437,21 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
       // Auto-detect edit mode if session has an ID
       const isEditMode = editMode || (editSession && editSession.id);
 
-      // Convert local datetime to UTC for storage
+      // Convert local datetime to UTC for storage using tutor's actual timezone
       const startUTC = convertToUTC(data.date, data.time, tutorTimezone);
       const endUTC = startUTC.add(data.duration, 'minutes');
 
-      console.log('📅 Session datetime conversion:', {
+      console.log('📅 Session creation - local to UTC conversion:', {
         selected_date: format(data.date, "yyyy-MM-dd"),
         selected_time: data.time,
         tutor_timezone: tutorTimezone,
         start_utc: startUTC.toISOString(),
         end_utc: endUTC.toISOString(),
-        duration_minutes: data.duration
+        duration_minutes: data.duration,
+        verification: {
+          start_local_display: startUTC.tz(tutorTimezone).format('YYYY-MM-DD HH:mm'),
+          end_local_display: endUTC.tz(tutorTimezone).format('YYYY-MM-DD HH:mm')
+        }
       });
 
       console.log('UTC result after conversion:', startUTC.toISOString());
@@ -520,9 +524,17 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
             const sessionDate = new Date(baseDate);
             sessionDate.setDate(sessionDate.getDate() + (week * 7));
             
-            // Convert each recurring session to UTC
+            // Convert each recurring session to UTC using tutor's timezone
             const weeklyStartUTC = convertToUTC(sessionDate, data.time, tutorTimezone);
             const weeklyEndUTC = weeklyStartUTC.add(data.duration, 'minutes');
+            
+            console.log(`📅 Recurring session ${week} - local to UTC:`, {
+              date: format(sessionDate, "yyyy-MM-dd"),
+              time: data.time,
+              timezone: tutorTimezone,
+              utc_start: weeklyStartUTC.toISOString(),
+              utc_end: weeklyEndUTC.toISOString()
+            });
             
             sessionsToInsert.push({
               student_id: data.studentId,

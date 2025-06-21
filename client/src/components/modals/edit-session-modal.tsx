@@ -159,11 +159,11 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
     }
     
     try {
-      // Convert local datetime to UTC for storage, keeping the same date
+      // Convert local datetime to UTC for storage using tutor's timezone
       const startUTC = convertToUTC(session.date, data.time, tutorTimezone);
       const endUTC = startUTC.add(data.duration, 'minutes');
 
-      console.log('📅 Editing session datetime conversion:', {
+      console.log('📅 Edit session - local to UTC conversion:', {
         session_id: session.id,
         existing_date: session.date,
         selected_time: data.time,
@@ -171,7 +171,10 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
         start_utc: startUTC.toISOString(),
         end_utc: endUTC.toISOString(),
         duration_minutes: data.duration,
-        is_recurring: isRecurring
+        verification: {
+          will_display_as: startUTC.tz(tutorTimezone).format('YYYY-MM-DD HH:mm'),
+          original_input: `${session.date} ${data.time}`
+        }
       });
 
       // Update single session
