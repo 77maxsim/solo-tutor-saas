@@ -151,41 +151,25 @@ export default function Calendar() {
     console.log('🔄 Converting sessions to FullCalendar events, tutorTimezone:', tutorTimezone);
     
     return filteredSessions.map(session => {
-      let startISO: string;
-      let endISO: string;
-
-      if (session.session_start && session.session_end) {
-        // Pass raw UTC ISO strings directly to FullCalendar without any conversion
-        startISO = session.session_start;
-        endISO = session.session_end;
-        
-        console.log('📅 Session with UTC timestamps - NO CONVERSION:', {
-          student: session.student_name,
-          raw_session_start: session.session_start,
-          raw_session_end: session.session_end,
-          passed_to_fullcalendar_start: startISO,
-          passed_to_fullcalendar_end: endISO
-        });
-      } else {
-        // Fallback: convert legacy date/time fields to UTC for FullCalendar
-        const sessionDate = session.date;
-        const sessionTime = session.time;
-        const tutorTz = tutorTimezone || 'UTC';
-        
-        // Parse as tutor's timezone, then convert to UTC
-        const startInTutorTz = DateTime.fromFormat(`${sessionDate} ${sessionTime}`, 'yyyy-MM-dd HH:mm', { zone: tutorTz });
-        const endInTutorTz = startInTutorTz.plus({ minutes: session.duration });
-        
-        startISO = startInTutorTz.toUTC().toISO();
-        endISO = endInTutorTz.toUTC().toISO();
-        
-        console.log('📅 Session with legacy date/time:', {
-          student: session.student_name,
-          legacy_date: sessionDate,
-          legacy_time: sessionTime,
-          converted_to_utc: { start: startISO, end: endISO }
-        });
+      // Only process sessions with UTC timestamps - remove fallback logic
+      if (!session.session_start || !session.session_end) {
+        console.warn('⚠️ Session missing UTC timestamps, skipping:', session.id);
+        return null;
       }
+
+      // Pass raw UTC ISO strings directly to FullCalendar
+      const startISO = session.session_start;
+      const endISO = session.session_end;
+      
+      console.log('📅 Session UTC timestamps passed to FullCalendar:', {
+        student: session.student_name,
+        session_start_utc: session.session_start,
+        session_end_utc: session.session_end,
+        calendar_timezone: tutorTimezone || 'UTC',
+        expected_display_time: DateTime.fromISO(session.session_start, { zone: 'utc' })
+          .setZone(tutorTimezone || 'UTC')
+          .toFormat('HH:mm')
+      });
 
       // Determine display name and styling
       let title = session.student_name || session.unassigned_name || 'Unassigned Session';
@@ -212,7 +196,7 @@ export default function Calendar() {
         textColor,
         extendedProps: session
       };
-    });
+    }).filter(Boolean); // Remove null entries
   }, [filteredSessions, tutorTimezone]);
 
   // Handle schedule session
@@ -251,15 +235,22 @@ export default function Calendar() {
 
   // Handle slot selection to schedule new session
   const handleDateSelect = (selectInfo: any) => {
-    // Convert to UTC for storage, tutor timezone for form display
-    const startUTC = DateTime.fromJSDate(selectInfo.start).toUTC();
-    const endUTC = DateTime.fromJSDate(selectInfo.end).toUTC();
+    // FullCalendar gives us time in tutor timezone, convert for form display
+    const startInTutorTz = DateTime.fromJSDate(selectInfo.start).setZone(tutorTimezone || 'UTC');
+    const endInTutorTz = DateTime.fromJSDate(selectInfo.end).setZone(tutorTimezone || 'UTC');
     
-    // For form data, use tutor timezone
-    const startInTutorTz = startUTC.setZone(tutorTimezone || 'UTC');
     const selectedDate = startInTutorTz.toISODate();
     const selectedTime = startInTutorTz.toFormat('HH:mm');
-    const duration = Math.round(endUTC.diff(startUTC, 'minutes').minutes);
+    const duration = Math.round(endInTutorTz.diff(startInTutorTz, 'minutes').minutes);
+    
+    console.log('🎯 Slot selected for new session:', {
+      selected_start_js: selectInfo.start,
+      selected_end_js: selectInfo.end,
+      tutor_timezone: tutorTimezone || 'UTC',
+      form_date: selectedDate,
+      form_time: selectedTime,
+      duration: duration
+    });
 
     window.dispatchEvent(new CustomEvent('openScheduleModal', {
       detail: {
@@ -539,21 +530,14 @@ export default function Calendar() {
             timeZone={tutorTimezone || 'UTC'}
             events={events}
             eventDidMount={(info) => {
-              // Debug: confirm timezone handling
-              const displayedTime = info.event.start?.toLocaleString('en-US', { 
-                timeZone: tutorTimezone || 'UTC',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              });
-              
-              console.log('🎯 FullCalendar Event Rendered:', {
+              // Debug: verify FullCalendar positioning
+              console.log('🎯 FullCalendar Event Positioned:', {
                 title: info.event.title,
-                calendar_timezone: tutorTimezone || 'UTC',
-                raw_utc_start: info.event.start?.toISOString(),
-                raw_utc_end: info.event.end?.toISOString(),
-                visually_displayed_time: displayedTime,
-                expected_time_in_tutor_tz: DateTime.fromISO(info.event.start?.toISOString() || '', { zone: 'utc' }).setZone(tutorTimezone || 'UTC').toFormat('HH:mm')
+                calendar_timezone_setting: tutorTimezone || 'UTC',
+                utc_start_received: info.event.start?.toISOString(),
+                utc_end_received: info.event.end?.toISOString(),
+                visual_time_on_calendar: info.event.start ? 
+                  DateTime.fromJSDate(info.event.start).setZone(tutorTimezone || 'UTC').toFormat('HH:mm') : 'N/A'
               });
             }}
             editable={true}
