@@ -25,6 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Loader2, Save, User } from "lucide-react";
+import { ALL_TIMEZONES, TIMEZONE_GROUPS, getBrowserTimezone } from "@/lib/timezones";
 
 const profileSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
@@ -32,6 +33,7 @@ const profileSchema = z.object({
   time_format: z.enum(["24h", "12h"], {
     required_error: "Time format is required",
   }),
+  timezone: z.string().min(1, "Timezone is required"),
 });
 
 type ProfileForm = z.infer<typeof profileSchema>;
@@ -52,7 +54,7 @@ export default function Profile() {
 
       const { data, error } = await supabase
         .from('tutors')
-        .select('id, full_name, email, currency, time_format, avatar_url')
+        .select('id, full_name, email, currency, time_format, timezone, avatar_url')
         .eq('user_id', user.id)
         .single();
 
@@ -71,6 +73,7 @@ export default function Profile() {
       full_name: "",
       currency: "USD",
       time_format: "24h",
+      timezone: getBrowserTimezone(),
     },
   });
 
@@ -81,6 +84,7 @@ export default function Profile() {
         full_name: tutorProfile.full_name || "",
         currency: tutorProfile.currency || "USD",
         time_format: tutorProfile.time_format || "24h",
+        timezone: tutorProfile.timezone || getBrowserTimezone(),
       });
     }
   }, [tutorProfile, form]);
@@ -442,6 +446,46 @@ export default function Profile() {
                         <FormMessage />
                         <p className="text-xs text-muted-foreground">
                           This will be used throughout the app for displaying times.
+                        </p>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Timezone */}
+                  <FormField
+                    control={form.control}
+                    name="timezone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Timezone</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={isLoading}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select your timezone" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[300px]">
+                              {Object.entries(TIMEZONE_GROUPS).map(([region, timezones]) => (
+                                <div key={region}>
+                                  <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                                    {region}
+                                  </div>
+                                  {timezones.map((timezone) => (
+                                    <SelectItem key={timezone.value} value={timezone.value}>
+                                      {timezone.label}
+                                    </SelectItem>
+                                  ))}
+                                </div>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-xs text-muted-foreground">
+                          This timezone will be used to display all your session times correctly.
                         </p>
                       </FormItem>
                     )}

@@ -81,6 +81,7 @@ export default function AuthPage() {
       password: "",
       fullName: "",
       currency: "USD",
+      timezone: getBrowserTimezone(),
       confirmPassword: "",
       rememberMe: false,
     },
