@@ -73,9 +73,25 @@ export default function PublicBookingPage() {
   const [studentTimezone, setStudentTimezone] = useState<string>(() => {
     // Try to get from localStorage first, then browser detection
     const saved = localStorage.getItem('studentTimezone');
-    return saved || getBrowserTimezone();
+    const detected = saved || getBrowserTimezone();
+    console.log('Initial student timezone setup:', {
+      saved,
+      browserDetected: getBrowserTimezone(),
+      final: detected
+    });
+    return detected;
   });
   const [showTimezoneSelector, setShowTimezoneSelector] = useState(false);
+
+  // Save student timezone to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('studentTimezone', studentTimezone);
+    console.log('Student timezone updated:', {
+      newTimezone: studentTimezone,
+      displayName: getTimezoneDisplayName(studentTimezone),
+      browserDetected: getBrowserTimezone()
+    });
+  }, [studentTimezone]);
 
   const {
     register,
@@ -305,7 +321,17 @@ export default function PublicBookingPage() {
   };
 
   const getAvailableSlots = () => {
-    return bookingSlots.filter(slot => !isSlotBooked(slot.start_time));
+    const filtered = bookingSlots.filter(slot => !isSlotBooked(slot.start_time));
+    console.log('Available slots filtered:', {
+      totalSlots: bookingSlots.length,
+      availableSlots: filtered.length,
+      studentTimezone,
+      sampleConversion: filtered[0] ? {
+        utc: filtered[0].start_time,
+        local: dayjs.utc(filtered[0].start_time).tz(studentTimezone).format('YYYY-MM-DD HH:mm A')
+      } : null
+    });
+    return filtered;
   };
 
   const handleSlotSelect = (slotId: string) => {
@@ -694,15 +720,15 @@ export default function PublicBookingPage() {
                       const localStartTime = utcStartTime.tz(studentTimezone);
                       const localEndTime = utcEndTime.tz(studentTimezone);
                       
-                      // Debug logging
-                      console.log('Slot timezone conversion:', {
+                      // Debug logging for each slot
+                      console.log("Booking slot:", {
                         slotId: slot.id,
-                        originalUTC: slot.start_time,
-                        studentTimezone,
-                        utcStartTime: utcStartTime.format(),
-                        localStartTime: localStartTime.format(),
-                        displayDate: localStartTime.format('dddd, MMMM D, YYYY'),
-                        displayTime: `${localStartTime.format('h:mm A')} - ${localEndTime.format('h:mm A')}`
+                        utc: slot.start_time,
+                        studentTZ: studentTimezone,
+                        localTime: localStartTime.format(),
+                        displayTime: `${localStartTime.format('h:mm A')} - ${localEndTime.format('h:mm A')}`,
+                        rawUTC: utcStartTime.format(),
+                        convertedLocal: localStartTime.format('YYYY-MM-DD HH:mm A')
                       });
                       
                       const isSelected = watchedSlotId === slot.id;
