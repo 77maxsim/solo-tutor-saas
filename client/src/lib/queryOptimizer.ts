@@ -62,7 +62,7 @@ export async function getOptimizedSessions(tutorId: string) {
       .from('sessions')
       .select('id, student_id, session_start, session_end, duration, rate, paid, notes, color, recurrence_id, created_at, status, unassigned_name')
       .eq('tutor_id', tutorId)
-      .order('session_start', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching optimized sessions:', error);
@@ -120,7 +120,17 @@ export async function getOptimizedSessions(tutorId: string) {
       totalSessions: sessionsWithNames.length,
       paidSessions: sessionsWithNames.filter(s => s.paid === true).length,
       unpaidSessions: sessionsWithNames.filter(s => s.paid === false).length,
-      studentsCount: students?.length || 0
+      pendingSessions: sessionsWithNames.filter(s => s.status === 'pending').length,
+      confirmedSessions: sessionsWithNames.filter(s => s.status === 'confirmed').length,
+      studentsCount: students?.length || 0,
+      recentSessions: sessionsWithNames.slice(0, 3).map(s => ({
+        id: s.id,
+        student_name: s.student_name,
+        unassigned_name: s.unassigned_name,
+        status: s.status,
+        session_start: s.session_start,
+        session_end: s.session_end
+      }))
     });
 
     return sessionsWithNames;
@@ -158,7 +168,7 @@ export async function getStandardSessions(tutorId: string) {
         )
       `)
       .eq('tutor_id', tutorId)
-      .order('session_start', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching standard sessions:', error);
@@ -171,6 +181,18 @@ export async function getStandardSessions(tutorId: string) {
       student_name: session.students?.name || session.unassigned_name || 'Unknown Student',
       avatarUrl: session.students?.avatar_url
     })) || [];
+
+    console.log('🔍 Standard query results:', {
+      totalSessions: sessionsWithNames.length,
+      recentSessions: sessionsWithNames.slice(0, 5).map(s => ({
+        id: s.id,
+        student_name: s.student_name,
+        status: s.status,
+        session_start: s.session_start,
+        session_end: s.session_end,
+        has_timestamps: !!(s.session_start && s.session_end)
+      }))
+    });
 
     // Track performance metrics
     await datasetMonitor.trackQueryPerformance(tutorId, 'standard', startTime, sessionsWithNames.length);

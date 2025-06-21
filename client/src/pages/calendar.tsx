@@ -203,11 +203,26 @@ export default function Calendar() {
   const events: FullCalendarEvent[] = useMemo(() => {
     console.log('🔄 Converting sessions to FullCalendar events');
     console.log('🌍 Current tutorTimezone value:', tutorTimezone);
+    console.log('📊 Total filtered sessions:', filteredSessions.length);
+    console.log('📊 Sessions data:', filteredSessions.map(s => ({
+      id: s.id,
+      student_name: s.student_name,
+      unassigned_name: s.unassigned_name,
+      status: s.status,
+      session_start: s.session_start,
+      session_end: s.session_end
+    })));
     
     return filteredSessions.map(session => {
       // Only process sessions with UTC timestamps - remove fallback logic
       if (!session.session_start || !session.session_end) {
-        console.warn('⚠️ Session missing UTC timestamps, skipping:', session.id);
+        console.warn('⚠️ Session missing UTC timestamps, skipping:', session.id, {
+          session_start: session.session_start,
+          session_end: session.session_end,
+          status: session.status,
+          student_name: session.student_name,
+          unassigned_name: session.unassigned_name
+        });
         return null;
       }
 
