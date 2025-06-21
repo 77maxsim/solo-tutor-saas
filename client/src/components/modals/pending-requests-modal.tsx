@@ -294,11 +294,11 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
   };
 
   const formatDateTime = (date: string, time: string) => {
-    const dateTime = moment(`${date} ${time}`, 'YYYY-MM-DD HH:mm');
+    const dateTime = DateTime.fromFormat(`${date} ${time}`, 'yyyy-MM-dd HH:mm');
     return {
-      date: dateTime.format('MMM D, YYYY'),
-      time: dateTime.format('h:mm A'),
-      dayOfWeek: dateTime.format('dddd')
+      date: dateTime.toFormat('MMM d, yyyy'),
+      time: dateTime.toFormat('h:mm a'),
+      dayOfWeek: dateTime.toFormat('cccc')
     };
   };
 
