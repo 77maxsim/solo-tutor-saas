@@ -615,6 +615,11 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
     open 
   });
 
+  // Early return if modal is not open
+  if (!open) {
+    return null;
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] w-[95vw] sm:w-full flex flex-col p-0 gap-0">
@@ -783,14 +788,14 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
                     />
                   </FormControl>
                   {/* Show timezone status */}
+                  {tutorTimezone && (
+                    <p className="text-xs text-gray-500">
+                      Timezone: {tutorTimezone}
+                    </p>
+                  )}
                   {isTimezoneLoading && (
                     <p className="text-sm text-gray-500">
                       Loading timezone...
-                    </p>
-                  )}
-                  {!tutorTimezone && !isTimezoneLoading && (
-                    <p className="text-sm text-red-600">
-                      Timezone not loaded. Please refresh and try again.
                     </p>
                   )}
                   <FormMessage />
