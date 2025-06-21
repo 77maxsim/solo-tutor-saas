@@ -124,7 +124,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
   const [showNotes, setShowNotes] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { tutorTimezone } = useTimezone();
+  const { tutorTimezone, isLoading: isTimezoneLoading } = useTimezone();
 
   // Track which fields user has manually modified to prevent overwriting
   const [userModifiedFields, setUserModifiedFields] = useState<Set<string>>(new Set());
@@ -420,12 +420,10 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
   const onSubmit = async (data: ScheduleSessionForm) => {
     setIsSubmitting(true);
     
+    console.log('Tutor timezone in modal:', tutorTimezone);
+    
     if (!tutorTimezone) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Timezone not loaded. Please refresh and try again.",
-      });
+      console.error('Timezone validation failed - tutorTimezone is:', tutorTimezone);
       setIsSubmitting(false);
       return;
     }
@@ -451,6 +449,8 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         end_utc: endUTC.toISOString(),
         duration_minutes: data.duration
       });
+
+      console.log('UTC result after conversion:', startUTC.toISOString());
 
       if (isEditMode && editSession) {
         // Update existing session with UTC timestamps
@@ -607,6 +607,22 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
     
     addStudentMutation.mutate(newStudentName);
   };
+
+  // Show loading state while timezone is being fetched
+  if (isTimezoneLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px] w-[95vw] sm:w-full">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+              <p className="text-sm text-gray-600">Loading timezone...</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -775,6 +791,12 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
                       timeFormat={timeFormat}
                     />
                   </FormControl>
+                  {/* Show timezone validation error */}
+                  {!tutorTimezone && !isTimezoneLoading && (
+                    <p className="text-sm text-red-600">
+                      Timezone not loaded. Please refresh and try again.
+                    </p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -1013,10 +1035,16 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting} className="flex-1 sm:flex-none">
-                {isSubmitting 
-                  ? ((editMode || (editSession && editSession.id)) ? "Updating..." : "Scheduling...") 
-                  : ((editMode || (editSession && editSession.id)) ? "Update Session" : "Schedule Session")
+              <Button 
+                type="submit" 
+                disabled={isSubmitting || isTimezoneLoading || !tutorTimezone} 
+                className="flex-1 sm:flex-none"
+              >
+                {isTimezoneLoading 
+                  ? "Loading timezone..." 
+                  : isSubmitting 
+                    ? ((editMode || (editSession && editSession.id)) ? "Updating..." : "Scheduling...") 
+                    : ((editMode || (editSession && editSession.id)) ? "Update Session" : "Schedule Session")
                 }
               </Button>
             </DialogFooter>
