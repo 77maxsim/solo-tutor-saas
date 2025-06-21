@@ -200,10 +200,16 @@ export default function Calendar() {
     return students.sort((a, b) => a.name.localeCompare(b.name));
   }, [sessions]);
 
-  // Filter sessions based on selected student
+  // Filter sessions based on selected student (include unassigned sessions)
   const filteredSessions = useMemo(() => {
     if (selectedStudent === 'all') return sessions;
-    return sessions.filter(session => session.student_id === selectedStudent);
+    return sessions.filter(session => {
+      // Include sessions assigned to selected student
+      if (session.student_id === selectedStudent) return true;
+      // Also include unassigned sessions when 'all' is selected
+      if (selectedStudent === 'all' && !session.student_id) return true;
+      return false;
+    });
   }, [sessions, selectedStudent]);
 
   // Convert sessions to FullCalendar events
@@ -238,7 +244,10 @@ export default function Calendar() {
       });
     });
     
-    return filteredSessions.map(session => {
+    const validEvents = [];
+    const skippedSessions = [];
+    
+    filteredSessions.forEach(session => {
       // Only process sessions with UTC timestamps - remove fallback logic
       if (!session.session_start || !session.session_end) {
         console.warn('⚠️ Session missing UTC timestamps, skipping:', {
@@ -252,10 +261,8 @@ export default function Calendar() {
           legacy_time: session.time
         });
         
-        // Count these sessions for debugging
-        if (!window.nullTimestampCount) window.nullTimestampCount = 0;
-        window.nullTimestampCount++;
-        return null;
+        skippedSessions.push(session);
+        return;
       }
 
       // Convert UTC timestamps to tutor timezone for FullCalendar display
@@ -263,17 +270,22 @@ export default function Calendar() {
       const startISO = dayjs.utc(session.session_start).tz(tutorTz).toISOString();
       const endISO = dayjs.utc(session.session_end).tz(tutorTz).toISOString();
       
-      console.log("Session UTC:", session.session_start);
-      console.log("Converted (Kyiv):", startISO);
-      console.log('📅 Session timezone conversion for FullCalendar:', {
-        student: session.student_name,
-        original_utc_start: session.session_start,
-        original_utc_end: session.session_end,
-        tutor_timezone: tutorTz,
-        converted_start_iso: startISO,
-        converted_end_iso: endISO,
-        display_time_in_tz: dayjs.utc(session.session_start).tz(tutorTz).format('HH:mm')
-      });
+      // Debug timezone conversion for this specific session
+      if (session.student_name === 'David' || session.unassigned_name?.includes('David')) {
+        console.log('🎯 DAVID SESSION CONVERSION:', {
+          id: session.id?.substring(0, 8) + '...',
+          student_name: session.student_name,
+          unassigned_name: session.unassigned_name,
+          original_utc_start: session.session_start,
+          original_utc_end: session.session_end,
+          tutor_timezone: tutorTz,
+          converted_start_iso: startISO,
+          converted_end_iso: endISO,
+          display_time_in_tz: dayjs.utc(session.session_start).tz(tutorTz).format('HH:mm'),
+          status: session.status,
+          student_id: session.student_id
+        });
+      }
 
       // Determine display name and styling
       let title = session.student_name || session.unassigned_name || 'Unknown Student';
@@ -298,7 +310,7 @@ export default function Calendar() {
       const sessionEnd = dayjs.utc(session.session_end);
       const isPastSession = sessionEnd.isBefore(now);
 
-      return {
+      const event = {
         id: session.id,
         title,
         start: startISO,
@@ -311,7 +323,29 @@ export default function Calendar() {
           isPastSession // Flag for styling past sessions
         }
       };
-    }).filter(Boolean); // Remove null entries
+      
+      validEvents.push(event);
+      
+      console.log('✅ Created calendar event:', {
+        id: session.id?.substring(0, 8) + '...',
+        title,
+        start: startISO,
+        student_name: session.student_name,
+        status: session.status
+      });
+    });
+    
+    console.log('📊 Calendar event summary:', {
+      totalFiltered: filteredSessions.length,
+      validEvents: validEvents.length,
+      skippedSessions: skippedSessions.length,
+      skippedReasons: skippedSessions.map(s => ({
+        id: s.id?.substring(0, 8) + '...',
+        reason: !s.session_start ? 'missing session_start' : !s.session_end ? 'missing session_end' : 'unknown'
+      }))
+    });
+    
+    return validEvents;
   }, [filteredSessions, tutorTimezone]);
 
   // Handle schedule session
