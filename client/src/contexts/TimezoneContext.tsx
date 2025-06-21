@@ -28,32 +28,38 @@ export function TimezoneProvider({ children }: { children: React.ReactNode }) {
   const fetchTutorTimezone = async () => {
     try {
       console.log('🔍 Starting timezone fetch...');
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (authError || !user) {
-        console.log('No authenticated user, using default timezone Europe/Kyiv');
+      // Get current session instead of just user
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      
+      if (authError || !session?.user) {
+        console.log('No authenticated session, using default timezone Europe/Kyiv');
         setTutorTimezone('Europe/Kyiv');
         setIsLoading(false);
         return;
       }
 
-      console.log('🔍 User authenticated, fetching tutor timezone for user_id:', user.id);
+      const user = session.user;
+      console.log('🔍 User session found, fetching tutor timezone for user_id:', user.id);
 
       const { data, error } = await supabase
         .from('tutors')
-        .select('timezone, user_id')
+        .select('timezone, user_id, full_name')
         .eq('user_id', user.id)
         .single();
 
-      console.log('🌍 Tutor query result:', { data, error });
+      console.log('🌍 Tutor query result:', { data, error, user_id: user.id });
 
       if (error) {
         console.error('Error fetching tutor timezone:', error);
-        // Set a default timezone instead of UTC for this user
-        setTutorTimezone('Europe/Kyiv');
+        // Retry with a small delay in case of timing issues
+        setTimeout(() => {
+          fetchTutorTimezone();
+        }, 1000);
+        return;
       } else {
         const timezone = data?.timezone || 'Europe/Kyiv';
-        console.log('🌍 Setting tutor timezone:', timezone);
+        console.log('🌍 Setting tutor timezone from profile:', timezone, 'for tutor:', data?.full_name);
         setTutorTimezone(timezone);
       }
     } catch (error) {
@@ -64,8 +70,17 @@ export function TimezoneProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateTimezone = (timezone: string) => {
+    console.log('🔄 Manually updating timezone to:', timezone);
+    setTutorTimezone(timezone);
+  };
+
   return (
-    <TimezoneContext.Provider value={{ tutorTimezone, isLoading, setTutorTimezone }}>
+    <TimezoneContext.Provider value={{ 
+      tutorTimezone, 
+      isLoading, 
+      setTutorTimezone: updateTimezone 
+    }}>
       {children}
     </TimezoneContext.Provider>
   );
