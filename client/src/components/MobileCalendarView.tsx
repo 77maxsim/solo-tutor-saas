@@ -29,6 +29,16 @@ interface MobileCalendarViewProps {
 export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEvent }: MobileCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // Helper function to get duration from either UTC timestamps or legacy fields
+  const getDurationMinutes = (session: SessionWithStudent): number => {
+    if (session.session_start && session.session_end) {
+      return Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60));
+    } else if (session.duration) {
+      return session.duration;
+    }
+    return 60; // Default fallback
+  };
+
   // Get week start (Sunday)
   const getWeekStart = (date: Date) => {
     const d = new Date(date);
@@ -50,8 +60,17 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
     const targetDateString = date.toDateString();
     
     return sessions.filter(session => {
-      // Extract date from session_start UTC timestamp and compare in local timezone
-      const sessionDate = new Date(session.session_start);
+      let sessionDate: Date;
+      
+      // Check if we have UTC timestamp or legacy date field
+      if (session.session_start) {
+        sessionDate = new Date(session.session_start);
+      } else if (session.date) {
+        sessionDate = new Date(session.date);
+      } else {
+        return false;
+      }
+      
       return sessionDate.toDateString() === targetDateString;
     });
   };
@@ -120,24 +139,42 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
               {weekDays.map((day, dayIndex) => {
                 const daySessions = getSessionsForDate(day);
                 
-                // Find session that starts at this exact time using UTC timestamps
+                // Find session that starts at this exact time
                 const sessionAtTime = daySessions.find(session => {
-                  const sessionStart = new Date(session.session_start);
-                  const sessionTimeString = sessionStart.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+                  let sessionTimeString: string;
+                  
+                  if (session.session_start) {
+                    const sessionStart = new Date(session.session_start);
+                    sessionTimeString = sessionStart.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+                  } else if (session.time) {
+                    sessionTimeString = session.time.substring(0, 5);
+                  } else {
+                    return false;
+                  }
+                  
                   return sessionTimeString === time;
                 });
 
-                // Check if this slot is occupied by a continuing session using UTC timestamps
+                // Check if this slot is occupied by a continuing session
                 const occupyingSession = daySessions.find(session => {
-                  const sessionStart = new Date(session.session_start);
-                  const sessionEnd = new Date(session.session_end);
-                  const [currentHour, currentMin] = time.split(':').map(Number);
+                  let sessionStart: Date, sessionEnd: Date;
                   
-                  // Create a date object for the current time slot on the same day
+                  if (session.session_start && session.session_end) {
+                    sessionStart = new Date(session.session_start);
+                    sessionEnd = new Date(session.session_end);
+                  } else if (session.date && session.time && session.duration) {
+                    const [hours, minutes] = session.time.split(':').map(Number);
+                    sessionStart = new Date(session.date);
+                    sessionStart.setHours(hours, minutes, 0, 0);
+                    sessionEnd = new Date(sessionStart.getTime() + session.duration * 60 * 1000);
+                  } else {
+                    return false;
+                  }
+                  
+                  const [currentHour, currentMin] = time.split(':').map(Number);
                   const currentTimeSlot = new Date(day);
                   currentTimeSlot.setHours(currentHour, currentMin, 0, 0);
                   
-                  // Check if current time slot falls within the session duration
                   return currentTimeSlot >= sessionStart && currentTimeSlot < sessionEnd;
                 });
 
@@ -151,7 +188,7 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
                         onClick={() => onSelectEvent(sessionAtTime)}
                         style={{ 
                           backgroundColor: sessionAtTime.color || '#3b82f6',
-                          height: `${Math.max(26, (Math.round((new Date(sessionAtTime.session_end).getTime() - new Date(sessionAtTime.session_start).getTime()) / (1000 * 60)) / 30) * 28)}px`
+                          height: `${Math.max(26, (getDurationMinutes(sessionAtTime) / 30) * 28)}px`
                         }}
                       >
                         <div className="text-xs font-medium truncate leading-tight w-full text-center">

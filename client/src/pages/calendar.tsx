@@ -760,8 +760,8 @@ export default function Calendar() {
       session.status === 'pending' && session.student_id === null
     )
       .sort((a, b) => {
-        const aTime = session.session_start ? new Date(a.session_start).getTime() : new Date(a.date + ' ' + a.time).getTime();
-        const bTime = session.session_start ? new Date(b.session_start).getTime() : new Date(b.date + ' ' + b.time).getTime();
+        const aTime = a.session_start ? new Date(a.session_start).getTime() : new Date(a.date + ' ' + a.time).getTime();
+        const bTime = b.session_start ? new Date(b.session_start).getTime() : new Date(b.date + ' ' + b.time).getTime();
         return aTime - bTime;
       })
     : [];
