@@ -9,13 +9,16 @@ import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
 import { X, Coins, Repeat } from "lucide-react";
+import { getSessionDisplayInfo, formatSessionTimeRange } from "@/lib/dateUtils";
 
 interface Session {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  date?: string; // Legacy field
+  time?: string; // Legacy field
+  session_start?: string; // UTC timestamp
+  session_end?: string; // UTC timestamp
   duration: number;
   rate: number;
   paid: boolean;
@@ -48,6 +51,8 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
           student_id,
           date,
           time,
+          session_start,
+          session_end,
           duration,
           rate,
           paid,

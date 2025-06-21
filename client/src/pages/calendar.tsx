@@ -252,10 +252,16 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
                       {/* Time and Earnings */}
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                         <span className="flex items-center gap-1">
-                          🕐 {new Date(session.session_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60))}min)
+                          🕐 {(() => {
+                            const { displayTime, durationMinutes } = getSessionDisplayInfo(session);
+                            return `${displayTime} (${durationMinutes}min)`;
+                          })()}
                         </span>
                         <span className="flex items-center gap-1">
-                          💰 {formatCurrency(session.rate * Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60)) / 60, tutorCurrency)}
+                          💰 {(() => {
+                            const { durationMinutes } = getSessionDisplayInfo(session);
+                            return formatCurrency(session.rate * durationMinutes / 60, tutorCurrency);
+                          })()}
                         </span>
                       </div>
 
@@ -784,12 +790,12 @@ export default function Calendar() {
 
     // Check if we have UTC timestamp columns
     if (session.session_start && session.session_end) {
-      // Use UTC timestamps directly
-      start = new Date(session.session_start);
-      end = new Date(session.session_end);
-      console.log('📅 Using UTC timestamps');
+      // Convert UTC timestamps to local Date objects for calendar rendering
+      start = utcToLocalDateObject(session.session_start);
+      end = utcToLocalDateObject(session.session_end);
+      console.log('📅 Using UTC timestamps, converted to local time');
     } else if (session.date && session.time) {
-      // Fallback to legacy date/time fields
+      // Fallback to legacy date/time fields (already in local time)
       console.log('⚠️ Using legacy date/time fields');
       const [hours, minutes] = session.time.split(':').map(Number);
       start = new Date(session.date);
@@ -819,7 +825,7 @@ export default function Calendar() {
       displayName = session.student_name;
       // Calculate duration for name truncation logic
       const sessionDuration = session.session_end 
-        ? Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60))
+        ? calculateDurationMinutes(session.session_start, session.session_end)
         : session.duration || 60;
       
       // Truncate student name based on session duration
@@ -838,7 +844,9 @@ export default function Calendar() {
     }
 
     // Calculate duration from timestamps for display
-    const durationMinutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+    const durationMinutes = session.session_end 
+      ? calculateDurationMinutes(session.session_start, session.session_end)
+      : session.duration || Math.round((end.getTime() - start.getTime()) / (1000 * 60));
     
     // For 30-minute sessions, use empty title to force custom component usage
     const eventTitle = durationMinutes <= 30 
