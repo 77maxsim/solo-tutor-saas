@@ -157,7 +157,6 @@ export default function Calendar() {
   const events: FullCalendarEvent[] = useMemo(() => {
     console.log('🔄 Converting sessions to FullCalendar events');
     console.log('🌍 Current tutorTimezone value:', tutorTimezone);
-    console.log('🌍 Timezone loading state:', isTimezoneLoading);
     
     return filteredSessions.map(session => {
       // Only process sessions with UTC timestamps - remove fallback logic
