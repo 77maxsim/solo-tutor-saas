@@ -278,29 +278,20 @@ export default function Calendar() {
         return;
       }
 
-      // Convert UTC timestamps to local time for FullCalendar display
-      // FullCalendar expects ISO strings in local time for proper display
-      const tutorTz = tutorTimezone || 'Europe/Kyiv';
-      const startLocal = dayjs.utc(session.session_start).tz(tutorTz);
-      const endLocal = dayjs.utc(session.session_end).tz(tutorTz);
+      // Convert UTC timestamps to Europe/Kyiv timezone and return as Date objects
+      // All timestamps in database are stored as UTC, convert exactly once to local time
+      const tutorTz = 'Europe/Kyiv';
+      const startDate = dayjs.utc(session.session_start).tz(tutorTz).toDate();
+      const endDate = dayjs.utc(session.session_end).tz(tutorTz).toDate();
       
-      // Create ISO strings without timezone offset for FullCalendar
-      const startISO = startLocal.format('YYYY-MM-DDTHH:mm:ss');
-      const endISO = endLocal.format('YYYY-MM-DDTHH:mm:ss');
-      
-      // Debug timezone conversion for David sessions specifically
-      if (session.student_name === 'David') {
-        console.log('🎯 DAVID SESSION FOUND AND CONVERTED:', {
+      // Debug timezone conversion for first few sessions only to avoid console spam
+      if (validEvents.length < 5) {
+        console.log('🕐 Session timezone conversion:', {
           id: session.id?.substring(0, 8) + '...',
           student_name: session.student_name,
           original_utc_start: session.session_start,
-          original_utc_end: session.session_end,
-          tutor_timezone: tutorTz,
-          converted_start_iso: startISO,
-          converted_end_iso: endISO,
-          local_display_time: startLocal.format('MMM DD, YYYY HH:mm'),
-          status: session.status,
-          student_id: session.student_id
+          converted_kyiv_start: dayjs.utc(session.session_start).tz(tutorTz).format('YYYY-MM-DD HH:mm'),
+          final_js_date_start: startDate.toISOString()
         });
       }
 
@@ -330,8 +321,8 @@ export default function Calendar() {
       const event = {
         id: session.id,
         title,
-        start: startISO,
-        end: endISO,
+        start: startDate,
+        end: endDate,
         backgroundColor,
         borderColor: backgroundColor,
         textColor,
@@ -343,16 +334,14 @@ export default function Calendar() {
       
       validEvents.push(event);
       
-      // Log David events specifically
+      // Log David events specifically for verification
       if (session.student_name === 'David') {
-        console.log('🎯 DAVID CALENDAR EVENT CREATED:', {
+        console.log('🎯 DAVID EVENT CREATED:', {
           id: session.id?.substring(0, 8) + '...',
           title,
-          start: startISO,
-          end: endISO,
+          start_date: startDate.toLocaleString('en-US', { timeZone: 'Europe/Kyiv' }),
           student_name: session.student_name,
-          status: session.status,
-          backgroundColor
+          status: session.status
         });
       }
     });
