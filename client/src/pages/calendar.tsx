@@ -155,9 +155,9 @@ export default function Calendar() {
       let endISO: string;
 
       if (session.session_start && session.session_end) {
-        // Pass pure UTC ISO strings directly to FullCalendar - NO conversion here
-        startISO = session.session_start;
-        endISO = session.session_end;
+        // Ensure proper UTC ISO string formatting for FullCalendar
+        startISO = DateTime.fromISO(session.session_start, { zone: 'utc' }).toUTC().toISO();
+        endISO = DateTime.fromISO(session.session_end, { zone: 'utc' }).toUTC().toISO();
         
         console.log('📅 Session with UTC timestamps:', {
           student: session.student_name,
