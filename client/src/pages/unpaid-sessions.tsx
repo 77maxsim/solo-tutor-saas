@@ -26,8 +26,10 @@ interface UnpaidSession {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  date?: string; // Legacy field
+  time?: string; // Legacy field
+  session_start?: string; // UTC timestamp
+  session_end?: string; // UTC timestamp
   duration: number;
   rate: number;
   paid: boolean;
@@ -80,6 +82,8 @@ export default function UnpaidSessions() {
           student_id,
           date,
           time,
+          session_start,
+          session_end,
           duration,
           rate,
           paid,
@@ -189,7 +193,9 @@ export default function UnpaidSessions() {
 
   // Group sessions by date
   const groupedSessions = sessions.reduce((groups: { [key: string]: UnpaidSession[] }, session) => {
-    const date = session.date;
+    const date = session.session_start 
+      ? new Date(session.session_start).toISOString().split('T')[0]
+      : session.date || '';
     if (!groups[date]) {
       groups[date] = [];
     }

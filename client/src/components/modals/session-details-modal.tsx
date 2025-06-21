@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, DollarSign, Edit, Trash2 } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
-import { getSessionDisplayInfo, formatSessionTimeRange, utcToLocalDate } from "@/lib/dateUtils";
 
 interface SessionDetails {
   id: string;

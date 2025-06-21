@@ -54,7 +54,6 @@ import { Clock, User, Check, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePendingSessions } from "@/hooks/use-pending-sessions";
 import { PendingRequestsModal } from "@/components/modals/pending-requests-modal";
-import { utcToLocalDateObject, utcToLocalTime, calculateDurationMinutes, getSessionDisplayInfo } from "@/lib/dateUtils";
 
 const localizer = momentLocalizer(moment);
 

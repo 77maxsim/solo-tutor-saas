@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { formatDate, formatTime } from '@/lib/utils';
-import { utcToLocalDateObject, utcToLocalTime, calculateDurationMinutes } from '@/lib/dateUtils';
 
 interface SessionWithStudent {
   id: string;
