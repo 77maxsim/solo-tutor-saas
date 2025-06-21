@@ -42,6 +42,7 @@ interface SessionDetailsModalProps {
 export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetailsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { tutorTimezone } = useTimezone();
   const [notes, setNotes] = useState(session?.notes || "");
   const [applyToSeries, setApplyToSeries] = useState(false);
   const [sessionColor, setSessionColor] = useState(session?.color || '#3B82F6');
