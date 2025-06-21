@@ -60,9 +60,9 @@ export async function getOptimizedSessions(tutorId: string) {
     // Get ALL sessions without joins to avoid performance issues
     const { data: allSessions, error } = await supabase
       .from('sessions')
-      .select('id, student_id, date, time, duration, rate, paid, notes, color, recurrence_id, created_at, status, unassigned_name')
+      .select('id, student_id, session_start, session_end, duration, rate, paid, notes, color, recurrence_id, created_at, status, unassigned_name')
       .eq('tutor_id', tutorId)
-      .order('date', { ascending: true });
+      .order('session_start', { ascending: true });
 
     if (error) {
       console.error('Error fetching optimized sessions:', error);
@@ -141,8 +141,8 @@ export async function getStandardSessions(tutorId: string) {
       .select(`
         id,
         student_id,
-        date,
-        time,
+        session_start,
+        session_end,
         duration,
         rate,
         paid,
@@ -158,7 +158,7 @@ export async function getStandardSessions(tutorId: string) {
         )
       `)
       .eq('tutor_id', tutorId)
-      .order('date', { ascending: true });
+      .order('session_start', { ascending: true });
 
     if (error) {
       console.error('Error fetching standard sessions:', error);

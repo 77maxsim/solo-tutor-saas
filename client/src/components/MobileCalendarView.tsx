@@ -8,8 +8,8 @@ interface SessionWithStudent {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   notes?: string;
@@ -47,12 +47,13 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
 
   // Get sessions for a specific date
   const getSessionsForDate = (date: Date) => {
-    // Use local date string to avoid timezone issues
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-    return sessions.filter(session => session.date === dateStr);
+    const targetDateString = date.toDateString();
+    
+    return sessions.filter(session => {
+      // Extract date from session_start UTC timestamp and compare in local timezone
+      const sessionDate = new Date(session.session_start);
+      return sessionDate.toDateString() === targetDateString;
+    });
   };
 
   // Navigate weeks

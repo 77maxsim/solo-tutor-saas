@@ -252,10 +252,10 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
                       {/* Time and Earnings */}
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                         <span className="flex items-center gap-1">
-                          🕐 {session.time} ({session.duration}min)
+                          🕐 {new Date(session.session_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60))}min)
                         </span>
                         <span className="flex items-center gap-1">
-                          💰 {formatCurrency(session.rate * session.duration / 60, tutorCurrency)}
+                          💰 {formatCurrency(session.rate * Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60)) / 60, tutorCurrency)}
                         </span>
                       </div>
 
@@ -756,9 +756,26 @@ export default function Calendar() {
 
   // Convert sessions to calendar events
   const events: CalendarEvent[] = filteredSessions.map(session => {
+    // Debug logging for session data
+    console.log('📅 Processing session for calendar:', {
+      id: session.id,
+      session_start: session.session_start,
+      session_end: session.session_end,
+      student_name: session.student_name,
+      status: session.status
+    });
+
     // Use UTC timestamps directly
     const start = new Date(session.session_start);
     const end = new Date(session.session_end);
+
+    // Debug the parsed dates
+    console.log('📅 Parsed dates:', {
+      start: start.toISOString(),
+      end: end.toISOString(),
+      localStart: start.toLocaleString(),
+      localEnd: end.toLocaleString()
+    });
 
     const isPending = session.status === 'pending';
     
@@ -794,7 +811,7 @@ export default function Calendar() {
       ? '' 
       : `${displayName} – ${durationMinutes} min`;
 
-    return {
+    const calendarEvent = {
       id: session.id,
       title: eventTitle,
       start,
@@ -806,7 +823,18 @@ export default function Calendar() {
         duration: durationMinutes // Include calculated duration for compatibility
       }
     };
+
+    console.log('📅 Created calendar event:', {
+      id: calendarEvent.id,
+      title: calendarEvent.title,
+      start: calendarEvent.start.toISOString(),
+      end: calendarEvent.end.toISOString()
+    });
+
+    return calendarEvent;
   });
+
+  console.log(`📅 Total calendar events created: ${events.length}`);
 
   const handleScheduleSession = () => {
     window.dispatchEvent(new CustomEvent('openScheduleModal'));
