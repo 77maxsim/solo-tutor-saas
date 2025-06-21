@@ -1,19 +1,21 @@
 // Date and timezone utilities for consistent timestamp handling
 
-export function formatSessionTime(timestamp: string | Date): string {
-  const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+export function formatUtcToLocalString(utcString: string) {
+  return new Date(utcString).toLocaleString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric'
+  });
 }
 
-export function formatSessionDateTime(timestamp: string | Date): string {
-  const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
-  return date.toLocaleString([], {
-    weekday: 'short',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
+export function formatUtcToLocalTime(utcString: string) {
+  return new Date(utcString).toLocaleTimeString(undefined, {
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    hour12: false
   });
 }
 

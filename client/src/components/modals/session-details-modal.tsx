@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, DollarSign, Edit, Trash2 } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
-import { formatSessionTime, calculateDurationMinutes } from "@/lib/dateUtils";
+import { formatUtcToLocalTime, calculateDurationMinutes } from "@/lib/dateUtils";
 
 interface SessionDetails {
   id: string;
@@ -163,9 +163,8 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
               <span>
                 {session.session_start && session.session_end
                   ? (() => {
-                      console.log("DEBUG", { raw: session.session_start, converted: new Date(session.session_start).toString() });
-                      const startTime = formatSessionTime(session.session_start);
-                      const endTime = formatSessionTime(session.session_end);
+                      const startTime = formatUtcToLocalTime(session.session_start);
+                      const endTime = formatUtcToLocalTime(session.session_end);
                       const duration = calculateDurationMinutes(session.session_start, session.session_end);
                       return `${startTime} - ${endTime} (${duration} minutes)`;
                     })()

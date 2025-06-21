@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
 import { X, Coins, Repeat } from "lucide-react";
-import { formatSessionTime, calculateDurationMinutes } from "@/lib/dateUtils";
+import { formatUtcToLocalTime, calculateDurationMinutes } from "@/lib/dateUtils";
 
 interface Session {
   id: string;
@@ -305,11 +305,10 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
                   <p className="text-xs text-muted-foreground dark:text-gray-400">
                     {session.session_start && session.session_end 
                       ? (() => {
-                          console.log("DEBUG", { raw: session.session_start, converted: new Date(session.session_start).toString() });
                           const date = new Date(session.session_start).toLocaleDateString();
-                          const time = formatSessionTime(session.session_start);
+                          const startTime = formatUtcToLocalTime(session.session_start);
                           const duration = calculateDurationMinutes(session.session_start, session.session_end);
-                          return `${date} at ${time} (${duration} min)`;
+                          return `${date} at ${startTime} (${duration} min)`;
                         })()
                       : `${session.date} at ${session.time?.substring(0, 5) || ''} (${session.duration || 0} min)`}
                   </p>

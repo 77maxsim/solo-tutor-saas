@@ -16,7 +16,7 @@ import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
-import { formatSessionTime, calculateDurationMinutes } from "@/lib/dateUtils";
+import { formatUtcToLocalTime, calculateDurationMinutes } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -453,10 +453,9 @@ export default function UpcomingSessions() {
                                     <Clock className="h-3 w-3" />
                                     {session.session_start && session.session_end 
                                       ? (() => {
-                                          console.log("DEBUG", { raw: session.session_start, converted: new Date(session.session_start).toString() });
-                                          const time = formatSessionTime(session.session_start);
+                                          const startTime = formatUtcToLocalTime(session.session_start);
                                           const duration = calculateDurationMinutes(session.session_start, session.session_end);
-                                          return `${time} (${duration} min)`;
+                                          return `${startTime} (${duration} min)`;
                                         })()
                                       : `${session.time?.substring(0, 5) || ''} (${session.duration || 0} min)`}
                                   </span>
