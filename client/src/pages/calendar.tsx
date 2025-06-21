@@ -37,6 +37,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 import MobileCalendarView from '@/components/MobileCalendarView';
 import { SessionDetailsModal } from '@/components/modals/session-details-modal';
+import { ScheduleSessionModal } from '@/components/modals/schedule-session-modal';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePendingSessions } from "@/hooks/use-pending-sessions";
 import { PendingRequestsModal } from "@/components/modals/pending-requests-modal";
@@ -84,12 +85,51 @@ export default function Calendar() {
   const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
   const [showPendingRequestsModal, setShowPendingRequestsModal] = useState(false);
   const [calendarView, setCalendarView] = useState<'week' | 'month' | 'agenda'>('week');
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [editSession, setEditSession] = useState<SessionWithStudent | null>(null);
   const calendarRef = useRef<FullCalendar>(null);
   
   const isMobile = useIsMobile();
   const { tutorTimezone } = useTimezone();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Add event listeners for session edit actions
+  useEffect(() => {
+    const handleEditSession = (event: CustomEvent) => {
+      const session = event.detail.session;
+      console.log('📝 Edit session event received:', session);
+      
+      // Close session details modal
+      setShowSessionDetailsModal(false);
+      setSessionForDetails(null);
+      
+      // Set edit session data and open schedule modal
+      setEditSession(session);
+      setShowScheduleModal(true);
+    };
+
+    const handleEditSeries = (event: CustomEvent) => {
+      const session = event.detail.session;
+      console.log('📝 Edit series event received:', session);
+      
+      // Close session details modal
+      setShowSessionDetailsModal(false);
+      setSessionForDetails(null);
+      
+      // Set edit session data and open schedule modal
+      setEditSession(session);
+      setShowScheduleModal(true);
+    };
+
+    window.addEventListener('editSession', handleEditSession as EventListener);
+    window.addEventListener('editSeries', handleEditSeries as EventListener);
+
+    return () => {
+      window.removeEventListener('editSession', handleEditSession as EventListener);
+      window.removeEventListener('editSeries', handleEditSeries as EventListener);
+    };
+  }, []);
 
   // Get pending sessions count for the button
   const { data: pendingCount = 0 } = usePendingSessions();
@@ -263,13 +303,20 @@ export default function Calendar() {
       duration: duration
     });
 
-    window.dispatchEvent(new CustomEvent('openScheduleModal', {
-      detail: {
-        date: selectedDate,
-        time: selectedTime,
-        duration: Math.max(30, duration)
-      }
-    }));
+    // Open schedule modal directly with form data
+    setEditSession(null); // Clear any existing edit session
+    setShowScheduleModal(true);
+    
+    // Dispatch event for form prefill
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('openScheduleModal', {
+        detail: {
+          date: selectedDate,
+          time: selectedTime,
+          duration: Math.max(30, duration)
+        }
+      }));
+    }, 100);
   };
 
   // Handle event drop (drag and drop)
@@ -611,6 +658,19 @@ export default function Calendar() {
           }}
         />
       )}
+
+      {/* Schedule Session Modal */}
+      <ScheduleSessionModal
+        open={showScheduleModal}
+        onOpenChange={(open) => {
+          setShowScheduleModal(open);
+          if (!open) {
+            setEditSession(null);
+          }
+        }}
+        editSession={editSession}
+        editMode={!!editSession}
+      />
 
       {/* Pending Requests Modal */}
       <PendingRequestsModal

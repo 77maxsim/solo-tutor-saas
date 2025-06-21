@@ -253,6 +253,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                   variant="outline" 
                   size="sm" 
                   onClick={() => {
+                    console.log('🔧 Edit this session button clicked');
                     // Dispatch edit session event
                     window.dispatchEvent(new CustomEvent('editSession', { 
                       detail: { session } 
@@ -291,6 +292,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                     variant="outline" 
                     size="sm" 
                     onClick={() => {
+                      console.log('🔧 Edit future sessions button clicked');
                       // Dispatch edit series event
                       window.dispatchEvent(new CustomEvent('editSeries', { 
                         detail: { session } 
