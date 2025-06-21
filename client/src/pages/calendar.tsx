@@ -28,6 +28,13 @@ import {
   X
 } from 'lucide-react';
 import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from '@/lib/queryOptimizer';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// Configure dayjs plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import MobileCalendarView from '@/components/MobileCalendarView';
 import { SessionDetailsModal } from '@/components/modals/session-details-modal';
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -157,18 +164,19 @@ export default function Calendar() {
         return null;
       }
 
-      // Pass raw UTC ISO strings directly to FullCalendar
-      const startISO = session.session_start;
-      const endISO = session.session_end;
+      // Convert UTC timestamps to tutor timezone for FullCalendar display
+      const tutorTz = tutorTimezone || 'UTC';
+      const startISO = dayjs(session.session_start).tz(tutorTz).toISOString();
+      const endISO = dayjs(session.session_end).tz(tutorTz).toISOString();
       
-      console.log('📅 Session UTC timestamps passed to FullCalendar:', {
+      console.log('📅 Session converted to tutor timezone for FullCalendar:', {
         student: session.student_name,
-        session_start_utc: session.session_start,
-        session_end_utc: session.session_end,
-        calendar_timezone: tutorTimezone || 'UTC',
-        expected_display_time: DateTime.fromISO(session.session_start, { zone: 'utc' })
-          .setZone(tutorTimezone || 'UTC')
-          .toFormat('HH:mm')
+        utc_start: session.session_start,
+        utc_end: session.session_end,
+        tutor_timezone: tutorTz,
+        converted_start: startISO,
+        converted_end: endISO,
+        display_time: dayjs(session.session_start).tz(tutorTz).format('HH:mm')
       });
 
       // Determine display name and styling
@@ -527,17 +535,17 @@ export default function Calendar() {
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, luxonPlugin]}
             initialView={view}
-            timeZone={tutorTimezone || 'UTC'}
+            timeZone="local"
             events={events}
             eventDidMount={(info) => {
-              // Debug: verify FullCalendar positioning
+              // Debug: verify FullCalendar positioning with converted timestamps
               console.log('🎯 FullCalendar Event Positioned:', {
                 title: info.event.title,
-                calendar_timezone_setting: tutorTimezone || 'UTC',
-                utc_start_received: info.event.start?.toISOString(),
-                utc_end_received: info.event.end?.toISOString(),
-                visual_time_on_calendar: info.event.start ? 
-                  DateTime.fromJSDate(info.event.start).setZone(tutorTimezone || 'UTC').toFormat('HH:mm') : 'N/A'
+                calendar_timezone_setting: 'local',
+                converted_start: info.event.start?.toISOString(),
+                converted_end: info.event.end?.toISOString(),
+                visual_time_displayed: info.event.start ? 
+                  dayjs(info.event.start).format('HH:mm') : 'N/A'
               });
             }}
             editable={true}
