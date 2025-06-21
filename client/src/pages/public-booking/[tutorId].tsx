@@ -212,10 +212,23 @@ export default function PublicBookingPage() {
         }
       }
 
-      // Filter out past slots
-      const futureSlots = slotsData.filter(slot => 
-        isFuture(parseISO(slot.start_time))
-      );
+      // Filter out past slots - check against student's timezone
+      const futureSlots = slotsData.filter(slot => {
+        const utcSlotTime = dayjs.utc(slot.start_time);
+        const localSlotTime = utcSlotTime.tz(studentTimezone);
+        const isInFuture = localSlotTime.isAfter(dayjs().tz(studentTimezone));
+        
+        console.log('Slot time check:', {
+          slotId: slot.id,
+          utcTime: utcSlotTime.format(),
+          localTime: localSlotTime.format(),
+          currentTime: dayjs().tz(studentTimezone).format(),
+          isInFuture,
+          studentTimezone
+        });
+        
+        return isInFuture;
+      });
       setBookingSlots(futureSlots);
 
       // Fetch existing sessions to check for conflicts (with retry)
