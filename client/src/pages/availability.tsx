@@ -70,6 +70,7 @@ export default function AvailabilityPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
   const [tutorId, setTutorId] = useState<string | null>(null);
+  const { timezone: tutorTimezone } = useTimezone();
 
   // Fetch current tutor ID
   useEffect(() => {
@@ -139,7 +140,6 @@ export default function AvailabilityPage() {
       }
 
       // Convert tutor's local time to UTC properly
-      const { timezone: tutorTimezone } = useTimezone();
       const startTimeUTC = dayjs.tz(data.startTime, tutorTimezone).utc().toDate();
       const endTimeUTC = dayjs.tz(data.endTime, tutorTimezone).utc().toDate();
 
@@ -500,10 +500,10 @@ export default function AvailabilityPage() {
                       <Clock className="h-5 w-5 text-gray-500" />
                       <div>
                         <div className="font-medium">
-                          {format(parseISO(slot.start_time), "EEEE, MMMM d, yyyy")}
+                          {dayjs.utc(slot.start_time).tz(tutorTimezone).format('dddd, MMMM D, YYYY')}
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
-                          {format(parseISO(slot.start_time), "h:mm a")} - {format(parseISO(slot.end_time), "h:mm a")}
+                          {dayjs.utc(slot.start_time).tz(tutorTimezone).format('h:mm A')} - {dayjs.utc(slot.end_time).tz(tutorTimezone).format('h:mm A')}
                         </div>
                       </div>
                     </div>
