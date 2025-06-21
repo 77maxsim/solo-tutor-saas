@@ -206,20 +206,21 @@ export default function Calendar() {
     console.log('🔍 Filtering sessions - selected student:', selectedStudent);
     console.log('🔍 Raw sessions count:', sessions.length);
     
-    // Check for newly accepted Jordan sessions
-    const jordanSessions = sessions.filter(s => 
-      s.unassigned_name && s.unassigned_name.includes('Jordan')
+    // Check for June 23rd sessions specifically
+    const june23Sessions = sessions.filter(s => 
+      s.session_start && s.session_start.includes('2025-06-23')
     );
-    if (jordanSessions.length > 0) {
-      console.log('🔍 Jordan sessions found:', jordanSessions.length);
-      jordanSessions.forEach(s => {
-        console.log('Jordan session:', {
+    if (june23Sessions.length > 0) {
+      console.log('🔍 June 23rd sessions found:', june23Sessions.length);
+      june23Sessions.forEach(s => {
+        console.log('June 23 session:', {
           id: s.id?.substring(0, 8) + '...',
-          unassigned_name: s.unassigned_name,
-          student_id: s.student_id,
           student_name: s.student_name,
+          student_id: s.student_id,
           status: s.status,
-          session_start: s.session_start
+          session_start: s.session_start,
+          session_end: s.session_end,
+          has_timestamps: !!(s.session_start && s.session_end)
         });
       });
     }
@@ -302,14 +303,16 @@ export default function Calendar() {
       const startDate = dayjs.utc(session.session_start).tz(tutorTz).toDate();
       const endDate = dayjs.utc(session.session_end).tz(tutorTz).toDate();
       
-      // Debug timezone conversion for first few sessions only to avoid console spam
-      if (validEvents.length < 5) {
-        console.log('🕐 Session timezone conversion:', {
+      // Debug timezone conversion for June 23rd sessions specifically
+      if (session.session_start && session.session_start.includes('2025-06-23')) {
+        console.log('🕐 June 23 timezone conversion:', {
           id: session.id?.substring(0, 8) + '...',
           student_name: session.student_name,
           original_utc_start: session.session_start,
           converted_kyiv_start: dayjs.utc(session.session_start).tz(tutorTz).format('YYYY-MM-DD HH:mm'),
-          final_js_date_start: startDate.toISOString()
+          final_js_date_start: startDate.toISOString(),
+          calendar_date: startDate.toLocaleDateString('en-US', { timeZone: 'Europe/Kyiv' }),
+          calendar_time: startDate.toLocaleTimeString('en-US', { timeZone: 'Europe/Kyiv' })
         });
       }
 
@@ -352,14 +355,16 @@ export default function Calendar() {
       
       validEvents.push(event);
       
-      // Log David events specifically for verification
-      if (session.student_name === 'David') {
-        console.log('🎯 DAVID EVENT CREATED:', {
+      // Log June 23rd events specifically for verification
+      if (session.session_start && session.session_start.includes('2025-06-23')) {
+        console.log('🎯 JUNE 23 EVENT CREATED:', {
           id: session.id?.substring(0, 8) + '...',
           title,
           start_date: startDate.toLocaleString('en-US', { timeZone: 'Europe/Kyiv' }),
           student_name: session.student_name,
-          status: session.status
+          status: session.status,
+          fullcalendar_start: startDate,
+          fullcalendar_end: endDate
         });
       }
     });
@@ -368,6 +373,13 @@ export default function Calendar() {
       totalFiltered: filteredSessions.length,
       validEvents: validEvents.length,
       skippedSessions: skippedSessions.length,
+      june23Events: validEvents.filter(e => e.start.toISOString().includes('2025-06-23')).length,
+      june23EventTimes: validEvents
+        .filter(e => e.start.toISOString().includes('2025-06-23'))
+        .map(e => ({
+          title: e.title,
+          start: e.start.toLocaleString('en-US', { timeZone: 'Europe/Kyiv' })
+        })),
       skippedReasons: skippedSessions.map(s => ({
         id: s.id?.substring(0, 8) + '...',
         reason: !s.session_start ? 'missing session_start' : !s.session_end ? 'missing session_end' : 'unknown'
