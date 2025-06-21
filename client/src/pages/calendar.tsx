@@ -115,16 +115,17 @@ const groupSessionsByDate = (sessions: SessionWithStudent[]) => {
   const grouped: { [key: string]: SessionWithStudent[] } = {};
   
   sessions.forEach(session => {
-    const dateKey = session.date;
+    // Extract date from session_start timestamp
+    const dateKey = new Date(session.session_start).toISOString().split('T')[0];
     if (!grouped[dateKey]) {
       grouped[dateKey] = [];
     }
     grouped[dateKey].push(session);
   });
 
-  // Sort sessions within each day by time
+  // Sort sessions within each day by session_start time
   Object.keys(grouped).forEach(date => {
-    grouped[date].sort((a, b) => a.time.localeCompare(b.time));
+    grouped[date].sort((a, b) => new Date(a.session_start).getTime() - new Date(b.session_start).getTime());
   });
 
   // Return sorted array of { date, sessions }
@@ -631,19 +632,25 @@ export default function Calendar() {
       // Create additional weekly sessions
       const newSessions = [];
       for (let week = 1; week < repeatWeeks; week++) {
-        const sessionDate = new Date(originalDate);
-        sessionDate.setDate(sessionDate.getDate() + (week * 7));
+        const originalStartDate = new Date(originalDate + 'T' + originalTime);
+        const newStartDate = new Date(originalStartDate);
+        newStartDate.setDate(newStartDate.getDate() + (week * 7));
+        
+        const newEndDate = new Date(newStartDate.getTime() + sessionData.duration * 60 * 1000);
 
         newSessions.push({
           tutor_id: tutorId,
           student_id: sessionData.studentId,
-          date: sessionDate.toISOString().split('T')[0],
-          time: sessionData.time,
+          session_start: newStartDate.toISOString(),
+          session_end: newEndDate.toISOString(),
           duration: sessionData.duration,
           rate: sessionData.rate,
           paid: false,
           recurrence_id: recurrenceId,
           color: sessionData.color,
+          // Keep legacy fields for compatibility during transition
+          date: newStartDate.toISOString().split('T')[0],
+          time: newStartDate.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
         });
       }
 
@@ -743,20 +750,15 @@ export default function Calendar() {
     sessions.filter(session => 
       session.status === 'pending' && session.student_id === null
     )
-      .sort((a, b) => new Date(a.date + ' ' + a.time).getTime() - new Date(b.date + ' ' + b.time).getTime())
+      .sort((a, b) => new Date(a.session_start).getTime() - new Date(b.session_start).getTime())
     : [];
 
 
   // Convert sessions to calendar events
   const events: CalendarEvent[] = filteredSessions.map(session => {
-    // Parse date and time to create start datetime
-    const [hours, minutes] = session.time.split(':').map(Number);
-    const start = new Date(session.date);
-    start.setHours(hours, minutes, 0, 0);
-
-    // Calculate end time by adding duration
-    const end = new Date(start);
-    end.setMinutes(end.getMinutes() + session.duration);
+    // Use UTC timestamps directly
+    const start = new Date(session.session_start);
+    const end = new Date(session.session_end);
 
     const isPending = session.status === 'pending';
     
@@ -766,11 +768,14 @@ export default function Calendar() {
       displayName = session.unassigned_name || 'Pending Request';
     } else {
       displayName = session.student_name;
+      // Calculate duration for name truncation logic
+      const sessionDuration = Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60));
+      
       // Truncate student name based on session duration
-      if (session.duration < 60) {
+      if (sessionDuration < 60) {
         // For sessions less than 60 min, show full name
         displayName = session.student_name;
-      } else if (session.duration >= 60 && session.duration <= 120) {
+      } else if (sessionDuration >= 60 && sessionDuration <= 120) {
         // For 60-120 min, show first name + last initial
         const nameParts = session.student_name.split(' ');
         if (nameParts.length > 1) {
@@ -781,10 +786,13 @@ export default function Calendar() {
       }
     }
 
+    // Calculate duration from timestamps for display
+    const durationMinutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+    
     // For 30-minute sessions, use empty title to force custom component usage
-    const eventTitle = session.duration <= 30 
+    const eventTitle = durationMinutes <= 30 
       ? '' 
-      : `${displayName} – ${session.duration} min`;
+      : `${displayName} – ${durationMinutes} min`;
 
     return {
       id: session.id,
@@ -794,7 +802,8 @@ export default function Calendar() {
       resource: {
         ...session,
         isPending,
-        student_name: displayName
+        student_name: displayName,
+        duration: durationMinutes // Include calculated duration for compatibility
       }
     };
   });
@@ -1033,8 +1042,8 @@ export default function Calendar() {
           sessionId: selectedSession.id,
           sessionData: data,
           repeatWeeks: repeatWeeks,
-          originalDate: selectedSession.date,
-          originalTime: selectedSession.time,
+          originalDate: new Date(selectedSession.session_start).toISOString().split('T')[0],
+          originalTime: new Date(selectedSession.session_start).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
         });
       } else {
         // Regular session update
@@ -1387,12 +1396,13 @@ export default function Calendar() {
 
   // Enhanced event component with micro-interactions
   const EventComponent = ({ event }: { event: CalendarEvent }) => {
-    const { student_name, duration, time, rate, date, created_at, notes } = event.resource;
+    const { student_name, rate, created_at, notes } = event.resource;
+    const duration = event.resource.duration; // Use calculated duration from resource
     const startTime = new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const earning = rate * duration / 60;
 
-    // Create full datetime for the session
-    const sessionDateTime = new Date(`${date}T${time}`);
+    // Use session_start timestamp directly
+    const sessionDateTime = new Date(event.resource.session_start);
     const createdDate = new Date(created_at);
     const now = new Date();
 

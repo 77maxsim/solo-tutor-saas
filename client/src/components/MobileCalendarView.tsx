@@ -119,23 +119,25 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
               {weekDays.map((day, dayIndex) => {
                 const daySessions = getSessionsForDate(day);
                 
-                // Find session that starts at this exact time
+                // Find session that starts at this exact time using UTC timestamps
                 const sessionAtTime = daySessions.find(session => {
-                  const sessionTime = session.time.substring(0, 5);
-                  return sessionTime === time;
+                  const sessionStart = new Date(session.session_start);
+                  const sessionTimeString = sessionStart.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+                  return sessionTimeString === time;
                 });
 
-                // Check if this slot is occupied by a continuing session
+                // Check if this slot is occupied by a continuing session using UTC timestamps
                 const occupyingSession = daySessions.find(session => {
-                  const sessionStart = session.time.substring(0, 5);
-                  const [sessionHour, sessionMin] = sessionStart.split(':').map(Number);
+                  const sessionStart = new Date(session.session_start);
+                  const sessionEnd = new Date(session.session_end);
                   const [currentHour, currentMin] = time.split(':').map(Number);
                   
-                  const sessionStartMinutes = sessionHour * 60 + sessionMin;
-                  const currentTimeMinutes = currentHour * 60 + currentMin;
-                  const sessionEndMinutes = sessionStartMinutes + session.duration;
+                  // Create a date object for the current time slot on the same day
+                  const currentTimeSlot = new Date(day);
+                  currentTimeSlot.setHours(currentHour, currentMin, 0, 0);
                   
-                  return currentTimeMinutes >= sessionStartMinutes && currentTimeMinutes < sessionEndMinutes;
+                  // Check if current time slot falls within the session duration
+                  return currentTimeSlot >= sessionStart && currentTimeSlot < sessionEnd;
                 });
 
                 const isOccupied = occupyingSession && !sessionAtTime;
@@ -148,7 +150,7 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
                         onClick={() => onSelectEvent(sessionAtTime)}
                         style={{ 
                           backgroundColor: sessionAtTime.color || '#3b82f6',
-                          height: `${Math.max(26, (sessionAtTime.duration / 30) * 28)}px`
+                          height: `${Math.max(26, (Math.round((new Date(sessionAtTime.session_end).getTime() - new Date(sessionAtTime.session_start).getTime()) / (1000 * 60)) / 30) * 28)}px`
                         }}
                       >
                         <div className="text-xs font-medium truncate leading-tight w-full text-center">
