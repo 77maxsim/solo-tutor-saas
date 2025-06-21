@@ -54,7 +54,7 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
 
 export async function getOptimizedSessions(tutorId: string) {
   const startTime = Date.now();
-  console.log('🔧 Using optimized query pattern for large dataset');
+  console.log('🔧 Using optimized query pattern for large dataset, tutor:', tutorId);
   
   try {
     // Get ALL sessions without joins to avoid performance issues
@@ -65,11 +65,29 @@ export async function getOptimizedSessions(tutorId: string) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching optimized sessions:', error);
+      console.error('❌ Error fetching optimized sessions:', error);
+      console.error('Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       // Fallback to standard query on error
       console.log('🔄 Falling back to standard query due to optimization error');
       return await getStandardSessions(tutorId);
     }
+
+    console.log('✅ Optimized query raw data:', {
+      totalRows: allSessions?.length || 0,
+      firstRow: allSessions?.[0] ? {
+        id: allSessions[0].id?.substring(0, 8) + '...',
+        status: allSessions[0].status,
+        session_start: allSessions[0].session_start,
+        session_end: allSessions[0].session_end,
+        unassigned_name: allSessions[0].unassigned_name,
+        student_id: allSessions[0].student_id
+      } : null
+    });
 
     // Safety check: If we get an unexpectedly large dataset, log a warning
     if (allSessions && allSessions.length > 10000) {
@@ -146,6 +164,8 @@ export async function getStandardSessions(tutorId: string) {
   const startTime = Date.now();
   
   try {
+    console.log('🔍 Standard query - fetching sessions for tutor:', tutorId);
+    
     const { data, error } = await supabase
       .from('sessions')
       .select(`
@@ -171,9 +191,27 @@ export async function getStandardSessions(tutorId: string) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching standard sessions:', error);
+      console.error('❌ Error fetching standard sessions:', error);
+      console.error('Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       throw error;
     }
+
+    console.log('✅ Standard query raw data:', {
+      totalRows: data?.length || 0,
+      firstRow: data?.[0] ? {
+        id: data[0].id?.substring(0, 8) + '...',
+        status: data[0].status,
+        session_start: data[0].session_start,
+        session_end: data[0].session_end,
+        unassigned_name: data[0].unassigned_name,
+        student_id: data[0].student_id
+      } : null
+    });
 
     // Transform the data to include student_name and avatarUrl
     const sessionsWithNames = data?.map((session: any) => ({

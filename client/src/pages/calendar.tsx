@@ -167,13 +167,20 @@ export default function Calendar() {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) return [];
 
+      console.log('🔍 Fetching calendar sessions for tutor:', tutorId);
+      
       if (shouldUseOptimizedQuery()) {
-        return await getOptimizedSessions(tutorId);
+        const results = await getOptimizedSessions(tutorId);
+        console.log('📊 Optimized query returned:', results.length, 'sessions');
+        return results;
       } else {
-        return await getStandardSessions(tutorId);
+        const results = await getStandardSessions(tutorId);
+        console.log('📊 Standard query returned:', results.length, 'sessions');
+        return results;
       }
     },
     refetchInterval: 30000,
+    staleTime: 5000, // Reduce stale time to ensure fresh data
   });
 
   // Get unique students for filter

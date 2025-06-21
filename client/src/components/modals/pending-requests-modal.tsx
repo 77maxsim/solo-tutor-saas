@@ -194,6 +194,14 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
         .toUTC()
         .toISO();
 
+      console.log('💾 Updating session with UTC timestamps:', {
+        requestId,
+        studentId,
+        sessionStartUTC,
+        sessionEndUTC,
+        originalData: pendingRequest
+      });
+
       const { error } = await supabase
         .from('sessions')
         .update({
@@ -205,9 +213,15 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
         })
         .eq('id', requestId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error updating session:', error);
+        throw error;
+      }
+
+      console.log('✅ Session updated successfully');
     },
     onSuccess: () => {
+      console.log('🎉 Request accepted successfully, invalidating queries...');
       toast({
         title: "Request Accepted",
         description: "The booking request has been confirmed and assigned to the student.",
@@ -217,6 +231,13 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
       queryClient.invalidateQueries({ queryKey: ['pending-sessions-count'] });
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['student-session-history'] });
+      
+      // Force refetch after a short delay to ensure data consistency
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['calendar-sessions'] });
+      }, 1000);
     },
     onError: (error: any) => {
       toast({
