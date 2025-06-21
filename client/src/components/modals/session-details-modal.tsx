@@ -46,6 +46,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
   const [notes, setNotes] = useState(session?.notes || "");
   const [applyToSeries, setApplyToSeries] = useState(false);
   const [sessionColor, setSessionColor] = useState(session?.color || '#3B82F6');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Reset state when modal opens/closes
   const handleClose = () => {
@@ -268,17 +269,14 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => {
-                    // Dispatch cancel session event
-                    window.dispatchEvent(new CustomEvent('cancelSession', { 
-                      detail: { session } 
-                    }));
-                    handleClose();
-                  }}
-                  className="flex items-center justify-center gap-2 h-10 bg-white dark:bg-gray-800 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  onClick={handleDeleteSession}
+                  disabled={isDeleting}
+                  className="flex items-center justify-center gap-2 h-10 bg-white dark:bg-gray-800 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span className="text-sm">Cancel this session</span>
+                  <span className="text-sm">
+                    {isDeleting ? "Deleting..." : "Cancel this session"}
+                  </span>
                 </Button>
               </div>
             </div>
