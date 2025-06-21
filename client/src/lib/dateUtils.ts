@@ -18,24 +18,12 @@ export function formatSessionDateTime(timestamp: string | Date): string {
 }
 
 export function calculateDurationMinutes(startTimestamp: string, endTimestamp: string): number {
-  const start = new Date(startTimestamp);
-  const end = new Date(endTimestamp);
-  return Math.round((end.getTime() - start.getTime()) / 60000);
-}
-
-/**
- * Calculates duration in minutes between two UTC timestamps
- * @param startUtc - Start UTC timestamp
- * @param endUtc - End UTC timestamp
- * @returns Duration in minutes
- */
-export function calculateDurationMinutes(startUtc: string, endUtc: string): number {
-  if (!startUtc || !endUtc) return 0;
+  if (!startTimestamp || !endTimestamp) return 0;
   
   try {
-    const start = new Date(startUtc);
-    const end = new Date(endUtc);
-    return Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+    const start = new Date(startTimestamp);
+    const end = new Date(endTimestamp);
+    return Math.round((end.getTime() - start.getTime()) / 60000);
   } catch (error) {
     console.error('Error calculating duration:', error);
     return 0;
