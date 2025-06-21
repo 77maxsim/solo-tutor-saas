@@ -319,7 +319,7 @@ export default function Calendar() {
         parsed_as_utc: sessionStartUTC.format('YYYY-MM-DD HH:mm [UTC]'),
         converted_to_tutor_tz: sessionStartUTC.tz(tutorTz).format(`YYYY-MM-DD HH:mm [${tutorTz}]`),
         final_js_date: startDate.toISOString(),
-        display_time: startDate.toLocaleString('en-US', { timeZone: 'Europe/Kyiv' })
+        display_time: startDate.toLocaleString('en-US', { timeZone: tutorTz })
       });
 
       // Determine display name and styling
@@ -367,7 +367,7 @@ export default function Calendar() {
         title,
         student_name: session.student_name,
         original_utc: session.session_start,
-        display_time: startDate.toLocaleString('en-US', { timeZone: 'Europe/Kyiv' })
+        display_time: startDate.toLocaleString('en-US', { timeZone: tutorTz })
       });
     });
     
