@@ -39,6 +39,13 @@ import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { Calendar, Clock, Plus, Trash2, ToggleLeft, ToggleRight, Share2 } from "lucide-react";
 import { format, parseISO, isBefore, isAfter, isWithinInterval } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTimezone } from "@/contexts/TimezoneContext";
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 // Form validation schema
 const slotFormSchema = z.object({
