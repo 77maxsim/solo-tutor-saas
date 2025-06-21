@@ -17,6 +17,14 @@ export function TimezoneProvider({ children }: { children: React.ReactNode }) {
     fetchTutorTimezone();
   }, []);
 
+  // Force refresh timezone on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchTutorTimezone();
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const fetchTutorTimezone = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
