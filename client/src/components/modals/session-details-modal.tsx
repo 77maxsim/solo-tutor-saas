@@ -151,17 +151,35 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
             
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>{formatDate(sessionDateTime)}</span>
+              <span>
+                {(() => {
+                  if (session.session_start) {
+                    return utcToLocalDate(session.session_start);
+                  } else {
+                    return session.date;
+                  }
+                })()}
+              </span>
             </div>
             
             <div className="flex items-center gap-2 text-sm">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span>{formatTime(sessionDateTime)} ({session.duration} minutes)</span>
+              <span>
+                {(() => {
+                  if (session.session_start && session.session_end) {
+                    const timeRange = formatSessionTimeRange(session.session_start, session.session_end);
+                    const duration = Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60));
+                    return `${timeRange} (${duration} minutes)`;
+                  } else {
+                    return `${session.time} (${session.duration} minutes)`;
+                  }
+                })()}
+              </span>
             </div>
             
             <div className="flex items-center gap-2 text-sm">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <span>{formatCurrency(earnings)}</span>
+              <span>{formatCurrency(earnings, 'USD')}</span>
             </div>
           </div>
 

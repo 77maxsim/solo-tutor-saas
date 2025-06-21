@@ -303,7 +303,14 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground dark:text-gray-400">
-                    {session.date} at {session.time} ({session.duration} min)
+                    {(() => {
+                      const { displayTime, durationMinutes } = getSessionDisplayInfo(session);
+                      const displayDate = session.session_start 
+                        ? new Date(session.session_start).toLocaleDateString() 
+                        : session.date;
+                      
+                      return `${displayDate} at ${displayTime} (${durationMinutes} min)`;
+                    })()}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
