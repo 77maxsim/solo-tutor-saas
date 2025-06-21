@@ -28,6 +28,7 @@ import {
   X
 } from 'lucide-react';
 import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from '@/lib/queryOptimizer';
+import { convertSessionToCalendarEvent, debugSessionConversion } from '@/lib/sessionUtils';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -297,24 +298,28 @@ export default function Calendar() {
         return;
       }
 
-      // Convert UTC timestamps to Europe/Kyiv timezone and return as Date objects
-      // All timestamps in database are stored as UTC, convert exactly once to local time
+      // CRITICAL: Standardized timezone conversion
+      // All session_start/session_end should be UTC, but verify and convert appropriately
       const tutorTz = 'Europe/Kyiv';
-      const startDate = dayjs.utc(session.session_start).tz(tutorTz).toDate();
-      const endDate = dayjs.utc(session.session_end).tz(tutorTz).toDate();
       
-      // Debug timezone conversion for June 23rd sessions specifically
-      if (session.session_start && session.session_start.includes('2025-06-23')) {
-        console.log('🕐 June 23 timezone conversion:', {
-          id: session.id?.substring(0, 8) + '...',
-          student_name: session.student_name,
-          original_utc_start: session.session_start,
-          converted_kyiv_start: dayjs.utc(session.session_start).tz(tutorTz).format('YYYY-MM-DD HH:mm'),
-          final_js_date_start: startDate.toISOString(),
-          calendar_date: startDate.toLocaleDateString('en-US', { timeZone: 'Europe/Kyiv' }),
-          calendar_time: startDate.toLocaleTimeString('en-US', { timeZone: 'Europe/Kyiv' })
-        });
-      }
+      // Parse as UTC and convert to tutor timezone exactly once
+      const sessionStartUTC = dayjs.utc(session.session_start);
+      const sessionEndUTC = dayjs.utc(session.session_end);
+      
+      // Convert to local timezone for FullCalendar
+      const startDate = sessionStartUTC.tz(tutorTz).toDate();
+      const endDate = sessionEndUTC.tz(tutorTz).toDate();
+      
+      // Debug timezone conversion for verification
+      console.debug('🕐 Session timezone conversion:', {
+        id: session.id?.substring(0, 8) + '...',
+        student_name: session.student_name,
+        original_timestamp: session.session_start,
+        parsed_as_utc: sessionStartUTC.format('YYYY-MM-DD HH:mm [UTC]'),
+        converted_to_kyiv: sessionStartUTC.tz(tutorTz).format('YYYY-MM-DD HH:mm [Europe/Kyiv]'),
+        final_js_date: startDate.toISOString(),
+        display_time: startDate.toLocaleString('en-US', { timeZone: 'Europe/Kyiv' })
+      });
 
       // Determine display name and styling
       let title = session.student_name || session.unassigned_name || 'Unknown Student';
@@ -355,18 +360,14 @@ export default function Calendar() {
       
       validEvents.push(event);
       
-      // Log June 23rd events specifically for verification
-      if (session.session_start && session.session_start.includes('2025-06-23')) {
-        console.log('🎯 JUNE 23 EVENT CREATED:', {
-          id: session.id?.substring(0, 8) + '...',
-          title,
-          start_date: startDate.toLocaleString('en-US', { timeZone: 'Europe/Kyiv' }),
-          student_name: session.student_name,
-          status: session.status,
-          fullcalendar_start: startDate,
-          fullcalendar_end: endDate
-        });
-      }
+      // Log event creation for verification
+      console.debug('✅ Calendar event created:', {
+        id: session.id?.substring(0, 8) + '...',
+        title,
+        student_name: session.student_name,
+        original_utc: session.session_start,
+        display_time: startDate.toLocaleString('en-US', { timeZone: 'Europe/Kyiv' })
+      });
     });
     
     console.log('📊 Calendar event summary:', {
@@ -401,7 +402,7 @@ export default function Calendar() {
     });
     
     return validEvents;
-  }, [filteredSessions, tutorTimezone]);
+  }, [filteredSessions, tutorTimezone, timeFormat, tutorCurrency]);
 
   // Handle schedule session
   const handleScheduleSession = () => {
