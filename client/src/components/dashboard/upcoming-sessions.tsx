@@ -307,8 +307,8 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
                   <p className="text-xs text-muted-foreground dark:text-gray-400">
                     {session.session_start && session.session_end && tutorTimezone
                       ? (() => {
-                          const date = DateTime.fromISO(session.session_start, { zone: 'utc' }).setZone(tutorTimezone).toFormat('MM/dd/yyyy');
-                          const startTime = DateTime.fromISO(session.session_start, { zone: 'utc' }).setZone(tutorTimezone).toFormat('HH:mm');
+                          const date = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MM/dd/yyyy');
+                          const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
                           const duration = calculateDurationMinutes(session.session_start, session.session_end);
                           console.log('📊 Dashboard session time display:', {
                             student: session.student_name,

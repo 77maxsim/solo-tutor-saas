@@ -14,9 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, DollarSign, Edit, Trash2 } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
-import { calculateDurationMinutes } from "@/lib/dateUtils";
+import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
-import { DateTime } from "luxon";
 
 interface SessionDetails {
   id: string;
@@ -155,7 +154,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span>
                 {session.session_start && tutorTimezone
-                  ? DateTime.fromISO(session.session_start, { zone: 'utc' }).setZone(tutorTimezone).toFormat('MM/dd/yyyy')
+                  ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MM/dd/yyyy')
                   : session.date}
               </span>
             </div>
@@ -165,8 +164,8 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
               <span>
                 {session.session_start && session.session_end && tutorTimezone
                   ? (() => {
-                      const startTime = DateTime.fromISO(session.session_start, { zone: 'utc' }).setZone(tutorTimezone).toFormat('HH:mm');
-                      const endTime = DateTime.fromISO(session.session_end, { zone: 'utc' }).setZone(tutorTimezone).toFormat('HH:mm');
+                      const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
+                      const endTime = formatUtcToTutorTimezone(session.session_end, tutorTimezone, 'HH:mm');
                       const duration = calculateDurationMinutes(session.session_start, session.session_end);
                       console.log('🔍 Session details modal time display:', {
                         student: session.student_name,

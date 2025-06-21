@@ -155,15 +155,16 @@ export default function Calendar() {
       let endISO: string;
 
       if (session.session_start && session.session_end) {
-        // Ensure proper UTC ISO string formatting for FullCalendar
-        startISO = DateTime.fromISO(session.session_start, { zone: 'utc' }).toUTC().toISO();
-        endISO = DateTime.fromISO(session.session_end, { zone: 'utc' }).toUTC().toISO();
+        // Pass raw UTC ISO strings directly to FullCalendar without any conversion
+        startISO = session.session_start;
+        endISO = session.session_end;
         
-        console.log('📅 Session with UTC timestamps:', {
+        console.log('📅 Session with UTC timestamps - NO CONVERSION:', {
           student: session.student_name,
-          session_start_utc: session.session_start,
-          session_end_utc: session.session_end,
-          passed_to_fullcalendar: { start: startISO, end: endISO }
+          raw_session_start: session.session_start,
+          raw_session_end: session.session_end,
+          passed_to_fullcalendar_start: startISO,
+          passed_to_fullcalendar_end: endISO
         });
       } else {
         // Fallback: convert legacy date/time fields to UTC for FullCalendar
@@ -250,16 +251,15 @@ export default function Calendar() {
 
   // Handle slot selection to schedule new session
   const handleDateSelect = (selectInfo: any) => {
-    // FullCalendar provides times in the calendar's timezone
-    // Convert to tutor timezone for form data
-    const tutorTz = tutorTimezone || 'local';
+    // Convert to UTC for storage, tutor timezone for form display
+    const startUTC = DateTime.fromJSDate(selectInfo.start).toUTC();
+    const endUTC = DateTime.fromJSDate(selectInfo.end).toUTC();
     
-    const startInTutorTz = DateTime.fromJSDate(selectInfo.start).setZone(tutorTz);
-    const endInTutorTz = DateTime.fromJSDate(selectInfo.end).setZone(tutorTz);
-    
+    // For form data, use tutor timezone
+    const startInTutorTz = startUTC.setZone(tutorTimezone || 'UTC');
     const selectedDate = startInTutorTz.toISODate();
     const selectedTime = startInTutorTz.toFormat('HH:mm');
-    const duration = Math.round(endInTutorTz.diff(startInTutorTz, 'minutes').minutes);
+    const duration = Math.round(endUTC.diff(startUTC, 'minutes').minutes);
 
     window.dispatchEvent(new CustomEvent('openScheduleModal', {
       detail: {
@@ -274,19 +274,18 @@ export default function Calendar() {
   const handleEventDrop = async (dropInfo: any) => {
     const session = dropInfo.event.extendedProps as SessionWithStudent;
     
-    // FullCalendar provides the new time in the calendar's timezone
-    // Convert to UTC for storage and tutor timezone for legacy fields
-    const tutorTz = tutorTimezone || 'local';
-    const newStartUTC = DateTime.fromJSDate(dropInfo.event.start).toUTC();
-    const newEndUTC = DateTime.fromJSDate(dropInfo.event.end).toUTC();
-    const newStartInTutorTz = newStartUTC.setZone(tutorTz);
+    // Convert FullCalendar's JS Date to UTC for storage
+    const newStartUTC = DateTime.fromJSDate(dropInfo.event.start).toUTC().toISO();
+    const newEndUTC = DateTime.fromJSDate(dropInfo.event.end).toUTC().toISO();
+    // For legacy fields, convert to tutor timezone
+    const newStartInTutorTz = DateTime.fromJSDate(dropInfo.event.start).setZone(tutorTimezone || 'UTC');
 
     try {
       const { error } = await supabase
         .from('sessions')
         .update({
-          session_start: newStartUTC.toISO(),
-          session_end: newEndUTC.toISO(),
+          session_start: newStartUTC,
+          session_end: newEndUTC,
           date: newStartInTutorTz.toISODate(),
           time: newStartInTutorTz.toFormat('HH:mm')
         })
@@ -313,17 +312,16 @@ export default function Calendar() {
   const handleEventResize = async (resizeInfo: any) => {
     const session = resizeInfo.event.extendedProps as SessionWithStudent;
     
-    // FullCalendar provides times in the calendar's timezone
     // Convert to UTC for storage
-    const newEndUTC = DateTime.fromJSDate(resizeInfo.event.end).toUTC();
+    const newEndUTC = DateTime.fromJSDate(resizeInfo.event.end).toUTC().toISO();
     const newStartUTC = DateTime.fromJSDate(resizeInfo.event.start).toUTC();
-    const newDuration = Math.round(newEndUTC.diff(newStartUTC, 'minutes').minutes);
+    const newDuration = Math.round(DateTime.fromJSDate(resizeInfo.event.end).diff(DateTime.fromJSDate(resizeInfo.event.start), 'minutes').minutes);
 
     try {
       const { error } = await supabase
         .from('sessions')
         .update({
-          session_end: newEndUTC.toISO(),
+          session_end: newEndUTC,
           duration: newDuration
         })
         .eq('id', session.id);
@@ -538,17 +536,24 @@ export default function Calendar() {
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, luxonPlugin]}
             initialView={view}
-            timeZone={tutorTimezone || 'local'}
+            timeZone={tutorTimezone || 'UTC'}
             events={events}
             eventDidMount={(info) => {
-              // Debug: log how FullCalendar positions events
-              console.log('🎯 FullCalendar positioned event:', {
+              // Debug: confirm timezone handling
+              const displayedTime = info.event.start?.toLocaleString('en-US', { 
+                timeZone: tutorTimezone || 'UTC',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              });
+              
+              console.log('🎯 FullCalendar Event Rendered:', {
                 title: info.event.title,
-                utc_start: info.event.start?.toISOString(),
-                utc_end: info.event.end?.toISOString(),
-                calendar_timezone: tutorTimezone || 'local',
-                displayed_start: info.event.start?.toLocaleString(),
-                displayed_end: info.event.end?.toLocaleString()
+                calendar_timezone: tutorTimezone || 'UTC',
+                raw_utc_start: info.event.start?.toISOString(),
+                raw_utc_end: info.event.end?.toISOString(),
+                visually_displayed_time: displayedTime,
+                expected_time_in_tutor_tz: DateTime.fromISO(info.event.start?.toISOString() || '', { zone: 'utc' }).setZone(tutorTimezone || 'UTC').toFormat('HH:mm')
               });
             }}
             editable={true}

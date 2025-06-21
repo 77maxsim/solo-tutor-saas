@@ -410,7 +410,7 @@ export default function UnpaidSessions() {
                                     <Clock className="h-3 w-3" />
                                     {session.session_start && session.session_end && tutorTimezone
                                       ? (() => {
-                                          const startTime = DateTime.fromISO(session.session_start, { zone: 'utc' }).setZone(tutorTimezone).toFormat('HH:mm');
+                                          const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
                                           const duration = calculateDurationMinutes(session.session_start, session.session_end);
                                           console.log('💰 Unpaid sessions time display:', {
                                             student: session.student_name,
