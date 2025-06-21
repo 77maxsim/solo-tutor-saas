@@ -26,12 +26,14 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { TIMEZONE_GROUPS, getBrowserTimezone } from "@/lib/timezones";
 
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   fullName: z.string().optional(),
   currency: z.string().optional(),
+  timezone: z.string().optional(),
   confirmPassword: z.string().optional(),
   rememberMe: z.boolean().default(false),
 }).refine((data) => {
@@ -298,37 +300,78 @@ export default function AuthPage() {
                 )}
 
                 {!isLogin && (
-                  <FormField
-                    control={form.control}
-                    name="currency"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tuition Fee Currency</FormLabel>
-                        <FormControl>
-                          <Select
-                            value={field.value || "USD"}
-                            onValueChange={field.onChange}
-                            disabled={isLoading}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select your currency" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="USD">USD - US Dollar</SelectItem>
-                              <SelectItem value="EUR">EUR - Euro</SelectItem>
-                              <SelectItem value="UAH">UAH - Ukrainian Hryvnia</SelectItem>
-                              <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                              <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
-                              <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
-                              <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
-                              <SelectItem value="CNY">CNY - Chinese Yuan</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="currency"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tuition Fee Currency</FormLabel>
+                          <FormControl>
+                            <Select
+                              value={field.value || "USD"}
+                              onValueChange={field.onChange}
+                              disabled={isLoading}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select your currency" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="USD">USD - US Dollar</SelectItem>
+                                <SelectItem value="EUR">EUR - Euro</SelectItem>
+                                <SelectItem value="UAH">UAH - Ukrainian Hryvnia</SelectItem>
+                                <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                                <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                                <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                                <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
+                                <SelectItem value="CNY">CNY - Chinese Yuan</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="timezone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Timezone</FormLabel>
+                          <FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              disabled={isLoading}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select your timezone" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-[200px]">
+                                {Object.entries(TIMEZONE_GROUPS).map(([region, timezones]) => (
+                                  <div key={region}>
+                                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                                      {region}
+                                    </div>
+                                    {timezones.map((timezone) => (
+                                      <SelectItem key={timezone.value} value={timezone.value}>
+                                        {timezone.label}
+                                      </SelectItem>
+                                    ))}
+                                  </div>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                          <p className="text-xs text-muted-foreground">
+                            This timezone will be used to display all your session times correctly.
+                          </p>
+                        </FormItem>
+                      )}
+                    />
+                  </>
                 )}
 
                 <FormField
