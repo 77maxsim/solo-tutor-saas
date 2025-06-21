@@ -1,31 +1,25 @@
 // Date and timezone utilities for consistent timestamp handling
+import { DateTime } from 'luxon';
 
-export function formatUtcToLocalString(utcString: string) {
-  return new Date(utcString).toLocaleString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    day: 'numeric',
-    month: 'numeric',
-    year: 'numeric'
-  });
+export function formatUtcToTutorTimezone(utcString: string, timezone: string, format: string = 'HH:mm') {
+  return DateTime.fromISO(utcString, { zone: 'utc' }).setZone(timezone).toFormat(format);
 }
 
-export function formatUtcToLocalTime(utcString: string) {
-  return new Date(utcString).toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
+export function formatUtcToTutorDate(utcString: string, timezone: string, format: string = 'MM/dd/yyyy') {
+  return DateTime.fromISO(utcString, { zone: 'utc' }).setZone(timezone).toFormat(format);
+}
+
+export function formatUtcToTutorDateTime(utcString: string, timezone: string, format: string = 'MM/dd/yyyy HH:mm') {
+  return DateTime.fromISO(utcString, { zone: 'utc' }).setZone(timezone).toFormat(format);
 }
 
 export function calculateDurationMinutes(startTimestamp: string, endTimestamp: string): number {
   if (!startTimestamp || !endTimestamp) return 0;
   
   try {
-    const start = new Date(startTimestamp);
-    const end = new Date(endTimestamp);
-    return Math.round((end.getTime() - start.getTime()) / 60000);
+    const start = DateTime.fromISO(startTimestamp, { zone: 'utc' });
+    const end = DateTime.fromISO(endTimestamp, { zone: 'utc' });
+    return Math.round(end.diff(start, 'minutes').minutes);
   } catch (error) {
     console.error('Error calculating duration:', error);
     return 0;

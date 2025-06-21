@@ -21,7 +21,8 @@ import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { triggerEarningsConfetti } from "@/lib/confetti";
-import { formatUtcToLocalTime, calculateDurationMinutes } from "@/lib/dateUtils";
+import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
+import { useTimezone } from "@/contexts/TimezoneContext";
 
 interface UnpaidSession {
   id: string;
@@ -41,6 +42,7 @@ export default function UnpaidSessions() {
   const [openDates, setOpenDates] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { tutorTimezone } = useTimezone();
 
   // Fetch tutor's currency preference
   const { data: tutorCurrency = 'USD' } = useQuery({
@@ -406,9 +408,9 @@ export default function UnpaidSessions() {
                                 <div className="flex items-center gap-4 text-sm text-gray-600">
                                   <span className="flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
-                                    {session.session_start && session.session_end 
+                                    {session.session_start && session.session_end && tutorTimezone
                                       ? (() => {
-                                          const startTime = formatUtcToLocalTime(session.session_start);
+                                          const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
                                           const duration = calculateDurationMinutes(session.session_start, session.session_end);
                                           return `${startTime} (${duration} min)`;
                                         })()

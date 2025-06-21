@@ -14,7 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, DollarSign, Edit, Trash2 } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
-import { formatUtcToLocalTime, calculateDurationMinutes } from "@/lib/dateUtils";
+import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
+import { useTimezone } from "@/contexts/TimezoneContext";
 
 interface SessionDetails {
   id: string;
@@ -152,8 +153,8 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span>
-                {session.session_start 
-                  ? new Date(session.session_start).toLocaleDateString()
+                {session.session_start && tutorTimezone
+                  ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MM/dd/yyyy')
                   : session.date}
               </span>
             </div>
@@ -161,10 +162,10 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
             <div className="flex items-center gap-2 text-sm">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span>
-                {session.session_start && session.session_end
+                {session.session_start && session.session_end && tutorTimezone
                   ? (() => {
-                      const startTime = formatUtcToLocalTime(session.session_start);
-                      const endTime = formatUtcToLocalTime(session.session_end);
+                      const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
+                      const endTime = formatUtcToTutorTimezone(session.session_end, tutorTimezone, 'HH:mm');
                       const duration = calculateDurationMinutes(session.session_start, session.session_end);
                       return `${startTime} - ${endTime} (${duration} minutes)`;
                     })()

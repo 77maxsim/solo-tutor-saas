@@ -54,7 +54,8 @@ import { Clock, User, Check, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePendingSessions } from "@/hooks/use-pending-sessions";
 import { PendingRequestsModal } from "@/components/modals/pending-requests-modal";
-import { formatUtcToLocalTime, calculateDurationMinutes } from "@/lib/dateUtils";
+import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
+import { useTimezone } from "@/contexts/TimezoneContext";
 
 const localizer = momentLocalizer(moment);
 
@@ -253,9 +254,9 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
                       {/* Time and Earnings */}
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                         <span className="flex items-center gap-1">
-                          🕐 {session.session_start && session.session_end
+                          🕐 {session.session_start && session.session_end && tutorTimezone
                             ? (() => {
-                                const startTime = formatUtcToLocalTime(session.session_start);
+                                const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
                                 const duration = calculateDurationMinutes(session.session_start, session.session_end);
                                 return `${startTime} (${duration}min)`;
                               })()
