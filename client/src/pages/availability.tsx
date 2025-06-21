@@ -138,8 +138,18 @@ export default function AvailabilityPage() {
         throw new Error("User not authenticated");
       }
 
-      const startTime = new Date(data.startTime);
-      const endTime = new Date(data.endTime);
+      // Convert tutor's local time to UTC properly
+      const { timezone: tutorTimezone } = useTimezone();
+      const startTimeUTC = dayjs.tz(data.startTime, tutorTimezone).utc().toDate();
+      const endTimeUTC = dayjs.tz(data.endTime, tutorTimezone).utc().toDate();
+
+      console.log('Slot creation timezone conversion:', {
+        tutorTimezone,
+        localStart: data.startTime,
+        localEnd: data.endTime,
+        utcStart: startTimeUTC.toISOString(),
+        utcEnd: endTimeUTC.toISOString()
+      });
 
       // Check for overlapping active slots
       if (bookingSlots) {
@@ -150,9 +160,9 @@ export default function AvailabilityPage() {
           const slotEnd = parseISO(slot.end_time);
           
           return (
-            isWithinInterval(startTime, { start: slotStart, end: slotEnd }) ||
-            isWithinInterval(endTime, { start: slotStart, end: slotEnd }) ||
-            isWithinInterval(slotStart, { start: startTime, end: endTime })
+            isWithinInterval(startTimeUTC, { start: slotStart, end: slotEnd }) ||
+            isWithinInterval(endTimeUTC, { start: slotStart, end: slotEnd }) ||
+            isWithinInterval(slotStart, { start: startTimeUTC, end: endTimeUTC })
           );
         });
 
@@ -165,8 +175,8 @@ export default function AvailabilityPage() {
         .from("booking_slots")
         .insert({
           tutor_id: tutorId,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
+          start_time: startTimeUTC.toISOString(),
+          end_time: endTimeUTC.toISOString(),
           is_active: true,
         });
 
