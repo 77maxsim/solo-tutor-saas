@@ -23,6 +23,7 @@ import { Clock, User, Calendar, Check, X, Loader2, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
 import { DateTime } from "luxon";
+import { useTimezone } from "@/contexts/TimezoneContext";
 
 interface PendingRequest {
   id: string;
@@ -50,6 +51,7 @@ interface PendingRequestsModalProps {
 export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }: PendingRequestsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { tutorTimezone } = useTimezone();
   const [selectedStudents, setSelectedStudents] = useState<Record<string, string>>({});
   const [processingRequests, setProcessingRequests] = useState<Set<string>>(new Set());
   const [showAddStudent, setShowAddStudent] = useState<Record<string, boolean>>({});
@@ -294,7 +296,9 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
   };
 
   const formatDateTime = (date: string, time: string) => {
-    const dateTime = DateTime.fromFormat(`${date} ${time}`, 'yyyy-MM-dd HH:mm');
+    // Assume date/time is in tutor's timezone, format appropriately
+    const tutorTz = tutorTimezone || 'UTC';
+    const dateTime = DateTime.fromFormat(`${date} ${time}`, 'yyyy-MM-dd HH:mm', { zone: tutorTz });
     return {
       date: dateTime.toFormat('MMM d, yyyy'),
       time: dateTime.toFormat('h:mm a'),
