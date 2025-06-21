@@ -596,6 +596,63 @@ export default function PublicBookingPage() {
             <p className="text-gray-600 dark:text-gray-400">
               Select an available time slot and enter your name to request a booking.
             </p>
+            
+            {/* Student Timezone Selector */}
+            <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Globe className="w-5 h-5 text-blue-600" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-blue-900 dark:text-blue-200">Your Timezone</p>
+                        <p className="text-xs text-blue-700 dark:text-blue-400">
+                          All times shown in: {getTimezoneDisplayName(studentTimezone)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowTimezoneSelector(!showTimezoneSelector)}
+                        className="text-blue-700 border-blue-300 hover:bg-blue-100 dark:text-blue-300 dark:border-blue-600 dark:hover:bg-blue-900"
+                      >
+                        Change
+                      </Button>
+                    </div>
+                    
+                    {showTimezoneSelector && (
+                      <div className="mt-3">
+                        <Select
+                          value={studentTimezone}
+                          onValueChange={(value) => {
+                            setStudentTimezone(value);
+                            setShowTimezoneSelector(false);
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select your timezone" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[200px]">
+                            {Object.entries(TIMEZONE_GROUPS).map(([region, timezones]) => (
+                              <div key={region}>
+                                <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                                  {region}
+                                </div>
+                                {timezones.map((timezone) => (
+                                  <SelectItem key={timezone.value} value={timezone.value}>
+                                    {timezone.label}
+                                  </SelectItem>
+                                ))}
+                              </div>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </CardHeader>
 
           <CardContent>
@@ -618,8 +675,23 @@ export default function PublicBookingPage() {
                   </Label>
                   <div className="grid gap-3">
                     {availableSlots.map((slot) => {
-                      const startTime = parseISO(slot.start_time);
-                      const endTime = parseISO(slot.end_time);
+                      // Convert UTC times to student's local timezone
+                      const utcStartTime = dayjs.utc(slot.start_time);
+                      const utcEndTime = dayjs.utc(slot.end_time);
+                      const localStartTime = utcStartTime.tz(studentTimezone);
+                      const localEndTime = utcEndTime.tz(studentTimezone);
+                      
+                      // Debug logging
+                      console.log('Slot timezone conversion:', {
+                        slotId: slot.id,
+                        originalUTC: slot.start_time,
+                        studentTimezone,
+                        utcStartTime: utcStartTime.format(),
+                        localStartTime: localStartTime.format(),
+                        displayDate: localStartTime.format('dddd, MMMM D, YYYY'),
+                        displayTime: `${localStartTime.format('h:mm A')} - ${localEndTime.format('h:mm A')}`
+                      });
+                      
                       const isSelected = watchedSlotId === slot.id;
 
                       return (
@@ -638,10 +710,13 @@ export default function PublicBookingPage() {
                                 <Clock className="h-5 w-5 text-gray-500" />
                                 <div>
                                   <div className="font-medium">
-                                    {format(startTime, 'EEEE, MMMM d, yyyy')}
+                                    {localStartTime.format('dddd, MMMM D, YYYY')}
                                   </div>
                                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
+                                    {localStartTime.format('h:mm A')} - {localEndTime.format('h:mm A')}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    {getTimezoneDisplayName(studentTimezone)}
                                   </div>
                                 </div>
                               </div>
@@ -714,12 +789,24 @@ export default function PublicBookingPage() {
                   <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
                     Selected Date
                   </p>
-                  <p className="text-blue-600 dark:text-blue-300">
-                    {format(parseISO(bookingSlots.find(s => s.id === selectedSlot)?.start_time || ''), 'EEEE, MMMM d, yyyy')}
-                  </p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                    Available: {format(parseISO(bookingSlots.find(s => s.id === selectedSlot)?.start_time || ''), 'h:mm a')} - {format(parseISO(bookingSlots.find(s => s.id === selectedSlot)?.end_time || ''), 'h:mm a')}
-                  </p>
+                  {(() => {
+                    const selectedSlotData = bookingSlots.find(s => s.id === selectedSlot);
+                    if (selectedSlotData) {
+                      const localStartTime = dayjs.utc(selectedSlotData.start_time).tz(studentTimezone);
+                      const localEndTime = dayjs.utc(selectedSlotData.end_time).tz(studentTimezone);
+                      return (
+                        <>
+                          <p className="text-blue-600 dark:text-blue-300">
+                            {localStartTime.format('dddd, MMMM D, YYYY')}
+                          </p>
+                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                            Available: {localStartTime.format('h:mm A')} - {localEndTime.format('h:mm A')} ({getTimezoneDisplayName(studentTimezone)})
+                          </p>
+                        </>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               )}
 
@@ -735,6 +822,28 @@ export default function PublicBookingPage() {
                   <SelectContent>
                     {availableStartTimes.map((time) => {
                       const isAvailable = isTimeSlotAvailable(time, selectedDuration);
+                      
+                      // Convert the time to student's timezone for display
+                      const selectedSlotData = bookingSlots.find(s => s.id === selectedSlot);
+                      let displayTime = format(new Date(`2000-01-01T${time}`), 'h:mm a');
+                      
+                      if (selectedSlotData) {
+                        // Create a datetime with the slot's date and selected time
+                        const slotDate = dayjs.utc(selectedSlotData.start_time).format('YYYY-MM-DD');
+                        const utcDateTime = dayjs.utc(`${slotDate}T${time}:00`);
+                        const localDateTime = utcDateTime.tz(studentTimezone);
+                        displayTime = localDateTime.format('h:mm A');
+                        
+                        console.log('Time picker conversion:', {
+                          originalTime: time,
+                          slotDate,
+                          utcDateTime: utcDateTime.format(),
+                          localDateTime: localDateTime.format(),
+                          displayTime,
+                          studentTimezone
+                        });
+                      }
+                      
                       return (
                         <SelectItem 
                           key={time} 
@@ -743,7 +852,7 @@ export default function PublicBookingPage() {
                         >
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4" />
-                            {format(new Date(`2000-01-01T${time}`), 'h:mm a')}
+                            {displayTime}
                             {!isAvailable && <span className="text-xs text-red-500">(Unavailable)</span>}
                           </div>
                         </SelectItem>
@@ -786,13 +895,26 @@ export default function PublicBookingPage() {
                       <p className="text-sm text-green-600 dark:text-green-300 mt-1">
                         You are booking with {tutor?.full_name}
                       </p>
-                      <p className="text-sm text-green-600 dark:text-green-300">
-                        {format(new Date(`2000-01-01T${selectedStartTime}`), 'h:mm a')} - {' '}
-                        {format(
-                          new Date(new Date(`2000-01-01T${selectedStartTime}`).getTime() + selectedDuration * 60 * 1000),
-                          'h:mm a'
-                        )} ({selectedDuration} minutes)
-                      </p>
+                      {(() => {
+                        const selectedSlotData = bookingSlots.find(s => s.id === selectedSlot);
+                        if (selectedSlotData) {
+                          const slotDate = dayjs.utc(selectedSlotData.start_time).format('YYYY-MM-DD');
+                          const utcStartDateTime = dayjs.utc(`${slotDate}T${selectedStartTime}:00`);
+                          const localStartDateTime = utcStartDateTime.tz(studentTimezone);
+                          const localEndDateTime = localStartDateTime.add(selectedDuration, 'minute');
+                          
+                          return (
+                            <p className="text-sm text-green-600 dark:text-green-300">
+                              {localStartDateTime.format('h:mm A')} - {localEndDateTime.format('h:mm A')} ({selectedDuration} minutes)
+                              <br />
+                              <span className="text-xs">
+                                {getTimezoneDisplayName(studentTimezone)}
+                              </span>
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 </div>
