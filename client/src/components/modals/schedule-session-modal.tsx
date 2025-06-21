@@ -800,13 +800,13 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
                     />
                   </FormControl>
                   {/* Show timezone status */}
-                  {tutorTimezone && (
+                  {tutorTimezone && !isTimezoneLoading && (
                     <p className="text-xs text-gray-500">
                       Timezone: {tutorTimezone}
                     </p>
                   )}
                   {isTimezoneLoading && (
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs text-gray-500">
                       Loading timezone...
                     </p>
                   )}
