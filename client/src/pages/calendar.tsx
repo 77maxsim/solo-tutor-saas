@@ -141,7 +141,7 @@ export default function Calendar() {
   // Get pending sessions count for the button
   const { data: pendingCount = 0 } = usePendingSessions();
 
-  // Get tutor currency
+  // Get tutor preferences including currency and time format
   const { data: tutorData } = useQuery({
     queryKey: ['tutor-profile'],
     queryFn: async () => {
@@ -150,7 +150,7 @@ export default function Calendar() {
       
       const { data, error } = await supabase
         .from('tutors')
-        .select('currency')
+        .select('currency, time_format')
         .eq('id', tutorId)
         .single();
       
@@ -160,6 +160,7 @@ export default function Calendar() {
   });
 
   const tutorCurrency = tutorData?.currency || 'USD';
+  const timeFormat = tutorData?.time_format || '24h';
 
   // Fetch sessions data with optimization
   const { data: sessions = [], isLoading } = useQuery({
