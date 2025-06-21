@@ -108,18 +108,24 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
   // Prefill form when editing a session
   useEffect(() => {
     if (session && open && tutorTimezone) {
-      console.log('🕐 Loading session for editing:', {
+      console.log('✅ Bug 4 fixed - Prefilling edit session form:', {
         session_id: session.id,
         date: session.date,
         time: session.time,
+        duration: session.duration,
+        rate: session.rate,
+        color: session.color,
         tutor_timezone: tutorTimezone,
         is_recurring: isRecurring
       });
       
-      form.setValue('time', session.time);
-      form.setValue('duration', session.duration);
-      form.setValue('rate', session.rate);
-      form.setValue('color', session.color || "#3B82F6");
+      // Reset form first to clear any previous values
+      form.reset({
+        time: session.time || "",
+        duration: session.duration || 60,
+        rate: session.rate || 0,
+        color: session.color || "#3B82F6",
+      });
     }
   }, [session, open, form, tutorTimezone, isRecurring]);
 

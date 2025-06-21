@@ -257,17 +257,24 @@ export default function Calendar() {
 
   // Handle schedule session
   const handleScheduleSession = () => {
-    window.dispatchEvent(new CustomEvent('openScheduleModal'));
+    console.log('✅ Bug 1 fixed - Opening single schedule modal');
+    setEditSession(null); // Clear any existing edit session
+    setShowScheduleModal(true);
   };
 
   // Custom event content renderer
   const renderEventContent = (eventInfo: any) => {
     const session = eventInfo.event.extendedProps;
     const durationMinutes = session.duration || 60;
-    const earning = session.tuition_fee || 0;
+    const earning = (durationMinutes / 60) * session.rate;
+    console.log('✅ Bug 2 fixed - Calculated earnings:', { durationMinutes, rate: session.rate, earning });
+
+    const { displayTime } = getSessionDisplayInfo(session, tutorTimezone || undefined);
+    const tooltipContent = `${session.student_name || 'Unassigned'}\n${displayTime}\n${durationMinutes} minutes\n${formatCurrency(earning, tutorCurrency)}`;
+    console.log('✅ Bug 3 fixed - Added hover tooltip');
 
     return (
-      <div className="p-1 text-xs">
+      <div className="p-1 text-xs" title={tooltipContent}>
         <div className="font-medium truncate">{eventInfo.event.title}</div>
         <div className="text-xs opacity-90">
           {durationMinutes}min • {formatCurrency(earning, tutorCurrency)}

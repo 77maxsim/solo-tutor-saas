@@ -1,0 +1,56 @@
+There are 4 bugs in my TutorTrack app. Please fix them step-by-step and confirm each one with a console log or comment. Here's the list:
+
+---
+
+🔧 **Bug 1: Double “Schedule Session” modals open**
+
+- Problem: When I click the top-right "Schedule Session" button, it opens two `ScheduleSessionModal` instances stacked on top of each other.
+- Expected: Only **one** modal opens.
+- Fix:
+  1. Trace the click handler of the “Schedule Session” button in the top navbar.
+  2. Make sure it's not calling `openModal()` more than once.
+  3. Check for any useEffect, event bubbling, or context that might also trigger modal opening.
+  4. Ensure modal state is cleanly toggled.
+
+---
+
+🔧 **Bug 2: Earnings show “¥0.00” on session cards**
+
+- Problem: Session cards in the calendar show 0 earnings, even when sessions have a proper hourly rate.
+- Expected: Earnings should calculate as `(durationMinutes / 60) * session.rate` and display that value on the session card.
+- Fix:
+  1. Open the component that renders session cards on the calendar.
+  2. Locate where earnings are displayed (likely in a `CardFooter`, `Tooltip`, or `description`).
+  3. Compute earnings in real-time based on duration and rate.
+  4. If missing, import and use the same `getSessionDisplayInfo` or helper function used in `SessionDetailsModal`.
+
+---
+
+🔧 **Bug 3: No hover info on session card**
+
+- Problem: When I hover over a calendar session card, nothing happens — no tooltip or session preview appears.
+- Expected: A simple hover effect should show:
+    - Student name
+    - Time
+    - Duration
+    - Earnings
+- Fix:
+  1. Enable or add `Tooltip`, `Popover`, or `title` attribute to the card container.
+  2. Style it minimally for now (e.g. Bootstrap/Chakra/Plain CSS is fine).
+  3. Use the same logic as in `SessionDetailsModal` to extract and show data.
+
+---
+
+🔧 **Bug 4: Edit Session Modal missing prefilled data**
+
+- Problem: When editing a session (clicking “Edit this session”), the `EditSessionModal` opens but fields are empty.
+- Expected: Fields should be prefilled with the actual session data.
+- Fix:
+  1. Ensure that `EditSessionModal` accepts a `session` prop.
+  2. In the modal, set the default state of fields like `time`, `duration`, `rate`, `studentId`, and `color` based on the passed session.
+  3. Use `useEffect(() => setValue(...), [session])` if needed to load values dynamically.
+  4. Validate and test with both single and recurring sessions.
+
+---
+
+Please log `✅ Bug X fixed` in the console after completing each step. Then I’ll verify on my side.
