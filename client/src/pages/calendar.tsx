@@ -246,13 +246,13 @@ export default function Calendar() {
 
   // Handle slot selection to schedule new session
   const handleDateSelect = (selectInfo: any) => {
-    // FullCalendar gives us time in tutor timezone, convert for form display
-    const startInTutorTz = DateTime.fromJSDate(selectInfo.start).setZone(tutorTimezone || 'UTC');
-    const endInTutorTz = DateTime.fromJSDate(selectInfo.end).setZone(tutorTimezone || 'UTC');
+    // FullCalendar selection is already in the display timezone
+    const startInTutorTz = dayjs(selectInfo.start).tz(tutorTimezone || 'UTC');
+    const endInTutorTz = dayjs(selectInfo.end).tz(tutorTimezone || 'UTC');
     
-    const selectedDate = startInTutorTz.toISODate();
-    const selectedTime = startInTutorTz.toFormat('HH:mm');
-    const duration = Math.round(endInTutorTz.diff(startInTutorTz, 'minutes').minutes);
+    const selectedDate = startInTutorTz.format('YYYY-MM-DD');
+    const selectedTime = startInTutorTz.format('HH:mm');
+    const duration = endInTutorTz.diff(startInTutorTz, 'minutes');
     
     console.log('🎯 Slot selected for new session:', {
       selected_start_js: selectInfo.start,
@@ -277,10 +277,20 @@ export default function Calendar() {
     const session = dropInfo.event.extendedProps as SessionWithStudent;
     
     // Convert FullCalendar's JS Date to UTC for storage
-    const newStartUTC = DateTime.fromJSDate(dropInfo.event.start).toUTC().toISO();
-    const newEndUTC = DateTime.fromJSDate(dropInfo.event.end).toUTC().toISO();
+    const newStartUTC = dayjs(dropInfo.event.start).utc().toISOString();
+    const newEndUTC = dayjs(dropInfo.event.end).utc().toISOString();
     // For legacy fields, convert to tutor timezone
-    const newStartInTutorTz = DateTime.fromJSDate(dropInfo.event.start).setZone(tutorTimezone || 'UTC');
+    const newStartInTutorTz = dayjs(dropInfo.event.start).tz(tutorTimezone || 'UTC');
+    
+    console.log('🔄 Drag & Drop - Converting times:', {
+      session_id: session.id,
+      js_start: dropInfo.event.start,
+      js_end: dropInfo.event.end,
+      converted_start_utc: newStartUTC,
+      converted_end_utc: newEndUTC,
+      legacy_date: newStartInTutorTz.format('YYYY-MM-DD'),
+      legacy_time: newStartInTutorTz.format('HH:mm')
+    });
 
     try {
       const { error } = await supabase
@@ -288,8 +298,8 @@ export default function Calendar() {
         .update({
           session_start: newStartUTC,
           session_end: newEndUTC,
-          date: newStartInTutorTz.toISODate(),
-          time: newStartInTutorTz.toFormat('HH:mm')
+          date: newStartInTutorTz.format('YYYY-MM-DD'),
+          time: newStartInTutorTz.format('HH:mm')
         })
         .eq('id', session.id);
 
@@ -315,9 +325,15 @@ export default function Calendar() {
     const session = resizeInfo.event.extendedProps as SessionWithStudent;
     
     // Convert to UTC for storage
-    const newEndUTC = DateTime.fromJSDate(resizeInfo.event.end).toUTC().toISO();
-    const newStartUTC = DateTime.fromJSDate(resizeInfo.event.start).toUTC();
-    const newDuration = Math.round(DateTime.fromJSDate(resizeInfo.event.end).diff(DateTime.fromJSDate(resizeInfo.event.start), 'minutes').minutes);
+    const newEndUTC = dayjs(resizeInfo.event.end).utc().toISOString();
+    const newDuration = dayjs(resizeInfo.event.end).diff(dayjs(resizeInfo.event.start), 'minutes');
+    
+    console.log('🔄 Resize - Converting times:', {
+      session_id: session.id,
+      js_end: resizeInfo.event.end,
+      converted_end_utc: newEndUTC,
+      new_duration_minutes: newDuration
+    });
 
     try {
       const { error } = await supabase

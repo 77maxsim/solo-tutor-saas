@@ -45,6 +45,14 @@ import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { TimePicker } from "@/components/ui/time-picker";
 import { triggerSuccessConfetti, triggerStudentConfetti } from "@/lib/confetti";
 import { formatTimeDisplay, parseTimeInput, generateTimeOptions } from "@/lib/timeFormat";
+import { useTimezone } from "@/contexts/TimezoneContext";
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// Configure dayjs plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const scheduleSessionSchema = z.object({
   studentId: z.string().min(1, "Please select a student"),
@@ -116,6 +124,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
   const [showNotes, setShowNotes] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { tutorTimezone } = useTimezone();
 
   // Track which fields user has manually modified to prevent overwriting
   const [userModifiedFields, setUserModifiedFields] = useState<Set<string>>(new Set());
@@ -246,9 +255,13 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
 
   // Prefill form when editing a session
   useEffect(() => {
-    if (editSession && open) {
-      // Auto-detect edit mode if session has an ID
-      const isEditMode = editMode || !!editSession.id;
+    if (editSession && open && tutorTimezone) {
+      console.log('🕐 Editing session - loading in tutor timezone:', {
+        session_id: editSession.id,
+        date: editSession.date,
+        time: editSession.time,
+        tutor_timezone: tutorTimezone
+      });
       
       form.setValue('studentId', editSession.student_id);
       form.setValue('date', new Date(editSession.date));
@@ -269,7 +282,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         setShowNotes(true);
       }
     }
-  }, [editMode, editSession, open, form]);
+  }, [editMode, editSession, open, form, tutorTimezone]);
 
   // Function to fetch student's most recent session data
   const fetchStudentLastSession = async (studentId: string) => {
@@ -387,8 +400,35 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
     };
   }, [form, onOpenChange]);
 
+  // Helper function to convert local time to UTC
+  const convertToUTC = (localDate: Date, localTime: string, timezone: string) => {
+    const dateStr = format(localDate, "yyyy-MM-dd");
+    const datetimeStr = `${dateStr} ${localTime}`;
+    const utcTimestamp = dayjs.tz(datetimeStr, timezone).utc();
+    
+    console.log('🌍 Converting to UTC:', {
+      local_date: dateStr,
+      local_time: localTime,
+      timezone: timezone,
+      combined_local: datetimeStr,
+      converted_utc: utcTimestamp.toISOString()
+    });
+    
+    return utcTimestamp;
+  };
+
   const onSubmit = async (data: ScheduleSessionForm) => {
     setIsSubmitting(true);
+    
+    if (!tutorTimezone) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Timezone not loaded. Please refresh and try again.",
+      });
+      setIsSubmitting(false);
+      return;
+    }
     
     try {
       const tutorId = await getCurrentTutorId();
@@ -399,12 +439,27 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
       // Auto-detect edit mode if session has an ID
       const isEditMode = editMode || (editSession && editSession.id);
 
+      // Convert local datetime to UTC for storage
+      const startUTC = convertToUTC(data.date, data.time, tutorTimezone);
+      const endUTC = startUTC.add(data.duration, 'minutes');
+
+      console.log('📅 Session datetime conversion:', {
+        selected_date: format(data.date, "yyyy-MM-dd"),
+        selected_time: data.time,
+        tutor_timezone: tutorTimezone,
+        start_utc: startUTC.toISOString(),
+        end_utc: endUTC.toISOString(),
+        duration_minutes: data.duration
+      });
+
       if (isEditMode && editSession) {
-        // Update existing session
+        // Update existing session with UTC timestamps
         const { error } = await supabase
           .from('sessions')
           .update({
             student_id: data.studentId,
+            session_start: startUTC.toISOString(),
+            session_end: endUTC.toISOString(),
             date: format(data.date, "yyyy-MM-dd"),
             time: data.time,
             duration: data.duration,
@@ -435,13 +490,19 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         queryClient.invalidateQueries({ queryKey: ['student-session-history'] });
 
       } else {
-        // Create new session(s) - existing logic
+        // Create new session(s) with UTC timestamps
         const recurrenceId = data.repeatWeekly ? crypto.randomUUID() : null;
         const sessionsToInsert = [];
         const baseDate = new Date(data.date);
         
+        // First session
+        const firstStartUTC = startUTC;
+        const firstEndUTC = endUTC;
+        
         sessionsToInsert.push({
           student_id: data.studentId,
+          session_start: firstStartUTC.toISOString(),
+          session_end: firstEndUTC.toISOString(),
           date: format(baseDate, "yyyy-MM-dd"),
           time: data.time,
           duration: data.duration,
@@ -459,8 +520,14 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
             const sessionDate = new Date(baseDate);
             sessionDate.setDate(sessionDate.getDate() + (week * 7));
             
+            // Convert each recurring session to UTC
+            const weeklyStartUTC = convertToUTC(sessionDate, data.time, tutorTimezone);
+            const weeklyEndUTC = weeklyStartUTC.add(data.duration, 'minutes');
+            
             sessionsToInsert.push({
               student_id: data.studentId,
+              session_start: weeklyStartUTC.toISOString(),
+              session_end: weeklyEndUTC.toISOString(),
               date: format(sessionDate, "yyyy-MM-dd"),
               time: data.time,
               duration: data.duration,
