@@ -56,6 +56,7 @@ import { usePendingSessions } from "@/hooks/use-pending-sessions";
 import { PendingRequestsModal } from "@/components/modals/pending-requests-modal";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import { DateTime } from "luxon";
 
 const localizer = momentLocalizer(moment);
 
