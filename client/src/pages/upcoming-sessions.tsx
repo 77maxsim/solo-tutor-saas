@@ -24,8 +24,10 @@ interface Session {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  date?: string; // Legacy field
+  time?: string; // Legacy field
+  session_start?: string; // UTC timestamp
+  session_end?: string; // UTC timestamp
   duration: number;
   rate: number;
   paid: boolean;
@@ -75,6 +77,8 @@ export default function UpcomingSessions() {
           student_id,
           date,
           time,
+          session_start,
+          session_end,
           duration,
           rate,
           paid,
@@ -407,7 +411,9 @@ export default function UpcomingSessions() {
                         const calculatedPrice = (session.duration / 60) * session.rate;
                         
                         // Create full datetime for the session
-                        const sessionDateTime = new Date(`${session.date}T${session.time}`);
+                        const sessionDateTime = session.session_start 
+                          ? new Date(session.session_start)
+                          : new Date(`${session.date}T${session.time}`);
                         const createdDate = new Date(session.created_at);
                         const now = new Date();
                         
