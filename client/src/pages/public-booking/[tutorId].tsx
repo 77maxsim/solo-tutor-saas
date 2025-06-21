@@ -11,10 +11,17 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
-import { Calendar, Clock, User, CheckCircle, AlertCircle, X } from "lucide-react";
+import { Calendar, Clock, User, CheckCircle, AlertCircle, X, Globe } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, parseISO, isFuture } from "date-fns";
+import { TIMEZONE_GROUPS, getBrowserTimezone, getTimezoneDisplayName } from "@/lib/timezones";
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 // Form validation schema
 const bookingFormSchema = z.object({
@@ -61,6 +68,14 @@ export default function PublicBookingPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  
+  // Student timezone handling
+  const [studentTimezone, setStudentTimezone] = useState<string>(() => {
+    // Try to get from localStorage first, then browser detection
+    const saved = localStorage.getItem('studentTimezone');
+    return saved || getBrowserTimezone();
+  });
+  const [showTimezoneSelector, setShowTimezoneSelector] = useState(false);
 
   const {
     register,
