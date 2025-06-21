@@ -65,7 +65,7 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
       
       // Check if we have UTC timestamp or legacy date field
       if (session.session_start) {
-        sessionDate = utcToLocalDateObject(session.session_start);
+        sessionDate = new Date(session.session_start);
       } else if (session.date) {
         sessionDate = new Date(session.date);
       } else {
@@ -145,7 +145,11 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
                   let sessionTimeString: string;
                   
                   if (session.session_start) {
-                    sessionTimeString = utcToLocalTime(session.session_start, { hour12: false, hour: '2-digit', minute: '2-digit' });
+                    sessionTimeString = new Date(session.session_start).toLocaleTimeString('en-US', { 
+                      hour12: false, 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    });
                   } else if (session.time) {
                     sessionTimeString = session.time.substring(0, 5);
                   } else {
@@ -160,8 +164,8 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
                   let sessionStart: Date, sessionEnd: Date;
                   
                   if (session.session_start && session.session_end) {
-                    sessionStart = utcToLocalDateObject(session.session_start);
-                    sessionEnd = utcToLocalDateObject(session.session_end);
+                    sessionStart = new Date(session.session_start);
+                    sessionEnd = new Date(session.session_end);
                   } else if (session.date && session.time && session.duration) {
                     const [hours, minutes] = session.time.split(':').map(Number);
                     sessionStart = new Date(session.date);

@@ -304,10 +304,21 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
                   </div>
                   <p className="text-xs text-muted-foreground dark:text-gray-400">
                     {(() => {
-                      const { displayTime, durationMinutes } = getSessionDisplayInfo(session);
                       const displayDate = session.session_start 
                         ? new Date(session.session_start).toLocaleDateString() 
                         : session.date;
+                      
+                      const displayTime = session.session_start
+                        ? new Date(session.session_start).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: false 
+                          })
+                        : session.time?.substring(0, 5) || '';
+                      
+                      const durationMinutes = session.session_start && session.session_end
+                        ? Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60))
+                        : session.duration || 0;
                       
                       return `${displayDate} at ${displayTime} (${durationMinutes} min)`;
                     })()}

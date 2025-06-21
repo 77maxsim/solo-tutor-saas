@@ -2,7 +2,7 @@
 
 /**
  * Converts a UTC timestamp to local time string
- * @param utcTimestamp - UTC timestamp string from database
+ * @param utcTimestamp - UTC timestamp string from database (automatically converted to local time by JS)
  * @param options - Intl.DateTimeFormatOptions for formatting
  * @returns Formatted local time string
  */
@@ -10,23 +10,22 @@ export function utcToLocalTime(utcTimestamp: string, options: Intl.DateTimeForma
   if (!utcTimestamp) return '';
   
   try {
-    // Create Date object from UTC timestamp
-    const utcDate = new Date(utcTimestamp);
+    // JavaScript automatically converts UTC timestamps to local time
+    const localDate = new Date(utcTimestamp);
     
-    // Convert to local time using toLocaleTimeString
-    return utcDate.toLocaleTimeString('en-US', {
+    return localDate.toLocaleTimeString('en-US', {
       hour12: false,
       ...options
     });
   } catch (error) {
-    console.error('Error converting UTC to local time:', error);
+    console.error('Error converting timestamp to local time:', error);
     return '';
   }
 }
 
 /**
  * Converts a UTC timestamp to local date string
- * @param utcTimestamp - UTC timestamp string from database
+ * @param utcTimestamp - UTC timestamp string from database (automatically converted to local time by JS)
  * @param options - Intl.DateTimeFormatOptions for formatting
  * @returns Formatted local date string
  */
@@ -34,27 +33,27 @@ export function utcToLocalDate(utcTimestamp: string, options: Intl.DateTimeForma
   if (!utcTimestamp) return '';
   
   try {
-    const utcDate = new Date(utcTimestamp);
-    return utcDate.toLocaleDateString('en-US', options);
+    const localDate = new Date(utcTimestamp);
+    return localDate.toLocaleDateString('en-US', options);
   } catch (error) {
-    console.error('Error converting UTC to local date:', error);
+    console.error('Error converting timestamp to local date:', error);
     return '';
   }
 }
 
 /**
  * Converts a UTC timestamp to a local Date object for calendar use
- * @param utcTimestamp - UTC timestamp string from database
+ * @param utcTimestamp - UTC timestamp string from database (automatically converted to local time by JS)
  * @returns Date object in local timezone
  */
 export function utcToLocalDateObject(utcTimestamp: string): Date {
   if (!utcTimestamp) return new Date();
   
   try {
-    // The Date constructor automatically converts UTC to local timezone
+    // JavaScript Date constructor automatically handles the timezone conversion
     return new Date(utcTimestamp);
   } catch (error) {
-    console.error('Error converting UTC to local Date object:', error);
+    console.error('Error converting timestamp to Date object:', error);
     return new Date();
   }
 }
@@ -80,16 +79,24 @@ export function calculateDurationMinutes(startUtc: string, endUtc: string): numb
 
 /**
  * Formats a session time range from UTC timestamps
- * @param startUtc - Start UTC timestamp
- * @param endUtc - End UTC timestamp
+ * @param startUtc - Start UTC timestamp (automatically converted to local time by JS)
+ * @param endUtc - End UTC timestamp (automatically converted to local time by JS)
  * @returns Formatted time range string (e.g., "2:00 PM - 3:00 PM")
  */
 export function formatSessionTimeRange(startUtc: string, endUtc: string): string {
   if (!startUtc || !endUtc) return '';
   
   try {
-    const startLocal = utcToLocalTime(startUtc, { hour: 'numeric', minute: '2-digit', hour12: true });
-    const endLocal = utcToLocalTime(endUtc, { hour: 'numeric', minute: '2-digit', hour12: true });
+    const startLocal = new Date(startUtc).toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    });
+    const endLocal = new Date(endUtc).toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    });
     return `${startLocal} - ${endLocal}`;
   } catch (error) {
     console.error('Error formatting session time range:', error);
@@ -103,10 +110,14 @@ export function formatSessionTimeRange(startUtc: string, endUtc: string): string
  * @returns Object with displayTime and durationMinutes
  */
 export function getSessionDisplayInfo(session: any): { displayTime: string; durationMinutes: number } {
-  // Prefer UTC timestamps if available
+  // Prefer UTC timestamps if available - JavaScript automatically converts to local time
   if (session.session_start && session.session_end) {
     return {
-      displayTime: utcToLocalTime(session.session_start),
+      displayTime: new Date(session.session_start).toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      }),
       durationMinutes: calculateDurationMinutes(session.session_start, session.session_end)
     };
   }

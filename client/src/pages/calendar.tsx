@@ -254,13 +254,27 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                         <span className="flex items-center gap-1">
                           🕐 {(() => {
-                            const { displayTime, durationMinutes } = getSessionDisplayInfo(session);
+                            const displayTime = session.session_start
+                              ? new Date(session.session_start).toLocaleTimeString('en-US', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit',
+                                  hour12: false 
+                                })
+                              : session.time?.substring(0, 5) || '';
+                            
+                            const durationMinutes = session.session_start && session.session_end
+                              ? Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60))
+                              : session.duration || 0;
+                            
                             return `${displayTime} (${durationMinutes}min)`;
                           })()}
                         </span>
                         <span className="flex items-center gap-1">
                           💰 {(() => {
-                            const { durationMinutes } = getSessionDisplayInfo(session);
+                            const durationMinutes = session.session_start && session.session_end
+                              ? Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60))
+                              : session.duration || 0;
+                            
                             return formatCurrency(session.rate * durationMinutes / 60, tutorCurrency);
                           })()}
                         </span>
@@ -803,10 +817,10 @@ export default function Calendar() {
 
     // Check if we have UTC timestamp columns
     if (session.session_start && session.session_end) {
-      // Convert UTC timestamps to local Date objects for calendar rendering
-      start = utcToLocalDateObject(session.session_start);
-      end = utcToLocalDateObject(session.session_end);
-      console.log('📅 Using UTC timestamps, converted to local time');
+      // JavaScript automatically converts UTC timestamps to local time
+      start = new Date(session.session_start);
+      end = new Date(session.session_end);
+      console.log('📅 Using UTC timestamps, automatically converted to local time');
     } else if (session.date && session.time) {
       // Fallback to legacy date/time fields (already in local time)
       console.log('⚠️ Using legacy date/time fields');
