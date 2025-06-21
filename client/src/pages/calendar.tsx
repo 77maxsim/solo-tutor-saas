@@ -44,6 +44,7 @@ import { usePendingSessions } from "@/hooks/use-pending-sessions";
 import { PendingRequestsModal } from "@/components/modals/pending-requests-modal";
 import { formatUtcToTutorTimezone } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import { getSessionDisplayInfo } from "@/lib/sessionDisplay"; // Utility to format session display information
 import { DateTime } from "luxon";
 
 interface SessionWithStudent {
