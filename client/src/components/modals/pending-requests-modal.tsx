@@ -269,10 +269,8 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
       queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['student-session-history'] });
       
-      // Force refetch after a short delay to ensure data consistency
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ['calendar-sessions'] });
-      }, 1000);
+      // Force immediate refetch to ensure data consistency
+      queryClient.refetchQueries({ queryKey: ['calendar-sessions'] });
     },
     onError: (error: any) => {
       toast({

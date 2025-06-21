@@ -180,7 +180,7 @@ export default function Calendar() {
       }
     },
     refetchInterval: 30000,
-    staleTime: 5000, // Reduce stale time to ensure fresh data
+    staleTime: 1000, // Very fresh data after repairs
   });
 
   // Get unique students for filter
