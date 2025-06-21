@@ -148,16 +148,25 @@ export default function Calendar() {
 
   // Convert sessions to FullCalendar events
   const events: FullCalendarEvent[] = useMemo(() => {
+    console.log('🔄 Converting sessions to FullCalendar events, tutorTimezone:', tutorTimezone);
+    
     return filteredSessions.map(session => {
       let startISO: string;
       let endISO: string;
 
       if (session.session_start && session.session_end) {
-        // Use UTC timestamps directly - FullCalendar will handle timezone conversion
-        startISO = DateTime.fromISO(session.session_start, { zone: 'utc' }).toISO();
-        endISO = DateTime.fromISO(session.session_end, { zone: 'utc' }).toISO();
+        // Pass pure UTC ISO strings directly to FullCalendar - NO conversion here
+        startISO = session.session_start;
+        endISO = session.session_end;
+        
+        console.log('📅 Session with UTC timestamps:', {
+          student: session.student_name,
+          session_start_utc: session.session_start,
+          session_end_utc: session.session_end,
+          passed_to_fullcalendar: { start: startISO, end: endISO }
+        });
       } else {
-        // Fallback: convert date/time fields to UTC for FullCalendar
+        // Fallback: convert legacy date/time fields to UTC for FullCalendar
         const sessionDate = session.date;
         const sessionTime = session.time;
         const tutorTz = tutorTimezone || 'UTC';
@@ -168,6 +177,13 @@ export default function Calendar() {
         
         startISO = startInTutorTz.toUTC().toISO();
         endISO = endInTutorTz.toUTC().toISO();
+        
+        console.log('📅 Session with legacy date/time:', {
+          student: session.student_name,
+          legacy_date: sessionDate,
+          legacy_time: sessionTime,
+          converted_to_utc: { start: startISO, end: endISO }
+        });
       }
 
       // Determine display name and styling
@@ -524,6 +540,17 @@ export default function Calendar() {
             initialView={view}
             timeZone={tutorTimezone || 'local'}
             events={events}
+            eventDidMount={(info) => {
+              // Debug: log how FullCalendar positions events
+              console.log('🎯 FullCalendar positioned event:', {
+                title: info.event.title,
+                utc_start: info.event.start?.toISOString(),
+                utc_end: info.event.end?.toISOString(),
+                calendar_timezone: tutorTimezone || 'local',
+                displayed_start: info.event.start?.toLocaleString(),
+                displayed_end: info.event.end?.toLocaleString()
+              });
+            }}
             editable={true}
             selectable={true}
             selectMirror={true}

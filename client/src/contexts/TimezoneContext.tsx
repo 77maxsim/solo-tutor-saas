@@ -36,7 +36,9 @@ export function TimezoneProvider({ children }: { children: React.ReactNode }) {
         // Fallback to UTC if no timezone found
         setTutorTimezone('UTC');
       } else {
-        setTutorTimezone(data?.timezone || 'UTC');
+        const timezone = data?.timezone || 'UTC';
+        console.log('🌍 Fetched tutor timezone from database:', timezone);
+        setTutorTimezone(timezone);
       }
     } catch (error) {
       console.error('Error in fetchTutorTimezone:', error);
