@@ -1,0 +1,25 @@
+Booking slot: 
+Object {slotId: "646a1c68-6a9c-4b04-a3a5-94e5cff420a8", utc: "2025-06-28T07:00:00+00:00", studentTZ: "Europe/Kiev", localTime: "2025-06-28T10:00:00+03:00", displayTime: "10:00 AM - 11:00 AM", …}
+Available slots filtered: 
+Object {totalSlots: 1, availableSlots: 1, studentTimezone: "Europe/Kyiv", sampleConversion: {…}}
+Booking slot: 
+Object {slotId: "646a1c68-6a9c-4b04-a3a5-94e5cff420a8", utc: "2025-06-28T07:00:00+00:00", studentTZ: "Europe/Kyiv", localTime: "2025-06-28T10:00:00+03:00", displayTime: "10:00 AM - 11:00 AM", …}
+Student timezone updated: 
+Object {newTimezone: "Europe/Kyiv", displayName: "Kyiv (EET/EEST)", browserDetected: "Europe/Kiev"}
+Available slots filtered: 
+Object {totalSlots: 1, availableSlots: 1, studentTimezone: "Europe/Kyiv", sampleConversion: {…}}
+Booking slot: 
+Object {slotId: "646a1c68-6a9c-4b04-a3a5-94e5cff420a8", utc: "2025-06-28T07:00:00+00:00", studentTZ: "Europe/Kyiv", localTime: "2025-06-28T10:00:00+03:00", displayTime: "10:00 AM - 11:00 AM", …}
+Time picker conversion: 
+Object {originalTime: "10:00", slotDate: "2025-06-28", utcDateTime: "2025-06-28T10:00:00Z", localDateTime: "2025-06-28T13:00:00+03:00", displayTime: "1:00 PM", …}
+Time picker conversion: 
+Object {originalTime: "10:30", slotDate: "2025-06-28", utcDateTime: "2025-06-28T10:30:00Z", localDateTime: "2025-06-28T13:30:00+03:00", displayTime: "1:30 PM", …}
+Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+Available slots filtered: 
+Object {totalSlots: 1, availableSlots: 1, studentTimezone: "Europe/Kyiv", sampleConversion: {…}}
+Booking slot: 
+Object {slotId: "646a1c68-6a9c-4b04-a3a5-94e5cff420a8", utc: "2025-06-28T07:00:00+00:00", studentTZ: "Europe/Kyiv", localTime: "2025-06-28T10:00:00+03:00", displayTime: "10:00 AM - 11:00 AM", …}
+Time picker conversion: 
+Object {originalTime: "10:00", slotDate: "2025-06-28", utcDateTime: "2025-06-28T10:00:00Z", localDateTime: "2025-06-28T13:00:00+03:00", displayTime: "1:00 PM", …}
+Time picker conversion: 
+Object {originalTime: "10:30", slotDate: "2025-06-28", utcDateTime: "2025-06-28T10:30:00Z", localDateTime: "2025-06-28T13:30:00+03:00", displayTime: "1:30 PM", …}
