@@ -386,6 +386,20 @@ export default function Calendar() {
       }))
     });
     
+    // Final check: Log events being passed to FullCalendar
+    console.log('📅 Final events array for FullCalendar:', {
+      totalEvents: validEvents.length,
+      june23Events: validEvents.filter(e => e.start.toISOString().includes('2025-06-23')).length,
+      sampleJune23: validEvents
+        .filter(e => e.start.toISOString().includes('2025-06-23'))
+        .map(e => ({
+          title: e.title,
+          start: e.start,
+          start_iso: e.start.toISOString(),
+          start_local: e.start.toLocaleString('en-US', { timeZone: 'Europe/Kyiv' })
+        }))
+    });
+    
     return validEvents;
   }, [filteredSessions, tutorTimezone]);
 
@@ -764,7 +778,7 @@ export default function Calendar() {
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, luxonPlugin]}
             initialView={view}
-            timeZone="UTC"
+            timeZone="local"
             events={events}
             eventDidMount={(info) => {
               const session = info.event.extendedProps;
@@ -778,6 +792,15 @@ export default function Calendar() {
               // Disable resizing for past sessions
               if (session.isPastSession) {
                 info.el.style.cursor = 'default';
+              }
+              
+              // Debug: Log when June 23 events are mounted
+              if (info.event.start && info.event.start.toISOString().includes('2025-06-23')) {
+                console.log('📅 FullCalendar mounted June 23 event:', {
+                  title: info.event.title,
+                  start: info.event.start.toLocaleString(),
+                  element_visible: info.el.offsetHeight > 0
+                });
               }
             }}
             editable={true}
