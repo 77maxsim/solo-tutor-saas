@@ -608,21 +608,12 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
     addStudentMutation.mutate(newStudentName);
   };
 
-  // Show loading state while timezone is being fetched
-  if (isTimezoneLoading) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px] w-[95vw] sm:w-full">
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-              <p className="text-sm text-gray-600">Loading timezone...</p>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  // Debug timezone loading
+  console.log('ScheduleSessionModal - Timezone state:', { 
+    tutorTimezone, 
+    isTimezoneLoading, 
+    open 
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -791,7 +782,12 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
                       timeFormat={timeFormat}
                     />
                   </FormControl>
-                  {/* Show timezone validation error */}
+                  {/* Show timezone status */}
+                  {isTimezoneLoading && (
+                    <p className="text-sm text-gray-500">
+                      Loading timezone...
+                    </p>
+                  )}
                   {!tutorTimezone && !isTimezoneLoading && (
                     <p className="text-sm text-red-600">
                       Timezone not loaded. Please refresh and try again.
@@ -1037,14 +1033,12 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
               </Button>
               <Button 
                 type="submit" 
-                disabled={isSubmitting || isTimezoneLoading || !tutorTimezone} 
+                disabled={isSubmitting || !tutorTimezone} 
                 className="flex-1 sm:flex-none"
               >
-                {isTimezoneLoading 
-                  ? "Loading timezone..." 
-                  : isSubmitting 
-                    ? ((editMode || (editSession && editSession.id)) ? "Updating..." : "Scheduling...") 
-                    : ((editMode || (editSession && editSession.id)) ? "Update Session" : "Schedule Session")
+                {isSubmitting 
+                  ? ((editMode || (editSession && editSession.id)) ? "Updating..." : "Scheduling...") 
+                  : ((editMode || (editSession && editSession.id)) ? "Update Session" : "Schedule Session")
                 }
               </Button>
             </DialogFooter>

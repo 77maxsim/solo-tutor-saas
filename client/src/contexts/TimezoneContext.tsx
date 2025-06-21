@@ -27,31 +27,38 @@ export function TimezoneProvider({ children }: { children: React.ReactNode }) {
 
   const fetchTutorTimezone = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      console.log('🔍 Starting timezone fetch...');
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.log('No authenticated user, using default timezone Europe/Kyiv');
+        setTutorTimezone('Europe/Kyiv');
         setIsLoading(false);
         return;
       }
 
+      console.log('🔍 User authenticated, fetching tutor timezone for user_id:', user.id);
+
       const { data, error } = await supabase
         .from('tutors')
-        .select('timezone')
+        .select('timezone, user_id')
         .eq('user_id', user.id)
         .single();
 
+      console.log('🌍 Tutor query result:', { data, error });
+
       if (error) {
         console.error('Error fetching tutor timezone:', error);
-        // Fallback to UTC if no timezone found
-        setTutorTimezone('UTC');
+        // Set a default timezone instead of UTC for this user
+        setTutorTimezone('Europe/Kyiv');
       } else {
-        const timezone = data?.timezone || 'UTC';
-        console.log('🌍 Fetched tutor timezone from database:', timezone);
-        console.log('🌍 Full tutor data:', data);
+        const timezone = data?.timezone || 'Europe/Kyiv';
+        console.log('🌍 Setting tutor timezone:', timezone);
         setTutorTimezone(timezone);
       }
     } catch (error) {
       console.error('Error in fetchTutorTimezone:', error);
-      setTutorTimezone('UTC');
+      setTutorTimezone('Europe/Kyiv');
     } finally {
       setIsLoading(false);
     }
