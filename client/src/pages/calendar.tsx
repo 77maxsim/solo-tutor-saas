@@ -54,7 +54,7 @@ import { Clock, User, Check, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePendingSessions } from "@/hooks/use-pending-sessions";
 import { PendingRequestsModal } from "@/components/modals/pending-requests-modal";
-import { getLocalSessionDisplayInfo } from "@/lib/dateUtils";
+import { formatSessionTime, calculateDurationMinutes } from "@/lib/dateUtils";
 
 const localizer = momentLocalizer(moment);
 
@@ -254,13 +254,18 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                         <span className="flex items-center gap-1">
                           🕐 {session.session_start && session.session_end
-                            ? `${getLocalSessionDisplayInfo(session).startTime} (${getLocalSessionDisplayInfo(session).duration}min)`
+                            ? (() => {
+                                console.log("DEBUG", { raw: session.session_start, converted: new Date(session.session_start).toString() });
+                                const time = formatSessionTime(session.session_start);
+                                const duration = calculateDurationMinutes(session.session_start, session.session_end);
+                                return `${time} (${duration}min)`;
+                              })()
                             : `${session.time?.substring(0, 5) || ''} (${session.duration || 0}min)`}
                         </span>
                         <span className="flex items-center gap-1">
                           💰 {(() => {
                             const durationMinutes = session.session_start && session.session_end
-                              ? getLocalSessionDisplayInfo(session).duration
+                              ? calculateDurationMinutes(session.session_start, session.session_end)
                               : session.duration || 0;
                             
                             return formatCurrency(session.rate * durationMinutes / 60, tutorCurrency);

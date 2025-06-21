@@ -21,7 +21,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { triggerEarningsConfetti } from "@/lib/confetti";
-import { getLocalSessionDisplayInfo } from "@/lib/dateUtils";
+import { formatSessionTime, calculateDurationMinutes } from "@/lib/dateUtils";
 
 interface UnpaidSession {
   id: string;
@@ -407,7 +407,12 @@ export default function UnpaidSessions() {
                                   <span className="flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
                                     {session.session_start && session.session_end 
-                                      ? `${getLocalSessionDisplayInfo(session).startTime} (${getLocalSessionDisplayInfo(session).duration} min)`
+                                      ? (() => {
+                                          console.log("DEBUG", { raw: session.session_start, converted: new Date(session.session_start).toString() });
+                                          const time = formatSessionTime(session.session_start);
+                                          const duration = calculateDurationMinutes(session.session_start, session.session_end);
+                                          return `${time} (${duration} min)`;
+                                        })()
                                       : `${session.time?.substring(0, 5) || ''} (${session.duration || 0} min)`}
                                   </span>
                                   <span className="font-medium text-orange-600">

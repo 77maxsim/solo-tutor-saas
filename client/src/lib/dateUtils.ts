@@ -1,25 +1,26 @@
 // Date and timezone utilities for consistent timestamp handling
 
-/**
- * Standardized function to get local session display information
- * @param session - Session object with UTC timestamps
- * @returns Object with formatted local time display strings
- */
-export function getLocalSessionDisplayInfo(session: {
-  session_start: string;
-  session_end: string;
-}) {
-  const start = new Date(session.session_start);
-  const end = new Date(session.session_end);
-  const duration = Math.round((end.getTime() - start.getTime()) / 60000);
-  
-  return {
-    startTime: start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    endTime: end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    date: start.toLocaleDateString(),
-    duration,
-    display: `${start.toLocaleDateString()} at ${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${duration} min)`
-  };
+export function formatSessionTime(timestamp: string | Date): string {
+  const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+export function formatSessionDateTime(timestamp: string | Date): string {
+  const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
+  return date.toLocaleString([], {
+    weekday: 'short',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+export function calculateDurationMinutes(startTimestamp: string, endTimestamp: string): number {
+  const start = new Date(startTimestamp);
+  const end = new Date(endTimestamp);
+  return Math.round((end.getTime() - start.getTime()) / 60000);
 }
 
 /**

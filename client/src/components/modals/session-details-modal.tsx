@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, DollarSign, Edit, Trash2 } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
-import { getLocalSessionDisplayInfo } from "@/lib/dateUtils";
+import { formatSessionTime, calculateDurationMinutes } from "@/lib/dateUtils";
 
 interface SessionDetails {
   id: string;
@@ -152,8 +152,8 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span>
-                {session.session_start && session.session_end
-                  ? getLocalSessionDisplayInfo(session).date
+                {session.session_start 
+                  ? new Date(session.session_start).toLocaleDateString()
                   : session.date}
               </span>
             </div>
@@ -162,7 +162,13 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span>
                 {session.session_start && session.session_end
-                  ? `${getLocalSessionDisplayInfo(session).startTime} - ${getLocalSessionDisplayInfo(session).endTime} (${getLocalSessionDisplayInfo(session).duration} minutes)`
+                  ? (() => {
+                      console.log("DEBUG", { raw: session.session_start, converted: new Date(session.session_start).toString() });
+                      const startTime = formatSessionTime(session.session_start);
+                      const endTime = formatSessionTime(session.session_end);
+                      const duration = calculateDurationMinutes(session.session_start, session.session_end);
+                      return `${startTime} - ${endTime} (${duration} minutes)`;
+                    })()
                   : `${session.time} (${session.duration} minutes)`}
               </span>
             </div>

@@ -16,7 +16,7 @@ import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
-import { getLocalSessionDisplayInfo } from "@/lib/dateUtils";
+import { formatSessionTime, calculateDurationMinutes } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -451,9 +451,15 @@ export default function UpcomingSessions() {
                                 <div className="flex items-center gap-4 text-sm text-gray-600">
                                   <span className="flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
-                                    {session.time}
+                                    {session.session_start && session.session_end 
+                                      ? (() => {
+                                          console.log("DEBUG", { raw: session.session_start, converted: new Date(session.session_start).toString() });
+                                          const time = formatSessionTime(session.session_start);
+                                          const duration = calculateDurationMinutes(session.session_start, session.session_end);
+                                          return `${time} (${duration} min)`;
+                                        })()
+                                      : `${session.time?.substring(0, 5) || ''} (${session.duration || 0} min)`}
                                   </span>
-                                  <span>{session.duration} minutes</span>
                                   <span className="font-medium text-green-600">
                                     {formatCurrency(calculatedPrice, tutorCurrency)}
                                   </span>

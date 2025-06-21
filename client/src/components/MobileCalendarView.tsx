@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { formatDate, formatTime } from '@/lib/utils';
-import { getLocalSessionDisplayInfo } from '@/lib/dateUtils';
+import { formatSessionTime } from '@/lib/dateUtils';
 
 interface SessionWithStudent {
   id: string;
@@ -144,8 +144,9 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
                 const sessionAtTime = daySessions.find(session => {
                   let sessionTimeString: string;
                   
-                  if (session.session_start && session.session_end) {
-                    sessionTimeString = getLocalSessionDisplayInfo(session).startTime;
+                  if (session.session_start) {
+                    console.log("DEBUG", { raw: session.session_start, converted: new Date(session.session_start).toString() });
+                    sessionTimeString = formatSessionTime(session.session_start);
                   } else if (session.time) {
                     sessionTimeString = session.time.substring(0, 5);
                   } else {
