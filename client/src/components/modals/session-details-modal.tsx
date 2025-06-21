@@ -16,6 +16,7 @@ import { Calendar, Clock, User, DollarSign, Edit, Trash2 } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import { getSessionDisplayInfo } from "@/lib/sessionDisplay";
 
 interface SessionDetails {
   id: string;
@@ -130,7 +131,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
 
   if (!session) return null;
 
-  const { displayTime, durationMinutes } = getSessionDisplayInfo(session);
+  const { displayTime, durationMinutes } = getSessionDisplayInfo(session, tutorTimezone || undefined);
   const earnings = (durationMinutes / 60) * session.rate;
 
   return (
