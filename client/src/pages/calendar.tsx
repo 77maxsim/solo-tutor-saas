@@ -155,7 +155,9 @@ export default function Calendar() {
 
   // Convert sessions to FullCalendar events
   const events: FullCalendarEvent[] = useMemo(() => {
-    console.log('🔄 Converting sessions to FullCalendar events, tutorTimezone:', tutorTimezone);
+    console.log('🔄 Converting sessions to FullCalendar events');
+    console.log('🌍 Current tutorTimezone value:', tutorTimezone);
+    console.log('🌍 Timezone loading state:', isTimezoneLoading);
     
     return filteredSessions.map(session => {
       // Only process sessions with UTC timestamps - remove fallback logic
@@ -166,17 +168,19 @@ export default function Calendar() {
 
       // Convert UTC timestamps to tutor timezone for FullCalendar display
       const tutorTz = tutorTimezone || 'UTC';
-      const startISO = dayjs(session.session_start).tz(tutorTz).toISOString();
-      const endISO = dayjs(session.session_end).tz(tutorTz).toISOString();
+      const startISO = dayjs.utc(session.session_start).tz(tutorTz).toISOString();
+      const endISO = dayjs.utc(session.session_end).tz(tutorTz).toISOString();
       
-      console.log('📅 Session converted to tutor timezone for FullCalendar:', {
+      console.log("Session UTC:", session.session_start);
+      console.log("Converted (Kyiv):", startISO);
+      console.log('📅 Session timezone conversion for FullCalendar:', {
         student: session.student_name,
-        utc_start: session.session_start,
-        utc_end: session.session_end,
+        original_utc_start: session.session_start,
+        original_utc_end: session.session_end,
         tutor_timezone: tutorTz,
-        converted_start: startISO,
-        converted_end: endISO,
-        display_time: dayjs(session.session_start).tz(tutorTz).format('HH:mm')
+        converted_start_iso: startISO,
+        converted_end_iso: endISO,
+        display_time_in_tz: dayjs.utc(session.session_start).tz(tutorTz).format('HH:mm')
       });
 
       // Determine display name and styling
@@ -535,16 +539,16 @@ export default function Calendar() {
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, luxonPlugin]}
             initialView={view}
-            timeZone="local"
+            timeZone="UTC"
             events={events}
             eventDidMount={(info) => {
               // Debug: verify FullCalendar positioning with converted timestamps
               console.log('🎯 FullCalendar Event Positioned:', {
                 title: info.event.title,
-                calendar_timezone_setting: 'local',
-                converted_start: info.event.start?.toISOString(),
-                converted_end: info.event.end?.toISOString(),
-                visual_time_displayed: info.event.start ? 
+                calendar_timezone_setting: 'UTC',
+                received_start_iso: info.event.start?.toISOString(),
+                received_end_iso: info.event.end?.toISOString(),
+                visual_time_on_calendar: info.event.start ? 
                   dayjs(info.event.start).format('HH:mm') : 'N/A'
               });
             }}

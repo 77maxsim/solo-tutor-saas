@@ -38,6 +38,7 @@ export function TimezoneProvider({ children }: { children: React.ReactNode }) {
       } else {
         const timezone = data?.timezone || 'UTC';
         console.log('🌍 Fetched tutor timezone from database:', timezone);
+        console.log('🌍 Full tutor data:', data);
         setTutorTimezone(timezone);
       }
     } catch (error) {
