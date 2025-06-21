@@ -105,7 +105,7 @@ export async function getOptimizedSessions(tutorId: string) {
       const studentData = studentDataMap.get(session.student_id);
       return {
         ...session,
-        student_name: studentData?.name || 'Unknown Student',
+        student_name: studentData?.name || session.unassigned_name || 'Unknown Student',
         avatarUrl: studentData?.avatar_url
       };
     });
@@ -168,7 +168,7 @@ export async function getStandardSessions(tutorId: string) {
     // Transform the data to include student_name and avatarUrl
     const sessionsWithNames = data?.map((session: any) => ({
       ...session,
-      student_name: session.students?.name || 'Unknown Student',
+      student_name: session.students?.name || session.unassigned_name || 'Unknown Student',
       avatarUrl: session.students?.avatar_url
     })) || [];
 

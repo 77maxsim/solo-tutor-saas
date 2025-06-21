@@ -1,9 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { supabase } from "@/lib/supabaseClient";
+import { useToast } from "@/hooks/use-toast";
 
 export function usePendingSessions() {
-  return useQuery({
+  const { toast } = useToast();
+  const previousCountRef = useRef<number>(0);
+
+  const query = useQuery({
     queryKey: ['pending-sessions-count'],
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
@@ -30,4 +35,23 @@ export function usePendingSessions() {
     refetchInterval: 30000, // Refetch every 30 seconds
     staleTime: 10000, // Consider data stale after 10 seconds
   });
+
+  // Show toast notification when new pending requests arrive
+  useEffect(() => {
+    const currentCount = query.data || 0;
+    const previousCount = previousCountRef.current;
+
+    if (currentCount > previousCount && previousCount > 0) {
+      const newRequestsCount = currentCount - previousCount;
+      toast({
+        title: "New Booking Request",
+        description: `You have ${newRequestsCount} new pending booking request${newRequestsCount > 1 ? 's' : ''}`,
+        duration: 5000,
+      });
+    }
+
+    previousCountRef.current = currentCount;
+  }, [query.data, toast]);
+
+  return query;
 }

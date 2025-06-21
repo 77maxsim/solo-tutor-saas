@@ -229,13 +229,13 @@ export default function Calendar() {
       });
 
       // Determine display name and styling
-      let title = session.student_name || session.unassigned_name || 'Unassigned Session';
+      let title = session.student_name || session.unassigned_name || 'Unknown Student';
       let backgroundColor = '#3b82f6'; // Default blue
       let textColor = '#ffffff';
       
       if (session.status === 'pending') {
         backgroundColor = '#f59e0b'; // Amber for pending
-        title = `⏳ ${title}`;
+        title = `⏳ ${session.unassigned_name || 'Pending Request'}`;
       } else if (!session.paid) {
         backgroundColor = '#ef4444'; // Red for unpaid
         title = `💰 ${title}`;

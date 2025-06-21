@@ -24,6 +24,8 @@ import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
 import { DateTime } from "luxon";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
 interface PendingRequest {
   id: string;
@@ -47,6 +49,9 @@ interface PendingRequestsModalProps {
   onOpenChange: (open: boolean) => void;
   highlightSessionId?: string;
 }
+
+// Configure dayjs
+dayjs.extend(relativeTime);
 
 export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }: PendingRequestsModalProps) {
   const { toast } = useToast();
@@ -409,7 +414,7 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
                         )}
 
                         <div className="text-xs text-muted-foreground">
-                          Requested {moment(request.created_at).fromNow()}
+                          Requested {dayjs(request.created_at).fromNow()}
                         </div>
                       </div>
 
