@@ -1,0 +1,31 @@
+🔧 Optimized query results: 
+Object {totalSessions: 214, paidSessions: 36, unpaidSessions: 178, pendingSessions: 0, confirmedSessions: 214, …}
+📊 Optimized query returned: 214 sessions
+🔍 Fetching calendar sessions for tutor: 7bf25f7b-f16e-4d75-9847-087276da4e0b
+🔧 Using optimized query pattern for large dataset, tutor: 7bf25f7b-f16e-4d75-9847-087276da4e0b
+Error checking session count: 
+Object {message: ""}
+
+at t.value (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+✅ Optimized query raw data: 
+Object {totalRows: 214, firstRow: {…}}
+📊 Query Performance [optimized]: 
+Object {tutorId: "7bf25f7b...", queryTime: "250ms", sessionCount: 214, performanceRating: "Good"}
+🔧 Optimized query results: 
+Object {totalSessions: 214, paidSessions: 36, unpaidSessions: 178, pendingSessions: 0, confirmedSessions: 214, …}
+📊 Optimized query returned: 214 sessions
+🔍 Fetching calendar sessions for tutor: 7bf25f7b-f16e-4d75-9847-087276da4e0b
+🔧 Using optimized query pattern for large dataset, tutor: 7bf25f7b-f16e-4d75-9847-087276da4e0b
+Error checking session count: 
+Object {message: ""}
+
+✅ Optimized query raw data: 
+Object {totalRows: 214, firstRow: {…}}
+📊 Query Performance [optimized]: 
+Object {tutorId: "7bf25f7b...", queryTime: "216ms", sessionCount: 214, performanceRating: "Good"}
+🔧 Optimized query results: 
+Object {totalSessions: 214, paidSessions: 36, unpaidSessions: 178, pendingSessions: 0, confirmedSessions: 214, …}
+📊 Optimized query returned: 214 sessions

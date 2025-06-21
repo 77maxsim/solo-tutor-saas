@@ -186,7 +186,7 @@ export default function Calendar() {
   // Get unique students for filter
   const uniqueStudents = useMemo(() => {
     const students = sessions
-      .filter(session => session.student_name)
+      .filter(session => session.student_name && session.student_id)
       .reduce((acc: Array<{id: string, name: string}>, session) => {
         if (!acc.find(s => s.id === session.student_id)) {
           acc.push({
@@ -197,26 +197,39 @@ export default function Calendar() {
         return acc;
       }, []);
     
+    console.log('📊 Unique students found:', students.length, students.map(s => s.name));
     return students.sort((a, b) => a.name.localeCompare(b.name));
   }, [sessions]);
 
   // Filter sessions based on selected student (include unassigned sessions)
   const filteredSessions = useMemo(() => {
-    if (selectedStudent === 'all') return sessions;
-    return sessions.filter(session => {
+    console.log('🔍 Filtering sessions - selected student:', selectedStudent);
+    console.log('🔍 Raw sessions count:', sessions.length);
+    
+    if (selectedStudent === 'all') {
+      console.log('🔍 Returning all sessions');
+      return sessions;
+    }
+    
+    const filtered = sessions.filter(session => {
       // Include sessions assigned to selected student
       if (session.student_id === selectedStudent) return true;
       // Also include unassigned sessions when 'all' is selected
       if (selectedStudent === 'all' && !session.student_id) return true;
       return false;
     });
+    
+    console.log('🔍 Filtered sessions count:', filtered.length);
+    return filtered;
   }, [sessions, selectedStudent]);
 
   // Convert sessions to FullCalendar events
   const events: FullCalendarEvent[] = useMemo(() => {
     console.log('🔄 Converting sessions to FullCalendar events');
     console.log('🌍 Current tutorTimezone value:', tutorTimezone);
+    console.log('📊 Total raw sessions:', sessions.length);
     console.log('📊 Total filtered sessions:', filteredSessions.length);
+    console.log('📊 Selected student filter:', selectedStudent);
     console.log('📊 Sessions data:', filteredSessions.map(s => ({
       id: s.id?.substring(0, 8) + '...',
       student_name: s.student_name,
@@ -265,23 +278,27 @@ export default function Calendar() {
         return;
       }
 
-      // Convert UTC timestamps to tutor timezone for FullCalendar display
-      const tutorTz = tutorTimezone || 'UTC';
-      const startISO = dayjs.utc(session.session_start).tz(tutorTz).toISOString();
-      const endISO = dayjs.utc(session.session_end).tz(tutorTz).toISOString();
+      // Convert UTC timestamps to local time for FullCalendar display
+      // FullCalendar expects ISO strings in local time for proper display
+      const tutorTz = tutorTimezone || 'Europe/Kyiv';
+      const startLocal = dayjs.utc(session.session_start).tz(tutorTz);
+      const endLocal = dayjs.utc(session.session_end).tz(tutorTz);
       
-      // Debug timezone conversion for this specific session
-      if (session.student_name === 'David' || session.unassigned_name?.includes('David')) {
-        console.log('🎯 DAVID SESSION CONVERSION:', {
+      // Create ISO strings without timezone offset for FullCalendar
+      const startISO = startLocal.format('YYYY-MM-DDTHH:mm:ss');
+      const endISO = endLocal.format('YYYY-MM-DDTHH:mm:ss');
+      
+      // Debug timezone conversion for David sessions specifically
+      if (session.student_name === 'David') {
+        console.log('🎯 DAVID SESSION FOUND AND CONVERTED:', {
           id: session.id?.substring(0, 8) + '...',
           student_name: session.student_name,
-          unassigned_name: session.unassigned_name,
           original_utc_start: session.session_start,
           original_utc_end: session.session_end,
           tutor_timezone: tutorTz,
           converted_start_iso: startISO,
           converted_end_iso: endISO,
-          display_time_in_tz: dayjs.utc(session.session_start).tz(tutorTz).format('HH:mm'),
+          local_display_time: startLocal.format('MMM DD, YYYY HH:mm'),
           status: session.status,
           student_id: session.student_id
         });
@@ -326,13 +343,18 @@ export default function Calendar() {
       
       validEvents.push(event);
       
-      console.log('✅ Created calendar event:', {
-        id: session.id?.substring(0, 8) + '...',
-        title,
-        start: startISO,
-        student_name: session.student_name,
-        status: session.status
-      });
+      // Log David events specifically
+      if (session.student_name === 'David') {
+        console.log('🎯 DAVID CALENDAR EVENT CREATED:', {
+          id: session.id?.substring(0, 8) + '...',
+          title,
+          start: startISO,
+          end: endISO,
+          student_name: session.student_name,
+          status: session.status,
+          backgroundColor
+        });
+      }
     });
     
     console.log('📊 Calendar event summary:', {
