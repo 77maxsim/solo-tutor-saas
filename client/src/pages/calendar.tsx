@@ -54,6 +54,7 @@ import { Clock, User, Check, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePendingSessions } from "@/hooks/use-pending-sessions";
 import { PendingRequestsModal } from "@/components/modals/pending-requests-modal";
+import { getLocalSessionDisplayInfo } from "@/lib/dateUtils";
 
 const localizer = momentLocalizer(moment);
 
@@ -252,26 +253,14 @@ const AgendaView = ({ sessions, onSelectSession, tutorCurrency }: AgendaViewProp
                       {/* Time and Earnings */}
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                         <span className="flex items-center gap-1">
-                          🕐 {(() => {
-                            const displayTime = session.session_start
-                              ? new Date(session.session_start).toLocaleTimeString('en-US', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit',
-                                  hour12: false 
-                                })
-                              : session.time?.substring(0, 5) || '';
-                            
-                            const durationMinutes = session.session_start && session.session_end
-                              ? Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60))
-                              : session.duration || 0;
-                            
-                            return `${displayTime} (${durationMinutes}min)`;
-                          })()}
+                          🕐 {session.session_start && session.session_end
+                            ? `${getLocalSessionDisplayInfo(session).startTime} (${getLocalSessionDisplayInfo(session).duration}min)`
+                            : `${session.time?.substring(0, 5) || ''} (${session.duration || 0}min)`}
                         </span>
                         <span className="flex items-center gap-1">
                           💰 {(() => {
                             const durationMinutes = session.session_start && session.session_end
-                              ? Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60))
+                              ? getLocalSessionDisplayInfo(session).duration
                               : session.duration || 0;
                             
                             return formatCurrency(session.rate * durationMinutes / 60, tutorCurrency);

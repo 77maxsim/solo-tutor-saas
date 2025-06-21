@@ -1,61 +1,25 @@
 // Date and timezone utilities for consistent timestamp handling
 
 /**
- * Converts a UTC timestamp to local time string
- * @param utcTimestamp - UTC timestamp string from database (automatically converted to local time by JS)
- * @param options - Intl.DateTimeFormatOptions for formatting
- * @returns Formatted local time string
+ * Standardized function to get local session display information
+ * @param session - Session object with UTC timestamps
+ * @returns Object with formatted local time display strings
  */
-export function utcToLocalTime(utcTimestamp: string, options: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' }): string {
-  if (!utcTimestamp) return '';
+export function getLocalSessionDisplayInfo(session: {
+  session_start: string;
+  session_end: string;
+}) {
+  const start = new Date(session.session_start);
+  const end = new Date(session.session_end);
+  const duration = Math.round((end.getTime() - start.getTime()) / 60000);
   
-  try {
-    // JavaScript automatically converts UTC timestamps to local time
-    const localDate = new Date(utcTimestamp);
-    
-    return localDate.toLocaleTimeString('en-US', {
-      hour12: false,
-      ...options
-    });
-  } catch (error) {
-    console.error('Error converting timestamp to local time:', error);
-    return '';
-  }
-}
-
-/**
- * Converts a UTC timestamp to local date string
- * @param utcTimestamp - UTC timestamp string from database (automatically converted to local time by JS)
- * @param options - Intl.DateTimeFormatOptions for formatting
- * @returns Formatted local date string
- */
-export function utcToLocalDate(utcTimestamp: string, options: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' }): string {
-  if (!utcTimestamp) return '';
-  
-  try {
-    const localDate = new Date(utcTimestamp);
-    return localDate.toLocaleDateString('en-US', options);
-  } catch (error) {
-    console.error('Error converting timestamp to local date:', error);
-    return '';
-  }
-}
-
-/**
- * Converts a UTC timestamp to a local Date object for calendar use
- * @param utcTimestamp - UTC timestamp string from database (automatically converted to local time by JS)
- * @returns Date object in local timezone
- */
-export function utcToLocalDateObject(utcTimestamp: string): Date {
-  if (!utcTimestamp) return new Date();
-  
-  try {
-    // JavaScript Date constructor automatically handles the timezone conversion
-    return new Date(utcTimestamp);
-  } catch (error) {
-    console.error('Error converting timestamp to Date object:', error);
-    return new Date();
-  }
+  return {
+    startTime: start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    endTime: end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    date: start.toLocaleDateString(),
+    duration,
+    display: `${start.toLocaleDateString()} at ${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${duration} min)`
+  };
 }
 
 /**

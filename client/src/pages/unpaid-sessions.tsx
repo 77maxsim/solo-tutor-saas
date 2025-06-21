@@ -21,6 +21,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { triggerEarningsConfetti } from "@/lib/confetti";
+import { getLocalSessionDisplayInfo } from "@/lib/dateUtils";
 
 interface UnpaidSession {
   id: string;
@@ -405,9 +406,10 @@ export default function UnpaidSessions() {
                                 <div className="flex items-center gap-4 text-sm text-gray-600">
                                   <span className="flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
-                                    {session.time}
+                                    {session.session_start && session.session_end 
+                                      ? `${getLocalSessionDisplayInfo(session).startTime} (${getLocalSessionDisplayInfo(session).duration} min)`
+                                      : `${session.time?.substring(0, 5) || ''} (${session.duration || 0} min)`}
                                   </span>
-                                  <span>{session.duration} minutes</span>
                                   <span className="font-medium text-orange-600">
                                     {formatCurrency(calculatedPrice, tutorCurrency)}
                                   </span>

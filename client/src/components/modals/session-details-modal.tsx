@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, DollarSign, Edit, Trash2 } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
+import { getLocalSessionDisplayInfo } from "@/lib/dateUtils";
 
 interface SessionDetails {
   id: string;
@@ -151,8 +152,8 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span>
-                {session.session_start 
-                  ? new Date(session.session_start).toLocaleDateString()
+                {session.session_start && session.session_end
+                  ? getLocalSessionDisplayInfo(session).date
                   : session.date}
               </span>
             </div>
@@ -160,24 +161,9 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
             <div className="flex items-center gap-2 text-sm">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span>
-                {(() => {
-                  if (session.session_start && session.session_end) {
-                    const startTime = new Date(session.session_start).toLocaleTimeString('en-US', { 
-                      hour: 'numeric', 
-                      minute: '2-digit', 
-                      hour12: true 
-                    });
-                    const endTime = new Date(session.session_end).toLocaleTimeString('en-US', { 
-                      hour: 'numeric', 
-                      minute: '2-digit', 
-                      hour12: true 
-                    });
-                    const duration = Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60));
-                    return `${startTime} - ${endTime} (${duration} minutes)`;
-                  } else {
-                    return `${session.time} (${session.duration} minutes)`;
-                  }
-                })()}
+                {session.session_start && session.session_end
+                  ? `${getLocalSessionDisplayInfo(session).startTime} - ${getLocalSessionDisplayInfo(session).endTime} (${getLocalSessionDisplayInfo(session).duration} minutes)`
+                  : `${session.time} (${session.duration} minutes)`}
               </span>
             </div>
             

@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
 import { X, Coins, Repeat } from "lucide-react";
-import { getSessionDisplayInfo, formatSessionTimeRange } from "@/lib/dateUtils";
+import { getLocalSessionDisplayInfo } from "@/lib/dateUtils";
 
 interface Session {
   id: string;
@@ -303,25 +303,9 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground dark:text-gray-400">
-                    {(() => {
-                      const displayDate = session.session_start 
-                        ? new Date(session.session_start).toLocaleDateString() 
-                        : session.date;
-                      
-                      const displayTime = session.session_start
-                        ? new Date(session.session_start).toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            hour12: false 
-                          })
-                        : session.time?.substring(0, 5) || '';
-                      
-                      const durationMinutes = session.session_start && session.session_end
-                        ? Math.round((new Date(session.session_end).getTime() - new Date(session.session_start).getTime()) / (1000 * 60))
-                        : session.duration || 0;
-                      
-                      return `${displayDate} at ${displayTime} (${durationMinutes} min)`;
-                    })()}
+                    {session.session_start && session.session_end 
+                      ? getLocalSessionDisplayInfo(session).display
+                      : `${session.date} at ${session.time?.substring(0, 5) || ''} (${session.duration || 0} min)`}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
