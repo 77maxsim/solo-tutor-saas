@@ -243,6 +243,11 @@ export default function Calendar() {
         backgroundColor = session.color;
       }
 
+      // Check if session has ended (for fading past sessions)
+      const now = dayjs.utc();
+      const sessionEnd = dayjs.utc(session.session_end);
+      const isPastSession = sessionEnd.isBefore(now);
+
       return {
         id: session.id,
         title,
@@ -251,7 +256,10 @@ export default function Calendar() {
         backgroundColor,
         borderColor: backgroundColor,
         textColor,
-        extendedProps: session
+        extendedProps: { 
+          ...session, 
+          isPastSession // Flag for styling past sessions
+        }
       };
     }).filter(Boolean); // Remove null entries
   }, [filteredSessions, tutorTimezone]);
@@ -268,14 +276,15 @@ export default function Calendar() {
     const session = eventInfo.event.extendedProps;
     const durationMinutes = session.duration || 60;
     const earning = (durationMinutes / 60) * session.rate;
-    console.log('✅ Bug 2 fixed - Calculated earnings:', { durationMinutes, rate: session.rate, earning });
 
     const { displayTime } = getSessionDisplayInfo(session, tutorTimezone || undefined);
     const tooltipContent = `${session.student_name || 'Unassigned'}\n${displayTime}\n${durationMinutes} minutes\n${formatCurrency(earning, tutorCurrency)}`;
-    console.log('✅ Bug 3 fixed - Added hover tooltip');
+
+    // Apply faded styling for past sessions
+    const fadeClass = session.isPastSession ? 'opacity-50 grayscale' : '';
 
     return (
-      <div className="p-1 text-xs" title={tooltipContent}>
+      <div className={`p-1 text-xs ${fadeClass}`} title={tooltipContent}>
         <div className="font-medium truncate">{eventInfo.event.title}</div>
         <div className="text-xs opacity-90">
           {durationMinutes}min • {formatCurrency(earning, tutorCurrency)}
@@ -380,19 +389,35 @@ export default function Calendar() {
     }
   };
 
-  // Handle event resize
+  // Helper function to calculate duration in minutes from start and end times
+  const calculateDurationMinutes = (startTime: Date, endTime: Date): number => {
+    return dayjs(endTime).diff(dayjs(startTime), 'minutes');
+  };
+
+  // Handle event resize (drag-to-resize duration)
   const handleEventResize = async (resizeInfo: any) => {
     const session = resizeInfo.event.extendedProps as SessionWithStudent;
     
-    // Convert to UTC for storage
-    const newEndUTC = dayjs(resizeInfo.event.end).utc().toISOString();
-    const newDuration = dayjs(resizeInfo.event.end).diff(dayjs(resizeInfo.event.start), 'minutes');
+    // Prevent resizing past sessions
+    if (session.isPastSession) {
+      resizeInfo.revert();
+      toast({
+        variant: "destructive",
+        title: "Cannot Resize Past Session",
+        description: "Past sessions cannot be resized."
+      });
+      return;
+    }
     
-    console.log('🔄 Resize - Converting times:', {
+    // Convert new end time to UTC for storage
+    const newEndUTC = dayjs(resizeInfo.event.end).utc().toISOString();
+    const newDuration = calculateDurationMinutes(resizeInfo.event.start, resizeInfo.event.end);
+    
+    console.log('🔧 Resizing session duration:', {
       session_id: session.id,
-      js_end: resizeInfo.event.end,
-      converted_end_utc: newEndUTC,
-      new_duration_minutes: newDuration
+      old_duration: session.duration,
+      new_duration: newDuration,
+      new_end_utc: newEndUTC
     });
 
     try {
@@ -408,14 +433,14 @@ export default function Calendar() {
 
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
       toast({
-        title: "Session Updated",
-        description: "Session duration has been updated successfully."
+        title: "Session Duration Updated",
+        description: `Duration changed to ${newDuration} minutes.`
       });
     } catch (error: any) {
       resizeInfo.revert();
       toast({
         variant: "destructive",
-        title: "Failed to Update Session",
+        title: "Failed to Update Duration",
         description: error.message
       });
     }
@@ -617,17 +642,21 @@ export default function Calendar() {
             timeZone="UTC"
             events={events}
             eventDidMount={(info) => {
-              // Debug: verify FullCalendar positioning with converted timestamps
-              console.log('🎯 FullCalendar Event Positioned:', {
-                title: info.event.title,
-                calendar_timezone_setting: 'UTC',
-                received_start_iso: info.event.start?.toISOString(),
-                received_end_iso: info.event.end?.toISOString(),
-                visual_time_on_calendar: info.event.start ? 
-                  dayjs(info.event.start).format('HH:mm') : 'N/A'
-              });
+              const session = info.event.extendedProps;
+              
+              // Apply faded styling to past sessions
+              if (session.isPastSession) {
+                info.el.style.opacity = '0.5';
+                info.el.style.filter = 'grayscale(50%)';
+              }
+              
+              // Disable resizing for past sessions
+              if (session.isPastSession) {
+                info.el.style.cursor = 'default';
+              }
             }}
             editable={true}
+            eventDurationEditable={true} // Enable vertical resizing
             selectable={true}
             selectMirror={true}
             dayMaxEvents={true}
