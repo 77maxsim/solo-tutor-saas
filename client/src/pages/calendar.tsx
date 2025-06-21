@@ -300,26 +300,30 @@ export default function Calendar() {
         return;
       }
 
-      // CRITICAL: Standardized timezone conversion
-      // All session_start/session_end should be UTC, but verify and convert appropriately
-      
-      // Parse as UTC and convert to tutor timezone exactly once
+      // CRITICAL: Convert UTC to tutor timezone for FullCalendar display
+      // Parse UTC timestamps and create Date objects that represent the correct time in tutor's timezone
       const sessionStartUTC = dayjs.utc(session.session_start);
       const sessionEndUTC = dayjs.utc(session.session_end);
       
-      // Convert to local timezone for FullCalendar
-      const startDate = sessionStartUTC.tz(tutorTz).toDate();
-      const endDate = sessionEndUTC.tz(tutorTz).toDate();
+      // Convert to tutor timezone, then create Date objects that will display correctly in FullCalendar
+      const tutorStartTime = sessionStartUTC.tz(tutorTz);
+      const tutorEndTime = sessionEndUTC.tz(tutorTz);
+      
+      // Create Date objects that represent the time as it should appear in tutor's timezone
+      const startDate = new Date(tutorStartTime.year(), tutorStartTime.month(), tutorStartTime.date(), 
+                                 tutorStartTime.hour(), tutorStartTime.minute(), tutorStartTime.second());
+      const endDate = new Date(tutorEndTime.year(), tutorEndTime.month(), tutorEndTime.date(), 
+                               tutorEndTime.hour(), tutorEndTime.minute(), tutorEndTime.second());
       
       // Debug timezone conversion for verification
       console.debug('🕐 Session timezone conversion:', {
         id: session.id?.substring(0, 8) + '...',
         student_name: session.student_name,
-        original_timestamp: session.session_start,
+        original_utc: session.session_start,
         parsed_as_utc: sessionStartUTC.format('YYYY-MM-DD HH:mm [UTC]'),
-        converted_to_tutor_tz: sessionStartUTC.tz(tutorTz).format(`YYYY-MM-DD HH:mm [${tutorTz}]`),
-        final_js_date: startDate.toISOString(),
-        display_time: startDate.toLocaleString('en-US', { timeZone: tutorTz })
+        converted_to_tutor_tz: tutorStartTime.format(`YYYY-MM-DD HH:mm [${tutorTz}]`),
+        final_date_object: startDate.toString(),
+        expected_display: `${tutorStartTime.hour()}:${tutorStartTime.minute().toString().padStart(2, '0')}`
       });
 
       // Determine display name and styling
