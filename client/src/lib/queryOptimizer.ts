@@ -118,12 +118,23 @@ export async function getOptimizedSessions(tutorId: string) {
       });
     });
 
-    // Add student names and avatars to all sessions
+    // Add student names and avatars to all sessions (including pending ones)
     const sessionsWithNames = (allSessions || []).map((session: any) => {
       const studentData = studentDataMap.get(session.student_id);
+      
+      // Handle pending sessions without assigned students
+      let displayName = 'Unknown Student';
+      if (session.status === 'pending' && !session.student_id) {
+        displayName = session.unassigned_name || 'Pending Request';
+      } else if (studentData?.name) {
+        displayName = studentData.name;
+      } else if (session.unassigned_name) {
+        displayName = session.unassigned_name;
+      }
+      
       return {
         ...session,
-        student_name: studentData?.name || session.unassigned_name || 'Unknown Student',
+        student_name: displayName,
         avatarUrl: studentData?.avatar_url
       };
     });
@@ -134,13 +145,28 @@ export async function getOptimizedSessions(tutorId: string) {
     // Check if archiving is recommended
     datasetMonitor.checkArchivingRecommendation(tutorId);
 
+    // Debug: Check for booking requests specifically
+    const bookingRequests = sessionsWithNames.filter(s => 
+      s.unassigned_name && s.unassigned_name.includes('Booking request from')
+    );
+    
     console.log('🔧 Optimized query results:', {
       totalSessions: sessionsWithNames.length,
       paidSessions: sessionsWithNames.filter(s => s.paid === true).length,
       unpaidSessions: sessionsWithNames.filter(s => s.paid === false).length,
       pendingSessions: sessionsWithNames.filter(s => s.status === 'pending').length,
       confirmedSessions: sessionsWithNames.filter(s => s.status === 'confirmed').length,
+      bookingRequests: bookingRequests.length,
       studentsCount: students?.length || 0,
+      recentBookingRequests: bookingRequests.slice(0, 3).map(s => ({
+        id: s.id?.substring(0, 8) + '...',
+        student_name: s.student_name,
+        unassigned_name: s.unassigned_name,
+        status: s.status,
+        session_start: s.session_start,
+        session_end: s.session_end,
+        has_timestamps: !!(s.session_start && s.session_end)
+      })),
       recentSessions: sessionsWithNames.slice(0, 3).map(s => ({
         id: s.id,
         student_name: s.student_name,
@@ -215,12 +241,24 @@ export async function getStandardSessions(tutorId: string) {
       } : null
     });
 
-    // Transform the data to include student_name and avatarUrl
-    const sessionsWithNames = data?.map((session: any) => ({
-      ...session,
-      student_name: session.students?.name || session.unassigned_name || 'Unknown Student',
-      avatarUrl: session.students?.avatar_url
-    })) || [];
+    // Transform the data to include student_name and avatarUrl (including pending sessions)
+    const sessionsWithNames = data?.map((session: any) => {
+      // Handle pending sessions without assigned students
+      let displayName = 'Unknown Student';
+      if (session.status === 'pending' && !session.student_id) {
+        displayName = session.unassigned_name || 'Pending Request';
+      } else if (session.students?.name) {
+        displayName = session.students.name;
+      } else if (session.unassigned_name) {
+        displayName = session.unassigned_name;
+      }
+      
+      return {
+        ...session,
+        student_name: displayName,
+        avatarUrl: session.students?.avatar_url
+      };
+    }) || [];
 
     console.log('🔍 Standard query results:', {
       totalSessions: sessionsWithNames.length,

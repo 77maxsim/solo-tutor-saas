@@ -271,6 +271,9 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
       
       // Force immediate refetch to ensure data consistency
       queryClient.refetchQueries({ queryKey: ['calendar-sessions'] });
+      queryClient.refetchQueries({ queryKey: ['sessions'] });
+      
+      console.log('🔄 Forced cache refresh after accepting request');
     },
     onError: (error: any) => {
       toast({

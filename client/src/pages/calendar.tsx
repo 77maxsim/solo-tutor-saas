@@ -180,7 +180,7 @@ export default function Calendar() {
       }
     },
     refetchInterval: 30000,
-    staleTime: 1000, // Very fresh data after repairs
+    staleTime: 500, // Very fresh data for pending requests
   });
 
   // Get unique students for filter
@@ -212,13 +212,31 @@ export default function Calendar() {
     console.log('🌍 Current tutorTimezone value:', tutorTimezone);
     console.log('📊 Total filtered sessions:', filteredSessions.length);
     console.log('📊 Sessions data:', filteredSessions.map(s => ({
-      id: s.id,
+      id: s.id?.substring(0, 8) + '...',
       student_name: s.student_name,
       unassigned_name: s.unassigned_name,
       status: s.status,
       session_start: s.session_start,
-      session_end: s.session_end
+      session_end: s.session_end,
+      has_timestamps: !!(s.session_start && s.session_end)
     })));
+    
+    // Debug: Specifically check for booking requests
+    const bookingRequestsInFiltered = filteredSessions.filter(s => 
+      s.unassigned_name && s.unassigned_name.includes('Booking request from')
+    );
+    console.log('📋 Booking requests in filtered sessions:', bookingRequestsInFiltered.length);
+    bookingRequestsInFiltered.forEach(s => {
+      console.log('📋 Booking request details:', {
+        id: s.id?.substring(0, 8) + '...',
+        unassigned_name: s.unassigned_name,
+        status: s.status,
+        session_start: s.session_start,
+        session_end: s.session_end,
+        student_id: s.student_id,
+        has_valid_timestamps: !!(s.session_start && s.session_end)
+      });
+    });
     
     return filteredSessions.map(session => {
       // Only process sessions with UTC timestamps - remove fallback logic
@@ -263,8 +281,11 @@ export default function Calendar() {
       let textColor = '#ffffff';
       
       if (session.status === 'pending') {
-        backgroundColor = '#f59e0b'; // Amber for pending
+        backgroundColor = '#f59e0b'; // Amber for pending requests
         title = `⏳ ${session.unassigned_name || 'Pending Request'}`;
+      } else if (session.status === 'confirmed' && !session.student_id) {
+        backgroundColor = '#10b981'; // Green for unassigned confirmed sessions
+        title = `📝 ${session.unassigned_name || 'Unassigned Session'}`;
       } else if (!session.paid) {
         backgroundColor = '#ef4444'; // Red for unpaid
         title = `💰 ${title}`;
