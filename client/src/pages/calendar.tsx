@@ -301,7 +301,7 @@ export default function Calendar() {
 
       // CRITICAL: Standardized timezone conversion
       // All session_start/session_end should be UTC, but verify and convert appropriately
-      const tutorTz = 'Europe/Kyiv';
+      const tutorTz = tutorTimezone || 'UTC';
       
       // Parse as UTC and convert to tutor timezone exactly once
       const sessionStartUTC = dayjs.utc(session.session_start);
@@ -317,7 +317,7 @@ export default function Calendar() {
         student_name: session.student_name,
         original_timestamp: session.session_start,
         parsed_as_utc: sessionStartUTC.format('YYYY-MM-DD HH:mm [UTC]'),
-        converted_to_kyiv: sessionStartUTC.tz(tutorTz).format('YYYY-MM-DD HH:mm [Europe/Kyiv]'),
+        converted_to_tutor_tz: sessionStartUTC.tz(tutorTz).format(`YYYY-MM-DD HH:mm [${tutorTz}]`),
         final_js_date: startDate.toISOString(),
         display_time: startDate.toLocaleString('en-US', { timeZone: 'Europe/Kyiv' })
       });
@@ -380,7 +380,7 @@ export default function Calendar() {
         .filter(e => e.start.toISOString().includes('2025-06-23'))
         .map(e => ({
           title: e.title,
-          start: e.start.toLocaleString('en-US', { timeZone: 'Europe/Kyiv' })
+          start: e.start.toLocaleString('en-US', { timeZone: tutorTz })
         })),
       skippedReasons: skippedSessions.map(s => ({
         id: s.id?.substring(0, 8) + '...',
@@ -398,7 +398,7 @@ export default function Calendar() {
           title: e.title,
           start: e.start,
           start_iso: e.start.toISOString(),
-          start_local: e.start.toLocaleString('en-US', { timeZone: 'Europe/Kyiv' })
+          start_local: e.start.toLocaleString('en-US', { timeZone: tutorTz })
         }))
     });
     

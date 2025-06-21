@@ -186,7 +186,7 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
       if (fetchError) throw fetchError;
 
       // Convert legacy date/time to UTC timestamps using tutor timezone
-      const tutorTz = tutorTimezone || 'Europe/Kyiv';
+      const tutorTz = tutorTimezone || 'UTC';
       const dateTimeStr = `${pendingRequest.date} ${pendingRequest.time}`;
       
       console.log('🕐 Converting datetime:', {

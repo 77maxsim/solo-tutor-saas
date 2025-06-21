@@ -67,7 +67,7 @@ export function convertSessionToCalendarEvent(
 /**
  * Debug helper to verify timezone conversion
  */
-export function debugSessionConversion(session: any, tutorTimezone: string = 'Europe/Kyiv') {
+export function debugSessionConversion(session: any, tutorTimezone: string = 'UTC') {
   const sessionStartUTC = dayjs.utc(session.session_start);
   
   return {
