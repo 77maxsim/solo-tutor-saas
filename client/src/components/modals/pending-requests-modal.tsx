@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Clock, User, Calendar, Check, X, Loader2, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
-import moment from "moment";
+import { DateTime } from "luxon";
 
 interface PendingRequest {
   id: string;

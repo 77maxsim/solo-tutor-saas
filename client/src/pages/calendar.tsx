@@ -107,6 +107,17 @@ interface FullCalendarEvent {
   extendedProps: SessionWithStudent;
 }
 
+interface FullCalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  backgroundColor?: string;
+  borderColor?: string;
+  textColor?: string;
+  extendedProps: SessionWithStudent;
+}
+
 interface AgendaViewProps {
   sessions: SessionWithStudent[];
   onSelectSession: (session: SessionWithStudent) => void;
@@ -372,6 +383,67 @@ export default function Calendar() {
   // Handle schedule session
   const handleScheduleSession = () => {
     window.dispatchEvent(new CustomEvent('openScheduleModal'));
+  };
+
+  // Custom event content renderer
+  const renderEventContent = (eventInfo: any) => {
+    const session = eventInfo.event.extendedProps;
+    const durationMinutes = session.duration || 60;
+    const earning = session.earning || 0;
+
+    return (
+      <div className="p-1 text-xs">
+        <div className="font-medium truncate">{eventInfo.event.title}</div>
+        <div className="text-xs opacity-90">
+          {durationMinutes}min • {formatCurrency(earning, tutorCurrency || 'USD')}
+        </div>
+      </div>
+    );
+  };
+
+  // View toggle handlers
+  const handleViewChange = (newView: 'week' | 'month' | 'agenda') => {
+    setCalendarView(newView);
+    if (calendarRef.current) {
+      let fullCalendarView = '';
+      switch (newView) {
+        case 'week':
+          fullCalendarView = 'timeGridWeek';
+          break;
+        case 'month':
+          fullCalendarView = 'dayGridMonth';
+          break;
+        case 'agenda':
+          fullCalendarView = 'listWeek';
+          break;
+      }
+      setView(fullCalendarView);
+      calendarRef.current.getApi().changeView(fullCalendarView);
+    }
+  };
+
+  // Toggle full screen
+  const toggleFullScreen = () => {
+    setIsFullScreen(!isFullScreen);
+  };
+
+  // Navigation handlers
+  const handlePrevious = () => {
+    if (calendarRef.current) {
+      calendarRef.current.getApi().prev();
+    }
+  };
+
+  const handleNext = () => {
+    if (calendarRef.current) {
+      calendarRef.current.getApi().next();
+    }
+  };
+
+  const handleToday = () => {
+    if (calendarRef.current) {
+      calendarRef.current.getApi().today();
+    }
   };
 
   // Handle event click to show session details modal

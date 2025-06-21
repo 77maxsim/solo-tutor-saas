@@ -698,8 +698,83 @@
     position: relative;
   }
 
-  /* Show more link styling */
-  .rbc-show-more {
-    @apply text-blue-600 dark:text-blue-400 text-xs font-medium cursor-pointer hover:underline;
+  /* FullCalendar styles */
+  .fc {
+    @apply font-sans;
+  }
+  
+  .fc-theme-standard .fc-scrollgrid {
+    @apply border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden;
+  }
+  
+  .fc-theme-standard th {
+    @apply bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-medium;
+  }
+  
+  .fc-theme-standard td {
+    @apply border-gray-200 dark:border-gray-700;
+  }
+  
+  .fc-day-today {
+    @apply bg-blue-50 dark:bg-blue-900 bg-opacity-30;
+  }
+  
+  .fc-event {
+    @apply rounded-md text-sm font-medium border-none cursor-pointer;
+  }
+  
+  .fc-event:hover {
+    @apply opacity-90 transform scale-105 transition-all duration-150;
+  }
+  
+  .fc-timegrid-slot {
+    @apply border-gray-100 dark:border-gray-700;
+  }
+  
+  .fc-timegrid-axis {
+    @apply bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400;
+  }
+  
+  .fc-col-header-cell {
+    @apply border-gray-200 dark:border-gray-700;
+  }
+  
+  .fc-daygrid-event {
+    @apply mb-1;
+  }
+  
+  .fc-list-event-title {
+    @apply text-gray-900 dark:text-gray-100;
+  }
+  
+  .fc-list-event-time {
+    @apply text-gray-600 dark:text-gray-400;
+  }
+  
+  .fc-list-day-text {
+    @apply text-gray-900 dark:text-gray-100 font-medium;
+  }
+  
+  .fc-scrollgrid-section-header {
+    @apply bg-gray-50 dark:bg-gray-800;
+  }
+  
+  .fc-now-indicator {
+    @apply text-red-500;
+  }
+
+  /* Responsive adjustments for FullCalendar */
+  @media (max-width: 640px) {
+    .fc-event {
+      @apply text-xs;
+    }
+    
+    .fc-col-header-cell {
+      @apply text-xs;
+    }
+    
+    .fc-timegrid-axis {
+      @apply text-xs;
+    }
   }
 }
