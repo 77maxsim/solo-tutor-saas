@@ -186,13 +186,48 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
       if (fetchError) throw fetchError;
 
       // Convert legacy date/time to UTC timestamps using tutor timezone
-      const tutorTz = tutorTimezone || 'UTC';
+      const tutorTz = tutorTimezone || 'Europe/Kyiv';
       const dateTimeStr = `${pendingRequest.date} ${pendingRequest.time}`;
-      const sessionStartUTC = DateTime.fromFormat(dateTimeStr, 'yyyy-MM-dd HH:mm', { zone: tutorTz }).toUTC().toISO();
-      const sessionEndUTC = DateTime.fromFormat(dateTimeStr, 'yyyy-MM-dd HH:mm', { zone: tutorTz })
-        .plus({ minutes: pendingRequest.duration })
-        .toUTC()
-        .toISO();
+      
+      console.log('🕐 Converting datetime:', {
+        date: pendingRequest.date,
+        time: pendingRequest.time,
+        dateTimeStr,
+        tutorTz,
+        duration: pendingRequest.duration
+      });
+      
+      // Try multiple date/time formats in case the format varies
+      let sessionStart;
+      try {
+        // Try format: "2025-06-23 04:30"
+        sessionStart = DateTime.fromFormat(dateTimeStr, 'yyyy-MM-dd HH:mm', { zone: tutorTz });
+        if (!sessionStart.isValid) {
+          // Try format: "2025-06-23 4:30" (single digit hour)
+          sessionStart = DateTime.fromFormat(dateTimeStr, 'yyyy-M-d H:mm', { zone: tutorTz });
+        }
+        if (!sessionStart.isValid) {
+          // Try ISO format
+          sessionStart = DateTime.fromISO(dateTimeStr, { zone: tutorTz });
+        }
+      } catch (e) {
+        console.error('Error parsing datetime:', e);
+        throw new Error(`Invalid date/time format: ${dateTimeStr}`);
+      }
+      
+      if (!sessionStart.isValid) {
+        console.error('Failed to parse datetime:', sessionStart.invalidReason);
+        throw new Error(`Could not parse date/time: ${dateTimeStr}`);
+      }
+      
+      const sessionStartUTC = sessionStart.toUTC().toISO();
+      const sessionEndUTC = sessionStart.plus({ minutes: pendingRequest.duration }).toUTC().toISO();
+      
+      console.log('✅ Converted timestamps:', {
+        sessionStartUTC,
+        sessionEndUTC,
+        localTime: sessionStart.toFormat('yyyy-MM-dd HH:mm')
+      });
 
       console.log('💾 Updating session with UTC timestamps:', {
         requestId,

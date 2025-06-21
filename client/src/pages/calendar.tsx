@@ -223,13 +223,20 @@ export default function Calendar() {
     return filteredSessions.map(session => {
       // Only process sessions with UTC timestamps - remove fallback logic
       if (!session.session_start || !session.session_end) {
-        console.warn('⚠️ Session missing UTC timestamps, skipping:', session.id, {
+        console.warn('⚠️ Session missing UTC timestamps, skipping:', {
+          id: session.id?.substring(0, 8) + '...',
           session_start: session.session_start,
           session_end: session.session_end,
           status: session.status,
           student_name: session.student_name,
-          unassigned_name: session.unassigned_name
+          unassigned_name: session.unassigned_name,
+          legacy_date: session.date,
+          legacy_time: session.time
         });
+        
+        // Count these sessions for debugging
+        if (!window.nullTimestampCount) window.nullTimestampCount = 0;
+        window.nullTimestampCount++;
         return null;
       }
 
