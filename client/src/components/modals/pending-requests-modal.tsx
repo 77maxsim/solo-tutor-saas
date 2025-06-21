@@ -176,12 +176,32 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
   // Accept request mutation
   const acceptMutation = useMutation({
     mutationFn: async ({ requestId, studentId }: { requestId: string; studentId: string }) => {
+      // First get the pending request to extract date/time for UTC conversion
+      const { data: pendingRequest, error: fetchError } = await supabase
+        .from('sessions')
+        .select('date, time, duration')
+        .eq('id', requestId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Convert legacy date/time to UTC timestamps using tutor timezone
+      const tutorTz = tutorTimezone || 'UTC';
+      const dateTimeStr = `${pendingRequest.date} ${pendingRequest.time}`;
+      const sessionStartUTC = DateTime.fromFormat(dateTimeStr, 'yyyy-MM-dd HH:mm', { zone: tutorTz }).toUTC().toISO();
+      const sessionEndUTC = DateTime.fromFormat(dateTimeStr, 'yyyy-MM-dd HH:mm', { zone: tutorTz })
+        .plus({ minutes: pendingRequest.duration })
+        .toUTC()
+        .toISO();
+
       const { error } = await supabase
         .from('sessions')
         .update({
           student_id: studentId,
           unassigned_name: null,
-          status: 'confirmed'
+          status: 'confirmed',
+          session_start: sessionStartUTC,
+          session_end: sessionEndUTC
         })
         .eq('id', requestId);
 
