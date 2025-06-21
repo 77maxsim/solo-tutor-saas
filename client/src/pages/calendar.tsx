@@ -149,21 +149,25 @@ export default function Calendar() {
   // Convert sessions to FullCalendar events
   const events: FullCalendarEvent[] = useMemo(() => {
     return filteredSessions.map(session => {
-      let startDateTime: DateTime;
-      let endDateTime: DateTime;
+      let startISO: string;
+      let endISO: string;
 
       if (session.session_start && session.session_end) {
-        // Use UTC timestamps if available
-        startDateTime = DateTime.fromISO(session.session_start, { zone: 'utc' });
-        endDateTime = DateTime.fromISO(session.session_end, { zone: 'utc' });
+        // Use UTC timestamps directly - FullCalendar will handle timezone conversion
+        startISO = DateTime.fromISO(session.session_start, { zone: 'utc' }).toISO();
+        endISO = DateTime.fromISO(session.session_end, { zone: 'utc' }).toISO();
       } else {
-        // Fallback to date/time fields - assume they're in tutor's timezone
+        // Fallback: convert date/time fields to UTC for FullCalendar
         const sessionDate = session.date;
         const sessionTime = session.time;
-        const timeZone = tutorTimezone || 'UTC';
+        const tutorTz = tutorTimezone || 'UTC';
         
-        startDateTime = DateTime.fromFormat(`${sessionDate} ${sessionTime}`, 'yyyy-MM-dd HH:mm', { zone: timeZone });
-        endDateTime = startDateTime.plus({ minutes: session.duration });
+        // Parse as tutor's timezone, then convert to UTC
+        const startInTutorTz = DateTime.fromFormat(`${sessionDate} ${sessionTime}`, 'yyyy-MM-dd HH:mm', { zone: tutorTz });
+        const endInTutorTz = startInTutorTz.plus({ minutes: session.duration });
+        
+        startISO = startInTutorTz.toUTC().toISO();
+        endISO = endInTutorTz.toUTC().toISO();
       }
 
       // Determine display name and styling
@@ -184,8 +188,8 @@ export default function Calendar() {
       return {
         id: session.id,
         title,
-        start: startDateTime.toISO(),
-        end: endDateTime.toISO(),
+        start: startISO,
+        end: endISO,
         backgroundColor,
         borderColor: backgroundColor,
         textColor,
@@ -230,24 +234,16 @@ export default function Calendar() {
 
   // Handle slot selection to schedule new session
   const handleDateSelect = (selectInfo: any) => {
-    let selectedDate: string;
-    let selectedTime: string;
-    let duration: number;
-
-    if (tutorTimezone) {
-      const startInTutorTz = DateTime.fromJSDate(selectInfo.start).setZone(tutorTimezone);
-      const endInTutorTz = DateTime.fromJSDate(selectInfo.end).setZone(tutorTimezone);
-      
-      selectedDate = startInTutorTz.toISODate();
-      selectedTime = startInTutorTz.toFormat('HH:mm');
-      duration = Math.round(endInTutorTz.diff(startInTutorTz, 'minutes').minutes);
-    } else {
-      selectedDate = selectInfo.start.toISOString().split('T')[0];
-      const hours = selectInfo.start.getHours().toString().padStart(2, '0');
-      const minutes = selectInfo.start.getMinutes().toString().padStart(2, '0');
-      selectedTime = `${hours}:${minutes}`;
-      duration = Math.round((selectInfo.end.getTime() - selectInfo.start.getTime()) / (1000 * 60));
-    }
+    // FullCalendar provides times in the calendar's timezone
+    // Convert to tutor timezone for form data
+    const tutorTz = tutorTimezone || 'local';
+    
+    const startInTutorTz = DateTime.fromJSDate(selectInfo.start).setZone(tutorTz);
+    const endInTutorTz = DateTime.fromJSDate(selectInfo.end).setZone(tutorTz);
+    
+    const selectedDate = startInTutorTz.toISODate();
+    const selectedTime = startInTutorTz.toFormat('HH:mm');
+    const duration = Math.round(endInTutorTz.diff(startInTutorTz, 'minutes').minutes);
 
     window.dispatchEvent(new CustomEvent('openScheduleModal', {
       detail: {
@@ -261,17 +257,22 @@ export default function Calendar() {
   // Handle event drop (drag and drop)
   const handleEventDrop = async (dropInfo: any) => {
     const session = dropInfo.event.extendedProps as SessionWithStudent;
-    const newStart = DateTime.fromJSDate(dropInfo.event.start);
-    const newEnd = DateTime.fromJSDate(dropInfo.event.end);
+    
+    // FullCalendar provides the new time in the calendar's timezone
+    // Convert to UTC for storage and tutor timezone for legacy fields
+    const tutorTz = tutorTimezone || 'local';
+    const newStartUTC = DateTime.fromJSDate(dropInfo.event.start).toUTC();
+    const newEndUTC = DateTime.fromJSDate(dropInfo.event.end).toUTC();
+    const newStartInTutorTz = newStartUTC.setZone(tutorTz);
 
     try {
       const { error } = await supabase
         .from('sessions')
         .update({
-          session_start: newStart.toUTC().toISO(),
-          session_end: newEnd.toUTC().toISO(),
-          date: newStart.toISODate(),
-          time: newStart.toFormat('HH:mm')
+          session_start: newStartUTC.toISO(),
+          session_end: newEndUTC.toISO(),
+          date: newStartInTutorTz.toISODate(),
+          time: newStartInTutorTz.toFormat('HH:mm')
         })
         .eq('id', session.id);
 
@@ -295,15 +296,18 @@ export default function Calendar() {
   // Handle event resize
   const handleEventResize = async (resizeInfo: any) => {
     const session = resizeInfo.event.extendedProps as SessionWithStudent;
-    const newEnd = DateTime.fromJSDate(resizeInfo.event.end);
-    const newStart = DateTime.fromJSDate(resizeInfo.event.start);
-    const newDuration = Math.round(newEnd.diff(newStart, 'minutes').minutes);
+    
+    // FullCalendar provides times in the calendar's timezone
+    // Convert to UTC for storage
+    const newEndUTC = DateTime.fromJSDate(resizeInfo.event.end).toUTC();
+    const newStartUTC = DateTime.fromJSDate(resizeInfo.event.start).toUTC();
+    const newDuration = Math.round(newEndUTC.diff(newStartUTC, 'minutes').minutes);
 
     try {
       const { error } = await supabase
         .from('sessions')
         .update({
-          session_end: newEnd.toUTC().toISO(),
+          session_end: newEndUTC.toISO(),
           duration: newDuration
         })
         .eq('id', session.id);
@@ -518,7 +522,7 @@ export default function Calendar() {
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, luxonPlugin]}
             initialView={view}
-            timeZone={tutorTimezone || 'UTC'}
+            timeZone={tutorTimezone || 'local'}
             events={events}
             editable={true}
             selectable={true}
@@ -544,7 +548,7 @@ export default function Calendar() {
               hour: 'numeric',
               minute: '2-digit',
               omitZeroMinute: false,
-              meridiem: false
+              meridiem: 'short'
             }}
           />
         </div>
