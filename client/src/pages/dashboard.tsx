@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from "@/lib/queryOptimizer";
 import { calculateEarnings } from "@/lib/earningsCalculator";
+import { ScheduleSessionModal } from "@/components/modals/schedule-session-modal";
 import { 
   BookOpen, 
   Coins, 
@@ -51,6 +52,7 @@ const defaultCardOrder: DashboardCard[] = [
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   
   // Force refresh dashboard stats after payment updates
   useEffect(() => {
@@ -425,6 +427,14 @@ export default function Dashboard() {
           <RecentActivity currency={tutorInfo?.currency || 'USD'} />
         </div>
       </div>
+
+      {/* Schedule Session Modal */}
+      <ScheduleSessionModal
+        open={showScheduleModal}
+        onOpenChange={setShowScheduleModal}
+        editSession={null}
+        editMode={false}
+      />
     </div>
   );
 }
