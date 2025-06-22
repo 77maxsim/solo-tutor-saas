@@ -55,7 +55,10 @@ export default function Dashboard() {
   
   // Force refresh dashboard stats on mount
   useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    const timer = setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [queryClient]);
   const [cards, setCards] = useState<DashboardCard[]>(defaultCardOrder);
   
