@@ -52,6 +52,11 @@ const defaultCardOrder: DashboardCard[] = [
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
+  
+  // Force refresh dashboard stats on mount
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+  }, [queryClient]);
   const [cards, setCards] = useState<DashboardCard[]>(defaultCardOrder);
   
   // Toggle state for earnings summary (today/week/month)
@@ -195,11 +200,12 @@ export default function Dashboard() {
       
       const tutorTimezone = tutorInfo?.timezone;
       console.log('📦 Dashboard: Using tutor timezone:', tutorTimezone);
+      console.log('📦 Dashboard: About to call calculateEarnings with', sessionsWithNames.length, 'sessions');
 
       // Use shared earnings calculator with timezone awareness
       const earningsData = calculateEarnings(sessionsWithNames, tutorTimezone);
       
-      console.log('📦 Dashboard: Earnings data:', earningsData);
+      console.log('📦 Dashboard: Earnings data returned:', earningsData);
       
       const result = {
         sessionsThisWeek: earningsData.thisMonthSessions,

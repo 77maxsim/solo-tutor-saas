@@ -1,0 +1,26 @@
+📦 ExpectedEarnings: Next month range in Asia/Shanghai : 2025-06-30T16:00:00.000Z to 2025-07-31T15:59:59.999Z
+📦 ExpectedEarnings: nextMonth total: 31890 from 394 sessions
+📊 Dashboard session time display: 
+Object {student: "King", utc_start: "2025-06-23T05:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 13:00"}
+📊 Dashboard session time display: 
+Object {student: "August", utc_start: "2025-06-23T10:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 18:00"}
+📊 Dashboard session time display: 
+Object {student: "Ryan", utc_start: "2025-06-23T10:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 18:30"}
+📊 Dashboard session time display: 
+Object {student: "Joy", utc_start: "2025-06-23T11:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 19:00"}
+📊 Dashboard session time display: 
+Object {student: "Felix", utc_start: "2025-06-23T11:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 19:30"}
+🔍 Dashboard query state: 
+Object {isLoading: false, hasData: true, dashboardStats: "{"sessionsThisWeek":150,"todayEarnings":0,"currentWeekEarnings":80,"currentMonthEarnings":8…", error: null}
+📦 ExpectedEarnings: Next month range in Asia/Shanghai : 2025-06-30T16:00:00.000Z to 2025-07-31T15:59:59.999Z
+📦 ExpectedEarnings: nextMonth total: 31890 from 394 sessions
+📊 Dashboard session time display: 
+Object {student: "King", utc_start: "2025-06-23T05:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 13:00"}
+📊 Dashboard session time display: 
+Object {student: "August", utc_start: "2025-06-23T10:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 18:00"}
+📊 Dashboard session time display: 
+Object {student: "Ryan", utc_start: "2025-06-23T10:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 18:30"}
+📊 Dashboard session time display: 
+Object {student: "Joy", utc_start: "2025-06-23T11:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 19:00"}
+📊 Dashboard session time display: 
+Object {student: "Felix", utc_start: "2025-06-23T11:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 19:30"}

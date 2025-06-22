@@ -7,7 +7,8 @@ dayjs.extend(timezone);
 
 // Shared earnings calculation logic for Dashboard and Earnings page
 export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
-  console.log('📦 EarningsCalculator: Starting with', sessions.length, 'sessions', tutorTimezone ? `in timezone ${tutorTimezone}` : '');
+  console.log('🔥 EarningsCalculator: FUNCTION CALLED with', sessions.length, 'sessions', tutorTimezone ? `in timezone ${tutorTimezone}` : '');
+  console.log('🔥 First 3 sessions:', sessions.slice(0, 3).map(s => ({ student: s.student_name, start: s.session_start, paid: s.paid })));
   
   // Use tutor's timezone if provided, otherwise use local time
   const getTimezoneBoundaries = () => {
@@ -83,9 +84,9 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     // Standardized paid session check (consistent with other components)
     const isPaid = session.paid === true;
     
-    // Debug all sessions for comprehensive debugging
+    // Debug all sessions for comprehensive debugging - fix string vs Date comparison issue
     const inMonth = sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth;
-    console.log('[Debug] session_start:', session.session_start, 'included:', inMonth, 'paid:', isPaid, 'student:', session.student_name, 'earnings:', earnings);
+    console.log('[Debug] session_start:', session.session_start, 'sessionDate:', sessionDate.toISOString(), 'included:', inMonth, 'paid:', isPaid, 'student:', session.student_name, 'earnings:', earnings);
     
     // Total earnings (only from paid sessions)
     if (isPaid) {
