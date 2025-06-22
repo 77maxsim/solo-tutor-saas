@@ -1,0 +1,34 @@
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "Europe/Kyiv", isTimezoneLoading: false, open: true}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "Europe/Kyiv", isTimezoneLoading: false, open: true}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "Europe/Kyiv", isTimezoneLoading: false, open: false}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "Europe/Kyiv", isTimezoneLoading: false, open: false}
+🔍 Fetching calendar sessions for tutor: 7bf25f7b-f16e-4d75-9847-087276da4e0b
+Using cached count for tutor: 211 sessions, optimized: false
+Standard query - fetching sessions for tutor: 7bf25f7b-f16e-4d75-9847-087276da4e0b
+Standard query raw data: 
+Object {totalRows: 211, firstRow: {…}}
+Standard query results: 
+Object {totalSessions: 211, recentSessions: Array(5)}
+📊 Query Performance [standard]: 
+Object {tutorId: "7bf25f7b...", queryTime: "183ms", sessionCount: 211, performanceRating: "Excellent"}
+📊 Standard query returned: 211 sessions
+📅 FullCalendar mounted June 23 event: 
+Object {title: "", start: "6/23/2025, 9:30:00 AM", element_visible: true}
+🎯 Slot selected for new session: 
+Object {selected_start_js: Date, selected_end_js: Date, tutor_timezone: "Europe/Kyiv", form_date: "2025-06-23", form_time: "09:30", …}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "Europe/Kyiv", isTimezoneLoading: false, open: true}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "Europe/Kyiv", isTimezoneLoading: false, open: true}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "Europe/Kyiv", isTimezoneLoading: false, open: true}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "Europe/Kyiv", isTimezoneLoading: false, open: true}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "Europe/Kyiv", isTimezoneLoading: false, open: false}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "Europe/Kyiv", isTimezoneLoading: false, open: false}

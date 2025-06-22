@@ -128,6 +128,13 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
   useEffect(() => {
     const handleEditSession = (event: CustomEvent) => {
       const session = event.detail.session;
+      
+      // Prevent multiple modal instances
+      if (scheduleModalOpen) {
+        console.log('⚠️ Schedule modal already open, ignoring edit request');
+        return;
+      }
+      
       // Close session details modal
       setSessionDetailsOpen(false);
       setSelectedSession(null);
@@ -165,9 +172,11 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
     };
   }, []);
 
-  const handleScheduleModalClose = () => {
-    setScheduleModalOpen(false);
-    setEditSession(null);
+  const handleScheduleModalClose = (open: boolean) => {
+    setScheduleModalOpen(open);
+    if (!open) {
+      setEditSession(null);
+    }
   };
 
   const SessionItem = ({ session }: { session: Session }) => {
@@ -332,7 +341,7 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
       {/* Schedule Session Modal for Editing */}
       <ScheduleSessionModal
         open={scheduleModalOpen}
-        onOpenChange={setScheduleModalOpen}
+        onOpenChange={handleScheduleModalClose}
         editSession={editSession}
         editMode={true}
       />

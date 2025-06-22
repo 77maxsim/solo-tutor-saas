@@ -333,13 +333,14 @@ export default function Dashboard() {
 
   const handleScheduleSession = () => {
     console.log('✅ Opening single schedule modal from dashboard');
-    setShowScheduleModal(prev => {
-      if (prev) {
-        console.log('⚠️ Modal already open, ignoring duplicate request');
-        return prev;
-      }
-      return true;
-    });
+    
+    // Prevent multiple modal instances
+    if (showScheduleModal) {
+      console.log('⚠️ Schedule modal already open, ignoring duplicate request');
+      return;
+    }
+    
+    setShowScheduleModal(true);
   };
 
   return (

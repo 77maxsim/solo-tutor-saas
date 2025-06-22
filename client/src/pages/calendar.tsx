@@ -402,14 +402,15 @@ export default function Calendar() {
   // Handle schedule session
   const handleScheduleSession = () => {
     console.log('✅ Opening single schedule modal from calendar');
+    
+    // Prevent multiple modal instances
+    if (showScheduleModal) {
+      console.log('⚠️ Schedule modal already open, ignoring duplicate request');
+      return;
+    }
+    
     setEditSession(null); // Clear any existing edit session
-    setShowScheduleModal(prev => {
-      if (prev) {
-        console.log('⚠️ Modal already open, ignoring duplicate request');
-        return prev;
-      }
-      return true;
-    });
+    setShowScheduleModal(true);
   };
 
   // Custom event content renderer
@@ -465,6 +466,12 @@ export default function Calendar() {
       form_time: selectedTime,
       duration: duration
     });
+
+    // Prevent multiple modal instances
+    if (showScheduleModal) {
+      console.log('⚠️ Schedule modal already open, ignoring duplicate slot selection');
+      return;
+    }
 
     // Open schedule modal directly with form data
     setEditSession(null); // Clear any existing edit session
