@@ -53,11 +53,12 @@ const defaultCardOrder: DashboardCard[] = [
 export default function Dashboard() {
   const queryClient = useQueryClient();
   
-  // Force refresh dashboard stats on mount
+  // Force refresh dashboard stats after payment updates
   useEffect(() => {
     const timer = setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-    }, 1000);
+      queryClient.invalidateQueries({ queryKey: ['earnings-sessions'] });
+    }, 2000);
     return () => clearTimeout(timer);
   }, [queryClient]);
   const [cards, setCards] = useState<DashboardCard[]>(defaultCardOrder);
