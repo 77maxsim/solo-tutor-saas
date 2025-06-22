@@ -58,7 +58,7 @@ export default function Dashboard() {
     const timer = setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['earnings-sessions'] });
-    }, 2000);
+    }, 1000);
     return () => clearTimeout(timer);
   }, [queryClient]);
   const [cards, setCards] = useState<DashboardCard[]>(defaultCardOrder);

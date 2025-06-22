@@ -133,7 +133,7 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     }
   });
 
-  console.log('📦 EarningsCalculator: Final month earnings:', thisMonthEarnings, 'from', sessions.filter(s => s.paid === true).length, 'paid sessions');
+  console.log('📦 EarningsCalculator: Final month earnings:', thisMonthEarnings, 'from', sessions.filter(s => s.paid === true || s.paid === 'true').length, 'paid sessions');
 
   const studentEarnings = Array.from(studentEarningsMap.entries())
     .map(([name, data]) => ({
