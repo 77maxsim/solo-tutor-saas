@@ -1,0 +1,72 @@
+Final Fix for Dashboard vs Earnings Page Mismatch
+We’ve attempted multiple rounds of fixes, but the issue still persists.
+
+❌ What is still broken (as of latest test):
+Dashboard earnings cards still show:
+
+¥0.00 Today
+
+¥0.00 This Week
+
+¥0.00 This Month
+→ Despite the Earnings page showing:
+✓ ¥2,714.00 this month and ✓ Sessions this month: 33
+
+Active Students = 0 on Dashboard
+→ Despite Earnings page correctly showing 50 active students
+
+Expected Earnings (30d / Month / All) values are still inconsistent with each other (logic unclear or broken)
+
+✅ What is working correctly:
+Earnings page logic and data (correct totals, active students, sessions this month)
+
+Database schema uses session_start and session_end in UTC
+
+Deprecated time and date fields are not used
+
+⚠️ Constraints (REPEAT – DO NOT BREAK THESE):
+❌ Do NOT query deprecated time or date columns.
+
+✅ Use only session_start (UTC) with conversion to tutor timezone for filtering by:
+
+Today (local)
+
+This week
+
+This month
+
+✅ Must respect Supabase RLS — only fetch sessions of the logged-in tutor
+
+✅ Earnings page logic must not be broken
+
+✅ Dashboard visual structure must remain unchanged
+
+🎯 REQUIRED FIXES
+✅ Fix all earnings cards on the Dashboard
+
+Ensure they use the same logic and filters as Earnings page.
+
+Use the shared earningsCalculator or move the EarningsPage logic to a shared utility if not already done.
+
+Show correct amounts for Today, This Week, and This Month.
+
+✅ Fix "Active Students" on Dashboard
+
+Use the same query/filter as Earnings page.
+
+"Active" means: students with at least one session in the past 30 days.
+
+✅ Fix Expected Earnings logic
+
+“30d” = next 30 days from now (use session_start)
+
+“Month” = next calendar month
+
+“All” = all future sessions from today
+
+🧪 FINAL VERIFICATION (DO NOT SKIP)
+✅ Log filtered session count and student count to console
+✅ Ensure values match exactly between Dashboard and Earnings.tsx
+✅ Confirm calculation parity for all 3 timeframes
+
+Please verify each fix step-by-step and share console debug output if needed. Do not assume the issue is resolved until Dashboard matches Earnings page values exactly.
