@@ -26,10 +26,8 @@ interface Session {
   id: string;
   student_id: string;
   student_name: string;
-  date?: string; // Legacy field
-  time?: string; // Legacy field
-  session_start?: string; // UTC timestamp
-  session_end?: string; // UTC timestamp
+  session_start: string; // UTC timestamp
+  session_end: string; // UTC timestamp
   duration: number;
   rate: number;
   paid: boolean;
@@ -78,8 +76,6 @@ export default function UpcomingSessions() {
         .select(`
           id,
           student_id,
-          date,
-          time,
           session_start,
           session_end,
           duration,
@@ -222,7 +218,7 @@ export default function UpcomingSessions() {
   // Group sessions by date using session_start
   const groupedSessions = sessions.reduce((groups: { [key: string]: Session[] }, session) => {
     // Convert UTC session_start to local date for grouping
-    const sessionDate = new Date(session.session_start || session.date);
+    const sessionDate = new Date(session.session_start);
     const date = sessionDate.toISOString().split('T')[0];
     if (!groups[date]) {
       groups[date] = [];
@@ -234,7 +230,7 @@ export default function UpcomingSessions() {
   // Calculate summary statistics
   const totalSessions = sessions.length;
   const next7DaysSessions = sessions.filter(session => {
-    const sessionDate = new Date(session.session_start || session.date);
+    const sessionDate = new Date(session.session_start);
     const next7Days = new Date();
     next7Days.setDate(next7Days.getDate() + 7);
     return sessionDate <= next7Days;

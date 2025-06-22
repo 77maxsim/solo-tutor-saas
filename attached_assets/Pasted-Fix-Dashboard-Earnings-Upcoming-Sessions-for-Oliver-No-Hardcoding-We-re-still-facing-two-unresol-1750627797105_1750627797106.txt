@@ -1,0 +1,96 @@
+Fix Dashboard Earnings + Upcoming Sessions for Oliver (No Hardcoding)
+We're still facing two unresolved issues for Oliver:
+
+🧾 Issue 1: Incorrect "Earned This Month" Calculation in Dashboard
+Oliver’s “Earned This Month” card shows only ¥80.00, but logs confirm many paid sessions during June (e.g., June 14th).
+
+The paid field is correctly marked as true, and data appears correctly on the Earnings Page.
+
+Logs show the following incorrect entry in dashboardStats:
+
+ts
+Копіювати
+Редагувати
+"currentMonthEarnings": 80
+Timezone is set to Asia/Shanghai, and some sessions show correct displayed_time in local time:
+
+ts
+Копіювати
+Редагувати
+utc_start: "2025-06-23T05:00:00+00:00" -> displayed_time: "06/23/2025 at 13:00"
+What to do:
+
+Double-check the Dashboard’s earnings calculation logic against the working Earnings Page. Both should use session_start in UTC, converted to the tutor's timezone (via .tz(tutor.timezone)).
+
+Avoid logic like:
+
+ts
+Копіювати
+Редагувати
+dayjs.utc(session.session_start).tz(tz).isSame(dayjs(), 'month')
+Instead:
+
+ts
+Копіювати
+Редагувати
+const sessionDate = dayjs.utc(session.session_start).tz(tz);
+const now = dayjs().tz(tz);
+const isSameMonth = sessionDate.month() === now.month() && sessionDate.year() === now.year();
+This prevents issues from hidden UTC-local mismatches.
+
+Validate that you're filtering sessions with paid = true and tutor_id = current tutor only.
+
+Do not hardcode Oliver's timezone or email — respect each tutor’s timezone field.
+
+Do not reference deprecated date or time columns — use only session_start.
+
+🧾 Issue 2: Upcoming Sessions Page Crashes (Empty Page + Error)
+When Oliver clicks “Upcoming Sessions”, the component crashes with:
+
+txt
+Копіювати
+Редагувати
+Error loading upcoming sessions
+This might be due to:
+
+A failed query due to broken filter logic (e.g., bad timezone math or invalid RLS access).
+
+Sessions being incorrectly excluded due to date range filtering.
+
+Incorrect serialization/deserialization of session_start.
+
+What to do:
+
+Log the query that fetches Upcoming Sessions and confirm:
+
+You are using session_start > now() in UTC, or adjusted to the tutor's timezone.
+
+The sessions belong to the correct tutor_id.
+
+Avoid applying .tz() on dayjs() without checking if the date is valid.
+
+Do not assume that session_start is already localized — always handle the UTC → local conversion safely.
+
+Add debug logging to show how many sessions are found and what the query filters look like in the frontend and backend.
+
+If the session list is empty, the page should render gracefully with a message (not crash).
+
+✅ Constraints
+✅ Do not use deprecated date or time columns — only use session_start.
+
+✅ Do not hardcode any tutor (e.g., Oliver’s email or timezone).
+
+✅ Use the existing shared earningsCalculator function across both Earnings and Dashboard.
+
+✅ Must support multi-timezone logic via the tutor.timezone field.
+
+✅ Must respect Supabase RLS — only fetch sessions where tutor_id = current_user.
+
+📸 Context from logs
+Oliver’s timezone: Asia/Shanghai
+
+session_start examples (in UTC) display correctly as local time (e.g., 13:00 CST from 05:00 UTC).
+
+However, the currentMonthEarnings = 80 indicates only 1 session is being counted incorrectly.
+
+Activity and Supabase clearly show dozens of June payments marked as paid: true.

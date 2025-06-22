@@ -43,17 +43,17 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
       };
     }
     
-    // Use timezone-aware boundaries
+    // Use timezone-aware boundaries - convert to UTC for comparison with UTC session_start
     const nowInTimezone = dayjs().tz(tutorTimezone);
     
     return {
-      startOfWeek: nowInTimezone.startOf('week').toDate(),
-      endOfWeek: nowInTimezone.endOf('week').toDate(),
-      firstDayOfMonth: nowInTimezone.startOf('month').toDate(),
-      lastDayOfMonth: nowInTimezone.endOf('month').toDate(),
-      startOfToday: nowInTimezone.startOf('day').toDate(),
-      endOfToday: nowInTimezone.endOf('day').toDate(),
-      thirtyDaysAgo: nowInTimezone.subtract(30, 'day').toDate()
+      startOfWeek: nowInTimezone.startOf('week').utc().toDate(),
+      endOfWeek: nowInTimezone.endOf('week').utc().toDate(), 
+      firstDayOfMonth: nowInTimezone.startOf('month').utc().toDate(),
+      lastDayOfMonth: nowInTimezone.endOf('month').utc().toDate(),
+      startOfToday: nowInTimezone.startOf('day').utc().toDate(),
+      endOfToday: nowInTimezone.endOf('day').utc().toDate(),
+      thirtyDaysAgo: nowInTimezone.subtract(30, 'day').utc().toDate()
     };
   };
   
