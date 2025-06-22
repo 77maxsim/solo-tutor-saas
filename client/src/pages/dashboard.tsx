@@ -375,15 +375,15 @@ export default function Dashboard() {
       });
       
       console.log('🔍 June 12-14 paid sessions found in app:', june12to14Sessions.length);
-      console.log('🔍 Sample June 12-14 sessions:', june12to14Sessions.slice(0, 5).map(s => ({
-        date: s.date,
+      console.log('Sample June 12-14 sessions:', june12to14Sessions.slice(0, 5).map(s => ({
+        date: new Date(s.session_start).toISOString().split('T')[0],
         paid: (s as any).paid,
         rate: s.rate,
         duration: s.duration
       })));
 
       // Check if we're missing sessions from database vs app
-      const allJuneSessions = sessionsWithNames.filter(s => s.date.startsWith('2025-06'));
+      const allJuneSessions = sessionsWithNames.filter(s => new Date(s.session_start).toISOString().split('T')[0].startsWith('2025-06'));
       const allJunePaidSessions = allJuneSessions.filter(s => {
         const paidValue = (s as any).paid;
         return Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
@@ -414,9 +414,9 @@ export default function Dashboard() {
 
 
       sessionsWithNames.forEach((session: SessionWithStudent) => {
-        // Parse session date in local timezone to avoid UTC conversion
-        const dateParts = sessionDate.split('-');
-        const sessionDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+        // Parse session date from session_start
+        const sessionStartDate = new Date(session.session_start);
+        const sessionDateStr = sessionStartDate.toISOString().split('T')[0];
         
 
         const earnings = (session.duration / 60) * session.rate;

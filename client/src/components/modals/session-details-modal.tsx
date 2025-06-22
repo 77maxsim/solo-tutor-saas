@@ -78,7 +78,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
           .from('sessions')
           .update({ notes, color })
           .eq('recurrence_id', session.recurrence_id)
-          .gte('date', session.date);
+          .gte('session_start', session.session_start);
 
         if (error) {
           console.error('Error updating series notes:', error);
@@ -195,7 +195,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
               <span>
                 {session.session_start && tutorTimezone
                   ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MM/dd/yyyy')
-                  : session.date}
+                  : session.session_start ? dayjs.utc(session.session_start).tz(tutorTimezone).format('YYYY-MM-DD') : 'N/A'}
               </span>
             </div>
             
