@@ -111,7 +111,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       console.log('✅ Bug 4 fixed - Prefilling edit session form:', {
         session_id: session.id,
         date: session.date,
-        time: session.time,
+        time: tutorTimezone ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm') : '',
         duration: session.duration,
         rate: session.rate,
         color: session.color,
@@ -121,7 +121,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       
       // Reset form first to clear any previous values
       form.reset({
-        time: session.time || "",
+        time: tutorTimezone ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm') : "",
         duration: session.duration || 60,
         rate: session.rate || 0,
         color: session.color || "#3B82F6",

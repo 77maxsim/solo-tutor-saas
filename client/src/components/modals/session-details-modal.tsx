@@ -202,7 +202,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
             <div className="flex items-center gap-2 text-sm">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span>
-                {session.session_start && session.session_end && tutorTimezone
+                {tutorTimezone
                   ? (() => {
                       const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
                       const endTime = formatUtcToTutorTimezone(session.session_end, tutorTimezone, 'HH:mm');
@@ -216,7 +216,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                       });
                       return `${startTime} - ${endTime} (${duration} minutes)`;
                     })()
-                  : `${session.time} (${session.duration} minutes)`}
+                  : 'Loading timezone...'}
               </span>
             </div>
             

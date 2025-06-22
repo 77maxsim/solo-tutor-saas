@@ -388,7 +388,9 @@ export default function UnpaidSessions() {
                     <CollapsibleContent className="space-y-2 mt-2">
                       {dateSessions.map((session) => {
                         const calculatedPrice = (session.duration / 60) * session.rate;
-                        const daysOverdue = getDaysOverdue(session.date, session.time);
+                        const sessionDate = new Date(session.session_start);
+                        const now = new Date();
+                        const daysOverdue = Math.floor((now.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24));
                         
                         return (
                           <div
@@ -420,7 +422,7 @@ export default function UnpaidSessions() {
                                           });
                                           return `${startTime} (${duration} min)`;
                                         })()
-                                      : `${session.time?.substring(0, 5) || ''} (${session.duration || 0} min)`}
+                                      : 'Loading timezone...'}
                                   </span>
                                   <span className="font-medium text-orange-600">
                                     {formatCurrency(calculatedPrice, tutorCurrency)}

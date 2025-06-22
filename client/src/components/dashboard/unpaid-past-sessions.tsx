@@ -64,17 +64,15 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      const now = new Date();
-      const currentDate = now.toISOString().split('T')[0];
-      const currentTime = now.toTimeString().split(' ')[0].substring(0, 5);
+      const now = new Date().toISOString();
 
       let query = supabase
         .from('sessions')
         .select(`
           id,
           student_id,
-          date,
-          time,
+          session_start,
+          session_end,
           duration,
           rate,
           paid,
@@ -85,9 +83,8 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
         `)
         .eq('tutor_id', tutorId)
         .eq('paid', false)
-        .or(`date.lt.${currentDate},and(date.eq.${currentDate},time.lt.${currentTime})`)
-        .order('date', { ascending: false })
-        .order('time', { ascending: false });
+        .lt('session_start', now)
+        .order('session_start', { ascending: false });
 
       if (limit && limit > 0) {
         query = query.limit(limit);
@@ -260,7 +257,7 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
         ) : (
           <div className="space-y-3">
             {unpaidSessions?.slice(0, limit > 0 ? limit : unpaidSessions.length).map((session) => {
-              const sessionDate = new Date(session.date);
+              const sessionDate = new Date(session.session_start);
               const now = new Date();
               const daysOverdue = Math.floor((now.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24));
               const earnings = (session.duration / 60) * session.rate;
@@ -278,7 +275,14 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(session.date).toLocaleDateString()} at {session.time} ({session.duration} min)
+                      {tutorTimezone
+                        ? (() => {
+                            const date = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MM/dd/yyyy');
+                            const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
+                            const duration = calculateDurationMinutes(session.session_start, session.session_end);
+                            return `${date} at ${startTime} (${duration} min)`;
+                          })()
+                        : 'Loading timezone...'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

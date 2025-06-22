@@ -96,12 +96,12 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
   // Separate sessions into upcoming and past
   const now = new Date();
   const upcomingSessions = sessions?.filter(session => {
-    const sessionDateTime = new Date(`${session.date}T${session.time}`);
+    const sessionDateTime = new Date(session.session_start);
     return sessionDateTime > now;
   }) || [];
 
   const pastSessions = sessions?.filter(session => {
-    const sessionDateTime = new Date(`${session.date}T${session.time}`);
+    const sessionDateTime = new Date(session.session_start);
     return sessionDateTime <= now;
   }) || [];
 
@@ -111,8 +111,8 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
       id: session.id,
       student_id: student?.id || '',
       student_name: student?.name || '',
-      date: session.date,
-      time: session.time,
+      session_start: session.session_start,
+      session_end: session.session_end,
       duration: session.duration,
       rate: session.rate,
       notes: session.notes,
@@ -136,8 +136,8 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
       const editSessionData = {
         id: session.id,
         student_id: session.student_id,
-        date: session.date,
-        time: session.time,
+        session_start: session.session_start,
+        session_end: session.session_end,
         duration: session.duration,
         rate: session.rate,
         notes: session.notes,
@@ -185,7 +185,7 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <span>{formatTime(new Date(`${session.date}T${session.time}`))}</span>
+            <span>{formatTime(new Date(session.session_start))}</span>
           </div>
           <Badge variant="outline" className="text-xs">
             {session.duration}min

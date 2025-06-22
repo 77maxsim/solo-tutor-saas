@@ -414,9 +414,7 @@ export default function UpcomingSessions() {
                         const calculatedPrice = (session.duration / 60) * session.rate;
                         
                         // Create full datetime for the session
-                        const sessionDateTime = session.session_start 
-                          ? new Date(session.session_start)
-                          : new Date(`${session.date}T${session.time}`);
+                        const sessionDateTime = new Date(session.session_start);
                         const createdDate = new Date(session.created_at);
                         const now = new Date();
                         
@@ -465,7 +463,7 @@ export default function UpcomingSessions() {
                                           });
                                           return `${startTime} (${duration} min)`;
                                         })()
-                                      : `${session.time?.substring(0, 5) || ''} (${session.duration || 0} min)`}
+                                      : 'Loading timezone...'}
                                   </span>
                                   <span className="font-medium text-green-600">
                                     {formatCurrency(calculatedPrice, tutorCurrency)}

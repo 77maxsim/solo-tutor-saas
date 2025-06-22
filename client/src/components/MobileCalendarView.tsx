@@ -144,33 +144,18 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
                 
                 // Find session that starts at this exact time
                 const sessionAtTime = daySessions.find(session => {
-                  let sessionTimeString: string;
+                  if (!session.session_start || !tutorTimezone) return false;
                   
-                  if (session.session_start && tutorTimezone) {
-                    sessionTimeString = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
-                  } else if (session.time) {
-                    sessionTimeString = session.time.substring(0, 5);
-                  } else {
-                    return false;
-                  }
-                  
+                  const sessionTimeString = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
                   return sessionTimeString === time;
                 });
 
                 // Check if this slot is occupied by a continuing session
                 const occupyingSession = daySessions.find(session => {
-                  let sessionStart: Date, sessionEnd: Date;
+                  if (!session.session_start || !session.session_end) return false;
                   
-                  if (session.session_start && session.session_end) {
-                    sessionStart = new Date(session.session_start);
-                    sessionEnd = new Date(session.session_end);
-                  } else if (session.date && session.time && session.duration) {
-                    const [hours, minutes] = session.time.split(':').map(Number);
-                    sessionStart = new Date(session.date);
-                    sessionStart.setHours(hours, minutes, 0, 0);
-                    sessionEnd = new Date(sessionStart.getTime() + session.duration * 60 * 1000);
-                  } else {
-                    return false;
+                  const sessionStart = new Date(session.session_start);
+                  const sessionEnd = new Date(session.session_end);
                   }
                   
                   const [currentHour, currentMin] = time.split(':').map(Number);
