@@ -26,8 +26,8 @@ interface SessionWithStudent {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   paid: boolean;
@@ -154,14 +154,14 @@ export default function Dashboard() {
       // Debug: Log the tutor ID being used for the query
       console.log('🔍 Oliver tutor ID used for query:', tutorId);
 
-      // Force a completely fresh query with explicit parameters
+      // Query using session_start/session_end UTC timestamps only
       const { data, error } = await supabase
         .from('sessions')
         .select(`
           id,
           student_id,
-          date,
-          time,
+          session_start,
+          session_end,
           duration,
           rate,
           paid,
@@ -172,25 +172,12 @@ export default function Dashboard() {
           )
         `)
         .eq('tutor_id', tutorId)
-        .order('date', { ascending: false })
+        .order('session_start', { ascending: false })
         .limit(2000); // Ensure we get all sessions
 
       console.log('🔍 Raw session count from database:', data?.length || 0);
       
-      // Make a separate, explicit query for June paid sessions to bypass any data issues
-      const { data: junePaidSessions, error: juneError } = await supabase
-        .from('sessions')
-        .select('id, date, time, duration, rate, paid')
-        .eq('tutor_id', tutorId)
-        .eq('paid', true)
-        .gte('date', '2025-06-01')
-        .lte('date', '2025-06-30');
-
-      console.log('🔍 Direct June paid query result:', junePaidSessions?.length || 0);
-      
-      if (juneError) {
-        console.error('June paid sessions query error:', juneError);
-      }
+      console.log('🔍 Raw session count from database:', data?.length || 0);
 
       // Always apply Oliver account override using direct database query results
       if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b') {
@@ -256,67 +243,8 @@ export default function Dashboard() {
         }
       }
 
-      // If we have the correct data from direct query, force the correction
-      let sessionsData = data;
-      if (junePaidSessions && junePaidSessions.length === 21) {
-        console.log('✓ Forcing correction with 21 paid June sessions');
-        
-        // Create a comprehensive map of all paid sessions from direct query
-        const paidSessionsMap = new Map();
-        junePaidSessions.forEach(session => {
-          paidSessionsMap.set(session.id, { ...session, paid: true });
-        });
-        
-        console.log('🔍 Paid sessions map size:', paidSessionsMap.size);
-        console.log('🔍 Sample paid session IDs:', Array.from(paidSessionsMap.keys()).slice(0, 3));
-        
-        // Check if session IDs match between queries
-        const mainSessionIds = new Set(sessionsData?.map(s => s.id) || []);
-        const paidSessionIds = new Set(junePaidSessions.map(s => s.id));
-        const matchingIds = Array.from(paidSessionIds).filter(id => mainSessionIds.has(id));
-        console.log('🔍 Matching session IDs between queries:', matchingIds.length);
-        
-        // Force override all session data to include correct paid status
-        if (sessionsData) {
-          let correctionCount = 0;
-          sessionsData = sessionsData.map(session => {
-            if (paidSessionsMap.has(session.id)) {
-              correctionCount++;
-              return { ...session, paid: true };
-            }
-            return session;
-          });
-          
-          console.log('🔍 Total sessions corrected:', correctionCount);
-          
-          // Double-check the correction by counting June paid sessions
-          const juneCorrections = sessionsData.filter(s => 
-            s.date >= '2025-06-01' && s.date <= '2025-06-30' && s.paid === true
-          );
-          console.log('🔍 June paid sessions after correction:', juneCorrections.length);
-        }
-      }
-
-      // Debug: Also check what the tutor email is
-      const { data: tutorData } = await supabase
-        .from('tutors')
-        .select('email')
-        .eq('id', tutorId)
-        .single();
-      
-      console.log('🔍 Tutor email for this ID:', tutorData?.email);
-
-      if (error) {
-        console.error('Error fetching dashboard data:', error);
-        throw error;
-      }
-
-      if (dashboardError) {
-        console.error('Dashboard query error:', dashboardError);
-      }
-
-      // Transform the data to include student_name, using corrected session data
-      const sessionsWithNames = sessionsData?.map((session: any) => ({
+      // Transform the data to include student_name
+      const sessionsWithNames: SessionWithStudent[] = data?.map((session: any) => ({
         ...session,
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
