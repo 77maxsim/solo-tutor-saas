@@ -293,7 +293,7 @@ export default function Calendar() {
           status: session.status,
           student_name: session.student_name,
           unassigned_name: session.unassigned_name,
-          legacy_date: session.date || 'N/A',
+          legacy_date: session.session_start ? new Date(session.session_start).toISOString().split('T')[0] : 'N/A',
           legacy_time: 'DEPRECATED'
         });
         
