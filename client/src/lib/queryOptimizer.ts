@@ -288,7 +288,6 @@ export async function getStandardSessions(tutorId: string) {
         has_timestamps: !!(s.session_start && s.session_end)
       }))
     });
-    });
 
     // Track performance metrics
     await datasetMonitor.trackQueryPerformance(tutorId, 'standard', startTime, sessionsWithNames.length);

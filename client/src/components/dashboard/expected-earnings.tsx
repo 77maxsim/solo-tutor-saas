@@ -11,8 +11,8 @@ interface UpcomingSession {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   paid: boolean;
@@ -48,16 +48,14 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
       }
 
       const now = new Date();
-      const currentDate = now.toISOString().split('T')[0];
-      const currentTime = now.toTimeString().split(' ')[0].substring(0, 5);
 
       const { data, error } = await supabase
         .from('sessions')
         .select(`
           id,
           student_id,
-          date,
-          time,
+          session_start,
+          session_end,
           duration,
           rate,
           paid,
@@ -67,9 +65,8 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
           )
         `)
         .eq('tutor_id', tutorId)
-        .or(`date.gt.${currentDate},and(date.eq.${currentDate},time.gt.${currentTime})`)
-        .order('date', { ascending: true })
-        .order('time', { ascending: true });
+        .gte('session_start', now.toISOString())
+        .order('session_start', { ascending: true });
 
       if (error) {
         console.error('Error fetching upcoming sessions:', error);
@@ -95,14 +92,14 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
       case 'next30days':
         const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
         filteredSessions = upcomingSessions.filter(session => {
-          const sessionDate = new Date(session.date);
+          const sessionDate = new Date(session.session_start);
           return sessionDate <= next30Days;
         });
         break;
       case 'nextMonth':
         const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         filteredSessions = upcomingSessions.filter(session => {
-          const sessionDate = new Date(session.date);
+          const sessionDate = new Date(session.session_start);
           return sessionDate <= nextMonth;
         });
         break;
