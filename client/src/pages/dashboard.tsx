@@ -221,21 +221,13 @@ export default function Dashboard() {
           
           const today = now.toISOString().split('T')[0];
           
-          junePaidSessions.forEach(session => {
-            const sessionDate = new Date(session.session_start);
-            const earnings = (session.duration / 60) * session.rate;
-            
-            // Check if session is in current week
-            if (sessionDate >= startOfWeek && sessionDate <= endOfWeek) {
-              currentWeekEarnings += earnings;
-              sessionsThisWeek++;
-            }
-            
-            // Check if session is today
-            if (sessionDate.toISOString().split('T')[0] === today) {
-              todayEarnings += earnings;
-            }
-          });
+          // Use the same earnings calculation logic as the Earnings page
+          const earningsData = calculateEarnings(sessionsWithNames || []);
+          
+          todayEarnings = earningsData.todayEarnings;
+          currentWeekEarnings = earningsData.thisWeekEarnings;
+          currentMonthEarnings = earningsData.thisMonthEarnings;
+          sessionsThisWeek = earningsData.thisMonthSessions; // Note: using month sessions for week display
 
           console.log('🔍 Oliver week calculation - Sessions this week:', sessionsThisWeek);
           console.log('🔍 Oliver week calculation - Week boundaries:', {
@@ -413,41 +405,47 @@ export default function Dashboard() {
 
 
 
+      // Use the shared earnings calculation logic
+      const earningsData = calculateEarnings(sessionsWithNames || []);
+      
+      todayEarnings = earningsData.todayEarnings;
+      currentWeekEarnings = earningsData.thisWeekEarnings;
+      currentMonthEarnings = earningsData.thisMonthEarnings;
+      sessionsThisWeek = earningsData.thisMonthSessions;
+
       sessionsWithNames.forEach((session: SessionWithStudent) => {
         // Parse session date from session_start
         const sessionStartDate = new Date(session.session_start);
         const sessionDateStr = sessionStartDate.toISOString().split('T')[0];
         
-
         const earnings = (session.duration / 60) * session.rate;
         // Handle different paid field formats - more comprehensive check
         const paidValue = (session as any).paid;
         const isPaid = Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
-        const isPastSession = sessionDate < now;
-
-        // Sessions this week count (regardless of payment status, but only current week)
-        if (sessionDate >= startOfWeek && sessionDate <= endOfWeek) {
-          sessionsThisWeek++;
-        }
-
-        // Today earnings (only paid sessions for today)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const endOfToday = new Date(today);
-        endOfToday.setHours(23, 59, 59, 999);
         
-        if (sessionDate >= today && sessionDate <= endOfToday && isPaid) {
-          todayEarnings += earnings;
+        // Active students (sessions in last 30 days, regardless of payment)
+        if (sessionStartDate >= thirtyDaysAgo) {
+          activeStudentsSet.add(session.student_name);
         }
 
-        // Current week earnings (only paid sessions in current week)
-        if (sessionDate >= startOfWeek && sessionDate <= endOfWeek && isPaid) {
-          currentWeekEarnings += earnings;
+        // Skip unpaid sessions for earnings calculations
+        if (!isPaid) {
+          // But still count unpaid students
+          unpaidStudentsSet.add(session.student_name);
+          return;
         }
 
-        // Current month earnings (only paid sessions in current month)
-        if (sessionDate >= firstDayOfCurrentMonth && sessionDate <= lastDayOfCurrentMonth && isPaid) {
-          currentMonthEarnings += earnings;
+        // Total earnings (only from paid sessions)
+        totalEarnings += earnings;
+
+        // This week earnings (only from paid sessions in current week)
+        if (sessionStartDate >= startOfWeek && sessionStartDate <= endOfWeek) {
+          thisWeekEarnings += earnings;
+        }
+
+        // This month earnings (only from paid sessions in current month)
+        if (sessionStartDate >= firstDayOfMonth && sessionStartDate <= lastDayOfMonth) {
+          thisMonthEarnings += earnings;
         }
 
         // Last month earnings (only paid sessions in last month)

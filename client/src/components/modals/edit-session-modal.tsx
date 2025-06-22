@@ -178,13 +178,12 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
         }
       });
 
-      // Update single session
+      // Update single session with UTC timestamps only
       const { error } = await supabase
         .from('sessions')
         .update({
           session_start: startUTC.toISOString(),
           session_end: endUTC.toISOString(),
-          time: data.time,
           duration: data.duration,
           rate: data.rate,
           color: data.color,
