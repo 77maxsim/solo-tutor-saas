@@ -373,8 +373,8 @@ export default function Students() {
         .select(`
           id,
           student_id,
-          date,
-          time,
+          session_start,
+          session_end,
           duration,
           rate,
           paid,
@@ -476,7 +476,7 @@ export default function Students() {
       let upcomingSessions = 0;
 
       studentSessions.forEach(session => {
-        const sessionDate = new Date(session.date);
+        const sessionDate = new Date(session.session_start);
         const earnings = (session.duration / 60) * session.rate;
         const isPaid = session.paid === true;
         
@@ -493,7 +493,7 @@ export default function Students() {
       });
 
       const sortedSessions = studentSessions.sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
+        new Date(b.session_start).getTime() - new Date(a.session_start).getTime()
       );
 
       return {
@@ -505,7 +505,7 @@ export default function Students() {
         avatarUrl: student.avatar_url,
         totalSessions: studentSessions.length,
         totalEarnings,
-        lastSessionDate: sortedSessions[0]?.date || '',
+        lastSessionDate: sortedSessions[0]?.session_start || '',
         avgSessionDuration: studentSessions.length > 0 ? totalDuration / studentSessions.length : 0,
         upcomingSessions
       };

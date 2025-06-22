@@ -292,8 +292,8 @@ export default function Calendar() {
           status: session.status,
           student_name: session.student_name,
           unassigned_name: session.unassigned_name,
-          legacy_date: session.date,
-          legacy_time: session.time
+          legacy_date: session.date || 'N/A',
+          legacy_time: 'DEPRECATED'
         });
         
         skippedSessions.push(session);
