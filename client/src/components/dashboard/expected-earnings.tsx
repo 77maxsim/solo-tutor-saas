@@ -117,23 +117,28 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
         });
         break;
       case 'nextMonth':
-        // Use timezone-aware calculation for "next calendar month"
+        // Use timezone-aware calculation for "next calendar month" (1st to last day of next month only)
+        let startOfNextMonth: Date;
         let endOfNextMonth: Date;
+        
         if (tutorTimezone) {
-          // Get end of next month in tutor's timezone
+          // Get start and end of next month in tutor's timezone
           const nowInTimezone = dayjs().tz(tutorTimezone);
+          startOfNextMonth = nowInTimezone.add(1, 'month').startOf('month').toDate();
           endOfNextMonth = nowInTimezone.add(1, 'month').endOf('month').toDate();
-          console.log('📦 ExpectedEarnings: End of next month in', tutorTimezone, ':', endOfNextMonth.toISOString());
+          console.log('📦 ExpectedEarnings: Next month range in', tutorTimezone, ':', 
+            startOfNextMonth.toISOString(), 'to', endOfNextMonth.toISOString());
         } else {
           // Fallback to local time
           const now = new Date();
+          startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
           endOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0);
           endOfNextMonth.setHours(23, 59, 59, 999);
         }
         
         filteredSessions = sessions.filter(session => {
           const sessionDate = new Date(session.session_start);
-          return sessionDate <= endOfNextMonth;
+          return sessionDate >= startOfNextMonth && sessionDate <= endOfNextMonth;
         });
         break;
       case 'allFuture':
