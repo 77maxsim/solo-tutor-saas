@@ -1,5 +1,6 @@
 // Shared earnings calculation logic for Dashboard and Earnings page
 export function calculateEarnings(sessions: any[]) {
+  console.log('📦 EarningsCalculator: Starting with', sessions.length, 'sessions');
   const now = new Date();
   
   // Current week boundaries (Sunday to Saturday)

@@ -140,21 +140,28 @@ export default function Dashboard() {
     },
   });
 
-  // Fetch dashboard statistics from real session data
+  // Fetch dashboard statistics using EXACT same logic as Earnings page
   const { data: dashboardStats, isLoading, error: dashboardError } = useQuery({
     queryKey: ['dashboard-stats'],
-    staleTime: 0,
-    refetchOnMount: true,
     queryFn: async () => {
-      const tutorId = await getCurrentTutorId();
-      if (!tutorId) {
-        throw new Error('User not authenticated or tutor record not found');
+      // Step 1: Get tutor ID (same as Earnings page)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data: tutorData, error: tutorError } = await supabase
+        .from('tutors')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (tutorError || !tutorData) {
+        console.error('Dashboard: Error fetching tutor:', tutorError);
+        throw new Error('Tutor record not found');
       }
 
-      // Debug: Log the tutor ID being used for the query
-      console.log('🔍 Oliver tutor ID used for query:', tutorId);
+      console.log('📦 Dashboard: Tutor ID found:', tutorData.id);
 
-      // Query using session_start/session_end UTC timestamps only
+      // Step 2: Query sessions (IDENTICAL to Earnings page)
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -166,16 +173,14 @@ export default function Dashboard() {
           rate,
           paid,
           created_at,
-          tutor_id,
           students (
             name
           )
         `)
-        .eq('tutor_id', tutorId)
-        .order('session_start', { ascending: false })
-        .limit(2000); // Ensure we get all sessions
+        .eq('tutor_id', tutorData.id)
+        .order('session_start', { ascending: false });
 
-      console.log('🔍 Raw session count from database:', data?.length || 0);
+      console.log('📦 Dashboard: Raw session count from database:', data?.length || 0);
       
       console.log('🔍 Raw session count from database:', data?.length || 0);
 
