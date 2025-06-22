@@ -222,7 +222,7 @@ export default function Dashboard() {
           const today = now.toISOString().split('T')[0];
           
           junePaidSessions.forEach(session => {
-            const sessionDate = new Date(session.date);
+            const sessionDate = new Date(session.session_start);
             const earnings = (session.duration / 60) * session.rate;
             
             // Check if session is in current week
@@ -232,7 +232,7 @@ export default function Dashboard() {
             }
             
             // Check if session is today
-            if (session.date === today) {
+            if (sessionDate.toISOString().split('T')[0] === today) {
               todayEarnings += earnings;
             }
           });
@@ -368,7 +368,7 @@ export default function Dashboard() {
 
       // Debug: Check June 12-14 paid sessions specifically
       const june12to14Sessions = sessionsWithNames.filter(session => {
-        const sessionDate = session.date;
+        const sessionDate = new Date(session.session_start).toISOString().split('T')[0];
         const paidValue = (session as any).paid;
         const isPaid = Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
         return sessionDate >= '2025-06-12' && sessionDate <= '2025-06-14' && isPaid;
@@ -415,7 +415,7 @@ export default function Dashboard() {
 
       sessionsWithNames.forEach((session: SessionWithStudent) => {
         // Parse session date in local timezone to avoid UTC conversion
-        const dateParts = session.date.split('-');
+        const dateParts = sessionDate.split('-');
         const sessionDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
         
 

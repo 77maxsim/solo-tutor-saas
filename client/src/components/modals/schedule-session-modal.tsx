@@ -457,15 +457,13 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
       console.log('UTC result after conversion:', startUTC.toISOString());
 
       if (isEditMode && editSession) {
-        // Update existing session with UTC timestamps
+        // Update existing session with UTC timestamps only
         const { error } = await supabase
           .from('sessions')
           .update({
             student_id: data.studentId,
             session_start: startUTC.toISOString(),
             session_end: endUTC.toISOString(),
-            date: format(data.date, "yyyy-MM-dd"),
-            time: data.time,
             duration: data.duration,
             rate: data.rate,
             color: data.color,

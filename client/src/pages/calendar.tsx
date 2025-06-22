@@ -501,9 +501,7 @@ export default function Calendar() {
         .from('sessions')
         .update({
           session_start: newStartUTC,
-          session_end: newEndUTC,
-          date: newStartInTutorTz.format('YYYY-MM-DD'),
-          time: newStartInTutorTz.format('HH:mm')
+          session_end: newEndUTC
         })
         .eq('id', session.id);
 

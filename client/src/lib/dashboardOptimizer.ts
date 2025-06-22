@@ -125,14 +125,16 @@ function calculateDashboardStats(sessions: any[], now: Date) {
   let lastMonthEarnings = 0;
 
   sessions.forEach(session => {
-    const sessionDate = new Date(session.date);
+    const sessionDate = new Date(session.session_start);
     const isPaid = session.paid === true;
     const earnings = (session.duration / 60) * session.rate;
 
     if (!isPaid) return; // Only count paid sessions for earnings
 
+    const todayStr = sessionDate.toISOString().split('T')[0];
+
     // Today's earnings
-    if (session.date === today) {
+    if (todayStr === today) {
       todayEarnings += earnings;
     }
 
