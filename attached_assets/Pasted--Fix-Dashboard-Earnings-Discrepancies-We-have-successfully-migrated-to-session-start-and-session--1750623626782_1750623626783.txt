@@ -1,0 +1,75 @@
+ Fix Dashboard & Earnings Discrepancies
+
+We have successfully migrated to session_start and session_end and removed the deprecated time field. However, multiple issues remain on the Dashboard:
+
+🧩 Current Issues
+Dashboard Earnings Cards (Today / Week / Month)
+
+Always show ¥0.00, even though the Earnings Page displays the correct totals (¥2,714.00 this month, etc.).
+
+Expected behavior: Should match the logic and results of the Earnings page.
+
+Expected Earnings (30d / Month / All)
+
+Values are inconsistent or incorrect across tabs.
+
+Examples:
+
+30d: ¥30,854.00
+
+Month: ¥7,380.00
+
+All: ¥76,994.00
+
+These differences do not reflect actual totals or session logic.
+
+Dashboard: Active Students = 0
+
+This is incorrect, as the Earnings page shows 50 active students.
+
+Same with “Sessions This Week” – shows 0 on Dashboard, while data exists in backend.
+
+✅ What Is Working
+Earnings page logic is correct and up to date.
+
+session_start is being used across all new logic (✅ good).
+
+RLS is enforced and sessions are scoped by the logged-in tutor.
+
+⚠️ Constraints
+Please make the fix without breaking any of the following:
+
+❌ Do not reference or query the deprecated time or date columns.
+
+❌ Do not break existing Earnings Page logic (this is our source of truth).
+
+✅ Use session_start and session_end (in UTC), and convert to tutor's timezone (e.g., Asia/Shanghai) where filtering by day/week/month is required.
+
+✅ Dashboard UI must remain unchanged.
+
+✅ Must respect Supabase RLS – fetch only sessions for the logged-in tutor.
+
+⚠️ Fix logic centrally (e.g., shared utils or hook) to ensure DRY code and reduce future bugs.
+
+🧪 Suggested Steps
+Audit the Dashboard.tsx and compare calculations with Earnings.tsx. Ensure they both use the same centralized logic.
+
+Use a shared earningsCalculator (if already created) or build a util that:
+
+Converts session_start from UTC to tutor timezone.
+
+Groups sessions by time window (today, this week, this month).
+
+Filters only paid: true sessions.
+
+Fix Active Students Count on the Dashboard:
+
+Use same query/logic as Earnings page.
+
+Define an “active student” as one who had a session in the last 30 days.
+
+💡 Optional Improvements
+Add basic Jest unit tests for the new earningsCalculator or shared query logic to avoid regression in future.
+
+Consider logging the raw filtered sessions in dev mode to verify the logic is correctly applied in both places.
+
