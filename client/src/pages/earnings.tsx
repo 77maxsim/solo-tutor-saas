@@ -15,6 +15,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from "@/lib/queryOptimizer";
 import { formatCurrency } from "@/lib/utils";
+import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
+import { useTimezone } from "@/contexts/TimezoneContext";
 import { 
   Coins, 
   TrendingUp, 
@@ -25,8 +27,8 @@ import {
 interface Session {
   id: string;
   student_id: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   created_at: string;
@@ -36,8 +38,8 @@ interface SessionWithStudent {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   paid: boolean;
@@ -64,6 +66,7 @@ const defaultCardOrder: EarningsCard[] = [
 
 export default function Earnings() {
   const queryClient = useQueryClient();
+  const { tutorTimezone } = useTimezone();
   const [cards, setCards] = useState<EarningsCard[]>(defaultCardOrder);
   
   // Toggle state for earnings summary (week/month)
@@ -165,11 +168,11 @@ export default function Earnings() {
         // Get the working paid sessions
         const { data: paidSessions, error: paidError } = await supabase
           .from('sessions')
-          .select('id, date, time, duration, rate, paid, student_id, created_at')
+          .select('id, session_start, session_end, duration, rate, paid, student_id, created_at')
           .eq('tutor_id', tutorId)
           .eq('paid', true)
-          .gte('date', '2025-06-01')
-          .lte('date', '2025-06-30');
+          .gte('session_start', '2025-06-01T00:00:00.000Z')
+          .lte('session_start', '2025-06-30T23:59:59.999Z');
 
         if (paidError) {
           console.error('Error fetching Oliver paid sessions:', paidError);
@@ -181,10 +184,10 @@ export default function Earnings() {
         // Get all unpaid sessions from a different time period for context
         const { data: unpaidSessions, error: unpaidError } = await supabase
           .from('sessions')
-          .select('id, date, time, duration, rate, paid, student_id, created_at')
+          .select('id, session_start, session_end, duration, rate, paid, student_id, created_at')
           .eq('tutor_id', tutorId)
           .eq('paid', false)
-          .order('date', { ascending: false })
+          .order('session_start', { ascending: false })
           .limit(100); // Limit to avoid performance issues
 
         if (unpaidError) {
@@ -229,8 +232,8 @@ export default function Earnings() {
         .select(`
           id,
           student_id,
-          date,
-          time,
+          session_start,
+          session_end,
           duration,
           rate,
           paid,
@@ -240,7 +243,7 @@ export default function Earnings() {
           )
         `)
         .eq('tutor_id', tutorId)
-        .order('date', { ascending: false });
+        .order('session_start', { ascending: false });
 
       if (error) {
         console.error('Error fetching earnings data:', error);
@@ -384,7 +387,7 @@ export default function Earnings() {
   console.log('🔍 Earnings page - Sessions data being used for calculations:', {
     sessionCount: sessions?.length || 0,
     firstSessionPaidStatus: sessions?.[0] ? (sessions[0] as any).paid : 'no sessions',
-    sampleJuneSessions: sessions?.filter(s => s.date >= '2025-06-01' && s.date <= '2025-06-30')?.slice(0, 3)?.map(s => ({ id: s.id, date: s.date, paid: (s as any).paid })) || []
+    sampleJuneSessions: sessions?.filter(s => s.session_start >= '2025-06-01T00:00:00.000Z' && s.session_start <= '2025-06-30T23:59:59.999Z')?.slice(0, 3)?.map(s => ({ id: s.id, session_start: s.session_start, paid: (s as any).paid })) || []
   });
 
   const earnings = sessions ? calculateEarnings(sessions) : null;
