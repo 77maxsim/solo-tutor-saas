@@ -413,7 +413,7 @@ export default function Calendar() {
     setShowScheduleModal(true);
   };
 
-  // Custom event content renderer with enhanced visuals
+  // Custom event content renderer
   const renderEventContent = (eventInfo: any) => {
     const session = eventInfo.event.extendedProps;
     const durationMinutes = session.duration || 60;
@@ -422,60 +422,15 @@ export default function Calendar() {
     const { displayTime } = getSessionDisplayInfo(session, tutorTimezone || undefined);
     const tooltipContent = `${session.student_name || 'Unassigned'}\n${displayTime}\n${durationMinutes} minutes\n${formatCurrency(earning, tutorCurrency)}`;
 
-    // Enhanced styling with modern hover effects
-    const isPast = session.isPastSession;
-    const baseClass = isPast ? 'opacity-60' : '';
-    
+    // Apply faded styling for past sessions
+    const fadeClass = session.isPastSession ? 'opacity-50 grayscale' : '';
+
     return (
-      <div 
-        className={`
-          group relative p-2 text-xs rounded-lg shadow-sm
-          transition-all duration-300 ease-out
-          hover:shadow-md hover:scale-105 hover:z-10
-          cursor-pointer border border-white/20
-          ${baseClass}
-        `} 
-        title={tooltipContent}
-        style={{
-          background: `linear-gradient(135deg, ${eventInfo.event.backgroundColor}f0, ${eventInfo.event.backgroundColor}cc)`,
-          backdropFilter: 'blur(4px)'
-        }}
-      >
-        {/* Main content */}
-        <div className="font-medium truncate text-white drop-shadow-sm group-hover:text-white transition-colors">
-          {eventInfo.event.title}
-        </div>
-        <div className="text-xs opacity-90 text-white/90 group-hover:text-white/100 transition-colors">
+      <div className={`p-1 text-xs ${fadeClass}`} title={tooltipContent}>
+        <div className="font-medium truncate">{eventInfo.event.title}</div>
+        <div className="text-xs opacity-90">
           {durationMinutes}min • {formatCurrency(earning, tutorCurrency)}
         </div>
-        
-        {/* Hover overlay with enhanced info */}
-        <div className="
-          absolute inset-0 bg-black/80 backdrop-blur-sm rounded-lg p-2
-          opacity-0 group-hover:opacity-100 
-          transition-all duration-200 ease-out
-          pointer-events-none z-20
-          flex flex-col justify-center text-center
-        ">
-          <div className="text-white font-medium text-sm mb-1">
-            {session.student_name || 'Unassigned'}
-          </div>
-          <div className="text-white/90 text-xs">
-            {displayTime}
-          </div>
-          <div className="text-green-300 font-semibold text-xs mt-1">
-            {formatCurrency(earning, tutorCurrency)}
-          </div>
-        </div>
-
-        {/* Shimmer effect on hover */}
-        <div className="
-          absolute inset-0 rounded-lg
-          bg-gradient-to-r from-transparent via-white/20 to-transparent
-          transform translate-x-[-100%] group-hover:translate-x-[100%]
-          transition-transform duration-700 ease-out
-          pointer-events-none
-        " />
       </div>
     );
   };
@@ -721,19 +676,13 @@ export default function Calendar() {
               Calendar
             </h1>
             
-            {/* Enhanced View Toggle with animations */}
-            <div className="flex items-center bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl p-1 shadow-inner border border-gray-200/50 dark:border-gray-600/50">
+            {/* View Toggle */}
+            <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
               <Button
                 variant={calendarView === 'week' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => handleViewChange('week')}
-                className={`
-                  text-xs font-medium transition-all duration-300 ease-out
-                  ${calendarView === 'week' 
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105' 
-                    : 'hover:bg-white/70 dark:hover:bg-gray-600/70 hover:shadow-sm hover:scale-102'
-                  }
-                `}
+                className="text-xs"
               >
                 Week
               </Button>
@@ -741,13 +690,7 @@ export default function Calendar() {
                 variant={calendarView === 'month' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => handleViewChange('month')}
-                className={`
-                  text-xs font-medium transition-all duration-300 ease-out
-                  ${calendarView === 'month' 
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105' 
-                    : 'hover:bg-white/70 dark:hover:bg-gray-600/70 hover:shadow-sm hover:scale-102'
-                  }
-                `}
+                className="text-xs"
               >
                 Month
               </Button>
@@ -755,13 +698,7 @@ export default function Calendar() {
                 variant={calendarView === 'agenda' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => handleViewChange('agenda')}
-                className={`
-                  text-xs font-medium transition-all duration-300 ease-out
-                  ${calendarView === 'agenda' 
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105' 
-                    : 'hover:bg-white/70 dark:hover:bg-gray-600/70 hover:shadow-sm hover:scale-102'
-                  }
-                `}
+                className="text-xs"
               >
                 Agenda
               </Button>
@@ -769,42 +706,16 @@ export default function Calendar() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Enhanced Student Filter */}
+            {/* Student Filter */}
             <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-              <SelectTrigger className="
-                w-48 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm
-                border-gray-200/50 dark:border-gray-600/50
-                hover:bg-white dark:hover:bg-gray-800
-                transition-all duration-200 ease-out
-                hover:shadow-md hover:border-blue-300 dark:hover:border-blue-500
-                focus:ring-2 focus:ring-blue-500/20
-              ">
-                <Filter className="h-4 w-4 mr-2 text-gray-500 transition-colors" />
+              <SelectTrigger className="w-48">
+                <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filter by student" />
               </SelectTrigger>
-              <SelectContent className="
-                bg-white/95 dark:bg-gray-800/95 backdrop-blur-md
-                border-gray-200/50 dark:border-gray-600/50
-                shadow-xl
-              ">
-                <SelectItem 
-                  value="all"
-                  className="
-                    hover:bg-blue-50 dark:hover:bg-blue-900/30
-                    transition-colors duration-200
-                  "
-                >
-                  All Students
-                </SelectItem>
+              <SelectContent>
+                <SelectItem value="all">All Students</SelectItem>
                 {uniqueStudents.map((student) => (
-                  <SelectItem 
-                    key={student.id} 
-                    value={student.id}
-                    className="
-                      hover:bg-blue-50 dark:hover:bg-blue-900/30
-                      transition-colors duration-200
-                    "
-                  >
+                  <SelectItem key={student.id} value={student.id}>
                     {student.name}
                   </SelectItem>
                 ))}
