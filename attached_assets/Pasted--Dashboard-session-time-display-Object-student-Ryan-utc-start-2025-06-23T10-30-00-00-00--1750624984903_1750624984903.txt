@@ -1,0 +1,30 @@
+📊 Dashboard session time display: 
+Object {student: "Ryan", utc_start: "2025-06-23T10:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 18:30"}
+📊 Dashboard session time display: 
+Object {student: "Joy", utc_start: "2025-06-23T11:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 19:00"}
+📊 Dashboard session time display: 
+Object {student: "Felix", utc_start: "2025-06-23T11:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 19:30"}
+🔍 Dashboard query state: 
+Object {isLoading: false, hasData: false, dashboardStats: "null", error: ReferenceError}
+📊 Dashboard session time display: 
+Object {student: "King", utc_start: "2025-06-23T05:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 13:00"}
+📊 Dashboard session time display: 
+Object {student: "August", utc_start: "2025-06-23T10:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 18:00"}
+📊 Dashboard session time display: 
+Object {student: "Ryan", utc_start: "2025-06-23T10:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 18:30"}
+📊 Dashboard session time display: 
+Object {student: "Joy", utc_start: "2025-06-23T11:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 19:00"}
+📊 Dashboard session time display: 
+Object {student: "Felix", utc_start: "2025-06-23T11:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 19:30"}
+📊 Dashboard session time display: 
+Object {student: "King", utc_start: "2025-06-23T05:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 13:00"}
+📊 Dashboard session time display: 
+Object {student: "August", utc_start: "2025-06-23T10:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 18:00"}
+📊 Dashboard session time display: 
+Object {student: "Ryan", utc_start: "2025-06-23T10:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 18:30"}
+📊 Dashboard session time display: 
+Object {student: "Joy", utc_start: "2025-06-23T11:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 19:00"}
+📊 Dashboard session time display: 
+Object {student: "Felix", utc_start: "2025-06-23T11:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "06/23/2025 at 19:30"}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "Asia/Shanghai", isTimezoneLoading: false, open: false}

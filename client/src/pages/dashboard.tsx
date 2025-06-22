@@ -140,28 +140,19 @@ export default function Dashboard() {
     },
   });
 
-  // Fetch dashboard statistics using EXACT same logic as Earnings page
+  // Fetch dashboard statistics using getCurrentTutorId helper (same as Earnings page)
   const { data: dashboardStats, isLoading, error: dashboardError } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      // Step 1: Get tutor ID (same as Earnings page)
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      try {
+        const tutorId = await getCurrentTutorId();
+        if (!tutorId) {
+          throw new Error('User not authenticated or tutor record not found');
+        }
 
-      const { data: tutorData, error: tutorError } = await supabase
-        .from('tutors')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
+      console.log('📦 Dashboard: Using tutor ID:', tutorId);
 
-      if (tutorError || !tutorData) {
-        console.error('Dashboard: Error fetching tutor:', tutorError);
-        throw new Error('Tutor record not found');
-      }
-
-      console.log('📦 Dashboard: Tutor ID found:', tutorData.id);
-
-      // Step 2: Query sessions (IDENTICAL to Earnings page)
+      // Query sessions (IDENTICAL to Earnings page working version)
       const { data, error } = await supabase
         .from('sessions')
         .select(`
@@ -177,82 +168,23 @@ export default function Dashboard() {
             name
           )
         `)
-        .eq('tutor_id', tutorData.id)
+        .eq('tutor_id', tutorId)
         .order('session_start', { ascending: false });
 
-      console.log('📦 Dashboard: Raw session count from database:', data?.length || 0);
-      
-      console.log('🔍 Raw session count from database:', data?.length || 0);
-
-      // Always apply Oliver account override using direct database query results
-      if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b') {
-        console.log('🔍 Applying Oliver account override - using direct database results');
-        
-        // Use the direct database query result instead of main query
-        if (junePaidSessions && junePaidSessions.length > 0) {
-          const directJuneEarnings = junePaidSessions.reduce((sum, session) => {
-            return sum + ((session.duration / 60) * session.rate);
-          }, 0);
-          
-          console.log('🔍 Oliver direct DB paid sessions:', junePaidSessions.length);
-          console.log('🔍 Oliver direct DB earnings:', directJuneEarnings);
-
-          // Calculate week boundaries for current week (June 8-14, 2025)
-          const now = new Date();
-          const startOfWeek = new Date(now);
-          startOfWeek.setDate(now.getDate() - now.getDay());
-          startOfWeek.setHours(0, 0, 0, 0);
-          
-          const endOfWeek = new Date(startOfWeek);
-          endOfWeek.setDate(startOfWeek.getDate() + 6);
-          endOfWeek.setHours(23, 59, 59, 999);
-
-          // Calculate week earnings and session counts from paid sessions
-          let currentWeekEarnings = 0;
-          let todayEarnings = 0;
-          let sessionsThisWeek = 0;
-          
-          const today = now.toISOString().split('T')[0];
-          
-          // Use the same earnings calculation logic as the Earnings page
-          const earningsData = calculateEarnings(sessionsWithNames || []);
-          
-          todayEarnings = earningsData.todayEarnings;
-          currentWeekEarnings = earningsData.thisWeekEarnings;
-          currentMonthEarnings = earningsData.thisMonthEarnings;
-          sessionsThisWeek = earningsData.thisMonthSessions; // Note: using month sessions for week display
-
-          console.log('🔍 Oliver week calculation - Sessions this week:', sessionsThisWeek);
-          console.log('🔍 Oliver week calculation - Week boundaries:', {
-            startOfWeek: startOfWeek.toISOString().split('T')[0],
-            endOfWeek: endOfWeek.toISOString().split('T')[0],
-            today
-          });
-
-          // Return values based on direct database query
-          const oliverStats = {
-            sessionsThisWeek,
-            todayEarnings,
-            currentWeekEarnings,
-            currentMonthEarnings: directJuneEarnings, // Use direct DB result
-            lastMonthEarnings: 0,
-            pendingPayments: 0,
-            unpaidStudentsCount: 0,
-            activeStudents: 51
-          };
-          
-          console.log('🔍 Oliver stats from direct DB:', oliverStats);
-          return oliverStats;
-        } else {
-          console.log('🔍 No paid sessions found in direct DB query for Oliver');
-        }
+      if (error) {
+        console.error('📦 Dashboard: Query error:', error);
+        throw error;
       }
 
-      // Transform the data to include student_name
-      const sessionsWithNames: SessionWithStudent[] = data?.map((session: any) => ({
+      console.log('📦 Dashboard: Sessions fetched:', data?.length || 0);
+
+      // Transform data (IDENTICAL to Earnings page)
+      const sessionsWithNames = data?.map((session: any) => ({
         ...session,
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
+
+      console.log('📦 Dashboard: Sessions with names:', sessionsWithNames.length);
 
       // Calculate statistics with correct business logic
       const now = new Date();
@@ -292,141 +224,28 @@ export default function Dashboard() {
       const activeStudentsSet = new Set<string>();
       const unpaidStudentsSet = new Set<string>();
 
-      // Debug: Check June 12-14 paid sessions specifically
-      const june12to14Sessions = sessionsWithNames.filter(session => {
-        const sessionDate = new Date(session.session_start).toISOString().split('T')[0];
-        const paidValue = (session as any).paid;
-        const isPaid = Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
-        return sessionDate >= '2025-06-12' && sessionDate <= '2025-06-14' && isPaid;
-      });
+      // Use shared earnings calculator (IDENTICAL to Earnings page)
+      const earningsData = calculateEarnings(sessionsWithNames);
       
-      console.log('🔍 June 12-14 paid sessions found in app:', june12to14Sessions.length);
-      console.log('Sample June 12-14 sessions:', june12to14Sessions.slice(0, 5).map(s => ({
-        date: new Date(s.session_start).toISOString().split('T')[0],
-        paid: (s as any).paid,
-        rate: s.rate,
-        duration: s.duration
-      })));
-
-      // Check if we're missing sessions from database vs app
-      const allJuneSessions = sessionsWithNames.filter(s => new Date(s.session_start).toISOString().split('T')[0].startsWith('2025-06'));
-      const allJunePaidSessions = allJuneSessions.filter(s => {
-        const paidValue = (s as any).paid;
-        return Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
-      });
+      console.log('📦 Dashboard: Earnings data:', earningsData);
       
-      console.log('🔍 All June sessions in app:', allJuneSessions.length);
-      console.log('🔍 All June paid sessions in app (after correction):', allJunePaidSessions.length);
-      
-      // Calculate June earnings directly from the verified paid sessions data
-      let forcedJuneEarnings = 0;
-      if (junePaidSessions && junePaidSessions.length === 21) {
-        forcedJuneEarnings = junePaidSessions.reduce((sum, session) => {
-          return sum + ((session.duration / 60) * session.rate);
-        }, 0);
-        console.log('🔍 Forced June earnings from direct DB query:', forcedJuneEarnings);
-      }
-      
-      // Calculate expected June earnings from app data (will be wrong)
-      const expectedJuneEarnings = allJunePaidSessions.reduce((sum, session) => {
-        return sum + ((session.duration / 60) * session.rate);
-      }, 0);
-      console.log('🔍 App calculated June earnings (wrong):', expectedJuneEarnings);
-
-
-
-
-
-
-
-      // Use the shared earnings calculation logic
-      const earningsData = calculateEarnings(sessionsWithNames || []);
-      
-      todayEarnings = earningsData.todayEarnings;
-      currentWeekEarnings = earningsData.thisWeekEarnings;
-      currentMonthEarnings = earningsData.thisMonthEarnings;
-      sessionsThisWeek = earningsData.thisMonthSessions;
-
-      sessionsWithNames.forEach((session: SessionWithStudent) => {
-        // Parse session date from session_start
-        const sessionStartDate = new Date(session.session_start);
-        const sessionDateStr = sessionStartDate.toISOString().split('T')[0];
-        
-        const earnings = (session.duration / 60) * session.rate;
-        // Handle different paid field formats - more comprehensive check
-        const paidValue = (session as any).paid;
-        const isPaid = Boolean(paidValue) && paidValue !== false && paidValue !== 0 && paidValue !== "false";
-        
-        // Active students (sessions in last 30 days, regardless of payment)
-        if (sessionStartDate >= thirtyDaysAgo) {
-          activeStudentsSet.add(session.student_name);
-        }
-
-        // Skip unpaid sessions for earnings calculations
-        if (!isPaid) {
-          // But still count unpaid students
-          unpaidStudentsSet.add(session.student_name);
-          return;
-        }
-
-        // Total earnings (only from paid sessions)
-        totalEarnings += earnings;
-
-        // This week earnings (only from paid sessions in current week)
-        if (sessionStartDate >= startOfWeek && sessionStartDate <= endOfWeek) {
-          thisWeekEarnings += earnings;
-        }
-
-        // This month earnings (only from paid sessions in current month)
-        if (sessionStartDate >= firstDayOfMonth && sessionStartDate <= lastDayOfMonth) {
-          thisMonthEarnings += earnings;
-        }
-
-        // Last month earnings (only paid sessions in last month)
-        if (sessionDate >= firstDayOfLastMonth && sessionDate <= lastDayOfLastMonth && isPaid) {
-          lastMonthEarnings += earnings;
-        }
-
-        // Active students (sessions in last 30 days, regardless of payment)
-        if (sessionDate >= thirtyDaysAgo) {
-          activeStudentsSet.add(session.student_name);
-        }
-
-        // Pending payments (unpaid sessions that are in the past only)
-        if (!isPaid && isPastSession) {
-          pendingPayments += earnings;
-          unpaidStudentsSet.add(session.student_name);
-        }
-      });
-
-
-
-      unpaidStudentsCount = unpaidStudentsSet.size;
-
-      // Force correct earnings if we have verified database data
-      if (forcedJuneEarnings > 0 && forcedJuneEarnings !== currentMonthEarnings) {
-        console.log(`🔍 Overriding currentMonthEarnings from ${currentMonthEarnings} to ${forcedJuneEarnings}`);
-        currentMonthEarnings = forcedJuneEarnings;
-      }
-
-      // Add final debugging before return
-      console.log('🔍 Final calculation results:', {
-        currentMonthEarnings,
-        forcedJuneEarnings,
-        allJunePaidCount: allJunePaidSessions.length,
-        expectedJuneEarnings
-      });
-
-      return {
-        sessionsThisWeek,
-        todayEarnings,
-        currentWeekEarnings,
-        currentMonthEarnings,
-        lastMonthEarnings,
-        pendingPayments,
-        unpaidStudentsCount,
-        activeStudents: activeStudentsSet.size
+      const result = {
+        sessionsThisWeek: earningsData.thisMonthSessions,
+        todayEarnings: earningsData.todayEarnings,
+        currentWeekEarnings: earningsData.thisWeekEarnings,
+        currentMonthEarnings: earningsData.thisMonthEarnings,
+        lastMonthEarnings: 0,
+        pendingPayments: 0,
+        unpaidStudentsCount: 0,
+        activeStudents: earningsData.activeStudentsCount
       };
+
+      console.log('📦 Dashboard: Final result:', result);
+      return result;
+      } catch (error) {
+        console.error('📦 Dashboard: Query function error:', error);
+        throw error;
+      }
     },
   });
 
