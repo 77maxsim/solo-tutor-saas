@@ -472,11 +472,11 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
           .eq('id', editSession.id);
 
         if (error) {
-          console.error('Supabase error:', error);
+          console.error('Supabase update error details:', error);
           toast({
-            variant: "destructive",
+            variant: "destructive", 
             title: "Error",
-            description: "Failed to update session. Please try again.",
+            description: error.message || "Failed to update session. Please check all fields and try again.",
           });
           return;
         }
@@ -554,11 +554,11 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
           .select();
 
         if (error) {
-          console.error('Supabase error:', error);
+          console.error('Supabase error details:', error);
           toast({
             variant: "destructive",
             title: "Error",
-            description: "Failed to schedule session. Please try again.",
+            description: error.message || "Failed to schedule session. Please check all fields and try again.",
           });
           return;
         }

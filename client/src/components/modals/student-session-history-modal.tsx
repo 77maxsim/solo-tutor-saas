@@ -23,8 +23,8 @@ import { ScheduleSessionModal } from "./schedule-session-modal";
 
 interface Session {
   id: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   paid: boolean;
@@ -38,8 +38,8 @@ interface SessionForDetails {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   notes?: string;
@@ -78,10 +78,10 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
 
       const { data, error } = await supabase
         .from('sessions')
-        .select('id, date, time, duration, rate, paid, created_at, notes, color, recurrence_id')
+        .select('id, session_start, session_end, duration, rate, paid, created_at, notes, color, recurrence_id')
         .eq('tutor_id', tutorId)
         .eq('student_id', student.id)
-        .order('date', { ascending: false });
+        .order('session_start', { ascending: false });
 
       if (error) {
         console.error('Error fetching session history:', error);

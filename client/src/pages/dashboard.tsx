@@ -330,8 +330,14 @@ export default function Dashboard() {
   };
 
   const handleScheduleSession = () => {
-    // Trigger the global schedule session modal
-    window.dispatchEvent(new CustomEvent('openScheduleModal'));
+    console.log('✅ Opening single schedule modal from dashboard');
+    setShowScheduleModal(prev => {
+      if (prev) {
+        console.log('⚠️ Modal already open, ignoring duplicate request');
+        return prev;
+      }
+      return true;
+    });
   };
 
   return (

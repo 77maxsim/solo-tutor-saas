@@ -401,9 +401,15 @@ export default function Calendar() {
 
   // Handle schedule session
   const handleScheduleSession = () => {
-    console.log('✅ Bug 1 fixed - Opening single schedule modal');
+    console.log('✅ Opening single schedule modal from calendar');
     setEditSession(null); // Clear any existing edit session
-    setShowScheduleModal(true);
+    setShowScheduleModal(prev => {
+      if (prev) {
+        console.log('⚠️ Modal already open, ignoring duplicate request');
+        return prev;
+      }
+      return true;
+    });
   };
 
   // Custom event content renderer
