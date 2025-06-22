@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from "@/lib/queryOptimizer";
 import { getOptimizedDashboardStats } from "@/lib/dashboardOptimizer";
+import { calculateEarnings } from "@/lib/earningsCalculator";
 import { 
   BookOpen, 
   Coins, 

@@ -97,10 +97,11 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
         });
         break;
       case 'nextMonth':
-        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const endOfThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endOfThisMonth.setHours(23, 59, 59, 999);
         filteredSessions = upcomingSessions.filter(session => {
           const sessionDate = new Date(session.session_start);
-          return sessionDate <= nextMonth;
+          return sessionDate <= endOfThisMonth;
         });
         break;
       case 'allFuture':

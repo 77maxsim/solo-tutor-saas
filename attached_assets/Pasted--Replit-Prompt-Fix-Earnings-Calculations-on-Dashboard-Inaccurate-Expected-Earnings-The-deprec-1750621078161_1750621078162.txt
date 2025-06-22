@@ -1,0 +1,61 @@
+🛠 Replit Prompt – Fix Earnings Calculations on Dashboard & Inaccurate Expected Earnings
+
+The deprecated session.time field has been fully removed, and most components have already been migrated to use session_start and session_end UTC timestamps.
+
+✅ The following bugs have already been fixed:
+
+Students page
+
+Calendar display and drag/drop rescheduling
+
+Session editing modal
+
+Earnings page (totals and breakdowns)
+
+❌ Remaining issues to fix:
+
+Dashboard: Earnings Calculations (Today / This Week / This Month)
+
+The earnings cards on the dashboard still show ¥0.00 for Today / Week / Month.
+
+But the same calculations do work correctly on the Earnings page.
+
+✅ Please reuse or centralize the correct logic from the Earnings page and apply it to the dashboard as well.
+
+🕓 All logic must be based on session_start and session_end (not time) and must respect the tutor’s timezone via formatUtcToTutorTimezone() or similar utility.
+
+Dashboard: Expected Earnings Totals Are Incorrect
+
+The "Expected Earnings" cards on the dashboard show inconsistent totals:
+
+“30d” shows one number (e.g. ¥30,854 from 380 sessions)
+
+“Month” shows a much lower number (e.g. ¥7,380 from 91 sessions), despite similar session volume
+
+These discrepancies likely stem from:
+
+Comparing different date ranges (e.g. 30 rolling days vs calendar month)
+
+Possibly wrong timezone or timestamp comparison
+
+Sessions that fall outside the intended date window
+
+✅ Please review the logic for calculating expected earnings in all modes (30d, Month, All) and ensure:
+
+All future sessions are based on session_start in UTC
+
+Time is converted correctly to local tutor timezone
+
+Date range logic is consistent across filters
+
+Amounts are summed accurately based on rate and duration
+
+📌 Notes:
+
+Please do not reintroduce or depend on session.time, which has been permanently dropped.
+
+Keep changes minimal and compatible with the updated structure.
+
+Make sure calculations are correct across different timezones.
+
+Validate everything using the live Supabase session_start and session_end data.
