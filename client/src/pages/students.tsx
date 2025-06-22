@@ -35,6 +35,8 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { formatCurrency } from "@/lib/utils";
+import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
+import { useTimezone } from "@/contexts/TimezoneContext";
 import { useToast } from "@/hooks/use-toast";
 import { 
   User, 
@@ -54,8 +56,8 @@ interface Session {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   paid: boolean;
@@ -78,6 +80,7 @@ interface StudentSummary {
 
 export default function Students() {
   const queryClient = useQueryClient();
+  const { tutorTimezone } = useTimezone();
   const { toast } = useToast();
   
   // Modal states
@@ -302,11 +305,11 @@ export default function Students() {
         // Get the working paid sessions
         const { data: paidSessions, error: paidError } = await supabase
           .from('sessions')
-          .select('id, date, time, duration, rate, paid, student_id, created_at')
+          .select('id, session_start, session_end, duration, rate, paid, student_id, created_at')
           .eq('tutor_id', tutorId)
           .eq('paid', true)
-          .gte('date', '2025-06-01')
-          .lte('date', '2025-06-30');
+          .gte('session_start', '2025-06-01T00:00:00.000Z')
+          .lte('session_start', '2025-06-30T23:59:59.999Z');
 
         if (paidError) {
           console.error('Error fetching Oliver paid sessions for students page:', paidError);
@@ -318,10 +321,10 @@ export default function Students() {
         // Get unpaid sessions for context
         const { data: unpaidSessions, error: unpaidError } = await supabase
           .from('sessions')
-          .select('id, date, time, duration, rate, paid, student_id, created_at')
+          .select('id, session_start, session_end, duration, rate, paid, student_id, created_at')
           .eq('tutor_id', tutorId)
           .eq('paid', false)
-          .order('date', { ascending: false })
+          .order('session_start', { ascending: false })
           .limit(100);
 
         if (unpaidError) {
