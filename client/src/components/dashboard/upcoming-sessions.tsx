@@ -49,8 +49,6 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
         .select(`
           id,
           student_id,
-          date,
-          time,
           session_start,
           session_end,
           duration,
@@ -63,9 +61,8 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
           )
         `)
         .eq('tutor_id', tutorId)
-        .gte('date', new Date().toISOString().split('T')[0]) // Only future sessions
-        .order('date', { ascending: true })
-        .order('time', { ascending: true });
+        .gte('session_start', new Date().toISOString()) // Only future sessions using UTC timestamps
+        .order('session_start', { ascending: true });
 
       // Apply limit only if specified (for dashboard view)
       if (limit && limit > 0) {

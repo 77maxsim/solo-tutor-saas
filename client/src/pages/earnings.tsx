@@ -325,7 +325,7 @@ export default function Earnings() {
 
 
     sessions.forEach(session => {
-      const sessionDate = new Date(session.date);
+      const sessionDate = new Date(session.session_start);
       const earnings = (session.duration / 60) * session.rate;
       // Standardized paid session check (consistent with other components)
       const isPaid = session.paid === true;

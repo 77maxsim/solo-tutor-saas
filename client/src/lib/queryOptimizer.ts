@@ -60,7 +60,7 @@ export async function getOptimizedSessions(tutorId: string) {
     // Get ALL sessions without joins to avoid performance issues
     const { data: allSessions, error } = await supabase
       .from('sessions')
-      .select('id, student_id, session_start, session_end, duration, rate, paid, notes, color, recurrence_id, created_at, status, unassigned_name, date, time')
+      .select('id, student_id, session_start, session_end, duration, rate, paid, notes, color, recurrence_id, created_at, status, unassigned_name')
       .eq('tutor_id', tutorId)
       .order('created_at', { ascending: false });
 
@@ -198,6 +198,24 @@ export async function getStandardSessions(tutorId: string) {
         id,
         student_id,
         session_start,
+        session_end,
+        duration,
+        rate,
+        paid,
+        notes,
+        color,
+        recurrence_id,
+        created_at,
+        status,
+        unassigned_name,
+        students (
+          id,
+          name,
+          avatar_url
+        )
+      `)
+      .eq('tutor_id', tutorId)
+      .order('session_start', { ascending: false });
         session_end,
         duration,
         rate,

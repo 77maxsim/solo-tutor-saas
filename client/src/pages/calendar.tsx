@@ -171,7 +171,8 @@ export default function Calendar() {
 
       console.log('🔍 Fetching calendar sessions for tutor:', tutorId);
       
-      if (shouldUseOptimizedQuery()) {
+      const useOptimized = await shouldUseOptimizedQuery(tutorId);
+      if (useOptimized) {
         const results = await getOptimizedSessions(tutorId);
         console.log('📊 Optimized query returned:', results.length, 'sessions');
         return results;
