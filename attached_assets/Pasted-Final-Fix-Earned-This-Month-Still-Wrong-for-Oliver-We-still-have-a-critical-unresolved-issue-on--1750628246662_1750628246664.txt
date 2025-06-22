@@ -1,0 +1,55 @@
+Final Fix — "Earned This Month" Still Wrong for Oliver
+We still have a critical unresolved issue on the Dashboard:
+
+❌ Oliver's “Earned This Month” shows only ¥80, but should be ¥2,714.00.
+Despite recent fixes:
+
+✅ session_start is used correctly (confirmed by console logs).
+
+✅ tutor timezone is Asia/Shanghai, and session timestamps display correctly on the Dashboard.
+
+✅ Supabase confirms many sessions this month are marked paid: true.
+
+✅ Activity log shows 30 payments on June 14 alone.
+
+🔍 Investigation Findings
+Please verify the following in the earningsCalculator logic used by the Dashboard:
+
+✅ You are using:
+
+ts
+Копіювати
+Редагувати
+const startOfMonthUtc = dayjs().tz(tz).startOf('month').utc().toDate();
+const endOfMonthUtc = dayjs().tz(tz).endOf('month').utc().toDate();
+❌ But verify the query or .filter() step actually compares session_start like:
+
+ts
+Копіювати
+Редагувати
+session.session_start >= startOfMonthUtc && session.session_start <= endOfMonthUtc
+❌ Make sure no sessionDate.isSame(dayjs(), 'month') logic is left in any part of the earnings filtering (that logic breaks when comparing UTC-local mismatches like Oliver’s timezone).
+
+❌ Confirm Oliver’s tutor.timezone is correctly loaded and passed to earningsCalculator.
+
+🧪 Add This Debugging Log to Identify Root Problem:
+Please log these during earnings calculation:
+
+ts
+Копіювати
+Редагувати
+console.log('[Debug] tutor timezone:', tutor.timezone);
+console.log('[Debug] startOfMonthUtc:', startOfMonthUtc);
+console.log('[Debug] endOfMonthUtc:', endOfMonthUtc);
+sessions.forEach(session => {
+  console.log('[Debug] session_start:', session.session_start, 'included:', session.session_start >= startOfMonthUtc && session.session_start <= endOfMonthUtc, 'paid:', session.paid);
+});
+🛑 Constraints
+Do NOT hardcode Oliver’s email, ID, or timezone.
+
+Do NOT reference deprecated time or date columns.
+
+Must work for ALL tutors dynamically based on their timezone.
+
+Must respect RLS and only pull sessions where tutor_id = current_user.
+

@@ -64,6 +64,10 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     week: `${boundaries.startOfWeek.toISOString()} to ${boundaries.endOfWeek.toISOString()}`,
     today: `${boundaries.startOfToday.toISOString()} to ${boundaries.endOfToday.toISOString()}`
   });
+  
+  console.log('[Debug] tutor timezone:', tutorTimezone);
+  console.log('[Debug] startOfMonthUtc:', boundaries.firstDayOfMonth.toISOString());
+  console.log('[Debug] endOfMonthUtc:', boundaries.lastDayOfMonth.toISOString());
 
   let totalEarnings = 0;
   let todayEarnings = 0;
@@ -79,20 +83,9 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     // Standardized paid session check (consistent with other components)
     const isPaid = session.paid === true;
     
-    // Debug log for Oliver's sessions to trace the issue
-    if (session.student_name && ['LittleSix', 'Eric', 'CoCo', 'Max New', 'Zoey', 'Vince', 'Victor', 'Ron'].includes(session.student_name)) {
-      console.log('📦 EarningsCalculator: Processing session', {
-        student: session.student_name,
-        sessionDate: sessionDate.toISOString(),
-        isPaid,
-        earnings,
-        inMonth: sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth,
-        monthBoundaries: {
-          start: boundaries.firstDayOfMonth.toISOString(),
-          end: boundaries.lastDayOfMonth.toISOString()
-        }
-      });
-    }
+    // Debug all sessions for comprehensive debugging
+    const inMonth = sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth;
+    console.log('[Debug] session_start:', session.session_start, 'included:', inMonth, 'paid:', isPaid, 'student:', session.student_name, 'earnings:', earnings);
     
     // Total earnings (only from paid sessions)
     if (isPaid) {
@@ -112,7 +105,7 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     // This month earnings (only from paid sessions in current month)
     if (isPaid && sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth) {
       thisMonthEarnings += earnings;
-      console.log('📦 EarningsCalculator: Added to month earnings:', earnings, 'total now:', thisMonthEarnings);
+      console.log('[Debug] Added to month earnings:', earnings, 'total now:', thisMonthEarnings, 'for student:', session.student_name);
     }
     
     // This month sessions count (all sessions in current month regardless of payment)
