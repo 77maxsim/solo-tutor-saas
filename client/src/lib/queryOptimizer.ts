@@ -226,15 +226,14 @@ export async function getStandardSessions(tutorId: string) {
         created_at,
         status,
         unassigned_name,
-        date,
-        time,
         students (
+          id,
           name,
           avatar_url
         )
       `)
       .eq('tutor_id', tutorId)
-      .order('created_at', { ascending: false });
+      .order('session_start', { ascending: false });
 
     if (error) {
       console.error('❌ Error fetching standard sessions:', error);
@@ -288,6 +287,7 @@ export async function getStandardSessions(tutorId: string) {
         session_end: s.session_end,
         has_timestamps: !!(s.session_start && s.session_end)
       }))
+    });
     });
 
     // Track performance metrics
