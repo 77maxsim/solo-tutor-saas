@@ -17,7 +17,7 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
   
   if (cached && (now - cached.timestamp) < CACHE_DURATION) {
     const shouldOptimize = cached.count > OPTIMIZATION_THRESHOLD;
-    console.log(`Using cached count for tutor: ${cached.count} sessions, optimized: ${shouldOptimize}`);
+    console.log(`📊 Using cached count for tutor: ${cached.count} sessions, optimized: ${shouldOptimize}`);
     return shouldOptimize;
   }
 
@@ -43,7 +43,7 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
 
     // Use optimized query if session count exceeds threshold
     const shouldOptimize = sessionCount > OPTIMIZATION_THRESHOLD;
-    console.log(`Dataset analysis: ${sessionCount} sessions, optimization ${shouldOptimize ? 'enabled' : 'disabled'}`);
+    console.log(`📊 Dataset analysis: ${sessionCount} sessions, optimization ${shouldOptimize ? 'enabled' : 'disabled'}`);
     
     return shouldOptimize;
   } catch (error) {
@@ -91,7 +91,7 @@ export async function getOptimizedSessions(tutorId: string) {
 
     // Safety check: If we get an unexpectedly large dataset, log a warning
     if (allSessions && allSessions.length > 10000) {
-      console.warn(`Very large dataset detected: ${allSessions.length} sessions. Consider additional optimization.`);
+      console.warn(`⚠️ Very large dataset detected: ${allSessions.length} sessions. Consider additional optimization.`);
     }
 
     // Get student data separately
@@ -216,6 +216,24 @@ export async function getStandardSessions(tutorId: string) {
       `)
       .eq('tutor_id', tutorId)
       .order('session_start', { ascending: false });
+        session_end,
+        duration,
+        rate,
+        paid,
+        notes,
+        color,
+        recurrence_id,
+        created_at,
+        status,
+        unassigned_name,
+        students (
+          id,
+          name,
+          avatar_url
+        )
+      `)
+      .eq('tutor_id', tutorId)
+      .order('session_start', { ascending: false });
 
     if (error) {
       console.error('Error fetching standard sessions:', error);
@@ -277,6 +295,7 @@ export async function getStandardSessions(tutorId: string) {
     return sessionsWithNames;
   } catch (error) {
     console.error('Critical error in standard query:', error);
+    // Last resort fallback - return empty array to prevent app crash
     console.log('Returning empty sessions array to prevent application crash');
     return [];
   }
