@@ -492,7 +492,7 @@ export default function Calendar() {
       converted_start_utc: newStartUTC,
       converted_end_utc: newEndUTC,
       legacy_date: newStartInTutorTz.format('YYYY-MM-DD'),
-      legacy_time: newStartInTutorTz.format('HH:mm')
+      legacy_time: 'DEPRECATED'
     });
 
     try {

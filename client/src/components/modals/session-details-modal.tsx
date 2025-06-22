@@ -72,7 +72,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
 
       if (applyToSeries && session.recurrence_id) {
         // Update all future sessions in the series
-        const sessionDate = new Date(`${session.date}T${session.time}`);
+        const sessionDate = new Date(session.session_start);
         
         const { error } = await supabase
           .from('sessions')
