@@ -186,46 +186,18 @@ export default function Dashboard() {
 
       console.log('📦 Dashboard: Sessions with names:', sessionsWithNames.length);
 
-      // Calculate statistics with correct business logic
-      const now = new Date();
+      // Get tutor timezone for timezone-aware calculations
+      const { data: tutorInfo } = await supabase
+        .from('tutors')
+        .select('timezone')
+        .eq('id', tutorId)
+        .single();
       
-      // Current week boundaries (Sunday to Saturday)
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay());
-      startOfWeek.setHours(0, 0, 0, 0);
-      
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-      endOfWeek.setHours(23, 59, 59, 999);
-      
-      // Current month boundaries - set time to start and end of day
-      const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      firstDayOfCurrentMonth.setHours(0, 0, 0, 0);
-      
-      const lastDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      lastDayOfCurrentMonth.setHours(23, 59, 59, 999);
-      
+      const tutorTimezone = tutorInfo?.timezone;
+      console.log('📦 Dashboard: Using tutor timezone:', tutorTimezone);
 
-      
-      // Last month boundaries for comparison
-      const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-      
-      // 30 days ago for active students
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-      let sessionsThisWeek = 0;
-      let todayEarnings = 0;
-      let currentWeekEarnings = 0;
-      let currentMonthEarnings = 0;
-      let lastMonthEarnings = 0;
-      let pendingPayments = 0;
-      let unpaidStudentsCount = 0;
-      const activeStudentsSet = new Set<string>();
-      const unpaidStudentsSet = new Set<string>();
-
-      // Use shared earnings calculator (IDENTICAL to Earnings page)
-      const earningsData = calculateEarnings(sessionsWithNames);
+      // Use shared earnings calculator with timezone awareness
+      const earningsData = calculateEarnings(sessionsWithNames, tutorTimezone);
       
       console.log('📦 Dashboard: Earnings data:', earningsData);
       

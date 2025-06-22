@@ -1,29 +1,69 @@
+// Import dayjs for timezone handling
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 // Shared earnings calculation logic for Dashboard and Earnings page
-export function calculateEarnings(sessions: any[]) {
-  console.log('📦 EarningsCalculator: Starting with', sessions.length, 'sessions');
-  const now = new Date();
+export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
+  console.log('📦 EarningsCalculator: Starting with', sessions.length, 'sessions', tutorTimezone ? `in timezone ${tutorTimezone}` : '');
   
-  // Current week boundaries (Sunday to Saturday)
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
+  // Use tutor's timezone if provided, otherwise use local time
+  const getTimezoneBoundaries = () => {
+    if (!tutorTimezone) {
+      // Fallback to local time (for backwards compatibility)
+      const now = new Date();
+      return {
+        startOfWeek: (() => {
+          const date = new Date(now);
+          date.setDate(now.getDate() - now.getDay());
+          date.setHours(0, 0, 0, 0);
+          return date;
+        })(),
+        endOfWeek: (() => {
+          const date = new Date(now);
+          date.setDate(now.getDate() - now.getDay() + 6);
+          date.setHours(23, 59, 59, 999);
+          return date;
+        })(),
+        firstDayOfMonth: new Date(now.getFullYear(), now.getMonth(), 1),
+        lastDayOfMonth: new Date(now.getFullYear(), now.getMonth() + 1, 0),
+        startOfToday: (() => {
+          const date = new Date(now);
+          date.setHours(0, 0, 0, 0);
+          return date;
+        })(),
+        endOfToday: (() => {
+          const date = new Date(now);
+          date.setHours(23, 59, 59, 999);
+          return date;
+        })(),
+        thirtyDaysAgo: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      };
+    }
+    
+    // Use timezone-aware boundaries
+    const nowInTimezone = dayjs().tz(tutorTimezone);
+    
+    return {
+      startOfWeek: nowInTimezone.startOf('week').toDate(),
+      endOfWeek: nowInTimezone.endOf('week').toDate(),
+      firstDayOfMonth: nowInTimezone.startOf('month').toDate(),
+      lastDayOfMonth: nowInTimezone.endOf('month').toDate(),
+      startOfToday: nowInTimezone.startOf('day').toDate(),
+      endOfToday: nowInTimezone.endOf('day').toDate(),
+      thirtyDaysAgo: nowInTimezone.subtract(30, 'day').toDate()
+    };
+  };
   
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
-  
-  // Current month boundaries
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  
-  // Today boundaries
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
-  const endOfToday = new Date(now);
-  endOfToday.setHours(23, 59, 59, 999);
-  
-  // 30 days ago for active students
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const boundaries = getTimezoneBoundaries();
+  console.log('📦 EarningsCalculator: Using boundaries', {
+    timezone: tutorTimezone || 'local',
+    month: `${boundaries.firstDayOfMonth.toISOString()} to ${boundaries.lastDayOfMonth.toISOString()}`,
+    week: `${boundaries.startOfWeek.toISOString()} to ${boundaries.endOfWeek.toISOString()}`,
+    today: `${boundaries.startOfToday.toISOString()} to ${boundaries.endOfToday.toISOString()}`
+  });
 
   let totalEarnings = 0;
   let todayEarnings = 0;
@@ -45,27 +85,27 @@ export function calculateEarnings(sessions: any[]) {
     }
     
     // Today earnings (only from paid sessions today)
-    if (isPaid && sessionDate >= startOfToday && sessionDate <= endOfToday) {
+    if (isPaid && sessionDate >= boundaries.startOfToday && sessionDate <= boundaries.endOfToday) {
       todayEarnings += earnings;
     }
     
     // This week earnings (only from paid sessions in current week)
-    if (isPaid && sessionDate >= startOfWeek && sessionDate <= endOfWeek) {
+    if (isPaid && sessionDate >= boundaries.startOfWeek && sessionDate <= boundaries.endOfWeek) {
       thisWeekEarnings += earnings;
     }
     
     // This month earnings (only from paid sessions in current month)
-    if (isPaid && sessionDate >= firstDayOfMonth && sessionDate <= lastDayOfMonth) {
+    if (isPaid && sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth) {
       thisMonthEarnings += earnings;
     }
     
     // This month sessions count (all sessions in current month regardless of payment)
-    if (sessionDate >= firstDayOfMonth && sessionDate <= lastDayOfMonth) {
+    if (sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth) {
       thisMonthSessions++;
     }
     
     // Active students (sessions in last 30 days, regardless of payment)
-    if (sessionDate >= thirtyDaysAgo) {
+    if (sessionDate >= boundaries.thirtyDaysAgo) {
       activeStudentsSet.add(session.student_name);
     }
     

@@ -7,6 +7,13 @@ import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { TrendingUp } from "lucide-react";
 
+// Import dayjs for timezone handling
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 interface UpcomingSession {
   id: string;
   student_id: string;
@@ -47,6 +54,16 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
         throw new Error('User not authenticated or tutor record not found');
       }
 
+      // Get tutor timezone for accurate calculations
+      const { data: tutorInfo } = await supabase
+        .from('tutors')
+        .select('timezone')
+        .eq('id', tutorId)
+        .single();
+      
+      const tutorTimezone = tutorInfo?.timezone;
+      console.log('📦 ExpectedEarnings: Using tutor timezone:', tutorTimezone);
+
       const now = new Date();
 
       const { data, error } = await supabase
@@ -73,11 +90,14 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
         throw error;
       }
 
-      // Transform the data to include student_name
-      return data?.map((session: any) => ({
+      // Transform the data to include student_name and store timezone
+      const sessions = data?.map((session: any) => ({
         ...session,
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
+      
+      // Attach timezone info for calculations
+      return { sessions, tutorTimezone };
     },
   });
 
@@ -85,33 +105,47 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
   const getExpectedEarnings = () => {
     if (!upcomingSessions) return { total: 0, sessions: [], count: 0 };
 
-    const now = new Date();
+    const { sessions, tutorTimezone } = upcomingSessions;
     let filteredSessions: UpcomingSession[] = [];
 
     switch (expectedTimeframe) {
       case 'next30days':
-        const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        filteredSessions = upcomingSessions.filter(session => {
+        const next30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        filteredSessions = sessions.filter(session => {
           const sessionDate = new Date(session.session_start);
           return sessionDate <= next30Days;
         });
         break;
       case 'nextMonth':
-        const endOfThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        endOfThisMonth.setHours(23, 59, 59, 999);
-        filteredSessions = upcomingSessions.filter(session => {
+        // Use timezone-aware calculation for "next calendar month"
+        let endOfNextMonth: Date;
+        if (tutorTimezone) {
+          // Get end of next month in tutor's timezone
+          const nowInTimezone = dayjs().tz(tutorTimezone);
+          endOfNextMonth = nowInTimezone.add(1, 'month').endOf('month').toDate();
+          console.log('📦 ExpectedEarnings: End of next month in', tutorTimezone, ':', endOfNextMonth.toISOString());
+        } else {
+          // Fallback to local time
+          const now = new Date();
+          endOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+          endOfNextMonth.setHours(23, 59, 59, 999);
+        }
+        
+        filteredSessions = sessions.filter(session => {
           const sessionDate = new Date(session.session_start);
-          return sessionDate <= endOfThisMonth;
+          return sessionDate <= endOfNextMonth;
         });
         break;
       case 'allFuture':
-        filteredSessions = upcomingSessions;
+        filteredSessions = sessions;
         break;
     }
 
     const total = filteredSessions.reduce((sum, session) => {
       return sum + (session.duration / 60) * session.rate;
     }, 0);
+
+    console.log('📦 ExpectedEarnings:', expectedTimeframe, 'total:', total, 'from', filteredSessions.length, 'sessions');
 
     return { 
       total, 
