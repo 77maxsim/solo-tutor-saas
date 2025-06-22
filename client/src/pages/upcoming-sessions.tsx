@@ -92,9 +92,8 @@ export default function UpcomingSessions() {
           )
         `)
         .eq('tutor_id', tutorId)
-        .gte('date', new Date().toISOString().split('T')[0])
-        .order('date', { ascending: true })
-        .order('time', { ascending: true });
+        .gte('session_start', new Date().toISOString())
+        .order('session_start', { ascending: true });
 
       if (error) {
         console.error('Error fetching upcoming sessions:', error);
@@ -204,9 +203,14 @@ export default function UpcomingSessions() {
     const nextWeek = new Date(today);
     nextWeek.setDate(today.getDate() + 7);
 
-    if (sessionDate.toDateString() === today.toDateString()) {
+    // Use date string comparison for more reliable matching
+    const sessionDateStr = sessionDate.toISOString().split('T')[0];
+    const todayStr = today.toISOString().split('T')[0];
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    if (sessionDateStr === todayStr) {
       return "Today";
-    } else if (sessionDate.toDateString() === tomorrow.toDateString()) {
+    } else if (sessionDateStr === tomorrowStr) {
       return "Tomorrow";
     } else if (sessionDate <= nextWeek) {
       return sessionDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
@@ -215,9 +219,11 @@ export default function UpcomingSessions() {
     }
   };
 
-  // Group sessions by date
+  // Group sessions by date using session_start
   const groupedSessions = sessions.reduce((groups: { [key: string]: Session[] }, session) => {
-    const date = session.date;
+    // Convert UTC session_start to local date for grouping
+    const sessionDate = new Date(session.session_start || session.date);
+    const date = sessionDate.toISOString().split('T')[0];
     if (!groups[date]) {
       groups[date] = [];
     }
@@ -228,7 +234,7 @@ export default function UpcomingSessions() {
   // Calculate summary statistics
   const totalSessions = sessions.length;
   const next7DaysSessions = sessions.filter(session => {
-    const sessionDate = new Date(session.date);
+    const sessionDate = new Date(session.session_start || session.date);
     const next7Days = new Date();
     next7Days.setDate(next7Days.getDate() + 7);
     return sessionDate <= next7Days;

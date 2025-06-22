@@ -79,6 +79,21 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     // Standardized paid session check (consistent with other components)
     const isPaid = session.paid === true;
     
+    // Debug log for Oliver's sessions to trace the issue
+    if (session.student_name && ['LittleSix', 'Eric', 'CoCo', 'Max New', 'Zoey', 'Vince', 'Victor', 'Ron'].includes(session.student_name)) {
+      console.log('📦 EarningsCalculator: Processing session', {
+        student: session.student_name,
+        sessionDate: sessionDate.toISOString(),
+        isPaid,
+        earnings,
+        inMonth: sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth,
+        monthBoundaries: {
+          start: boundaries.firstDayOfMonth.toISOString(),
+          end: boundaries.lastDayOfMonth.toISOString()
+        }
+      });
+    }
+    
     // Total earnings (only from paid sessions)
     if (isPaid) {
       totalEarnings += earnings;
@@ -97,6 +112,7 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     // This month earnings (only from paid sessions in current month)
     if (isPaid && sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth) {
       thisMonthEarnings += earnings;
+      console.log('📦 EarningsCalculator: Added to month earnings:', earnings, 'total now:', thisMonthEarnings);
     }
     
     // This month sessions count (all sessions in current month regardless of payment)
@@ -118,6 +134,8 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
       });
     }
   });
+
+  console.log('📦 EarningsCalculator: Final month earnings:', thisMonthEarnings, 'from', sessions.filter(s => s.paid === true).length, 'paid sessions');
 
   const studentEarnings = Array.from(studentEarningsMap.entries())
     .map(([name, data]) => ({

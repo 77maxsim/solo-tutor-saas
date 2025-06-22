@@ -1,0 +1,56 @@
+Fix Dashboard Earnings Display + Upcoming Sessions Error
+
+Despite previous fixes, the Dashboard "Earned This Month" card still shows incorrect data for Oliver. It only displays ¥80.00, but according to Supabase and the Activity page, Oliver has received multiple payments this month (see screenshot from All Activity > Payments with ~10 confirmed payments on June 14th alone).
+
+✅ Important context:
+
+The Earnings Page shows the correct values (e.g. ¥2,714.00).
+
+The Dashboard earnings logic should already use the shared earningsCalculator, yet the numbers don’t match for Oliver.
+
+This bug does not affect other tutors like Max, whose Dashboard earnings display correctly.
+
+Oliver’s timezone is Asia/Shanghai, and we previously adjusted session UTC timestamps for his records, so it's possible this has caused timezone logic inconsistencies.
+
+The "Earned This Month" card seems to incorrectly exclude valid paid sessions for Oliver, even those that occurred mid-month (not just around UTC edge cases like June 1st).
+
+🎯 What to fix:
+Audit the logic for calculating Earned This Month in the Dashboard, especially:
+
+Are you converting session_start from UTC to the tutor’s timezone correctly (e.g., Asia/Shanghai)?
+
+Are you using .isSame(dayjs(), 'month') with local or UTC values?
+
+Is the session marked paid = true AND the tutor_id matching?
+
+Verify session filtering is based on session_start and not deprecated columns (like time or date).
+
+Ensure the same calculation code from the Earnings page is applied to the Dashboard, without any Oliver-specific overrides or custom filters.
+
+When clicking "Upcoming Sessions", the entire page breaks with "Error loading upcoming sessions".
+
+Please trace the query and frontend logic for this route.
+
+Make sure the session_start filter doesn’t exclude valid future sessions due to timezone misalignment or RLS policy issues.
+
+This bug is likely connected to the same misinterpretation of timezones or broken filters on tutor_id.
+
+📎 Summary of what works and what doesn't
+Feature	Status
+Earnings Page	✅ Correct
+Dashboard (Max)	✅ Correct
+Dashboard (Oliver)	❌ Wrong earnings (¥80 instead of ~¥2,700)
+All Activity (Oliver)	✅ Correctly shows many June payments
+Upcoming Sessions (Oliver)	❌ Page broken with error
+
+✅ Constraints:
+
+Do not use deprecated time or date columns.
+
+Do not break the working logic on the Earnings page.
+
+Use session_start in UTC, convert to tutor's timezone for filtering.
+
+Respect RLS (Row-Level Security) — fetch only sessions belonging to the logged-in tutor.
+
+Keep visual UI and earnings card layout unchanged.
