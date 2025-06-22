@@ -53,13 +53,10 @@ const defaultCardOrder: DashboardCard[] = [
 export default function Dashboard() {
   const queryClient = useQueryClient();
   
-  // Force refresh dashboard stats after payment updates
+  // Force refresh dashboard stats to ensure fresh data
   useEffect(() => {
-    const timer = setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['earnings-sessions'] });
-    }, 2000);
-    return () => clearTimeout(timer);
+    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['earnings-sessions'] });
   }, [queryClient]);
   const [cards, setCards] = useState<DashboardCard[]>(defaultCardOrder);
   

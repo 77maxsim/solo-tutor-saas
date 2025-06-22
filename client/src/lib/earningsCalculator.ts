@@ -81,13 +81,27 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     const sessionDate = new Date(session.session_start);
     const earnings = (session.duration / 60) * session.rate;
     
-    // Debug paid field type to identify string vs boolean issue
-    if (session.student_name && ['LittleSix', 'Eric', 'CoCo', 'Max New', 'Zoey', 'Vince', 'Victor', 'Ron'].includes(session.student_name)) {
-      console.log('[TYPE TEST]', typeof session.paid, session.paid, 'for', session.student_name);
-    }
-    
     // Resilient paid session check - handle both boolean and string values
     const isPaid = session.paid === true || session.paid === 'true';
+    
+    // Debug earnings calculation logic for Oliver's sessions
+    if (session.student_name && ['LittleSix', 'Eric', 'CoCo', 'Max New', 'Zoey', 'Vince', 'Victor', 'Ron'].includes(session.student_name)) {
+      const sessionInTimezone = tutorTimezone ? dayjs.utc(session.session_start).tz(tutorTimezone) : dayjs(session.session_start);
+      const nowInTimezone = tutorTimezone ? dayjs().tz(tutorTimezone) : dayjs();
+      const isSameMonth = sessionInTimezone.isSame(nowInTimezone, 'month');
+      
+      console.log('[EARNINGS DEBUG]', {
+        student: session.student_name,
+        session_start: session.session_start,
+        paid: session.paid,
+        isPaid,
+        tutorTimezone,
+        sessionInTz: sessionInTimezone.format('YYYY-MM-DD HH:mm:ss'),
+        nowInTz: nowInTimezone.format('YYYY-MM-DD HH:mm:ss'),
+        isSameMonth,
+        included: isPaid && isSameMonth
+      });
+    }
     
     // const inMonth = sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth;
     // console.log('[Debug] session_start:', session.session_start, 'sessionDate:', sessionDate.toISOString(), 'included:', inMonth, 'paid:', isPaid, 'student:', session.student_name, 'earnings:', earnings);
@@ -97,24 +111,30 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
       totalEarnings += earnings;
     }
     
-    // Today earnings (only from paid sessions today)
-    if (isPaid && sessionDate >= boundaries.startOfToday && sessionDate <= boundaries.endOfToday) {
+    // Today earnings - use proper timezone-aware comparison
+    const isSameDay = sessionInTimezone.isSame(nowInTimezone, 'day');
+    if (isPaid && isSameDay) {
       todayEarnings += earnings;
     }
     
-    // This week earnings (only from paid sessions in current week)
-    if (isPaid && sessionDate >= boundaries.startOfWeek && sessionDate <= boundaries.endOfWeek) {
+    // This week earnings - use proper timezone-aware comparison
+    const isSameWeek = sessionInTimezone.isSame(nowInTimezone, 'week');
+    if (isPaid && isSameWeek) {
       thisWeekEarnings += earnings;
     }
     
-    // This month earnings (only from paid sessions in current month)
-    if (isPaid && sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth) {
+    // This month earnings - use proper timezone-aware comparison
+    const sessionInTimezone = tutorTimezone ? dayjs.utc(session.session_start).tz(tutorTimezone) : dayjs(session.session_start);
+    const nowInTimezone = tutorTimezone ? dayjs().tz(tutorTimezone) : dayjs();
+    const isSameMonth = sessionInTimezone.isSame(nowInTimezone, 'month');
+    
+    if (isPaid && isSameMonth) {
       thisMonthEarnings += earnings;
-      // console.log('[Debug] Added to month earnings:', earnings, 'total now:', thisMonthEarnings, 'for student:', session.student_name);
+      console.log('[MONTH EARNINGS]', earnings, 'added for', session.student_name, 'total now:', thisMonthEarnings);
     }
     
     // This month sessions count (all sessions in current month regardless of payment)
-    if (sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth) {
+    if (isSameMonth) {
       thisMonthSessions++;
     }
     
