@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { TimePicker } from "@/components/ui/time-picker";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -107,11 +108,11 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
 
   // Prefill form when editing a session
   useEffect(() => {
-    if (session && open && tutorTimezone) {
+    if (session && open && tutorTimezone && session.session_start) {
       console.log('✅ Bug 4 fixed - Prefilling edit session form:', {
         session_id: session.id,
-        date: session.date,
-        time: tutorTimezone ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm') : '',
+        session_start: session.session_start,
+        time: formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm'),
         duration: session.duration,
         rate: session.rate,
         color: session.color,
@@ -121,7 +122,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       
       // Reset form first to clear any previous values
       form.reset({
-        time: tutorTimezone ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm') : "",
+        time: formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm'),
         duration: session.duration || 60,
         rate: session.rate || 0,
         color: session.color || "#3B82F6",

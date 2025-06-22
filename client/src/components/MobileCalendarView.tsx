@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { formatDate, formatTime } from '@/lib/utils';
-import { formatUtcToTutorTimezone } from '@/lib/dateUtils';
+import { formatUtcToTutorTimezone, calculateDurationMinutes } from '@/lib/dateUtils';
 import { useTimezone } from '@/contexts/TimezoneContext';
 
 interface SessionWithStudent {

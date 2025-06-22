@@ -181,7 +181,7 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{formatDate(new Date(session.date))}</span>
+            <span className="font-medium">{formatDate(new Date(session.session_start))}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Clock className="h-4 w-4 text-muted-foreground" />
