@@ -81,12 +81,7 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     const sessionDate = new Date(session.session_start);
     const earnings = (session.duration / 60) * session.rate;
     
-    // Debug paid field type to identify string vs boolean issue
-    if (session.student_name && ['LittleSix', 'Eric', 'CoCo', 'Max New', 'Zoey', 'Vince', 'Victor', 'Ron'].includes(session.student_name)) {
-      console.log('[TYPE TEST]', typeof session.paid, session.paid, 'for', session.student_name);
-    }
-    
-    // Resilient paid session check - handle both boolean and string values
+    // Resilient paid session check - handle both boolean and string values from different query paths
     const isPaid = session.paid === true || session.paid === 'true';
     
     // const inMonth = sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth;

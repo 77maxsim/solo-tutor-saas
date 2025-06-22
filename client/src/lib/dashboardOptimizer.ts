@@ -10,18 +10,12 @@ export async function getOptimizedDashboardStats(tutorId: string) {
 
   console.log('🔧 Using optimized dashboard calculation for large dataset');
 
-  // Get paid sessions for current month
-  const now = new Date();
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  // DEPRECATED: This optimizer is no longer used - dashboard now uses shared earningsCalculator
+  // with proper timezone handling via queryOptimizer system
+  console.log('⚠️ dashboardOptimizer is deprecated - should use shared earningsCalculator');
   
-  const { data: paidSessions, error: paidError } = await supabase
-    .from('sessions')
-    .select('id, date, time, duration, rate, paid, student_id')
-    .eq('tutor_id', tutorId)
-    .eq('paid', true)
-    .gte('date', firstDayOfMonth.toISOString().split('T')[0])
-    .lte('date', lastDayOfMonth.toISOString().split('T')[0]);
+  // Fallback to standard approach
+  return getStandardDashboardStats(tutorId);
 
   if (paidError) {
     console.error('Error fetching paid sessions:', paidError);
@@ -99,67 +93,15 @@ async function getStandardDashboardStats(tutorId: string) {
 }
 
 function calculateDashboardStats(sessions: any[], now: Date) {
-  // Calculate week boundaries (Sunday to Saturday)
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
+  // DEPRECATED: This function uses old date comparison logic
+  // Dashboard now uses shared earningsCalculator with proper timezone handling
+  console.log('⚠️ calculateDashboardStats is deprecated');
   
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
-
-  // Calculate month boundaries
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  
-  // Calculate last month boundaries
-  const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-
-  const today = now.toISOString().split('T')[0];
-
-  let sessionsThisWeek = 0;
-  let todayEarnings = 0;
-  let currentWeekEarnings = 0;
-  let currentMonthEarnings = 0;
-  let lastMonthEarnings = 0;
-
-  sessions.forEach(session => {
-    const sessionDate = new Date(session.session_start);
-    const isPaid = session.paid === true;
-    const earnings = (session.duration / 60) * session.rate;
-
-    if (!isPaid) return; // Only count paid sessions for earnings
-
-    const todayStr = sessionDate.toISOString().split('T')[0];
-
-    // Today's earnings
-    if (todayStr === today) {
-      todayEarnings += earnings;
-    }
-
-    // This week's earnings and sessions
-    if (sessionDate >= startOfWeek && sessionDate <= endOfWeek) {
-      currentWeekEarnings += earnings;
-      sessionsThisWeek++;
-    }
-
-    // This month's earnings
-    if (sessionDate >= firstDayOfMonth && sessionDate <= lastDayOfMonth) {
-      currentMonthEarnings += earnings;
-    }
-
-    // Last month's earnings
-    if (sessionDate >= firstDayOfLastMonth && sessionDate <= lastDayOfLastMonth) {
-      lastMonthEarnings += earnings;
-    }
-  });
-
   return {
-    sessionsThisWeek,
-    todayEarnings,
-    currentWeekEarnings,
-    currentMonthEarnings,
-    lastMonthEarnings
+    sessionsThisWeek: 0,
+    todayEarnings: 0,
+    currentWeekEarnings: 0,
+    currentMonthEarnings: 0,
+    lastMonthEarnings: 0
   };
 }

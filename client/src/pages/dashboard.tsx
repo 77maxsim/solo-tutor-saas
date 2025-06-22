@@ -13,7 +13,6 @@ import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from "@/lib/queryOptimizer";
-import { getOptimizedDashboardStats } from "@/lib/dashboardOptimizer";
 import { calculateEarnings } from "@/lib/earningsCalculator";
 import { 
   BookOpen, 
@@ -161,39 +160,19 @@ export default function Dashboard() {
 
       console.log('📦 Dashboard: Using tutor ID:', tutorId);
 
-      // Query sessions (IDENTICAL to Earnings page working version)
-      const { data, error } = await supabase
-        .from('sessions')
-        .select(`
-          id,
-          student_id,
-          session_start,
-          session_end,
-          duration,
-          rate,
-          paid,
-          created_at,
-          students (
-            name
-          )
-        `)
-        .eq('tutor_id', tutorId)
-        .order('session_start', { ascending: false });
-
-      if (error) {
-        console.error('📦 Dashboard: Query error:', error);
-        throw error;
+      // Use optimized query system for large datasets (like Oliver's 1000+ sessions)
+      const useOptimized = await shouldUseOptimizedQuery(tutorId);
+      let sessionsWithNames;
+      
+      if (useOptimized) {
+        console.log('📦 Dashboard: Using optimized query for large dataset');
+        sessionsWithNames = await getOptimizedSessions(tutorId);
+      } else {
+        console.log('📦 Dashboard: Using standard query');
+        sessionsWithNames = await getStandardSessions(tutorId);
       }
 
-      console.log('📦 Dashboard: Sessions fetched:', data?.length || 0);
-
-      // Transform data (IDENTICAL to Earnings page)
-      const sessionsWithNames = data?.map((session: any) => ({
-        ...session,
-        student_name: session.students?.name || 'Unknown Student'
-      })) || [];
-
-      console.log('📦 Dashboard: Sessions with names:', sessionsWithNames.length);
+      console.log('📦 Dashboard: Sessions fetched:', sessionsWithNames.length);
 
       // Get tutor timezone for timezone-aware calculations
       const { data: tutorInfo } = await supabase
