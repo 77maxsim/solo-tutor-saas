@@ -300,19 +300,19 @@ export default function Calendar() {
         return;
       }
 
-      // CRITICAL: Convert UTC timestamps to tutor's timezone for FullCalendar
-      // Parse UTC and convert to tutor timezone as Date objects
-      const startDate = dayjs.utc(session.session_start).tz(tutorTz).toDate();
-      const endDate = dayjs.utc(session.session_end).tz(tutorTz).toDate();
+      // CRITICAL: Pass UTC timestamps directly to FullCalendar
+      // FullCalendar will handle timezone conversion using its timeZone prop
+      const startDate = new Date(session.session_start);
+      const endDate = new Date(session.session_end);
       
-      // Debug timezone conversion for verification
-      console.debug('🕐 Session timezone conversion:', {
+      // Debug timezone handling for verification
+      console.debug('🕐 FullCalendar timezone setup:', {
         id: session.id?.substring(0, 8) + '...',
         student_name: session.student_name,
-        original_utc: session.session_start,
-        converted_to_tutor_tz: dayjs.utc(session.session_start).tz(tutorTz).format(`YYYY-MM-DD HH:mm [${tutorTz}]`),
-        final_date_object: startDate.toString(),
-        date_hours: startDate.getHours()
+        utc_stored: session.session_start,
+        tutor_timezone: tutorTz,
+        fullcalendar_will_convert_to: dayjs.utc(session.session_start).tz(tutorTz).format(`YYYY-MM-DD HH:mm [${tutorTz}]`),
+        raw_date_object: startDate.toISOString()
       });
 
       // Determine display name and styling
@@ -773,7 +773,7 @@ export default function Calendar() {
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, luxonPlugin]}
             initialView={view}
-            timeZone="local"
+            timeZone={tutorTimezone || 'UTC'}
             events={events}
             eventDidMount={(info) => {
               const session = info.event.extendedProps;
