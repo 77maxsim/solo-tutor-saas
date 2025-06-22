@@ -16,10 +16,8 @@ interface Session {
   id: string;
   student_id: string;
   student_name: string;
-  date?: string; // Legacy field
-  time?: string; // Legacy field
-  session_start?: string; // UTC timestamp
-  session_end?: string; // UTC timestamp
+  session_start: string; // UTC timestamp
+  session_end: string; // UTC timestamp
   duration: number;
   rate: number;
   paid: boolean;
@@ -274,8 +272,8 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
           {sessions.map((session, index) => {
             const calculatedPrice = (session.duration / 60) * session.rate;
             
-            // Create full datetime for the session
-            const sessionDateTime = new Date(`${session.date}T${session.time}`);
+            // Create full datetime for the session using UTC timestamp
+            const sessionDateTime = new Date(session.session_start);
             const createdDate = new Date(session.created_at);
             const now = new Date();
             
@@ -305,7 +303,7 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground dark:text-gray-400">
-                    {session.session_start && session.session_end && tutorTimezone
+                    {tutorTimezone
                       ? (() => {
                           const date = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MM/dd/yyyy');
                           const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
@@ -318,7 +316,7 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
                           });
                           return `${date} at ${startTime} (${duration} min)`;
                         })()
-                      : `${session.date} at ${session.time?.substring(0, 5) || ''} (${session.duration || 0} min)`}
+                      : 'Loading timezone...'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

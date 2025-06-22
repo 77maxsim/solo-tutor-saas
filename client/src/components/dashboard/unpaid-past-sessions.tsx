@@ -10,13 +10,15 @@ import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
 import { Coins, AlertTriangle, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
+import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
+import { useTimezone } from "@/contexts/TimezoneContext";
 
 interface UnpaidSession {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   paid: boolean;
@@ -27,8 +29,8 @@ interface UpcomingSession {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   paid: boolean;
@@ -47,6 +49,7 @@ type ExpectedTimeframe = 'next30days' | 'nextMonth' | 'allFuture';
 export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = true }: PaymentOverviewProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { tutorTimezone } = useTimezone();
 
   // Toggle state for view mode and expected earnings timeframe
   const [viewMode, setViewMode] = useState<ViewMode>('overdue');
