@@ -156,7 +156,6 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
                   
                   const sessionStart = new Date(session.session_start);
                   const sessionEnd = new Date(session.session_end);
-                  }
                   
                   const [currentHour, currentMin] = time.split(':').map(Number);
                   const currentTimeSlot = new Date(day);

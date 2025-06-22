@@ -32,7 +32,8 @@ export const sessions = pgTable("sessions", {
   title: text("title"),
   description: text("description"),
   date: text("date").notNull(),
-  time: text("time").notNull(),
+  // DEPRECATED: time field - migrated to session_start/session_end UTC timestamps
+  // time: text("time").notNull(),
   duration: integer("duration").notNull(),
   rate: decimal("rate", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("scheduled"), // scheduled, completed, cancelled, pending

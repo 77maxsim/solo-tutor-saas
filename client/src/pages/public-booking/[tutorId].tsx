@@ -279,7 +279,7 @@ export default function PublicBookingPage() {
 
       // Convert date/time format to match booking slots
       const sessions = sessionsData.map(session => ({
-        start_time: `${session.date}T${session.time}:00`,
+        start_time: session.session_start,
         status: 'booked',
       }));
       setExistingSessions(sessions);
