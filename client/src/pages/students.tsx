@@ -348,17 +348,31 @@ export default function Students() {
     const now = new Date();
     const studentMap = new Map<string, any>();
 
-    // Extract unique students from sessions data (which includes avatar_url)
+    // Handle both optimized query format (student_name directly) and standard query format (nested students)
     sessions?.forEach((session: any) => {
-      if (session.students && !studentMap.has(session.student_id)) {
-        studentMap.set(session.student_id, {
-          id: session.student_id,
-          name: session.students.name,
-          phone: session.students.phone,
-          email: session.students.email,
-          tags: session.students.tags,
-          avatar_url: session.students.avatar_url
-        });
+      if (session.student_id && !studentMap.has(session.student_id)) {
+        // For optimized queries: data is directly on session
+        if (session.student_name && !session.students) {
+          studentMap.set(session.student_id, {
+            id: session.student_id,
+            name: session.student_name,
+            phone: null, // Not available in optimized query
+            email: null, // Not available in optimized query
+            tags: [],
+            avatar_url: session.avatarUrl
+          });
+        }
+        // For standard queries: data is nested in students object
+        else if (session.students) {
+          studentMap.set(session.student_id, {
+            id: session.student_id,
+            name: session.students.name,
+            phone: session.students.phone,
+            email: session.students.email,
+            tags: session.students.tags,
+            avatar_url: session.students.avatar_url
+          });
+        }
       }
     });
 
