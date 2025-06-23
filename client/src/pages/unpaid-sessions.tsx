@@ -73,8 +73,6 @@ export default function UnpaidSessions() {
       }
 
       const now = new Date();
-      const currentDate = now.toISOString().split('T')[0];
-      const currentTime = now.toTimeString().split(' ')[0].substring(0, 5);
 
       const { data, error } = await supabase
         .from('sessions')
