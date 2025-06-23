@@ -57,13 +57,7 @@ dayjs.extend(timezone);
 
 const scheduleSessionSchema = z.object({
   studentId: z.string().min(1, "Please select a student"),
-  date: z.date({ required_error: "Date is required" }).refine((date) => {
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    return date >= thirtyDaysAgo;
-  }, "Sessions cannot be scheduled more than 30 days in the past"),
-  time: z.string().min(1, "Time is required").regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter a valid time (HH:MM)"),
+  sessionStart: z.string().min(1, "Session start time is required"),
   duration: z.number().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
   rate: z.number().min(0, "Rate must be a positive number"),
   color: z.string().default("#3B82F6"),
@@ -81,14 +75,14 @@ const scheduleSessionSchema = z.object({
   path: ["repeatWeeks"],
 }).refine((data) => {
   if (data.repeatWeekly) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return data.date >= today;
+    const sessionStartDate = dayjs(data.sessionStart);
+    const today = dayjs().startOf('day');
+    return sessionStartDate.isAfter(today) || sessionStartDate.isSame(today);
   }
   return true;
 }, {
   message: "Recurring sessions can only be scheduled for today or future dates",
-  path: ["date"],
+  path: ["sessionStart"],
 });
 
 type ScheduleSessionForm = z.infer<typeof scheduleSessionSchema>;
@@ -242,8 +236,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
     resolver: zodResolver(scheduleSessionSchema),
     defaultValues: {
       studentId: "",
-      date: undefined,
-      time: "",
+      sessionStart: "",
       duration: 60,
       rate: 0,
       color: "#3B82F6",
@@ -263,14 +256,8 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         tutor_timezone: tutorTimezone
       });
       
-      // Convert UTC session_start to local date and time in tutor's timezone
-      const sessionStartLocal = dayjs.utc(editSession.session_start).tz(tutorTimezone);
-      const sessionDate = sessionStartLocal.toDate();
-      const sessionTime = sessionStartLocal.format('HH:mm');
-      
       form.setValue('studentId', editSession.student_id);
-      form.setValue('date', sessionDate);
-      form.setValue('time', sessionTime);
+      form.setValue('sessionStart', editSession.session_start);
       form.setValue('duration', editSession.duration);
       form.setValue('rate', editSession.rate);
       form.setValue('color', editSession.color || "#3B82F6");
@@ -280,7 +267,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
       form.setValue('applyNotesToSeries', false);
       
       // Mark all fields as user-modified to prevent auto-prefilling
-      setUserModifiedFields(new Set(['studentId', 'date', 'time', 'duration', 'rate', 'color', 'notes']));
+      setUserModifiedFields(new Set(['studentId', 'sessionStart', 'duration', 'rate', 'color', 'notes']));
       
       // Show notes section if there are notes
       if (editSession.notes) {
@@ -336,10 +323,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         fieldsToUpdate.push({ field: 'duration', value: lastSession.duration });
       }
       
-      if (!userModifiedFields.has('time') && lastSession.session_start !== null && tutorTimezone) {
-        const timeFromLastSession = formatUtcToTutorTimezone(lastSession.session_start, tutorTimezone, 'HH:mm');
-        fieldsToUpdate.push({ field: 'time', value: timeFromLastSession });
-      }
+      // Remove time field prefilling since we use sessionStart directly
       
       // Apply the updates
       if (fieldsToUpdate.length > 0) {
@@ -348,8 +332,6 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
             form.setValue('rate', value);
           } else if (field === 'duration') {
             form.setValue('duration', value);
-          } else if (field === 'time') {
-            form.setValue('time', value);
           }
         });
         
@@ -383,12 +365,12 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
       if (event.detail) {
         const { date, time, duration } = event.detail;
         
-        if (date) {
-          form.setValue('date', new Date(date));
-        }
-        if (time) {
-          form.setValue('time', time);
-          setUserModifiedFields(prev => new Set(prev).add('time'));
+        // Convert date + time to UTC sessionStart if provided
+        if (date && time && tutorTimezone) {
+          const localDateTime = `${date} ${time}`;
+          const utcSessionStart = dayjs.tz(localDateTime, tutorTimezone).utc().toISOString();
+          form.setValue('sessionStart', utcSessionStart);
+          setUserModifiedFields(prev => new Set(prev).add('sessionStart'));
         }
         if (duration) {
           form.setValue('duration', duration);
@@ -404,29 +386,32 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
     return () => {
       window.removeEventListener('openScheduleModal', handleOpenScheduleModal as EventListener);
     };
-  }, [form, onOpenChange]);
+  }, [form, onOpenChange, tutorTimezone]);
 
-  // Helper function to convert local time to UTC
-  const convertToUTC = (localDate: Date, localTime: string, timezone: string) => {
-    const dateStr = format(localDate, "yyyy-MM-dd");
-    const datetimeStr = `${dateStr} ${localTime}`;
+  // Helper function to create UTC sessionStart from local date and time inputs
+  const createSessionStart = (localDate: string, localTime: string, timezone: string) => {
+    const datetimeStr = `${localDate} ${localTime}`;
     const utcTimestamp = dayjs.tz(datetimeStr, timezone).utc();
     
-    console.log('🌍 Converting to UTC:', {
-      local_date: dateStr,
+    console.log('Creating UTC sessionStart:', {
+      local_date: localDate,
       local_time: localTime,
       timezone: timezone,
       combined_local: datetimeStr,
-      converted_utc: utcTimestamp.toISOString()
+      utc_result: utcTimestamp.toISOString()
     });
     
-    return utcTimestamp;
+    return utcTimestamp.toISOString();
   };
 
   const onSubmit = async (data: ScheduleSessionForm) => {
     setIsSubmitting(true);
     
-    console.log('Tutor timezone in modal:', tutorTimezone);
+    console.log('Session submission data:', {
+      sessionStart: data.sessionStart,
+      duration: data.duration,
+      tutorTimezone
+    });
     
     if (!tutorTimezone) {
       console.error('Timezone validation failed - tutorTimezone is:', tutorTimezone);
@@ -443,24 +428,19 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
       // Auto-detect edit mode if session has an ID
       const isEditMode = editMode || (editSession && editSession.id);
 
-      // Convert local datetime to UTC for storage using tutor's actual timezone
-      const startUTC = convertToUTC(data.date, data.time, tutorTimezone);
+      // Parse UTC sessionStart and calculate end time
+      const startUTC = dayjs.utc(data.sessionStart);
       const endUTC = startUTC.add(data.duration, 'minutes');
 
-      console.log('📅 Session creation - local to UTC conversion:', {
-        selected_date: format(data.date, "yyyy-MM-dd"),
-        selected_time: data.time,
-        tutor_timezone: tutorTimezone,
-        start_utc: startUTC.toISOString(),
-        end_utc: endUTC.toISOString(),
+      console.log('Session UTC timestamps:', {
+        session_start: startUTC.toISOString(),
+        session_end: endUTC.toISOString(),
         duration_minutes: data.duration,
         verification: {
-          start_local_display: startUTC.tz(tutorTimezone).format('YYYY-MM-DD HH:mm'),
-          end_local_display: endUTC.tz(tutorTimezone).format('YYYY-MM-DD HH:mm')
+          local_display: startUTC.tz(tutorTimezone).format('YYYY-MM-DD HH:mm'),
+          timezone: tutorTimezone
         }
       });
-
-      console.log('UTC result after conversion:', startUTC.toISOString());
 
       if (isEditMode && editSession) {
         // Update existing session with UTC timestamps only
