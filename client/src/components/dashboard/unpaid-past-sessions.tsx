@@ -168,8 +168,8 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
     }
   };
 
-  const getDaysOverdue = (date: string, time: string) => {
-    const sessionDateTime = new Date(`${date}T${time}`);
+  const getDaysOverdue = (sessionStart: string) => {
+    const sessionDateTime = new Date(sessionStart);
     const now = new Date();
     const diffTime = now.getTime() - sessionDateTime.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -257,9 +257,7 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
         ) : (
           <div className="space-y-3">
             {unpaidSessions?.slice(0, limit > 0 ? limit : unpaidSessions.length).map((session) => {
-              const sessionDate = new Date(session.session_start);
-              const now = new Date();
-              const daysOverdue = Math.floor((now.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24));
+              const daysOverdue = getDaysOverdue(session.session_start);
               const earnings = (session.duration / 60) * session.rate;
 
               return (

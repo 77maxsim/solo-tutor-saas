@@ -81,8 +81,6 @@ export default function UnpaidSessions() {
         .select(`
           id,
           student_id,
-          date,
-          time,
           session_start,
           session_end,
           duration,
@@ -95,9 +93,8 @@ export default function UnpaidSessions() {
         `)
         .eq('tutor_id', tutorId)
         .eq('paid', false)
-        .or(`date.lt.${currentDate},and(date.eq.${currentDate},time.lt.${currentTime})`)
-        .order('date', { ascending: false })
-        .order('time', { ascending: false });
+        .lt('session_start', new Date().toISOString())
+        .order('session_start', { ascending: false });
 
       if (error) {
         console.error('Error fetching unpaid sessions:', error);
@@ -184,8 +181,8 @@ export default function UnpaidSessions() {
     }
   };
 
-  const getDaysOverdue = (date: string, time: string) => {
-    const sessionDateTime = new Date(`${date}T${time}`);
+  const getDaysOverdue = (sessionStart: string) => {
+    const sessionDateTime = new Date(sessionStart);
     const now = new Date();
     const diffTime = now.getTime() - sessionDateTime.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -194,9 +191,7 @@ export default function UnpaidSessions() {
 
   // Group sessions by date
   const groupedSessions = sessions.reduce((groups: { [key: string]: UnpaidSession[] }, session) => {
-    const date = session.session_start 
-      ? new Date(session.session_start).toISOString().split('T')[0]
-      : session.date || '';
+    const date = new Date(session.session_start).toISOString().split('T')[0];
     if (!groups[date]) {
       groups[date] = [];
     }
@@ -386,9 +381,7 @@ export default function UnpaidSessions() {
                     <CollapsibleContent className="space-y-2 mt-2">
                       {dateSessions.map((session) => {
                         const calculatedPrice = (session.duration / 60) * session.rate;
-                        const sessionDate = new Date(session.session_start);
-                        const now = new Date();
-                        const daysOverdue = Math.floor((now.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24));
+                        const daysOverdue = getDaysOverdue(session.session_start);
                         
                         return (
                           <div

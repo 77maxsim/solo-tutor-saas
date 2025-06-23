@@ -101,8 +101,8 @@ interface Student {
 
 interface Session {
   id: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   notes?: string;
