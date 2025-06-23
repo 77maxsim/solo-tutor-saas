@@ -481,7 +481,6 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         // Create new session(s) with UTC timestamps
         const recurrenceId = data.repeatWeekly ? crypto.randomUUID() : null;
         const sessionsToInsert = [];
-        const baseDate = new Date(data.date);
         
         // First session
         const firstStartUTC = startUTC;
@@ -503,19 +502,14 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
 
         if (data.repeatWeekly && data.repeatWeeks) {
           for (let week = 1; week < data.repeatWeeks; week++) {
-            const sessionDate = new Date(baseDate);
-            sessionDate.setDate(sessionDate.getDate() + (week * 7));
-            
-            // Convert each recurring session to UTC using tutor's timezone
-            const weeklyStartUTC = convertToUTC(sessionDate, data.time, tutorTimezone);
+            // Calculate recurring session times by adding weeks to the original sessionStart
+            const weeklyStartUTC = startUTC.add(week * 7, 'days');
             const weeklyEndUTC = weeklyStartUTC.add(data.duration, 'minutes');
             
-            console.log(`📅 Recurring session ${week} - local to UTC:`, {
-              date: format(sessionDate, "yyyy-MM-dd"),
-              time: data.time,
-              timezone: tutorTimezone,
-              utc_start: weeklyStartUTC.toISOString(),
-              utc_end: weeklyEndUTC.toISOString()
+            console.log(`Recurring session ${week} UTC:`, {
+              week_offset: week,
+              start_utc: weeklyStartUTC.toISOString(),
+              end_utc: weeklyEndUTC.toISOString()
             });
             
             sessionsToInsert.push({
@@ -715,74 +709,86 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
               </div>
             )}
 
-            {/* Date */}
+            {/* Session Date and Time */}
             <FormField
               control={form.control}
-              name="date"
+              name="sessionStart"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
+                  <FormLabel>Session Date & Time</FormLabel>
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Date Picker */}
+                    <Popover>
+                      <PopoverTrigger asChild>
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full pl-3 text-left font-normal",
+                            "pl-3 text-left font-normal",
                             !field.value && "text-muted-foreground"
                           )}
                         >
                           {field.value ? (
-                            format(field.value, "PPP")
+                            dayjs.utc(field.value).tz(tutorTimezone || 'UTC').format('MMM DD, YYYY')
                           ) : (
-                            <span>Pick a date</span>
+                            <span>Pick date</span>
                           )}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => {
-                          const today = new Date();
-                          const thirtyDaysAgo = new Date(today);
-                          thirtyDaysAgo.setDate(today.getDate() - 30);
-                          return date < thirtyDaysAgo || date < new Date("1900-01-01");
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Time */}
-            <FormField
-              control={form.control}
-              name="time"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Time</FormLabel>
-                  <FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? dayjs.utc(field.value).tz(tutorTimezone || 'UTC').toDate() : undefined}
+                          onSelect={(date) => {
+                            if (date && tutorTimezone) {
+                              const existingTime = field.value ? 
+                                dayjs.utc(field.value).tz(tutorTimezone).format('HH:mm') : 
+                                '09:00';
+                              const newSessionStart = createSessionStart(
+                                dayjs(date).format('YYYY-MM-DD'),
+                                existingTime,
+                                tutorTimezone
+                              );
+                              field.onChange(newSessionStart);
+                              handleFieldChange('sessionStart');
+                            }
+                          }}
+                          disabled={(date) => {
+                            const today = new Date();
+                            const thirtyDaysAgo = new Date(today);
+                            thirtyDaysAgo.setDate(today.getDate() - 30);
+                            return date < thirtyDaysAgo || date < new Date("1900-01-01");
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    
+                    {/* Time Picker */}
                     <TimePicker
-                      value={field.value}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        handleFieldChange('time');
+                      value={field.value ? dayjs.utc(field.value).tz(tutorTimezone || 'UTC').format('HH:mm') : ''}
+                      onChange={(time) => {
+                        if (time && tutorTimezone) {
+                          const existingDate = field.value ? 
+                            dayjs.utc(field.value).tz(tutorTimezone).format('YYYY-MM-DD') : 
+                            dayjs().format('YYYY-MM-DD');
+                          const newSessionStart = createSessionStart(
+                            existingDate,
+                            time,
+                            tutorTimezone
+                          );
+                          field.onChange(newSessionStart);
+                          handleFieldChange('sessionStart');
+                        }
                       }}
                       placeholder="Select time"
                       timeFormat={timeFormat}
                     />
-                  </FormControl>
-                  {/* Show timezone status */}
-                  {tutorTimezone && !isTimezoneLoading && (
+                  </div>
+                  {/* Show timezone and preview */}
+                  {tutorTimezone && !isTimezoneLoading && field.value && (
                     <p className="text-xs text-gray-500">
-                      Timezone: {tutorTimezone}
+                      {dayjs.utc(field.value).tz(tutorTimezone).format('dddd, MMMM DD, YYYY [at] HH:mm')} ({tutorTimezone})
                     </p>
                   )}
                   {isTimezoneLoading && (
