@@ -38,6 +38,7 @@ import { formatCurrency } from "@/lib/utils";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
 import { useToast } from "@/hooks/use-toast";
+import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from "@/lib/queryOptimizer";
 import { 
   User, 
   Calendar,
@@ -289,7 +290,7 @@ export default function Students() {
     },
   });
 
-  // Fetch sessions data
+  // Fetch sessions data using query optimizer
   const { data: sessions, isLoading: isLoadingSessions, error } = useQuery({
     queryKey: ['student-sessions'],
     queryFn: async () => {
@@ -298,117 +299,18 @@ export default function Students() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // For Oliver's account, use only the working paid sessions query
-      if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b') {
-        console.log('🔍 Students page - Using only verified paid sessions for Oliver');
-        
-        // Get the working paid sessions
-        const { data: paidSessions, error: paidError } = await supabase
-          .from('sessions')
-          .select('id, session_start, session_end, duration, rate, paid, student_id, created_at')
-          .eq('tutor_id', tutorId)
-          .eq('paid', true)
-          .gte('session_start', '2025-06-01T00:00:00.000Z')
-          .lte('session_start', '2025-06-30T23:59:59.999Z');
-
-        if (paidError) {
-          console.error('Error fetching Oliver paid sessions for students page:', paidError);
-          throw paidError;
-        }
-
-        console.log('🔍 Students page - Oliver paid sessions found:', paidSessions?.length || 0);
-
-        // Get unpaid sessions for context
-        const { data: unpaidSessions, error: unpaidError } = await supabase
-          .from('sessions')
-          .select('id, session_start, session_end, duration, rate, paid, student_id, created_at')
-          .eq('tutor_id', tutorId)
-          .eq('paid', false)
-          .order('session_start', { ascending: false })
-          .limit(100);
-
-        if (unpaidError) {
-          console.error('Error fetching unpaid sessions:', unpaidError);
-        }
-
-        // Get student data separately
-        const { data: students, error: studentsError } = await supabase
-          .from('students')
-          .select('id, name, phone, email, tags, avatar_url')
-          .eq('tutor_id', tutorId);
-
-        if (studentsError) {
-          console.error('Error fetching students for students page:', studentsError);
-          throw studentsError;
-        }
-
-        // Create student data map
-        const studentDataMap = new Map();
-        students?.forEach(student => {
-          studentDataMap.set(student.id, student);
-        });
-
-        // Combine paid and unpaid sessions with student data
-        const allSessions = [
-          ...(paidSessions || []),
-          ...(unpaidSessions || [])
-        ].map((session: any) => {
-          const studentData = studentDataMap.get(session.student_id);
-          return {
-            ...session,
-            student_name: studentData?.name || 'Unknown Student',
-            students: studentData || { name: 'Unknown Student' }
-          };
-        });
-
-        console.log('🔍 Students page - Oliver combined sessions:', allSessions.length);
-        console.log('🔍 Students page - Oliver confirmed paid sessions:', allSessions.filter(s => s.paid === true).length);
-
-        return allSessions as Session[];
+      console.log('Students page - fetching sessions for tutor:', tutorId);
+      
+      // Use the query optimizer to determine the best approach
+      const useOptimizedQuery = await shouldUseOptimizedQuery(tutorId);
+      
+      if (useOptimizedQuery) {
+        console.log('Students page - using optimized query pattern');
+        return await getOptimizedSessions(tutorId);
+      } else {
+        console.log('Students page - using standard query pattern');
+        return await getStandardSessions(tutorId);
       }
-
-      // For other tutors, use the standard query
-      const { data, error } = await supabase
-        .from('sessions')
-        .select(`
-          id,
-          student_id,
-          session_start,
-          session_end,
-          duration,
-          rate,
-          paid,
-          created_at,
-          students (
-            id,
-            name,
-            phone,
-            email,
-            tags,
-            avatar_url
-          )
-        `)
-        .eq('tutor_id', tutorId)
-        .order('date', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching student data:', error);
-        throw error;
-      }
-
-      // Transform the data to include student_name and debug the structure
-      const sessionsWithNames = data?.map((session: any) => ({
-        ...session,
-        student_name: session.students?.name || 'Unknown Student'
-      })) || [];
-
-      // Debug: log the first session to see the structure
-      if (data && data.length > 0) {
-        console.log('Session data structure:', data[0]);
-        console.log('Student data in session:', data[0].students);
-      }
-
-      return sessionsWithNames as Session[];
     },
   });
 
