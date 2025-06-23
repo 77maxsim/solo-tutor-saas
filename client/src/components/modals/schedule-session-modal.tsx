@@ -45,6 +45,7 @@ import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { TimePicker } from "@/components/ui/time-picker";
 import { triggerSuccessConfetti, triggerStudentConfetti } from "@/lib/confetti";
 import { formatTimeDisplay, parseTimeInput, generateTimeOptions } from "@/lib/timeFormat";
+import { formatUtcToTutorTimezone } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -255,17 +256,21 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
 
   // Prefill form when editing a session
   useEffect(() => {
-    if (editSession && open && tutorTimezone) {
+    if (editSession && open && tutorTimezone && editSession.session_start) {
       console.log('🕐 Editing session - loading in tutor timezone:', {
         session_id: editSession.id,
-        date: editSession.date,
-        time: editSession.time,
+        session_start: editSession.session_start,
         tutor_timezone: tutorTimezone
       });
       
+      // Convert UTC session_start to local date and time in tutor's timezone
+      const sessionStartLocal = dayjs.utc(editSession.session_start).tz(tutorTimezone);
+      const sessionDate = sessionStartLocal.toDate();
+      const sessionTime = sessionStartLocal.format('HH:mm');
+      
       form.setValue('studentId', editSession.student_id);
-      form.setValue('date', new Date(editSession.date));
-      form.setValue('time', editSession.time);
+      form.setValue('date', sessionDate);
+      form.setValue('time', sessionTime);
       form.setValue('duration', editSession.duration);
       form.setValue('rate', editSession.rate);
       form.setValue('color', editSession.color || "#3B82F6");
@@ -292,10 +297,10 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
 
       const { data, error } = await supabase
         .from('sessions')
-        .select('rate, duration, time')
+        .select('rate, duration, session_start')
         .eq('student_id', studentId)
         .eq('tutor_id', tutorId)
-        .order('date', { ascending: false })
+        .order('session_start', { ascending: false })
         .limit(1)
         .single();
 
@@ -331,8 +336,9 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         fieldsToUpdate.push({ field: 'duration', value: lastSession.duration });
       }
       
-      if (!userModifiedFields.has('time') && lastSession.time !== null) {
-        fieldsToUpdate.push({ field: 'time', value: lastSession.time });
+      if (!userModifiedFields.has('time') && lastSession.session_start !== null && tutorTimezone) {
+        const timeFromLastSession = formatUtcToTutorTimezone(lastSession.session_start, tutorTimezone, 'HH:mm');
+        fieldsToUpdate.push({ field: 'time', value: timeFromLastSession });
       }
       
       // Apply the updates

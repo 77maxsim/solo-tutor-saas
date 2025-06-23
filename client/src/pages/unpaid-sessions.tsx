@@ -28,10 +28,8 @@ interface UnpaidSession {
   id: string;
   student_id: string;
   student_name: string;
-  date?: string; // Legacy field
-  time?: string; // Legacy field
-  session_start?: string; // UTC timestamp
-  session_end?: string; // UTC timestamp
+  session_start: string; // UTC timestamp
+  session_end: string; // UTC timestamp
   duration: number;
   rate: number;
   paid: boolean;

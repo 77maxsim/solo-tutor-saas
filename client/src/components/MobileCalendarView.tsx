@@ -63,17 +63,9 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
     const targetDateString = date.toDateString();
     
     return sessions.filter(session => {
-      let sessionDate: Date;
+      if (!session.session_start) return false;
       
-      // Check if we have UTC timestamp or legacy date field
-      if (session.session_start) {
-        sessionDate = new Date(session.session_start);
-      } else if (session.date) {
-        sessionDate = new Date(session.date);
-      } else {
-        return false;
-      }
-      
+      const sessionDate = new Date(session.session_start);
       return sessionDate.toDateString() === targetDateString;
     });
   };
