@@ -31,9 +31,12 @@ export const sessions = pgTable("sessions", {
   studentId: integer("student_id"),
   title: text("title"),
   description: text("description"),
-  date: text("date").notNull(),
+  // DEPRECATED: date field - migrated to session_start/session_end UTC timestamps
+  // date: text("date").notNull(),
   // DEPRECATED: time field - migrated to session_start/session_end UTC timestamps
   // time: text("time").notNull(),
+  sessionStart: text("session_start").notNull(), // UTC timestamp
+  sessionEnd: text("session_end").notNull(), // UTC timestamp
   duration: integer("duration").notNull(),
   rate: decimal("rate", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("scheduled"), // scheduled, completed, cancelled, pending

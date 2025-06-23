@@ -47,10 +47,8 @@ interface SessionData {
   id: string;
   student_id: string;
   student_name?: string;
-  date: string;
-  time: string;
-  session_start?: string;
-  session_end?: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   notes?: string;

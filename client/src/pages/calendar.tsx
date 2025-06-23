@@ -52,8 +52,8 @@ interface SessionWithStudent {
   id: string;
   student_id: string;
   student_name: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   tuition_fee: number;
@@ -63,8 +63,6 @@ interface SessionWithStudent {
   avatarUrl?: string;
   color?: string;
   recurrence_id?: string;
-  session_start?: string;
-  session_end?: string;
   status?: string;
   unassigned_name?: string;
 }
