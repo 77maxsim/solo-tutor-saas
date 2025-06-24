@@ -448,6 +448,12 @@ export default function Calendar() {
 
   // Handle slot selection to schedule new session
   const handleDateSelect = (selectInfo: any) => {
+    // Prevent multiple modal instances - check and prevent immediately
+    if (showScheduleModal) {
+      console.log('⚠️ Schedule modal already open, ignoring duplicate slot selection');
+      return;
+    }
+
     // FullCalendar selection is already in the display timezone
     const startInTutorTz = dayjs(selectInfo.start).tz(tutorTimezone || 'UTC');
     const endInTutorTz = dayjs(selectInfo.end).tz(tutorTimezone || 'UTC');
@@ -465,17 +471,11 @@ export default function Calendar() {
       duration: duration
     });
 
-    // Prevent multiple modal instances
-    if (showScheduleModal) {
-      console.log('⚠️ Schedule modal already open, ignoring duplicate slot selection');
-      return;
-    }
-
-    // Open schedule modal directly with form data
-    setEditSession(null); // Clear any existing edit session
+    // Clear any existing edit session and open modal
+    setEditSession(null);
     setShowScheduleModal(true);
     
-    // Dispatch event for form prefill
+    // Dispatch event for form prefill with slight delay to ensure modal is mounted
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent('openScheduleModal', {
         detail: {
@@ -484,7 +484,7 @@ export default function Calendar() {
           duration: Math.max(30, duration)
         }
       }));
-    }, 100);
+    }, 50);
   };
 
   // Handle event drop (drag and drop)

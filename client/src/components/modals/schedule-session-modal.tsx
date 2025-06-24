@@ -785,10 +785,16 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
                       timeFormat={timeFormat}
                     />
                   </div>
-                  {/* Show timezone and preview */}
-                  {tutorTimezone && !isTimezoneLoading && field.value && (
+                  {/* Show timezone and preview - always display timezone */}
+                  {!isTimezoneLoading && (
                     <p className="text-xs text-gray-500">
-                      {dayjs.utc(field.value).tz(tutorTimezone).format('dddd, MMMM DD, YYYY [at] HH:mm')} ({tutorTimezone})
+                      {field.value ? (
+                        <>
+                          {dayjs.utc(field.value).tz(tutorTimezone || 'UTC').format('dddd, MMMM DD, YYYY [at] HH:mm')} ({tutorTimezone || 'UTC'})
+                        </>
+                      ) : (
+                        <>Timezone: {tutorTimezone || 'UTC'}</>
+                      )}
                     </p>
                   )}
                   {isTimezoneLoading && (

@@ -55,7 +55,7 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
   const [viewMode, setViewMode] = useState<ViewMode>('overdue');
   const [expectedTimeframe, setExpectedTimeframe] = useState<ExpectedTimeframe>('next30days');
 
-  // Fetch unpaid past sessions (overdue)
+  // Fetch unpaid past sessions (overdue) - ALWAYS fetch all for total calculation
   const { data: unpaidSessions, isLoading: isLoadingUnpaid, error: unpaidError } = useQuery({
     queryKey: ['unpaid-past-sessions', limit],
     queryFn: async () => {
@@ -66,7 +66,8 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
 
       const now = new Date().toISOString();
 
-      let query = supabase
+      // Always fetch ALL unpaid sessions for correct total calculation
+      const { data: allUnpaidData, error } = await supabase
         .from('sessions')
         .select(`
           id,
@@ -86,23 +87,21 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
         .lt('session_start', now)
         .order('session_start', { ascending: false });
 
-      if (limit && limit > 0) {
-        query = query.limit(limit);
-      }
-
-      const { data, error } = await query;
-
       if (error) {
         console.error('Error fetching unpaid past sessions:', error);
         throw error;
       }
 
-      const sessionsWithNames = data?.map((session: any) => ({
+      const allSessionsWithNames = allUnpaidData?.map((session: any) => ({
         ...session,
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
 
-      return sessionsWithNames as UnpaidSession[];
+      // Return object with all sessions for total calculation and limited for display
+      return {
+        allSessions: allSessionsWithNames,
+        displaySessions: limit && limit > 0 ? allSessionsWithNames.slice(0, limit) : allSessionsWithNames
+      } as { allSessions: UnpaidSession[], displaySessions: UnpaidSession[] };
     },
   });
 
@@ -176,9 +175,13 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
     return diffDays;
   };
 
-  const totalOverdue = unpaidSessions?.reduce((sum, session) => {
+  // Calculate total from ALL unpaid sessions, not just displayed ones
+  const totalOverdue = unpaidSessions?.allSessions?.reduce((sum, session) => {
     return sum + (session.duration / 60) * session.rate;
   }, 0) || 0;
+
+  // Use display sessions for rendering
+  const displaySessions = unpaidSessions?.displaySessions || [];
 
   const isLoading = isLoadingUnpaid;
   const error = unpaidError;
@@ -242,7 +245,7 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
             {formatCurrency(totalOverdue, currency)}
           </span>
         </CardTitle>
-        {showViewAll && unpaidSessions && unpaidSessions.length > 0 && (
+        {showViewAll && displaySessions && displaySessions.length > 0 && (
           <Button variant="ghost" size="sm" asChild className="dark:hover:bg-gray-700 dark:text-gray-300">
             <Link to="/unpaid-sessions">View all</Link>
           </Button>

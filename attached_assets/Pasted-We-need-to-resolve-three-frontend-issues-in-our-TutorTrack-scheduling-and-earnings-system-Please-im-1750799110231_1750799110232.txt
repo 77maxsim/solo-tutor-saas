@@ -1,0 +1,53 @@
+We need to resolve three frontend issues in our TutorTrack scheduling and earnings system. Please implement the following fixes carefully. ⚠️ Do not make any changes to the Supabase schema, fields, or permissions. Supabase structure must remain untouched.
+
+✅ Fix 1: Missing Timezone Display in Schedule Modal
+Problem:
+When scheduling a session by clicking the calendar grid (empty slot), the modal initially shows the user's timezone correctly (e.g., Asia/Shanghai), but when the same modal is opened using the "Schedule Session" button from the sidebar, the timezone is missing.
+
+Task:
+Ensure the timezone is always shown next to the date/time field regardless of how the modal is opened. This display should rely on the user's local system timezone or a fallback to default (Europe/Kyiv if undefined).
+
+Keep existing UTC logic intact.
+
+Do not change the session_start or timezone handling logic already in place.
+
+✅ Fix 2: Duplicate Schedule Modals on Calendar Slot Click
+Problem:
+Clicking on an empty time slot in the calendar opens two "Schedule Session" modals at once. This doesn’t happen when clicking the sidebar button, which opens it correctly once.
+
+Task:
+Audit and fix the calendar event handler so it doesn't trigger multiple modal mounts.
+
+Prevent double rendering or accidental double openModal() calls.
+
+Apply consistent logic with the sidebar modal trigger.
+
+Test with multiple clicks to ensure modal doesn't open twice.
+
+✅ Fix 3: Overdue Payments Calculation Limited to First 5 Sessions
+Problem:
+The "Overdue Payments" total on the dashboard only reflects the 5 most recent unpaid sessions shown on the widget. However, there are many more unpaid sessions which should be included in the total.
+
+Task:
+Fix the total overdue calculation logic so that the amount reflects all unpaid sessions, not just the ones currently rendered.
+
+Use the same filtering conditions already implemented (paid = false AND session_start < NOW()).
+
+Do not increase or render all overdue sessions in the dashboard—just ensure the total is correctly calculated from all overdue entries.
+
+☑️ Constraints
+Do not modify, add, or remove any fields in Supabase.
+
+Keep all session logic based on session_start, session_end, and duration, in UTC.
+
+Do not reintroduce date or time fields anywhere in the logic.
+
+Preserve all existing timezone-aware conversion and session rendering logic.
+
+After the fixes are applied, please test:
+
+Schedule modal from both sidebar and calendar click
+
+Dashboard overdue amount
+
+Modal duplication
