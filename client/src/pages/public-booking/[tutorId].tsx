@@ -254,8 +254,9 @@ export default function PublicBookingPage() {
           console.log(`Fetching existing sessions - attempt ${attempt + 1}`);
           const result = await supabase
             .from('sessions')
-            .select('session_start, session_end')
-            .eq('tutor_id', tutorId);
+            .select('session_start, session_end, status')
+            .eq('tutor_id', tutorId)
+            .neq('status', 'cancelled');
 
           if (result.error) {
             console.error(`Sessions fetch attempt ${attempt + 1} failed:`, result.error);
@@ -515,13 +516,14 @@ export default function PublicBookingPage() {
       const sessionStart = utcDateTime.toISOString();
       const sessionEnd = utcDateTime.add(duration, 'minutes').toISOString();
 
-      // Prepare session payload using UTC timestamps
+      // Prepare session payload using correct field names from Drizzle schema
       const sessionPayload = {
         tutor_id: tutorId,
         student_id: null,
         session_start: sessionStart,
         session_end: sessionEnd,
-        rate: 0, // Default rate, tutor can update later
+        duration: duration,
+        rate: "0", // Must be string for decimal field
         paid: false,
         unassigned_name: data.name,
         notes: `Booking request from ${data.name}`,
@@ -555,11 +557,18 @@ export default function PublicBookingPage() {
       await fetchTutorAndSlots();
 
     } catch (error) {
-      console.error('Error submitting booking:', error);
+      console.error('Error submitting booking:', {
+        error,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        sessionPayload
+      });
       toast({
         variant: "destructive",
         title: "Booking Failed",
-        description: "Could not submit your booking request. Please try again.",
+        description: `Could not submit your booking request. ${error.message || 'Please try again.'}`,
       });
     } finally {
       setSubmitting(false);
