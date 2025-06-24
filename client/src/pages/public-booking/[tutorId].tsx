@@ -432,17 +432,20 @@ export default function PublicBookingPage() {
     const slot = bookingSlots.find(s => s.id === selectedSlot);
     if (!slot) return false;
     
-    const slotDate = format(parseISO(slot.start_time), 'yyyy-MM-dd');
-    const sessionStartTime = `${slotDate}T${startTime}:00`;
+    // Convert student's local time back to UTC for comparison with existing sessions
+    const slotDate = dayjs.utc(slot.start_time).format('YYYY-MM-DD');
+    const localDateTime = dayjs.tz(`${slotDate}T${startTime}:00`, studentTimezone);
+    const utcDateTime = localDateTime.utc();
+    const requestedStartUTC = utcDateTime.toDate();
+    const requestedEndUTC = new Date(requestedStartUTC.getTime() + duration * 60 * 1000);
     
     // Check if this exact time conflicts with existing sessions
     return !existingSessions.some(session => {
+      if (!session.start_time) return false;
       const sessionStart = new Date(session.start_time);
-      const requestedStart = new Date(sessionStartTime);
-      const requestedEnd = new Date(requestedStart.getTime() + duration * 60 * 1000);
       
       // Simple overlap check - for now we'll just check start times
-      return Math.abs(sessionStart.getTime() - requestedStart.getTime()) < 30 * 60 * 1000; // 30 min buffer
+      return Math.abs(sessionStart.getTime() - requestedStartUTC.getTime()) < 30 * 60 * 1000; // 30 min buffer
     });
   };
 
