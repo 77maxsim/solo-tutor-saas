@@ -51,7 +51,6 @@ import {
 import { EditStudentModal } from "@/components/modals/edit-student-modal";
 import { AvatarEditorModal } from "@/components/modals/avatar-editor-modal";
 import { StudentSessionHistoryModal } from "@/components/modals/student-session-history-modal";
-import { StudentAvatarTooltip } from "@/components/student-avatar-tooltip";
 import { getAvatarDisplay } from "@/lib/avatarUtils";
 
 interface Session {
@@ -564,12 +563,44 @@ export default function Students() {
                       <TableCell>
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-3">
-                            <StudentAvatarTooltip
-                              student={student}
-                              showName={true}
-                              showStats={true}
+                            <button
                               onClick={() => handleEditAvatar(student)}
-                            />
+                              className="h-10 w-10 rounded-full hover-scale transition-all duration-300 cursor-pointer group-hover:shadow-lg hover:ring-2 hover:ring-blue-200"
+                              title="Click to edit avatar"
+                            >
+                              {(() => {
+                                const avatarDisplay = getAvatarDisplay(student.avatarUrl);
+                                
+                                if (avatarDisplay.type === 'image') {
+                                  return (
+                                    <img
+                                      src={`${avatarDisplay.content}?t=${Date.now()}`}
+                                      alt="avatar"
+                                      className="w-10 h-10 rounded-full object-cover"
+                                      key={`avatar-${student.id}-${student.avatarUrl}`}
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = '/default-avatar.svg';
+                                      }}
+                                    />
+                                  );
+                                } else if (avatarDisplay.type === 'emoji') {
+                                  return (
+                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                      <span className="text-lg">{avatarDisplay.content}</span>
+                                    </div>
+                                  );
+                                } else {
+                                  return (
+                                    <img
+                                      src="/default-avatar.svg"
+                                      alt="avatar"
+                                      className="w-10 h-10 rounded-full object-cover"
+                                    />
+                                  );
+                                }
+                              })()}
+                            </button>
                             <div>
                               <p className="font-medium">{student.name}</p>
                               <div className="flex items-center gap-2 mt-1">
