@@ -253,13 +253,13 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
       </CardHeader>
       <CardContent>
 
-        {unpaidSessions?.length === 0 ? (
+        {displaySessions?.length === 0 ? (
           <p className="text-center text-muted-foreground py-6">
             No unpaid sessions! 🎉
           </p>
         ) : (
           <div className="space-y-3">
-            {unpaidSessions?.slice(0, limit > 0 ? limit : unpaidSessions.length).map((session) => {
+            {Array.isArray(displaySessions) ? displaySessions.map((session) => {
               const daysOverdue = getDaysOverdue(session.session_start);
               const earnings = (session.duration / 60) * session.rate;
 
@@ -303,7 +303,7 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
                   </div>
                 </div>
               );
-            })}
+            }) : null}
           </div>
         )}
       </CardContent>
