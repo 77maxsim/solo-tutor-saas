@@ -81,7 +81,9 @@ TutorTrack is a comprehensive tutoring management platform built with React and 
 
 ## Changelog
 
-- June 24, 2025. Initial setup
+- June 24, 2025: Implemented animated loading indicators for calendar time slot selection
+- June 24, 2025: Fixed duplicate schedule modal issue and unpaid sessions runtime bug  
+- June 24, 2025: Initial setup
 
 ## User Preferences
 

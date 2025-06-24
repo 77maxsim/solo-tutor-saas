@@ -463,11 +463,21 @@ export default function Calendar() {
       return;
     }
 
+    // Show loading indicator at click position
+    const rect = selectInfo.jsEvent?.target?.getBoundingClientRect();
+    if (rect) {
+      setLoadingSlot({
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+      });
+    }
+
     // Debounce the selection to prevent rapid duplicate calls
     selectTimeoutRef.current = setTimeout(() => {
       // Double-check modal state after debounce delay
       if (showScheduleModal) {
         console.log('⚠️ Schedule modal opened during debounce, canceling selection');
+        setLoadingSlot(null);
         return;
       }
 
@@ -498,6 +508,9 @@ export default function Calendar() {
         time: selectedTime,
         duration: Math.max(30, duration)
       };
+
+      // Clear loading indicator when modal opens
+      setLoadingSlot(null);
     }, 100); // 100ms debounce delay
   }, [showScheduleModal, tutorTimezone]);
 
@@ -840,6 +853,7 @@ export default function Calendar() {
             eventClick={handleEventClick}
             select={handleDateSelect}
             unselectAuto={false}
+            selectMinDistance={10}
             eventDrop={handleEventDrop}
             eventResize={handleEventResize}
             eventContent={renderEventContent}
@@ -885,6 +899,7 @@ export default function Calendar() {
           setShowScheduleModal(open);
           if (!open) {
             setEditSession(null);
+            setLoadingSlot(null); // Clear loading indicator when modal closes
           }
         }}
         editSession={null}
@@ -911,6 +926,35 @@ export default function Calendar() {
         onOpenChange={setShowPendingRequestsModal}
         highlightSessionId={sessionForDetails?.id}
       />
+
+      {/* Animated Loading Indicator for Time Slot Selection */}
+      {loadingSlot && (
+        <div 
+          className="fixed z-50 pointer-events-none animate-in fade-in-0 zoom-in-95 duration-200"
+          style={{
+            left: loadingSlot.x - 20,
+            top: loadingSlot.y - 20,
+          }}
+        >
+          <div className="relative">
+            {/* Outer Pulsing Ring */}
+            <div className="absolute inset-0 w-10 h-10 rounded-full border-2 border-blue-400 animate-ping opacity-75"></div>
+            
+            {/* Middle Spinning Circle */}
+            <div className="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-gray-700 border-t-blue-500 animate-spin"></div>
+            
+            {/* Center Dot */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            </div>
+            
+            {/* Floating "+" Icon */}
+            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold animate-bounce">
+              +
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
