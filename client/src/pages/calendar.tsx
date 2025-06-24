@@ -446,46 +446,73 @@ export default function Calendar() {
     }
   };
 
+  // Add debounce ref to prevent rapid successive calls
+  const selectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Handle slot selection to schedule new session
-  const handleDateSelect = (selectInfo: any) => {
+  const handleDateSelect = useCallback((selectInfo: any) => {
+    // Clear any existing timeout
+    if (selectTimeoutRef.current) {
+      clearTimeout(selectTimeoutRef.current);
+      selectTimeoutRef.current = null;
+    }
+
     // Prevent multiple modal instances - check and prevent immediately
     if (showScheduleModal) {
       console.log('⚠️ Schedule modal already open, ignoring duplicate slot selection');
       return;
     }
 
-    // FullCalendar selection is already in the display timezone
-    const startInTutorTz = dayjs(selectInfo.start).tz(tutorTimezone || 'UTC');
-    const endInTutorTz = dayjs(selectInfo.end).tz(tutorTimezone || 'UTC');
-    
-    const selectedDate = startInTutorTz.format('YYYY-MM-DD');
-    const selectedTime = startInTutorTz.format('HH:mm');
-    const duration = endInTutorTz.diff(startInTutorTz, 'minutes');
-    
-    console.log('🎯 Slot selected for new session:', {
-      selected_start_js: selectInfo.start,
-      selected_end_js: selectInfo.end,
-      tutor_timezone: tutorTimezone || 'UTC',
-      form_date: selectedDate,
-      form_time: selectedTime,
-      duration: duration
-    });
+    // Debounce the selection to prevent rapid duplicate calls
+    selectTimeoutRef.current = setTimeout(() => {
+      // Double-check modal state after debounce delay
+      if (showScheduleModal) {
+        console.log('⚠️ Schedule modal opened during debounce, canceling selection');
+        return;
+      }
 
-    // Clear any existing edit session and open modal
-    setEditSession(null);
-    setShowScheduleModal(true);
-    
-    // Dispatch event for form prefill with slight delay to ensure modal is mounted
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('openScheduleModal', {
-        detail: {
-          date: selectedDate,
-          time: selectedTime,
-          duration: Math.max(30, duration)
-        }
-      }));
-    }, 50);
-  };
+      // FullCalendar selection is already in the display timezone
+      const startInTutorTz = dayjs(selectInfo.start).tz(tutorTimezone || 'UTC');
+      const endInTutorTz = dayjs(selectInfo.end).tz(tutorTimezone || 'UTC');
+      
+      const selectedDate = startInTutorTz.format('YYYY-MM-DD');
+      const selectedTime = startInTutorTz.format('HH:mm');
+      const duration = endInTutorTz.diff(startInTutorTz, 'minutes');
+      
+      console.log('🎯 Slot selected for new session:', {
+        selected_start_js: selectInfo.start,
+        selected_end_js: selectInfo.end,
+        tutor_timezone: tutorTimezone || 'UTC',
+        form_date: selectedDate,
+        form_time: selectedTime,
+        duration: duration
+      });
+
+      // Clear any existing edit session and open modal
+      setEditSession(null);
+      setShowScheduleModal(true);
+      
+      // Dispatch event for form prefill with slight delay to ensure modal is mounted
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('openScheduleModal', {
+          detail: {
+            date: selectedDate,
+            time: selectedTime,
+            duration: Math.max(30, duration)
+          }
+        }));
+      }, 50);
+    }, 100); // 100ms debounce delay
+  }, [showScheduleModal, tutorTimezone]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (selectTimeoutRef.current) {
+        clearTimeout(selectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle event drop (drag and drop)
   const handleEventDrop = async (dropInfo: any) => {
@@ -816,6 +843,7 @@ export default function Calendar() {
             weekends={true}
             eventClick={handleEventClick}
             select={handleDateSelect}
+            unselectAuto={false}
             eventDrop={handleEventDrop}
             eventResize={handleEventResize}
             eventContent={renderEventContent}
