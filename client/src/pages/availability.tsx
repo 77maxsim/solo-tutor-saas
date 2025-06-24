@@ -146,37 +146,42 @@ export default function AvailabilityPage() {
         throw new Error("User not authenticated");
       }
 
-      // Validate timezone is available and wait for it if needed
-      if (!tutorTimezone) {
-        // Try to get timezone from tutor profile directly as fallback
-        const { data: tutorData } = await supabase
-          .from('tutors')
-          .select('timezone')
-          .eq('id', tutorId)
-          .single();
-        
-        const effectiveTimezone = tutorData?.timezone || 'Asia/Shanghai';
-        console.warn('Timezone not available from context, fetched from DB:', {
-          contextTimezone: tutorTimezone,
-          dbTimezone: tutorData?.timezone,
-          effectiveTimezone
-        });
+      // Get effective timezone - fetch from DB if context is not available
+      let effectiveTimezone = tutorTimezone;
+      
+      if (!effectiveTimezone) {
+        console.log('Timezone not available from context, fetching from database...');
+        try {
+          const { data: tutorData } = await supabase
+            .from('tutors')
+            .select('timezone')
+            .eq('id', tutorId)
+            .single();
+          
+          effectiveTimezone = tutorData?.timezone || 'Asia/Shanghai';
+          console.log('Fetched timezone from database:', {
+            contextTimezone: tutorTimezone,
+            dbTimezone: tutorData?.timezone,
+            effectiveTimezone
+          });
+        } catch (error) {
+          console.error('Failed to fetch timezone from database:', error);
+          effectiveTimezone = 'Asia/Shanghai';
+        }
       }
-
-      // Ensure we have a valid timezone
-      const effectiveTimezone = tutorTimezone || 'Asia/Shanghai';
       
       // Convert tutor's local time to UTC properly
       const startTimeUTC = dayjs.tz(data.startTime, effectiveTimezone).utc().toDate();
       const endTimeUTC = dayjs.tz(data.endTime, effectiveTimezone).utc().toDate();
 
       console.log('Slot creation timezone conversion:', {
-        tutorTimezone,
+        contextTimezone: tutorTimezone,
         effectiveTimezone,
         localStart: data.startTime,
         localEnd: data.endTime,
         utcStart: startTimeUTC.toISOString(),
-        utcEnd: endTimeUTC.toISOString()
+        utcEnd: endTimeUTC.toISOString(),
+        verificationLocal: dayjs.utc(startTimeUTC).tz(effectiveTimezone).format('YYYY-MM-DD HH:mm')
       });
 
       // Check for overlapping active slots
