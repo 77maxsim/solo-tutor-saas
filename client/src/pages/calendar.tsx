@@ -412,7 +412,7 @@ export default function Calendar() {
     setShowScheduleModal(true);
   };
 
-  // Custom event content renderer
+  // Custom event content renderer with hover animations
   const renderEventContent = (eventInfo: any) => {
     const session = eventInfo.event.extendedProps;
     const durationMinutes = session.duration || 60;
@@ -425,9 +425,14 @@ export default function Calendar() {
     const fadeClass = session.isPastSession ? 'opacity-50 grayscale' : '';
 
     return (
-      <div className={`p-1 text-xs ${fadeClass}`} title={tooltipContent}>
-        <div className="font-medium truncate">{eventInfo.event.title}</div>
-        <div className="text-xs opacity-90">
+      <div 
+        className={`p-1 text-xs transition-all duration-200 ease-in-out hover:saturate-150 hover:brightness-110 ${fadeClass} cursor-pointer group`} 
+        title={tooltipContent}
+      >
+        <div className="font-medium truncate transition-transform duration-200 ease-in-out group-hover:scale-105 group-hover:translate-y-[-1px]">
+          {eventInfo.event.title}
+        </div>
+        <div className="text-xs opacity-90 transition-opacity duration-200 group-hover:opacity-100">
           {durationMinutes}min • {formatCurrency(earning, tutorCurrency)}
         </div>
       </div>
@@ -848,12 +853,12 @@ export default function Calendar() {
             editable={true}
             eventDurationEditable={true} // Enable vertical resizing
             selectable={true}
-            selectMirror={true}
+            selectMirror={false}
             dayMaxEvents={true}
             weekends={true}
             eventClick={handleEventClick}
             select={handleDateSelect}
-            unselectAuto={false}
+            unselectAuto={true}
             selectMinDistance={10}
             eventDrop={handleEventDrop}
             eventResize={handleEventResize}
@@ -901,6 +906,10 @@ export default function Calendar() {
           if (!open) {
             setEditSession(null);
             setLoadingSlot(null); // Clear loading indicator when modal closes
+            // Force calendar to clear any selection state
+            if (calendarRef.current) {
+              calendarRef.current.getApi().unselect();
+            }
           }
         }}
         editSession={null}

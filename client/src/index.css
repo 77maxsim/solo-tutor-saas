@@ -694,9 +694,24 @@
     @apply bg-blue-50 dark:bg-blue-900 bg-opacity-30 transition-colors duration-150;
   }
 
-  /* Slot Selection Highlight */
-  .fc-highlight {
-    @apply bg-blue-200 dark:bg-blue-800 bg-opacity-70 animate-pulse;
+  /* Remove default selection mirror to prevent ghost sessions */
+  .fc-mirror-skeleton {
+    display: none !important;
+  }
+
+  /* Enhanced Session Card Hover Effects */
+  .fc-event {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .fc-event:hover {
+    @apply transform scale-[1.02] shadow-lg z-10;
+    filter: saturate(1.2) brightness(1.1);
+  }
+
+  /* Prevent ghost session blocks during selection */
+  .fc-selecting .fc-event {
+    pointer-events: auto;
   }
 
   /* Popup for "+X more" events */
