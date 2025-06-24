@@ -457,6 +457,8 @@ export default function Calendar() {
 
   // Handle slot selection to schedule new session
   const handleDateSelect = useCallback((selectInfo: any) => {
+    console.log('📅 Calendar select triggered:', selectInfo);
+    
     // Clear any existing timeout
     if (selectTimeoutRef.current) {
       clearTimeout(selectTimeoutRef.current);
@@ -518,6 +520,56 @@ export default function Calendar() {
       // Clear loading indicator when modal opens
       setLoadingSlot(null);
     }, 100); // 100ms debounce delay
+  }, [showScheduleModal, tutorTimezone]);
+
+  // Handle single date clicks as fallback when select doesn't work
+  const handleDateClick = useCallback((dateClickInfo: any) => {
+    console.log('📅 Calendar dateClick triggered:', dateClickInfo);
+    
+    // Prevent multiple modal instances
+    if (showScheduleModal) {
+      console.log('⚠️ Schedule modal already open, ignoring date click');
+      return;
+    }
+
+    // Show loading indicator at click position
+    const rect = dateClickInfo.jsEvent?.target?.getBoundingClientRect();
+    if (rect) {
+      setLoadingSlot({
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+      });
+    }
+
+    // Create a simulated selectInfo for consistent handling
+    const clickDate = dayjs(dateClickInfo.date).tz(tutorTimezone || 'UTC');
+    const selectedDate = clickDate.format('YYYY-MM-DD');
+    const selectedTime = clickDate.format('HH:mm');
+    const duration = 60; // Default 1 hour duration for single clicks
+    
+    console.log('🎯 Date clicked for new session:', {
+      clicked_date: dateClickInfo.date,
+      tutor_timezone: tutorTimezone || 'UTC',
+      form_date: selectedDate,
+      form_time: selectedTime,
+      duration: duration
+    });
+
+    setTimeout(() => {
+      // Clear any existing edit session and open modal
+      setEditSession(null);
+      setShowScheduleModal(true);
+      
+      // Store prefill data for the modal to use when it mounts
+      window.sessionPrefillData = {
+        date: selectedDate,
+        time: selectedTime,
+        duration: duration
+      };
+
+      // Clear loading indicator when modal opens
+      setLoadingSlot(null);
+    }, 100);
   }, [showScheduleModal, tutorTimezone]);
 
   // Clean up timeout on unmount
@@ -858,8 +910,9 @@ export default function Calendar() {
             weekends={true}
             eventClick={handleEventClick}
             select={handleDateSelect}
+            dateClick={handleDateClick}
             unselectAuto={true}
-            selectMinDistance={10}
+            selectMinDistance={5}
             eventDrop={handleEventDrop}
             eventResize={handleEventResize}
             eventContent={renderEventContent}
