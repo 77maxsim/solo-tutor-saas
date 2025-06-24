@@ -254,7 +254,7 @@ export default function PublicBookingPage() {
           console.log(`Fetching existing sessions - attempt ${attempt + 1}`);
           const result = await supabase
             .from('sessions')
-            .select('date, time')
+            .select('session_start, session_end')
             .eq('tutor_id', tutorId);
 
           if (result.error) {
@@ -277,9 +277,10 @@ export default function PublicBookingPage() {
         }
       }
 
-      // Convert date/time format to match booking slots
+      // Convert session format to match booking slots
       const sessions = sessionsData.map(session => ({
         start_time: session.session_start,
+        end_time: session.session_end,
         status: 'booked',
       }));
       setExistingSessions(sessions);
@@ -510,17 +511,16 @@ export default function PublicBookingPage() {
         finalTime: utcDateTime.format('HH:mm')
       });
 
-      const date = utcDateTime.format('YYYY-MM-DD');
-      const time = utcDateTime.format('HH:mm');
       const duration = data.selectedDuration;
+      const sessionStart = utcDateTime.toISOString();
+      const sessionEnd = utcDateTime.add(duration, 'minutes').toISOString();
 
-      // Prepare session payload
+      // Prepare session payload using UTC timestamps
       const sessionPayload = {
         tutor_id: tutorId,
         student_id: null,
-        date: date,
-        time: time,
-        duration: duration,
+        session_start: sessionStart,
+        session_end: sessionEnd,
         rate: 0, // Default rate, tutor can update later
         paid: false,
         unassigned_name: data.name,
@@ -533,7 +533,7 @@ export default function PublicBookingPage() {
       // Add debug toast
       toast({
         title: "Submitting Booking...",
-        description: `Booking ${data.name} for ${time} (${duration} min)`,
+        description: `Booking ${data.name} for ${data.selectedStartTime} (${duration} min)`,
       });
 
       // Create session record
