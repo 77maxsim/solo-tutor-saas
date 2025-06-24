@@ -77,7 +77,7 @@ export default function AvailabilityPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
   const [tutorId, setTutorId] = useState<string | null>(null);
-  const { timezone: tutorTimezone } = useTimezone();
+  const { tutorTimezone } = useTimezone();
 
   // Fetch current tutor ID
   useEffect(() => {
@@ -146,12 +146,33 @@ export default function AvailabilityPage() {
         throw new Error("User not authenticated");
       }
 
+      // Validate timezone is available and wait for it if needed
+      if (!tutorTimezone) {
+        // Try to get timezone from tutor profile directly as fallback
+        const { data: tutorData } = await supabase
+          .from('tutors')
+          .select('timezone')
+          .eq('id', tutorId)
+          .single();
+        
+        const effectiveTimezone = tutorData?.timezone || 'Asia/Shanghai';
+        console.warn('Timezone not available from context, fetched from DB:', {
+          contextTimezone: tutorTimezone,
+          dbTimezone: tutorData?.timezone,
+          effectiveTimezone
+        });
+      }
+
+      // Ensure we have a valid timezone
+      const effectiveTimezone = tutorTimezone || 'Asia/Shanghai';
+      
       // Convert tutor's local time to UTC properly
-      const startTimeUTC = dayjs.tz(data.startTime, tutorTimezone).utc().toDate();
-      const endTimeUTC = dayjs.tz(data.endTime, tutorTimezone).utc().toDate();
+      const startTimeUTC = dayjs.tz(data.startTime, effectiveTimezone).utc().toDate();
+      const endTimeUTC = dayjs.tz(data.endTime, effectiveTimezone).utc().toDate();
 
       console.log('Slot creation timezone conversion:', {
         tutorTimezone,
+        effectiveTimezone,
         localStart: data.startTime,
         localEnd: data.endTime,
         utcStart: startTimeUTC.toISOString(),
