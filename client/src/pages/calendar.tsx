@@ -426,13 +426,31 @@ export default function Calendar() {
 
     return (
       <div 
-        className={`p-1 text-xs transition-all duration-200 ease-in-out hover:saturate-150 hover:brightness-110 ${fadeClass} cursor-pointer group`} 
+        className={`p-1 text-xs transition-all duration-200 ease-in-out hover:saturate-150 hover:brightness-110 ${fadeClass} cursor-pointer group relative`} 
         title={tooltipContent}
       >
-        <div className="font-medium truncate transition-transform duration-200 ease-in-out group-hover:scale-105 group-hover:translate-y-[-1px]">
+        {session.student_id && (
+          <div className="absolute -top-1 -left-1 z-10">
+            <StudentAvatarTooltip
+              student={{
+                id: session.student_id,
+                name: session.student_name || 'Unknown',
+                avatar_url: session.avatarUrl,
+                tags: [],
+                phone: '',
+                email: '',
+                tutor_id: ''
+              }}
+              size="sm"
+              showName={true}
+              showStats={false}
+            />
+          </div>
+        )}
+        <div className="font-medium truncate transition-transform duration-200 ease-in-out group-hover:scale-105 group-hover:translate-y-[-1px] ml-6">
           {eventInfo.event.title}
         </div>
-        <div className="text-xs opacity-90 transition-opacity duration-200 group-hover:opacity-100">
+        <div className="text-xs opacity-90 transition-opacity duration-200 group-hover:opacity-100 ml-6">
           {durationMinutes}min • {formatCurrency(earning, tutorCurrency)}
         </div>
       </div>
