@@ -356,18 +356,29 @@ export default function PublicBookingPage() {
   };
 
   const generateAvailableStartTimes = (slot: BookingSlot): string[] => {
-    const startDateTime = parseISO(slot.start_time);
-    const endDateTime = parseISO(slot.end_time);
+    // Convert UTC slot times to student's timezone
+    const utcStartTime = dayjs.utc(slot.start_time);
+    const utcEndTime = dayjs.utc(slot.end_time);
+    const localStartTime = utcStartTime.tz(studentTimezone);
+    const localEndTime = utcEndTime.tz(studentTimezone);
+    
+    console.log('Generating time options for student:', {
+      utcSlot: `${utcStartTime.format()} - ${utcEndTime.format()}`,
+      localSlot: `${localStartTime.format()} - ${localEndTime.format()}`,
+      studentTimezone
+    });
+    
     const times: string[] = [];
     
-    // Generate 30-minute intervals
-    let current = new Date(startDateTime);
-    while (current < endDateTime) {
-      const timeString = format(current, 'HH:mm');
+    // Generate 30-minute intervals in student's local timezone
+    let current = localStartTime.clone();
+    while (current.isBefore(localEndTime)) {
+      const timeString = current.format('HH:mm');
       times.push(timeString);
-      current.setMinutes(current.getMinutes() + 30);
+      current = current.add(30, 'minutes');
     }
     
+    console.log('Generated time options:', times);
     return times;
   };
 
@@ -377,16 +388,18 @@ export default function PublicBookingPage() {
     const slot = bookingSlots.find(s => s.id === selectedSlot);
     if (!slot) return [];
     
-    const slotStartDateTime = parseISO(slot.start_time);
-    const slotEndDateTime = parseISO(slot.end_time);
+    // Convert slot times to student's timezone
+    const utcSlotStart = dayjs.utc(slot.start_time);
+    const utcSlotEnd = dayjs.utc(slot.end_time);
+    const localSlotStart = utcSlotStart.tz(studentTimezone);
+    const localSlotEnd = utcSlotEnd.tz(studentTimezone);
     
-    // Create selected start datetime
-    const selectedStartDateTime = new Date(slotStartDateTime);
-    const [hours, minutes] = startTime.split(':').map(Number);
-    selectedStartDateTime.setHours(hours, minutes, 0, 0);
+    // Create selected start time in student's timezone
+    const slotDate = localSlotStart.format('YYYY-MM-DD');
+    const selectedLocalStart = dayjs.tz(`${slotDate}T${startTime}:00`, studentTimezone);
     
     // Calculate available durations
-    const maxMinutes = Math.floor((slotEndDateTime.getTime() - selectedStartDateTime.getTime()) / (1000 * 60));
+    const maxMinutes = localSlotEnd.diff(selectedLocalStart, 'minutes');
     const durations: number[] = [];
     
     // Add 30-minute intervals up to the maximum
@@ -479,10 +492,23 @@ export default function PublicBookingPage() {
         return;
       }
 
-      // Use selected date from slot and selected time from user
-      const slotDate = format(parseISO(slot.start_time), 'yyyy-MM-dd');
-      const date = slotDate;
-      const time = data.selectedStartTime;
+      // Convert student's local time selection back to UTC for storage
+      const slotDate = dayjs.utc(slot.start_time).format('YYYY-MM-DD');
+      const localDateTime = dayjs.tz(`${slotDate}T${data.selectedStartTime}:00`, studentTimezone);
+      const utcDateTime = localDateTime.utc();
+      
+      console.log('Booking submission timezone conversion:', {
+        studentTimezone,
+        selectedTime: data.selectedStartTime,
+        slotDate,
+        localDateTime: localDateTime.format(),
+        utcDateTime: utcDateTime.format(),
+        finalDate: utcDateTime.format('YYYY-MM-DD'),
+        finalTime: utcDateTime.format('HH:mm')
+      });
+
+      const date = utcDateTime.format('YYYY-MM-DD');
+      const time = utcDateTime.format('HH:mm');
       const duration = data.selectedDuration;
 
       // Prepare session payload
@@ -863,26 +889,9 @@ export default function PublicBookingPage() {
                     {availableStartTimes.map((time) => {
                       const isAvailable = isTimeSlotAvailable(time, selectedDuration);
                       
-                      // Convert the time to student's timezone for display
-                      const selectedSlotData = bookingSlots.find(s => s.id === selectedSlot);
-                      let displayTime = format(new Date(`2000-01-01T${time}`), 'h:mm a');
-                      
-                      if (selectedSlotData) {
-                        // Create a datetime with the slot's date and selected time
-                        const slotDate = dayjs.utc(selectedSlotData.start_time).format('YYYY-MM-DD');
-                        const utcDateTime = dayjs.utc(`${slotDate}T${time}:00`);
-                        const localDateTime = utcDateTime.tz(studentTimezone);
-                        displayTime = localDateTime.format('h:mm A');
-                        
-                        console.log('Time picker conversion:', {
-                          originalTime: time,
-                          slotDate,
-                          utcDateTime: utcDateTime.format(),
-                          localDateTime: localDateTime.format(),
-                          displayTime,
-                          studentTimezone
-                        });
-                      }
+                      // Since time is already in student's timezone from generateAvailableStartTimes,
+                      // we just need to format it for display
+                      const displayTime = dayjs(`2000-01-01T${time}:00`).format('h:mm A');
                       
                       return (
                         <SelectItem 
