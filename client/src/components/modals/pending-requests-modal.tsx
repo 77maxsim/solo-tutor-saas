@@ -30,8 +30,8 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 interface PendingRequest {
   id: string;
   unassigned_name: string;
-  date: string;
-  time: string;
+  session_start: string;
+  session_end: string;
   duration: number;
   rate: number;
   notes?: string;
@@ -71,7 +71,7 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
 
       const { data, error } = await supabase
         .from('sessions')
-        .select('id, unassigned_name, date, time, duration, rate, notes, created_at')
+        .select('id, unassigned_name, session_start, session_end, duration, rate, notes, created_at')
         .eq('tutor_id', tutorId)
         .eq('status', 'pending')
         .is('student_id', null)
@@ -176,65 +176,9 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
   // Accept request mutation
   const acceptMutation = useMutation({
     mutationFn: async ({ requestId, studentId }: { requestId: string; studentId: string }) => {
-      // First get the pending request to extract date/time for UTC conversion
-      const { data: pendingRequest, error: fetchError } = await supabase
-        .from('sessions')
-        .select('date, time, duration')
-        .eq('id', requestId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Convert legacy date/time to UTC timestamps using tutor timezone
-      const tutorTz = tutorTimezone || 'UTC';
-      const dateTimeStr = `${pendingRequest.date} ${pendingRequest.time}`;
-      
-      console.log('🕐 Converting datetime:', {
-        date: pendingRequest.date,
-        time: pendingRequest.time,
-        dateTimeStr,
-        tutorTz,
-        duration: pendingRequest.duration
-      });
-      
-      // Try multiple date/time formats in case the format varies
-      let sessionStart;
-      try {
-        // Try format: "2025-06-23 04:30"
-        sessionStart = DateTime.fromFormat(dateTimeStr, 'yyyy-MM-dd HH:mm', { zone: tutorTz });
-        if (!sessionStart.isValid) {
-          // Try format: "2025-06-23 4:30" (single digit hour)
-          sessionStart = DateTime.fromFormat(dateTimeStr, 'yyyy-M-d H:mm', { zone: tutorTz });
-        }
-        if (!sessionStart.isValid) {
-          // Try ISO format
-          sessionStart = DateTime.fromISO(dateTimeStr, { zone: tutorTz });
-        }
-      } catch (e) {
-        console.error('Error parsing datetime:', e);
-        throw new Error(`Invalid date/time format: ${dateTimeStr}`);
-      }
-      
-      if (!sessionStart.isValid) {
-        console.error('Failed to parse datetime:', sessionStart.invalidReason);
-        throw new Error(`Could not parse date/time: ${dateTimeStr}`);
-      }
-      
-      const sessionStartUTC = sessionStart.toUTC().toISO();
-      const sessionEndUTC = sessionStart.plus({ minutes: pendingRequest.duration }).toUTC().toISO();
-      
-      console.log('✅ Converted timestamps:', {
-        sessionStartUTC,
-        sessionEndUTC,
-        localTime: sessionStart.toFormat('yyyy-MM-dd HH:mm')
-      });
-
-      console.log('💾 Updating session with UTC timestamps:', {
+      console.log('💾 Updating session to confirmed status:', {
         requestId,
-        studentId,
-        sessionStartUTC,
-        sessionEndUTC,
-        originalData: pendingRequest
+        studentId
       });
 
       const { error } = await supabase
@@ -242,9 +186,7 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
         .update({
           student_id: studentId,
           unassigned_name: null,
-          status: 'confirmed',
-          session_start: sessionStartUTC,
-          session_end: sessionEndUTC
+          status: 'confirmed'
         })
         .eq('id', requestId);
 
@@ -382,10 +324,10 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
     addStudentMutation.mutate({ name, requestId });
   };
 
-  const formatDateTime = (date: string, time: string) => {
-    // Assume date/time is in tutor's timezone, format appropriately
+  const formatDateTime = (sessionStart: string) => {
+    // Convert UTC timestamp to tutor's timezone for display
     const tutorTz = tutorTimezone || 'UTC';
-    const dateTime = DateTime.fromFormat(`${date} ${time}`, 'yyyy-MM-dd HH:mm', { zone: tutorTz });
+    const dateTime = DateTime.fromISO(sessionStart, { zone: 'utc' }).setZone(tutorTz);
     return {
       date: dateTime.toFormat('MMM d, yyyy'),
       time: dateTime.toFormat('h:mm a'),
@@ -441,7 +383,7 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
             </div>
           ) : (
             pendingRequests.map((request) => {
-              const { date, time, dayOfWeek } = formatDateTime(request.date, request.time);
+              const { date, time, dayOfWeek } = formatDateTime(request.session_start);
               const isProcessing = processingRequests.has(request.id);
 
               return (
