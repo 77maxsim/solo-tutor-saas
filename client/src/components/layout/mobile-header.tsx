@@ -9,8 +9,9 @@ interface MobileHeaderProps {
 
 export function MobileHeader({ title, onMenuClick }: MobileHeaderProps) {
   const handleScheduleSession = () => {
-    // Trigger the global schedule session modal
-    window.dispatchEvent(new CustomEvent('openScheduleModal'));
+    // Trigger the global schedule session modal via custom event
+    // This is separate from calendar slot selection to avoid conflicts
+    window.dispatchEvent(new CustomEvent('openScheduleModalFromButton'));
   };
 
   return (

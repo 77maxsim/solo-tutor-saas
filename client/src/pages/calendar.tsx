@@ -492,16 +492,12 @@ export default function Calendar() {
       setEditSession(null);
       setShowScheduleModal(true);
       
-      // Dispatch event for form prefill with slight delay to ensure modal is mounted
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('openScheduleModal', {
-          detail: {
-            date: selectedDate,
-            time: selectedTime,
-            duration: Math.max(30, duration)
-          }
-        }));
-      }, 50);
+      // Store prefill data for the modal to use when it mounts
+      window.sessionPrefillData = {
+        date: selectedDate,
+        time: selectedTime,
+        duration: Math.max(30, duration)
+      };
     }, 100); // 100ms debounce delay
   }, [showScheduleModal, tutorTimezone]);
 

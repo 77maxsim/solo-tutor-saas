@@ -359,34 +359,39 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
     onOpenChange(false);
   };
 
-  // Listen for custom events to pre-fill form from calendar clicks
+  // Check for prefill data when modal opens and listen for button triggers
   useEffect(() => {
-    const handleOpenScheduleModal = (event: CustomEvent) => {
-      if (event.detail) {
-        const { date, time, duration } = event.detail;
-        
-        // Convert date + time to UTC sessionStart if provided
-        if (date && time && tutorTimezone) {
-          const localDateTime = `${date} ${time}`;
-          const utcSessionStart = dayjs.tz(localDateTime, tutorTimezone).utc().toISOString();
-          form.setValue('sessionStart', utcSessionStart);
-          setUserModifiedFields(prev => new Set(prev).add('sessionStart'));
-        }
-        if (duration) {
-          form.setValue('duration', duration);
-          setUserModifiedFields(prev => new Set(prev).add('duration'));
-        }
+    // Handle prefill data from calendar slot selection
+    if (open && (window as any).sessionPrefillData && tutorTimezone) {
+      const { date, time, duration } = (window as any).sessionPrefillData;
+      
+      // Convert date + time to UTC sessionStart if provided
+      if (date && time) {
+        const localDateTime = `${date} ${time}`;
+        const utcSessionStart = dayjs.tz(localDateTime, tutorTimezone).utc().toISOString();
+        form.setValue('sessionStart', utcSessionStart);
+        setUserModifiedFields(prev => new Set(prev).add('sessionStart'));
+      }
+      if (duration) {
+        form.setValue('duration', duration);
+        setUserModifiedFields(prev => new Set(prev).add('duration'));
       }
       
+      // Clear the prefill data after using it
+      delete (window as any).sessionPrefillData;
+    }
+
+    // Handle modal opening from button clicks (mobile header, sidebar, etc.)
+    const handleOpenFromButton = () => {
       onOpenChange(true);
     };
 
-    window.addEventListener('openScheduleModal', handleOpenScheduleModal as EventListener);
+    window.addEventListener('openScheduleModalFromButton', handleOpenFromButton);
     
     return () => {
-      window.removeEventListener('openScheduleModal', handleOpenScheduleModal as EventListener);
+      window.removeEventListener('openScheduleModalFromButton', handleOpenFromButton);
     };
-  }, [form, onOpenChange, tutorTimezone]);
+  }, [open, form, tutorTimezone, onOpenChange]);
 
   // Helper function to create UTC sessionStart from local date and time inputs
   const createSessionStart = (localDate: string, localTime: string, timezone: string) => {
