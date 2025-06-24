@@ -90,6 +90,7 @@ export default function Calendar() {
   const [editSession, setEditSession] = useState<SessionWithStudent | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isEditingRecurring, setIsEditingRecurring] = useState(false);
+  const [loadingSlot, setLoadingSlot] = useState<{x: number, y: number} | null>(null);
   const calendarRef = useRef<FullCalendar>(null);
   
   const isMobile = useIsMobile();
