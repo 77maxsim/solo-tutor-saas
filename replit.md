@@ -81,11 +81,19 @@ TutorTrack is a comprehensive tutoring management platform built with React and 
 
 ## Changelog
 
-- June 24, 2025: Fixed timezone mismatch in availability slot creation by ensuring proper timezone handling
-- June 24, 2025: Fixed ghost session card bug and added session card hover animations
-- June 24, 2025: Implemented animated loading indicators for calendar time slot selection
-- June 24, 2025: Fixed duplicate schedule modal issue and unpaid sessions runtime bug  
-- June 24, 2025: Initial setup
+### June 29, 2025: Complete UTC Timestamp Migration & Booking System Fixes
+- **UTC Migration**: Completed full migration from legacy date/time fields to session_start/session_end UTC timestamps
+- **Booking System**: Fixed student booking page timezone conversion and form submission
+- **Pending Requests**: Updated pending requests modal to work with new UTC timestamp schema
+- **Error Handling**: Enhanced booking submission with proper field validation and decimal formatting
+- **Calendar Integration**: Restored calendar slot selection functionality with animated loading indicators
+
+### June 24, 2025: Core System Enhancements
+- Fixed timezone mismatch in availability slot creation by ensuring proper timezone handling
+- Fixed ghost session card bug and added session card hover animations
+- Implemented animated loading indicators for calendar time slot selection
+- Fixed duplicate schedule modal issue and unpaid sessions runtime bug  
+- Initial setup and core functionality implementation
 
 ## User Preferences
 
