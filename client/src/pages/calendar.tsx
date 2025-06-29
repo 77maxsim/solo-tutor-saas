@@ -727,9 +727,15 @@ export default function Calendar() {
             event?.preventDefault?.();
             event?.stopPropagation?.();
             
-            // Set highlightedSessionId first - useEffect will handle opening modal
-            console.log('🔧 Setting highlightedSessionId - useEffect will open modal');
+            // Force both states immediately
+            console.log('🔧 Force setting both states immediately');
             setHighlightedSessionId(session.id);
+            
+            // Use setTimeout to ensure state is processed
+            setTimeout(() => {
+              console.log('⚡ Force opening modal now!');
+              setShowPendingRequestsModal(true);
+            }, 1);
             
             return;
           }

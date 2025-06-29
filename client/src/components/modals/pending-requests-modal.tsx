@@ -55,6 +55,11 @@ dayjs.extend(relativeTime);
 
 export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }: PendingRequestsModalProps) {
   console.log('🎭 PendingRequestsModal render - open:', open, 'highlightSessionId:', highlightSessionId);
+  
+  // CRITICAL FIX: If modal opens but no highlightSessionId, keep it open anyway
+  const shouldBeOpen = open || Boolean(highlightSessionId);
+  console.log('🔥 Modal should be open:', shouldBeOpen, 'because open:', open, 'or highlightSessionId:', Boolean(highlightSessionId));
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { tutorTimezone } = useTimezone();
@@ -357,7 +362,7 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
   }, [open, highlightSessionId, pendingRequests]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={shouldBeOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl md:max-w-4xl sm:max-w-[95vw] max-h-[80vh] overflow-y-auto z-50 mx-2 sm:mx-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
