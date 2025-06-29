@@ -1,0 +1,30 @@
+Warning: Internal React error: Expected static flag was missing. Please notify the React team.
+    at PendingRequestsModal (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/components/modals/pending-requests-modal.tsx:47:40)
+    at div
+    at _c (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/components/ui/card.tsx:20:11)
+    at MobileCalendarView (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/components/MobileCalendarView.tsx:28:46)
+    at Calendar (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/pages/calendar.tsx:61:27)
+    at ProtectedCalendar (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/App.tsx?v=WeW1wK-RIrjmT-ibfQ9W8:89:27)
+    at Route (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=30ae8597:323:16)
+    at Switch (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=30ae8597:379:17)
+    at Router (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/App.tsx?v=WeW1wK-RIrjmT-ibfQ9W8:390:27)
+    at div
+    at div
+    at div
+    at AppLayout (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/App.tsx?v=WeW1wK-RIrjmT-ibfQ9W8:503:41)
+    at Provider (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7ZKHW5FC.js?v=30ae8597:38:15)
+    at TooltipProvider (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=30ae8597:62:5)
+    at TimezoneProvider (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/contexts/TimezoneContext.tsx:21:36)
+    at QueryClientProvider (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=30ae8597:2805:3)
+    at ThemeProvider (https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/src/hooks/use-theme.tsx:26:3)
+    at App
+Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+🎭 PendingRequestsModal render - open: true highlightSessionId: undefined
+🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+🎯 Mobile session clicked: 
+Object {id: "d6dbafdd-5d9a-45c2-8b53-2ad77377c2a2", student_id: null, session_start: "2025-06-30T08:30:00+00:00", session_end: "2025-06-30T10:00:00+00:00", duration: 90, …}
+📱 Opening session details for: 
+Object {id: "d6dbafdd-5d9a-45c2-8b53-2ad77377c2a2", student_id: null, session_start: "2025-06-30T08:30:00+00:00", session_end: "2025-06-30T10:00:00+00:00", duration: 90, …}
+🟠 Detected pending session, opening modal with ID: d6dbafdd-5d9a-45c2-8b53-2ad77377c2a2
+🚀 Current modal state before: true
+🚀 Modal state set to true

@@ -711,10 +711,13 @@ export default function Calendar() {
           if (session.status === 'pending') {
             console.log('🟠 Detected pending session, opening modal with ID:', session.id);
             console.log('🚀 Current modal state before:', showPendingRequestsModal);
+            console.log('🔑 Setting highlightedSessionId to:', session.id);
             
-            // Set states together to prevent race condition
-            setHighlightedSessionId(session.id);
-            setShowPendingRequestsModal(true);
+            // Use React's state batching to update both states together
+            React.startTransition(() => {
+              setHighlightedSessionId(session.id);
+              setShowPendingRequestsModal(true);
+            });
             console.log('🚀 Modal state set to true');
             return;
           }
