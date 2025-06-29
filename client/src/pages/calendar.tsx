@@ -87,6 +87,7 @@ export default function Calendar() {
   const [showPendingRequestsModal, setShowPendingRequestsModal] = useState(false);
   console.log('🔍 Current pending modal state:', showPendingRequestsModal);
   const [highlightedSessionId, setHighlightedSessionId] = useState<string | undefined>(undefined);
+  console.log('🔍 Current highlightedSessionId:', highlightedSessionId);
   const [calendarView, setCalendarView] = useState<'week' | 'month' | 'agenda'>('week');
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [editSession, setEditSession] = useState<SessionWithStudent | null>(null);
@@ -717,6 +718,11 @@ export default function Calendar() {
             setHighlightedSessionId(session.id);
             setShowPendingRequestsModal(true);
             console.log('🚀 Modal state set to true');
+            
+            // Force re-render to ensure modal gets updated props
+            setTimeout(() => {
+              console.log('🔄 Post-timeout check - modal state:', showPendingRequestsModal, 'highlightId:', highlightedSessionId);
+            }, 10);
             return;
           }
           
@@ -959,6 +965,7 @@ export default function Calendar() {
       {/* Pending Requests Modal */}
       {console.log('🎭 About to render PendingRequestsModal with open:', showPendingRequestsModal, 'highlightSessionId:', highlightedSessionId)}
       <PendingRequestsModal
+        key={highlightedSessionId || 'no-highlight'} // Force re-render when highlightSessionId changes
         open={showPendingRequestsModal}
         onOpenChange={(open) => {
           console.log('🚀 Pending modal state changing to:', open);
