@@ -283,7 +283,7 @@ export default function Calendar() {
     const tutorTz = tutorTimezone || 'UTC';
     
     filteredSessions.forEach(session => {
-      // Only process sessions with UTC timestamps - remove fallback logic
+      // Only process sessions with UTC timestamps
       if (!session.session_start || !session.session_end) {
         console.warn('⚠️ Session missing UTC timestamps, skipping:', {
           id: session.id?.substring(0, 8) + '...',
@@ -291,77 +291,31 @@ export default function Calendar() {
           session_end: session.session_end,
           status: session.status,
           student_name: session.student_name,
-          unassigned_name: session.unassigned_name,
-          legacy_date: session.session_start ? new Date(session.session_start).toISOString().split('T')[0] : 'N/A',
-          legacy_time: 'DEPRECATED'
+          unassigned_name: session.unassigned_name
         });
         
         skippedSessions.push(session);
         return;
       }
 
-      // CRITICAL: Pass UTC timestamps directly to FullCalendar
-      // FullCalendar will handle timezone conversion using its timeZone prop
-      const startDate = new Date(session.session_start);
-      const endDate = new Date(session.session_end);
-      
-      // Debug timezone handling for verification
-      console.debug('🕐 FullCalendar timezone setup:', {
-        id: session.id?.substring(0, 8) + '...',
-        student_name: session.student_name,
-        utc_stored: session.session_start,
-        tutor_timezone: tutorTz,
-        fullcalendar_will_convert_to: dayjs.utc(session.session_start).tz(tutorTz).format(`YYYY-MM-DD HH:mm [${tutorTz}]`),
-        raw_date_object: startDate.toISOString()
-      });
-
-      // Determine display name and styling
-      let title = session.student_name || session.unassigned_name || 'Unknown Student';
-      let backgroundColor = '#3b82f6'; // Default blue
-      let textColor = '#ffffff';
-      
-      if (session.status === 'pending') {
-        backgroundColor = '#f59e0b'; // Amber for pending requests
-        title = `⏳ ${session.unassigned_name || 'Pending Request'}`;
-      } else if (session.status === 'confirmed' && !session.student_id) {
-        backgroundColor = '#10b981'; // Green for unassigned confirmed sessions
-        title = `📝 ${session.unassigned_name || 'Unassigned Session'}`;
-      } else if (!session.paid) {
-        backgroundColor = '#ef4444'; // Red for unpaid
-        title = `💰 ${title}`;
-      } else if (session.color) {
-        backgroundColor = session.color;
+      try {
+        // Use the proper utility function that handles colors correctly
+        const event = convertSessionToCalendarEvent(session, tutorTz);
+        validEvents.push(event);
+        
+        // Log event creation for verification including color
+        console.debug('✅ Calendar event created:', {
+          id: session.id?.substring(0, 8) + '...',
+          title: event.title,
+          student_name: session.student_name,
+          selected_color: session.color,
+          final_background: event.backgroundColor,
+          original_utc: session.session_start
+        });
+      } catch (error) {
+        console.error('❌ Failed to convert session to calendar event:', error);
+        skippedSessions.push(session);
       }
-
-      // Check if session has ended (for fading past sessions)
-      const now = dayjs.utc();
-      const sessionEnd = dayjs.utc(session.session_end);
-      const isPastSession = sessionEnd.isBefore(now);
-
-      const event = {
-        id: session.id,
-        title,
-        start: startDate,
-        end: endDate,
-        backgroundColor,
-        borderColor: backgroundColor,
-        textColor,
-        extendedProps: { 
-          ...session, 
-          isPastSession // Flag for styling past sessions
-        }
-      };
-      
-      validEvents.push(event);
-      
-      // Log event creation for verification
-      console.debug('✅ Calendar event created:', {
-        id: session.id?.substring(0, 8) + '...',
-        title,
-        student_name: session.student_name,
-        original_utc: session.session_start,
-        display_time: startDate.toLocaleString('en-US', { timeZone: tutorTz })
-      });
     });
     
     console.log('📊 Calendar event summary:', {

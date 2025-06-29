@@ -31,6 +31,16 @@ export function convertSessionToCalendarEvent(
   let backgroundColor = session.color || '#3b82f6'; // Use user's selected color or default blue
   let textColor = '#ffffff';
   
+  // Debug color assignment
+  console.debug('🎨 Session color debug:', {
+    sessionId: session.id?.substring(0, 8) + '...',
+    studentName: session.student_name,
+    colorFromDB: session.color,
+    finalBackground: backgroundColor,
+    status: session.status,
+    paid: session.paid
+  });
+  
   // Only override user's color choice for critical status indicators
   if (session.status === 'pending') {
     backgroundColor = '#f59e0b'; // Amber for pending requests (critical status)
