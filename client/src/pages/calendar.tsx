@@ -703,6 +703,15 @@ export default function Calendar() {
       <MobileCalendarView
         sessions={filteredSessions}
         onSelectSession={(session) => {
+          console.log('📱 Opening session details for:', session);
+          
+          // For pending sessions, open pending modal instead
+          if (session.status === 'pending') {
+            setHighlightedSessionId(session.id);
+            setShowPendingModal(true);
+            return;
+          }
+          
           setSessionForDetails(session);
           setShowSessionDetailsModal(true);
         }}
