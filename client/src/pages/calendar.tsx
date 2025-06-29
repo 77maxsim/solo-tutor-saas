@@ -304,12 +304,14 @@ export default function Calendar() {
         validEvents.push(event);
         
         // Log event creation for verification including color
-        console.debug('✅ Calendar event created:', {
+        console.log('✅ Calendar event created:', {
           id: session.id?.substring(0, 8) + '...',
           title: event.title,
           student_name: session.student_name,
           selected_color: session.color,
           final_background: event.backgroundColor,
+          status: session.status,
+          paid: session.paid,
           original_utc: session.session_start
         });
       } catch (error) {
