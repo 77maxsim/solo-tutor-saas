@@ -959,10 +959,21 @@ export default function PublicBookingPage() {
                       {(() => {
                         const selectedSlotData = bookingSlots.find(s => s.id === selectedSlot);
                         if (selectedSlotData) {
-                          const slotDate = dayjs.utc(selectedSlotData.start_time).format('YYYY-MM-DD');
-                          const utcStartDateTime = dayjs.utc(`${slotDate}T${selectedStartTime}:00`);
-                          const localStartDateTime = utcStartDateTime.tz(studentTimezone);
+                          // Get the slot date in student's timezone
+                          const slotDate = dayjs.utc(selectedSlotData.start_time).tz(studentTimezone).format('YYYY-MM-DD');
+                          
+                          // selectedStartTime is already in student's local timezone (e.g., "10:00")
+                          // Create datetime in student's timezone directly, no double conversion
+                          const localStartDateTime = dayjs.tz(`${slotDate}T${selectedStartTime}:00`, studentTimezone);
                           const localEndDateTime = localStartDateTime.add(selectedDuration, 'minute');
+                          
+                          console.log('Session Summary Time Debug:', {
+                            selectedStartTime,
+                            slotDate,
+                            studentTimezone,
+                            localStartDateTime: localStartDateTime.format(),
+                            displayTime: localStartDateTime.format('h:mm A')
+                          });
                           
                           return (
                             <p className="text-sm text-green-600 dark:text-green-300">
