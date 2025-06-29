@@ -104,6 +104,7 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
   };
 
   const handleSessionClick = (session: SessionWithStudent) => {
+    console.log('🎯 Mobile session clicked:', session);
     onSelectSession(session);
   };
 
@@ -191,9 +192,10 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
                 return (
                   <div key={dayIndex} className="relative border-r last:border-r-0 p-0.5 bg-white hover:bg-gray-50 min-h-[28px] min-w-0">
                     {sessionAtTime ? (
-                      <div
-                        className="absolute top-0.5 left-0.5 right-0.5 rounded text-white cursor-pointer hover:opacity-80 active:opacity-60 transition-opacity px-1 py-1 flex flex-col justify-center overflow-hidden z-10 touch-manipulation"
+                      <button
+                        className="absolute top-0.5 left-0.5 right-0.5 rounded text-white cursor-pointer hover:opacity-80 active:opacity-60 transition-opacity px-1 py-1 flex flex-col justify-center overflow-hidden z-10 touch-manipulation border-0 outline-none focus:ring-2 focus:ring-white/20"
                         onClick={() => handleSessionClick(sessionAtTime)}
+                        onTouchStart={() => console.log('Touch started on session:', sessionAtTime.id)}
                         style={{ 
                           backgroundColor: sessionAtTime.status === 'pending' ? '#f59e0b' : sessionAtTime.color || '#3b82f6',
                           height: `${Math.max(26, (getDurationMinutes(sessionAtTime) / 30) * 28)}px`
@@ -203,7 +205,7 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
                           {sessionAtTime.status === 'pending' && '⏳ '}
                           {sessionAtTime.student_name?.split(' ')[0] || sessionAtTime.unassigned_name?.split(' ')[0] || 'Session'}
                         </div>
-                      </div>
+                      </button>
                     ) : isOccupied ? (
                       // This slot is occupied by a continuing session, render empty
                       <div className="w-full h-full"></div>
