@@ -1,12 +1,14 @@
 # TutorTrack - Tutoring Management System
 
-A comprehensive tutoring management platform built with React and Supabase that enables tutors to manage students, schedule sessions, track earnings, and handle public bookings through an intuitive dashboard interface.
+A comprehensive, timezone-friendly tutoring management platform built with React and Supabase. Features an advanced scheduling tool with FullCalendar integration, intelligent dataset optimization for scalability, and complete timezone awareness for global tutoring operations.
 
 ## 🚀 Features
 
 ### Core Functionality
+- **Advanced Scheduling Tool**: Full-featured calendar with FullCalendar integration, drag-and-drop functionality, and multi-view support (month, week, day, agenda)
+- **Timezone-Friendly Architecture**: Complete timezone awareness with automatic detection, manual override, and proper UTC storage with local display
+- **Intelligent Dataset Optimization**: Automatic query optimization that switches strategies based on dataset size for optimal performance
 - **Student Management**: Add, edit, and organize students with tags, contact information, and profile pictures
-- **Session Scheduling**: Calendar-based scheduling with drag-and-drop functionality and timezone support
 - **Earnings Tracking**: Real-time earnings calculations with detailed breakdowns by time periods
 - **Public Booking**: Student-facing booking page with timezone-aware slot selection
 - **Pending Requests**: Manage booking requests from students with approval workflow
@@ -31,9 +33,23 @@ A comprehensive tutoring management platform built with React and Supabase that 
 - **Added session card hover animations** for better user experience
 - **Enhanced timezone handling** with fallback mechanisms for Asia/Shanghai timezone
 
-#### Database Optimization ✅
-- **Intelligent query optimization** that automatically switches strategies based on dataset size
-- **Performance monitoring** with query execution time tracking
+#### Advanced Scheduling Tool ✅
+- **FullCalendar integration** with multiple view modes (month, week, day, agenda)
+- **Drag-and-drop scheduling** for intuitive session management
+- **Mobile-responsive** calendar views optimized for all devices
+- **Real-time session updates** with live synchronization across components
+
+#### Timezone-Friendly System ✅
+- **Complete timezone awareness** throughout the entire application
+- **Automatic timezone detection** with manual override capabilities
+- **UTC storage with local display** ensuring data consistency across timezones
+- **DST handling** via Luxon for accurate time calculations
+- **Multi-timezone support** for tutors and students in different regions
+
+#### Dataset Optimization ✅
+- **Intelligent query optimization** that automatically switches strategies based on dataset size (500+ sessions threshold)
+- **Performance monitoring** with query execution time tracking and alerts
+- **Scalable architecture** supporting both small and large tutoring operations
 - **Row Level Security (RLS)** policies for secure data access
 - **Real-time subscriptions** for live data updates across components
 
