@@ -708,6 +708,7 @@ export default function Calendar() {
           
           // For pending sessions, open pending modal instead
           if (session.status === 'pending') {
+            console.log('🟠 Detected pending session, opening modal with ID:', session.id);
             setHighlightedSessionId(session.id);
             setShowPendingRequestsModal(true);
             return;
@@ -953,6 +954,7 @@ export default function Calendar() {
       <PendingRequestsModal
         open={showPendingRequestsModal}
         onOpenChange={(open) => {
+          console.log('🚀 Pending modal state changing to:', open);
           setShowPendingRequestsModal(open);
           if (!open) {
             setHighlightedSessionId(undefined);
