@@ -712,12 +712,10 @@ export default function Calendar() {
             console.log('🟠 Detected pending session, opening modal with ID:', session.id);
             console.log('🚀 Current modal state before:', showPendingRequestsModal);
             
-            // Use setTimeout to ensure state updates are processed
-            setTimeout(() => {
-              setHighlightedSessionId(session.id);
-              setShowPendingRequestsModal(true);
-              console.log('🚀 Modal state set to true (async)');
-            }, 0);
+            // Set states together to prevent race condition
+            setHighlightedSessionId(session.id);
+            setShowPendingRequestsModal(true);
+            console.log('🚀 Modal state set to true');
             return;
           }
           
