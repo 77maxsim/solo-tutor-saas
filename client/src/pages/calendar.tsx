@@ -88,6 +88,15 @@ export default function Calendar() {
   console.log('🔍 Current pending modal state:', showPendingRequestsModal);
   const [highlightedSessionId, setHighlightedSessionId] = useState<string | undefined>(undefined);
   console.log('🔍 Current highlightedSessionId:', highlightedSessionId);
+  
+  // Effect to ensure modal opens when highlightedSessionId is set
+  useEffect(() => {
+    if (highlightedSessionId) {
+      console.log('🔄 useEffect triggered - opening modal for session:', highlightedSessionId);
+      setShowPendingRequestsModal(true);
+    }
+  }, [highlightedSessionId]);
+  
   const [calendarView, setCalendarView] = useState<'week' | 'month' | 'agenda'>('week');
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [editSession, setEditSession] = useState<SessionWithStudent | null>(null);
@@ -961,10 +970,9 @@ export default function Calendar() {
         isRecurring={isEditingRecurring}
       />
 
-      {/* Pending Requests Modal - Always render to debug */}
+      {/* Pending Requests Modal */}
       {console.log('🎭 About to render PendingRequestsModal with open:', showPendingRequestsModal, 'highlightSessionId:', highlightedSessionId)}
       <PendingRequestsModal
-        key={`modal-${showPendingRequestsModal}-${highlightedSessionId || 'none'}`} // Force re-render with both states
         open={showPendingRequestsModal}
         onOpenChange={(open) => {
           console.log('🚀 Pending modal state changing to:', open);
