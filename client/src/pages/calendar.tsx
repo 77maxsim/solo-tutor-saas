@@ -711,9 +711,13 @@ export default function Calendar() {
           if (session.status === 'pending') {
             console.log('🟠 Detected pending session, opening modal with ID:', session.id);
             console.log('🚀 Current modal state before:', showPendingRequestsModal);
-            setHighlightedSessionId(session.id);
-            setShowPendingRequestsModal(true);
-            console.log('🚀 Modal state set to true');
+            
+            // Use setTimeout to ensure state updates are processed
+            setTimeout(() => {
+              setHighlightedSessionId(session.id);
+              setShowPendingRequestsModal(true);
+              console.log('🚀 Modal state set to true (async)');
+            }, 0);
             return;
           }
           
@@ -955,17 +959,19 @@ export default function Calendar() {
 
       {/* Pending Requests Modal */}
       {console.log('🎭 About to render PendingRequestsModal with open:', showPendingRequestsModal)}
-      <PendingRequestsModal
-        open={showPendingRequestsModal}
-        onOpenChange={(open) => {
-          console.log('🚀 Pending modal state changing to:', open);
-          setShowPendingRequestsModal(open);
-          if (!open) {
-            setHighlightedSessionId(undefined);
-          }
-        }}
-        highlightSessionId={highlightedSessionId}
-      />
+      {showPendingRequestsModal && (
+        <PendingRequestsModal
+          open={showPendingRequestsModal}
+          onOpenChange={(open) => {
+            console.log('🚀 Pending modal state changing to:', open);
+            setShowPendingRequestsModal(open);
+            if (!open) {
+              setHighlightedSessionId(undefined);
+            }
+          }}
+          highlightSessionId={highlightedSessionId}
+        />
+      )}
 
       {/* Animated Loading Indicator for Time Slot Selection */}
       {loadingSlot && (
