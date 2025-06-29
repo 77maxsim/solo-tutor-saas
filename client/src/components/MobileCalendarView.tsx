@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ChevronLeft, ChevronRight, Plus, Clock } from 'lucide-react';
 import { formatDate, formatTime } from '@/lib/utils';
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from '@/lib/dateUtils';
 import { useTimezone } from '@/contexts/TimezoneContext';
+import { usePendingSessions } from '@/hooks/use-pending-sessions';
+import { PendingRequestsModal } from '@/components/modals/pending-requests-modal';
 
 interface SessionWithStudent {
   id: string;
@@ -20,17 +23,23 @@ interface SessionWithStudent {
   recurrence_id?: string;
   paid?: boolean;
   avatarUrl?: string;
+  status?: string;
+  unassigned_name?: string;
 }
 
 interface MobileCalendarViewProps {
   sessions: SessionWithStudent[];
-  onSelectSlot: (date: Date) => void;
-  onSelectEvent: (session: SessionWithStudent) => void;
+  onSelectSession: (session: SessionWithStudent) => void;
+  tutorCurrency: string;
 }
 
-export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEvent }: MobileCalendarViewProps) {
+export default function MobileCalendarView({ sessions, onSelectSession, tutorCurrency }: MobileCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [showPendingModal, setShowPendingModal] = useState(false);
   const { tutorTimezone } = useTimezone();
+  
+  // Get pending sessions count
+  const { data: pendingCount = 0 } = usePendingSessions();
 
   // Helper function to get duration from either UTC timestamps or legacy fields
   const getDurationMinutes = (session: SessionWithStudent): number => {
@@ -89,7 +98,13 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
     const datetime = new Date(date);
     const [hours, minutes] = time.split(':').map(Number);
     datetime.setHours(hours, minutes, 0, 0);
-    onSelectSlot(datetime);
+    
+    // Trigger global schedule session modal
+    window.dispatchEvent(new CustomEvent('openScheduleModalFromButton'));
+  };
+
+  const handleSessionClick = (session: SessionWithStudent) => {
+    onSelectSession(session);
   };
 
   return (
@@ -98,6 +113,21 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Weekly Schedule</CardTitle>
           <div className="flex items-center gap-2">
+            {/* Mobile Pending Requests Button - Responsive */}
+            {pendingCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPendingModal(true)}
+                className="relative flex items-center gap-1 px-2 py-1 text-xs"
+              >
+                <Clock className="h-3 w-3" />
+                <span className="hidden xs:inline">Pending</span>
+                <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs bg-orange-500 text-white">
+                  {pendingCount}
+                </Badge>
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => navigateWeek('prev')}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -163,14 +193,14 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
                     {sessionAtTime ? (
                       <div
                         className="absolute top-0.5 left-0.5 right-0.5 rounded text-white cursor-pointer hover:opacity-80 transition-opacity px-1 py-1 flex flex-col justify-center overflow-hidden z-10"
-                        onClick={() => onSelectEvent(sessionAtTime)}
+                        onClick={() => handleSessionClick(sessionAtTime)}
                         style={{ 
                           backgroundColor: sessionAtTime.color || '#3b82f6',
                           height: `${Math.max(26, (getDurationMinutes(sessionAtTime) / 30) * 28)}px`
                         }}
                       >
                         <div className="text-xs font-medium truncate leading-tight w-full text-center">
-                          {sessionAtTime.student_name.split(' ')[0]}
+                          {sessionAtTime.student_name?.split(' ')[0] || sessionAtTime.unassigned_name?.split(' ')[0] || 'Session'}
                         </div>
                       </div>
                     ) : isOccupied ? (
@@ -191,6 +221,14 @@ export default function MobileCalendarView({ sessions, onSelectSlot, onSelectEve
           ))}
         </div>
       </CardContent>
+
+      {/* Mobile Pending Requests Modal */}
+      {showPendingModal && (
+        <PendingRequestsModal
+          open={showPendingModal}
+          onOpenChange={setShowPendingModal}
+        />
+      )}
     </Card>
   );
 }
