@@ -714,15 +714,15 @@ export default function Calendar() {
             console.log('🚀 Current modal state before:', showPendingRequestsModal);
             console.log('🔑 Setting highlightedSessionId to:', session.id);
             
+            // Prevent default event handling to avoid calendar refresh
+            event?.preventDefault?.();
+            event?.stopPropagation?.();
+            
             // Set states synchronously - React 18 batches them automatically
             setHighlightedSessionId(session.id);
             setShowPendingRequestsModal(true);
             console.log('🚀 Modal state set to true');
             
-            // Force re-render to ensure modal gets updated props
-            setTimeout(() => {
-              console.log('🔄 Post-timeout check - modal state:', showPendingRequestsModal, 'highlightId:', highlightedSessionId);
-            }, 10);
             return;
           }
           
@@ -962,10 +962,10 @@ export default function Calendar() {
         isRecurring={isEditingRecurring}
       />
 
-      {/* Pending Requests Modal */}
+      {/* Pending Requests Modal - Always render to debug */}
       {console.log('🎭 About to render PendingRequestsModal with open:', showPendingRequestsModal, 'highlightSessionId:', highlightedSessionId)}
       <PendingRequestsModal
-        key={highlightedSessionId || 'no-highlight'} // Force re-render when highlightSessionId changes
+        key={`modal-${showPendingRequestsModal}-${highlightedSessionId || 'none'}`} // Force re-render with both states
         open={showPendingRequestsModal}
         onOpenChange={(open) => {
           console.log('🚀 Pending modal state changing to:', open);
