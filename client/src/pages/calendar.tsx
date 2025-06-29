@@ -85,6 +85,7 @@ export default function Calendar() {
   const [sessionForDetails, setSessionForDetails] = useState<SessionWithStudent | null>(null);
   const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
   const [showPendingRequestsModal, setShowPendingRequestsModal] = useState(false);
+  console.log('🔍 Current pending modal state:', showPendingRequestsModal);
   const [highlightedSessionId, setHighlightedSessionId] = useState<string | undefined>(undefined);
   const [calendarView, setCalendarView] = useState<'week' | 'month' | 'agenda'>('week');
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -709,8 +710,10 @@ export default function Calendar() {
           // For pending sessions, open pending modal instead
           if (session.status === 'pending') {
             console.log('🟠 Detected pending session, opening modal with ID:', session.id);
+            console.log('🚀 Current modal state before:', showPendingRequestsModal);
             setHighlightedSessionId(session.id);
             setShowPendingRequestsModal(true);
+            console.log('🚀 Modal state set to true');
             return;
           }
           
@@ -951,6 +954,7 @@ export default function Calendar() {
       />
 
       {/* Pending Requests Modal */}
+      {console.log('🎭 About to render PendingRequestsModal with open:', showPendingRequestsModal)}
       <PendingRequestsModal
         open={showPendingRequestsModal}
         onOpenChange={(open) => {

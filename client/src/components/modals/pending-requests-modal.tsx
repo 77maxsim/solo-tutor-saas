@@ -54,6 +54,7 @@ interface PendingRequestsModalProps {
 dayjs.extend(relativeTime);
 
 export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }: PendingRequestsModalProps) {
+  console.log('🎭 PendingRequestsModal render - open:', open, 'highlightSessionId:', highlightSessionId);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { tutorTimezone } = useTimezone();
