@@ -713,11 +713,9 @@ export default function Calendar() {
             console.log('🚀 Current modal state before:', showPendingRequestsModal);
             console.log('🔑 Setting highlightedSessionId to:', session.id);
             
-            // Use React's state batching to update both states together
-            React.startTransition(() => {
-              setHighlightedSessionId(session.id);
-              setShowPendingRequestsModal(true);
-            });
+            // Set states synchronously - React 18 batches them automatically
+            setHighlightedSessionId(session.id);
+            setShowPendingRequestsModal(true);
             console.log('🚀 Modal state set to true');
             return;
           }
@@ -959,20 +957,18 @@ export default function Calendar() {
       />
 
       {/* Pending Requests Modal */}
-      {console.log('🎭 About to render PendingRequestsModal with open:', showPendingRequestsModal)}
-      {showPendingRequestsModal && (
-        <PendingRequestsModal
-          open={showPendingRequestsModal}
-          onOpenChange={(open) => {
-            console.log('🚀 Pending modal state changing to:', open);
-            setShowPendingRequestsModal(open);
-            if (!open) {
-              setHighlightedSessionId(undefined);
-            }
-          }}
-          highlightSessionId={highlightedSessionId}
-        />
-      )}
+      {console.log('🎭 About to render PendingRequestsModal with open:', showPendingRequestsModal, 'highlightSessionId:', highlightedSessionId)}
+      <PendingRequestsModal
+        open={showPendingRequestsModal}
+        onOpenChange={(open) => {
+          console.log('🚀 Pending modal state changing to:', open);
+          setShowPendingRequestsModal(open);
+          if (!open) {
+            setHighlightedSessionId(undefined);
+          }
+        }}
+        highlightSessionId={highlightedSessionId}
+      />
 
       {/* Animated Loading Indicator for Time Slot Selection */}
       {loadingSlot && (
