@@ -357,7 +357,7 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto z-50">
+      <DialogContent className="max-w-4xl md:max-w-4xl sm:max-w-[95vw] max-h-[80vh] overflow-y-auto z-50 mx-2 sm:mx-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />

@@ -122,7 +122,7 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
                 className="relative flex items-center gap-1 px-2 py-1 text-xs"
               >
                 <Clock className="h-3 w-3" />
-                <span className="hidden xs:inline">Pending</span>
+                <span className="hidden sm:inline">Pending</span>
                 <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs bg-orange-500 text-white">
                   {pendingCount}
                 </Badge>
@@ -192,14 +192,15 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
                   <div key={dayIndex} className="relative border-r last:border-r-0 p-0.5 bg-white hover:bg-gray-50 min-h-[28px] min-w-0">
                     {sessionAtTime ? (
                       <div
-                        className="absolute top-0.5 left-0.5 right-0.5 rounded text-white cursor-pointer hover:opacity-80 transition-opacity px-1 py-1 flex flex-col justify-center overflow-hidden z-10"
+                        className="absolute top-0.5 left-0.5 right-0.5 rounded text-white cursor-pointer hover:opacity-80 active:opacity-60 transition-opacity px-1 py-1 flex flex-col justify-center overflow-hidden z-10 touch-manipulation"
                         onClick={() => handleSessionClick(sessionAtTime)}
                         style={{ 
-                          backgroundColor: sessionAtTime.color || '#3b82f6',
+                          backgroundColor: sessionAtTime.status === 'pending' ? '#f59e0b' : sessionAtTime.color || '#3b82f6',
                           height: `${Math.max(26, (getDurationMinutes(sessionAtTime) / 30) * 28)}px`
                         }}
                       >
                         <div className="text-xs font-medium truncate leading-tight w-full text-center">
+                          {sessionAtTime.status === 'pending' && '⏳ '}
                           {sessionAtTime.student_name?.split(' ')[0] || sessionAtTime.unassigned_name?.split(' ')[0] || 'Session'}
                         </div>
                       </div>
@@ -223,12 +224,10 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
       </CardContent>
 
       {/* Mobile Pending Requests Modal */}
-      {showPendingModal && (
-        <PendingRequestsModal
-          open={showPendingModal}
-          onOpenChange={setShowPendingModal}
-        />
-      )}
+      <PendingRequestsModal
+        open={showPendingModal}
+        onOpenChange={setShowPendingModal}
+      />
     </Card>
   );
 }
