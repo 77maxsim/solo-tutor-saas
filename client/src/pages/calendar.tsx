@@ -718,10 +718,9 @@ export default function Calendar() {
             event?.preventDefault?.();
             event?.stopPropagation?.();
             
-            // Set states synchronously - React 18 batches them automatically
+            // Set highlightedSessionId first - useEffect will handle opening modal
+            console.log('🔧 Setting highlightedSessionId - useEffect will open modal');
             setHighlightedSessionId(session.id);
-            setShowPendingRequestsModal(true);
-            console.log('🚀 Modal state set to true');
             
             return;
           }
