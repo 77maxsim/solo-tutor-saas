@@ -85,6 +85,7 @@ export default function Calendar() {
   const [sessionForDetails, setSessionForDetails] = useState<SessionWithStudent | null>(null);
   const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
   const [showPendingRequestsModal, setShowPendingRequestsModal] = useState(false);
+  const [highlightedSessionId, setHighlightedSessionId] = useState<string | undefined>(undefined);
   const [calendarView, setCalendarView] = useState<'week' | 'month' | 'agenda'>('week');
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [editSession, setEditSession] = useState<SessionWithStudent | null>(null);
@@ -708,7 +709,7 @@ export default function Calendar() {
           // For pending sessions, open pending modal instead
           if (session.status === 'pending') {
             setHighlightedSessionId(session.id);
-            setShowPendingModal(true);
+            setShowPendingRequestsModal(true);
             return;
           }
           
@@ -951,8 +952,13 @@ export default function Calendar() {
       {/* Pending Requests Modal */}
       <PendingRequestsModal
         open={showPendingRequestsModal}
-        onOpenChange={setShowPendingRequestsModal}
-        highlightSessionId={sessionForDetails?.id}
+        onOpenChange={(open) => {
+          setShowPendingRequestsModal(open);
+          if (!open) {
+            setHighlightedSessionId(undefined);
+          }
+        }}
+        highlightSessionId={highlightedSessionId}
       />
 
       {/* Animated Loading Indicator for Time Slot Selection */}
