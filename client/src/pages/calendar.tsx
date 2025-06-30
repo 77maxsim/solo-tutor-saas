@@ -978,6 +978,7 @@ export default function Calendar() {
       />
 
       {/* Session Details Modal */}
+      {console.log('🔍 Modal render check:', { sessionForDetails: !!sessionForDetails, showSessionDetailsModal, sessionData: sessionForDetails })}
       {sessionForDetails && (
         <SessionDetailsModal
           session={sessionForDetails as any}
