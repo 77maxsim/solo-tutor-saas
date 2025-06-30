@@ -711,6 +711,45 @@ export default function Calendar() {
   }
 
   if (isMobile) {
+    // Add event listeners for mobile edit actions
+    useEffect(() => {
+      const handleEditSession = (event: CustomEvent) => {
+        const session = event.detail.session;
+        console.log('📱 Mobile edit session event received:', session);
+        
+        // Close session details modal
+        setShowSessionDetailsModal(false);
+        setSessionForDetails(null);
+        
+        // Set edit session data and open edit modal
+        setEditSession(session);
+        setIsEditingRecurring(false);
+        setShowEditModal(true);
+      };
+
+      const handleEditSeries = (event: CustomEvent) => {
+        const session = event.detail.session;
+        console.log('📱 Mobile edit series event received:', session);
+        
+        // Close session details modal
+        setShowSessionDetailsModal(false);
+        setSessionForDetails(null);
+        
+        // Set edit session data and open edit modal for recurring
+        setEditSession(session);
+        setIsEditingRecurring(true);
+        setShowEditModal(true);
+      };
+
+      window.addEventListener('editSession', handleEditSession as EventListener);
+      window.addEventListener('editSeries', handleEditSeries as EventListener);
+
+      return () => {
+        window.removeEventListener('editSession', handleEditSession as EventListener);
+        window.removeEventListener('editSeries', handleEditSeries as EventListener);
+      };
+    }, []);
+
     return (
       <>
         <MobileCalendarView
@@ -746,6 +785,14 @@ export default function Calendar() {
             }, 10);
           }}
           tutorCurrency={tutorCurrency}
+        />
+
+        {/* Mobile Edit Session Modal */}
+        <ScheduleSessionModal
+          open={showEditModal}
+          onOpenChange={setShowEditModal}
+          session={editSession}
+          isRecurring={isEditingRecurring}
         />
 
         {/* Mobile Session Details Modal */}
