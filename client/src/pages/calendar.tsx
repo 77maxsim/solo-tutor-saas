@@ -712,40 +712,69 @@ export default function Calendar() {
 
   if (isMobile) {
     return (
-      <MobileCalendarView
-        sessions={filteredSessions}
-        onSelectSession={(session) => {
-          console.log('📱 Mobile session selected:', session);
-          console.log('📱 Session status:', session.status);
-          console.log('📱 Current modal states before:', {
-            showSessionDetailsModal,
-            showPendingRequestsModal,
-            sessionForDetails: !!sessionForDetails
-          });
-          
-          // For pending sessions, open pending modal instead
-          if (session.status === 'pending') {
-            console.log('🟠 Detected pending session, opening pending modal with ID:', session.id);
-            setHighlightedSessionId(session.id);
-            setShowPendingRequestsModal(true);
-            return;
-          }
-          
-          // For regular sessions, open session details modal
-          console.log('📱 Opening session details modal for regular session');
-          setSessionForDetails(session);
-          setShowSessionDetailsModal(true);
-          
-          // Log state after setting
-          setTimeout(() => {
-            console.log('📱 Modal states after update:', {
-              showSessionDetailsModal: true,
-              sessionForDetails: session
+      <>
+        <MobileCalendarView
+          sessions={filteredSessions}
+          onSelectSession={(session) => {
+            console.log('📱 Mobile session selected:', session);
+            console.log('📱 Session status:', session.status);
+            console.log('📱 Current modal states before:', {
+              showSessionDetailsModal,
+              showPendingRequestsModal,
+              sessionForDetails: !!sessionForDetails
             });
-          }, 10);
-        }}
-        tutorCurrency={tutorCurrency}
-      />
+            
+            // For pending sessions, open pending modal instead
+            if (session.status === 'pending') {
+              console.log('🟠 Detected pending session, opening pending modal with ID:', session.id);
+              setHighlightedSessionId(session.id);
+              setShowPendingRequestsModal(true);
+              return;
+            }
+            
+            // For regular sessions, open session details modal
+            console.log('📱 Opening session details modal for regular session');
+            setSessionForDetails(session);
+            setShowSessionDetailsModal(true);
+            
+            // Log state after setting
+            setTimeout(() => {
+              console.log('📱 Modal states after update:', {
+                showSessionDetailsModal: true,
+                sessionForDetails: session
+              });
+            }, 10);
+          }}
+          tutorCurrency={tutorCurrency}
+        />
+
+        {/* Mobile Session Details Modal */}
+        {console.log('📱 Mobile modal render check:', { sessionForDetails: !!sessionForDetails, showSessionDetailsModal, sessionData: sessionForDetails })}
+        {sessionForDetails && (
+          <SessionDetailsModal
+            session={sessionForDetails as any}
+            isOpen={showSessionDetailsModal}
+            onClose={() => {
+              console.log('📱 Closing mobile session details modal');
+              setShowSessionDetailsModal(false);
+              setSessionForDetails(null);
+            }}
+          />
+        )}
+
+        {/* Mobile Pending Requests Modal */}
+        <PendingRequestsModal
+          open={showPendingRequestsModal}
+          onOpenChange={(open) => {
+            console.log('📱 Mobile pending modal state changing to:', open);
+            setShowPendingRequestsModal(open);
+            if (!open) {
+              setHighlightedSessionId(undefined);
+            }
+          }}
+          highlightSessionId={highlightedSessionId}
+        />
+      </>
     );
   }
 
