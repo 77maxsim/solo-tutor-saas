@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, Clock, User, DollarSign, Edit, Trash2, ChevronDown, Plus } from "lucide-react";
+import { Calendar, Clock, User, DollarSign, Edit, Trash2, ChevronDown, Plus, Pencil, Repeat } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
@@ -200,7 +200,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
     ...session,
     session_start: session.session_start || '',
     session_end: session.session_end || ''
-  }, tutorTimezone || undefined);
+  }, tutorTimezone ?? 'UTC');
   const earnings = (durationMinutes / 60) * session.rate;
 
   return (
@@ -225,7 +225,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
               <span>
                 {session.session_start && tutorTimezone
                   ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MM/dd/yyyy')
-                  : session.session_start ? dayjs.utc(session.session_start).tz(tutorTimezone).format('YYYY-MM-DD') : 'N/A'}
+                  : session.session_start ? dayjs.utc(session.session_start).format('YYYY-MM-DD') : 'N/A'}
               </span>
             </div>
             
@@ -354,11 +354,12 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
 
           {/* Session Actions */}
           <div className="space-y-4 pt-4 border-t">
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Individual Session</h4>
+            {/* This Session Section */}
+            <div className="border rounded-md p-3 bg-gray-50/50 dark:bg-gray-800/50">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">This Session</h4>
               <div className="grid grid-cols-2 gap-3">
                 <Button 
-                  variant="outline" 
+                  variant="secondary" 
                   size="sm" 
                   onClick={() => {
                     console.log('🔧 Edit this session button clicked');
@@ -368,33 +369,33 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                     }));
                     handleClose();
                   }}
-                  className="flex items-center justify-center gap-2 h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="flex items-center justify-center gap-2 h-10"
                 >
-                  <Edit className="w-4 h-4" />
-                  <span className="text-sm">Edit this session</span>
+                  <Pencil className="w-4 h-4" />
+                  <span className="text-sm">Edit</span>
                 </Button>
                 <Button 
-                  variant="outline" 
+                  variant="destructive" 
                   size="sm" 
                   onClick={handleDeleteSession}
                   disabled={isDeleting}
-                  className="flex items-center justify-center gap-2 h-10 bg-white dark:bg-gray-800 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 h-10"
                 >
                   <Trash2 className="w-4 h-4" />
                   <span className="text-sm">
-                    {isDeleting ? "Deleting..." : "Cancel this session"}
+                    {isDeleting ? "Canceling..." : "Cancel"}
                   </span>
                 </Button>
               </div>
             </div>
 
-            {/* Recurring series actions - only show if session has recurrence_id */}
+            {/* Entire Series Section - only show if session has recurrence_id */}
             {session.recurrence_id && (
-              <div className="space-y-3 border-t pt-4">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Recurring Series</h4>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="border rounded-md p-3 bg-blue-50/50 dark:bg-blue-950/50">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Entire Series</h4>
+                <div className="grid grid-cols-1 gap-3">
                   <Button 
-                    variant="outline" 
+                    variant="secondary" 
                     size="sm" 
                     onClick={() => {
                       console.log('🔧 Edit future sessions button clicked');
@@ -404,13 +405,13 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                       }));
                       handleClose();
                     }}
-                    className="flex items-center justify-center gap-2 h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="flex items-center justify-center gap-2 h-10"
                   >
-                    <Edit className="w-4 h-4" />
+                    <Repeat className="w-4 h-4" />
                     <span className="text-sm">Edit future sessions</span>
                   </Button>
                   <Button 
-                    variant="outline" 
+                    variant="destructive" 
                     size="sm" 
                     onClick={() => {
                       // Dispatch cancel series event
@@ -419,7 +420,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                       }));
                       handleClose();
                     }}
-                    className="flex items-center justify-center gap-2 h-10 bg-white dark:bg-gray-800 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    className="flex items-center justify-center gap-2 h-10"
                   >
                     <Trash2 className="w-4 h-4" />
                     <span className="text-sm">Cancel future sessions</span>
