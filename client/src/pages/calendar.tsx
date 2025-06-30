@@ -110,44 +110,7 @@ export default function Calendar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Add event listeners for session edit actions
-  useEffect(() => {
-    const handleEditSession = (event: CustomEvent) => {
-      const session = event.detail.session;
-      console.log('📝 Edit session event received:', session);
-      
-      // Close session details modal
-      setShowSessionDetailsModal(false);
-      setSessionForDetails(null);
-      
-      // Set edit session data and open edit modal
-      setEditSession(session);
-      setIsEditingRecurring(false);
-      setShowEditModal(true);
-    };
 
-    const handleEditSeries = (event: CustomEvent) => {
-      const session = event.detail.session;
-      console.log('📝 Edit series event received:', session);
-      
-      // Close session details modal
-      setShowSessionDetailsModal(false);
-      setSessionForDetails(null);
-      
-      // Set edit session data and open edit modal for recurring
-      setEditSession(session);
-      setIsEditingRecurring(true);
-      setShowEditModal(true);
-    };
-
-    window.addEventListener('editSession', handleEditSession as EventListener);
-    window.addEventListener('editSeries', handleEditSeries as EventListener);
-
-    return () => {
-      window.removeEventListener('editSession', handleEditSession as EventListener);
-      window.removeEventListener('editSeries', handleEditSeries as EventListener);
-    };
-  }, []);
 
   // Get pending sessions count for the button
   const { data: pendingCount = 0 } = usePendingSessions();
@@ -710,45 +673,46 @@ export default function Calendar() {
     );
   }
 
+  // Add event listeners for session edit actions (works for both mobile and desktop)
+  useEffect(() => {
+    const handleEditSession = (event: CustomEvent) => {
+      const session = event.detail.session;
+      console.log('📝 Edit session event received:', session);
+      
+      // Close session details modal
+      setShowSessionDetailsModal(false);
+      setSessionForDetails(null);
+      
+      // Set edit session data and open edit modal
+      setEditSession(session);
+      setIsEditingRecurring(false);
+      setShowEditModal(true);
+    };
+
+    const handleEditSeries = (event: CustomEvent) => {
+      const session = event.detail.session;
+      console.log('📝 Edit series event received:', session);
+      
+      // Close session details modal
+      setShowSessionDetailsModal(false);
+      setSessionForDetails(null);
+      
+      // Set edit session data and open edit modal for recurring
+      setEditSession(session);
+      setIsEditingRecurring(true);
+      setShowEditModal(true);
+    };
+
+    window.addEventListener('editSession', handleEditSession as EventListener);
+    window.addEventListener('editSeries', handleEditSeries as EventListener);
+
+    return () => {
+      window.removeEventListener('editSession', handleEditSession as EventListener);
+      window.removeEventListener('editSeries', handleEditSeries as EventListener);
+    };
+  }, []);
+
   if (isMobile) {
-    // Add event listeners for mobile edit actions
-    useEffect(() => {
-      const handleEditSession = (event: CustomEvent) => {
-        const session = event.detail.session;
-        console.log('📱 Mobile edit session event received:', session);
-        
-        // Close session details modal
-        setShowSessionDetailsModal(false);
-        setSessionForDetails(null);
-        
-        // Set edit session data and open edit modal
-        setEditSession(session);
-        setIsEditingRecurring(false);
-        setShowEditModal(true);
-      };
-
-      const handleEditSeries = (event: CustomEvent) => {
-        const session = event.detail.session;
-        console.log('📱 Mobile edit series event received:', session);
-        
-        // Close session details modal
-        setShowSessionDetailsModal(false);
-        setSessionForDetails(null);
-        
-        // Set edit session data and open edit modal for recurring
-        setEditSession(session);
-        setIsEditingRecurring(true);
-        setShowEditModal(true);
-      };
-
-      window.addEventListener('editSession', handleEditSession as EventListener);
-      window.addEventListener('editSeries', handleEditSeries as EventListener);
-
-      return () => {
-        window.removeEventListener('editSession', handleEditSession as EventListener);
-        window.removeEventListener('editSeries', handleEditSeries as EventListener);
-      };
-    }, []);
 
     return (
       <>
