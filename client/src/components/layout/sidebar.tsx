@@ -117,17 +117,20 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
   return (
     <div className="flex h-full w-64 flex-col bg-card border-r border-border animate-slide-up">
       {/* Logo/Brand Header with Hover Effect */}
-      <div className="flex items-center gap-3 px-6 py-6 border-b border-border hover-lift cursor-pointer group">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 group-hover:scale-110 transition-all duration-300 animate-pulse-glow">
-          <GraduationCap className="h-4 w-4 text-white group-hover:animate-bounce-subtle" />
+      <Link href="/dashboard">
+        <div className="flex items-center gap-3 px-6 py-6 border-b border-border hover-lift cursor-pointer group" onClick={handleNavClick}>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 group-hover:scale-110 transition-all duration-300 animate-pulse-glow">
+            <GraduationCap className="h-4 w-4 text-white group-hover:animate-bounce-subtle" />
+          </div>
+          <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-200">TutorTrack</span>
         </div>
-        <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-200">TutorTrack</span>
-      </div>
+      </Link>
 
       {/* Navigation Menu with Enhanced Interactions */}
       <nav className="flex-1 space-y-2 px-4 py-6">
         {navigation.map((item, index) => {
-          const isActive = location === item.href;
+          // Handle dashboard route matching for both "/" and "/dashboard"
+          const isActive = item.href === "/" ? (location === "/" || location === "/dashboard") : location === item.href;
           const isCalendar = item.name === "Calendar";
           const showBadge = isCalendar && pendingCount > 0;
           
