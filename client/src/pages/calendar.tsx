@@ -750,9 +750,15 @@ export default function Calendar() {
         />
 
         {/* Mobile Edit Session Modal */}
-        <ScheduleSessionModal
+        <EditSessionModal
           open={showEditModal}
-          onOpenChange={setShowEditModal}
+          onOpenChange={(open) => {
+            setShowEditModal(open);
+            if (!open) {
+              setEditSession(null);
+              setIsEditingRecurring(false);
+            }
+          }}
           session={editSession}
           isRecurring={isEditingRecurring}
         />
