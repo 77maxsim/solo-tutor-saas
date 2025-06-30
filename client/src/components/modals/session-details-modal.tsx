@@ -17,6 +17,13 @@ import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
 import { getSessionDisplayInfo } from "@/lib/sessionDisplay";
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// Configure dayjs plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface SessionDetails {
   id: string;
@@ -24,13 +31,18 @@ interface SessionDetails {
   student_name: string;
   date?: string; // Legacy field
   time?: string; // Legacy field
-  session_start?: string; // UTC timestamp
-  session_end?: string; // UTC timestamp
+  session_start: string; // UTC timestamp - required
+  session_end: string; // UTC timestamp - required
   duration: number;
   rate: number;
+  tuition_fee?: number;
   notes?: string;
   color?: string;
   recurrence_id?: string;
+  paid?: boolean;
+  created_at?: string;
+  status?: string;
+  unassigned_name?: string;
 }
 
 interface SessionDetailsModalProps {
@@ -168,9 +180,23 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
     }
   };
 
-  if (!session) return null;
+  console.log('📄 SessionDetailsModal render check:', {
+    session: !!session,
+    isOpen,
+    sessionId: session?.id,
+    sessionData: session
+  });
 
-  const { displayTime, durationMinutes } = getSessionDisplayInfo(session, tutorTimezone || undefined);
+  if (!session) {
+    console.log('📄 SessionDetailsModal not rendering - no session');
+    return null;
+  }
+
+  const { displayTime, durationMinutes } = getSessionDisplayInfo({
+    ...session,
+    session_start: session.session_start || '',
+    session_end: session.session_end || ''
+  }, tutorTimezone || undefined);
   const earnings = (durationMinutes / 60) * session.rate;
 
   return (

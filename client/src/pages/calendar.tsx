@@ -980,7 +980,7 @@ export default function Calendar() {
       {/* Session Details Modal */}
       {sessionForDetails && (
         <SessionDetailsModal
-          session={sessionForDetails}
+          session={sessionForDetails as any}
           isOpen={showSessionDetailsModal}
           onClose={() => {
             console.log('📱 Closing session details modal');
