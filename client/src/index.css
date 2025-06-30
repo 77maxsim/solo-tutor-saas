@@ -559,6 +559,37 @@
     .calendar-event-content {
       padding: 1px 2px;
     }
+    
+    /* Mobile calendar session card enhancements */
+    .mobile-session-card {
+      touch-action: manipulation !important;
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-touch-callout: none !important;
+      -webkit-user-select: none !important;
+      user-select: none !important;
+      cursor: pointer !important;
+      position: relative !important;
+      z-index: 20 !important;
+      min-height: 28px !important;
+      min-width: 100% !important;
+    }
+    
+    /* Ensure mobile session cards are above other elements */
+    .mobile-calendar-container {
+      touch-action: pan-y !important;
+    }
+    
+    /* Fix any overlapping issues with calendar grid */
+    .mobile-calendar-grid-cell {
+      position: relative !important;
+      overflow: visible !important;
+    }
+    
+    /* Enhance touch targets for mobile session cards */
+    .mobile-session-card:active {
+      opacity: 0.7 !important;
+      transform: scale(0.98) !important;
+    }
   }
 
   /* Selected Event */

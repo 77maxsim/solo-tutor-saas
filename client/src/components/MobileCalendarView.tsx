@@ -109,7 +109,7 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
   };
 
   return (
-    <Card className="w-full">
+    <Card className="mobile-calendar-container w-full">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Weekly Schedule</CardTitle>
@@ -190,18 +190,40 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
                 const isOccupied = occupyingSession && !sessionAtTime;
 
                 return (
-                  <div key={dayIndex} className="relative border-r last:border-r-0 p-0.5 bg-white hover:bg-gray-50 min-h-[28px] min-w-0">
+                  <div key={dayIndex} className="mobile-calendar-grid-cell relative border-r last:border-r-0 p-0.5 bg-white hover:bg-gray-50 min-h-[28px] min-w-0" style={{ touchAction: 'manipulation' }}>
                     {sessionAtTime ? (
                       <button
-                        className="absolute top-0.5 left-0.5 right-0.5 rounded text-white cursor-pointer hover:opacity-80 active:opacity-60 transition-opacity px-1 py-1 flex flex-col justify-center overflow-hidden z-10 touch-manipulation border-0 outline-none focus:ring-2 focus:ring-white/20"
-                        onClick={() => handleSessionClick(sessionAtTime)}
-                        onTouchStart={() => console.log('Touch started on session:', sessionAtTime.id)}
+                        className="mobile-session-card absolute top-0.5 left-0.5 right-0.5 rounded text-white cursor-pointer hover:opacity-80 active:opacity-60 transition-opacity px-1 py-1 flex flex-col justify-center overflow-hidden z-20 touch-manipulation border-0 outline-none focus:ring-2 focus:ring-white/20"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('📱 Mobile session button clicked:', sessionAtTime.id);
+                          handleSessionClick(sessionAtTime);
+                        }}
+                        onTouchStart={(e) => {
+                          e.stopPropagation();
+                          console.log('👆 Touch started on session:', sessionAtTime.id);
+                        }}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('👆 Touch ended on session:', sessionAtTime.id);
+                          // Trigger click on touch end for better mobile experience
+                          handleSessionClick(sessionAtTime);
+                        }}
                         style={{ 
                           backgroundColor: sessionAtTime.status === 'pending' ? '#f59e0b' : sessionAtTime.color || '#3b82f6',
-                          height: `${Math.max(26, (getDurationMinutes(sessionAtTime) / 30) * 28)}px`
+                          height: `${Math.max(26, (getDurationMinutes(sessionAtTime) / 30) * 28)}px`,
+                          // Enhanced mobile touch target styling
+                          minHeight: '28px',
+                          minWidth: '100%',
+                          WebkitTapHighlightColor: 'transparent',
+                          WebkitTouchCallout: 'none',
+                          WebkitUserSelect: 'none',
+                          userSelect: 'none'
                         }}
                       >
-                        <div className="text-xs font-medium truncate leading-tight w-full text-center">
+                        <div className="text-xs font-medium truncate leading-tight w-full text-center pointer-events-none">
                           {sessionAtTime.status === 'pending' && '⏳ '}
                           {sessionAtTime.student_name?.split(' ')[0] || sessionAtTime.unassigned_name?.split(' ')[0] || 'Session'}
                         </div>
