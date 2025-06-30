@@ -109,10 +109,10 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
   };
 
   return (
-    <Card className="mobile-calendar-container w-full">
-      <CardHeader className="pb-4">
+    <Card className="mobile-calendar-container w-full bg-white dark:bg-slate-900">
+      <CardHeader className="pb-4 bg-white dark:bg-slate-900">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Weekly Schedule</CardTitle>
+          <CardTitle className="text-lg text-gray-900 dark:text-gray-100">Weekly Schedule</CardTitle>
           <div className="flex items-center gap-2">
             {/* Mobile Pending Requests Button - Responsive */}
             {pendingCount > 0 && (
@@ -142,14 +142,14 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="grid border-b" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
-          <div className="p-2 text-xs font-medium text-gray-500 border-r bg-gray-50"></div>
+        <div className="grid border-b border-gray-200 dark:border-gray-700" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+          <div className="p-2 text-xs font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800"></div>
           {weekDays.map((day, index) => (
-            <div key={index} className="p-2 text-center border-r last:border-r-0 min-w-0">
-              <div className="text-xs font-medium text-gray-600 truncate">
+            <div key={index} className="p-2 text-center border-r last:border-r-0 min-w-0 bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-700">
+              <div className="text-xs font-medium text-gray-600 dark:text-gray-300 truncate">
                 {day.toLocaleDateString('en-US', { weekday: 'short' })}
               </div>
-              <div className="text-sm font-semibold">
+              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {day.getDate()}
               </div>
             </div>
@@ -158,8 +158,8 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
 
         <div className="max-h-[500px] overflow-y-auto">
           {timeSlots.map((time, timeIndex) => (
-            <div key={time} className="grid border-b last:border-b-0 min-h-[30px]" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
-              <div className="p-1 text-xs text-gray-500 border-r bg-gray-50 flex items-center justify-center">
+            <div key={time} className="grid border-b last:border-b-0 min-h-[30px] border-gray-200 dark:border-gray-700" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+              <div className="p-1 text-xs text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 flex items-center justify-center">
                 <span className="font-medium">{time}</span>
               </div>
               {weekDays.map((day, dayIndex) => {
@@ -190,7 +190,7 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
                 const isOccupied = occupyingSession && !sessionAtTime;
 
                 return (
-                  <div key={dayIndex} className="mobile-calendar-grid-cell relative border-r last:border-r-0 p-0.5 bg-white hover:bg-gray-50 min-h-[28px] min-w-0" style={{ touchAction: 'manipulation' }}>
+                  <div key={dayIndex} className="mobile-calendar-grid-cell relative border-r last:border-r-0 p-0.5 bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 min-h-[28px] min-w-0 border-gray-200 dark:border-gray-700" style={{ touchAction: 'manipulation' }}>
                     {sessionAtTime ? (
                       <button
                         className="mobile-session-card absolute top-0.5 left-0.5 right-0.5 rounded text-white cursor-pointer hover:opacity-80 active:opacity-60 transition-opacity px-1 py-1 flex flex-col justify-center overflow-hidden z-20 touch-manipulation border-0 outline-none focus:ring-2 focus:ring-white/20"
@@ -233,10 +233,10 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
                       <div className="w-full h-full"></div>
                     ) : (
                       <button
-                        className="w-full h-full rounded hover:bg-gray-100 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                        className="w-full h-full rounded hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
                         onClick={() => handleAddSession(day, time)}
                       >
-                        <Plus className="h-3 w-3 text-gray-400" />
+                        <Plus className="h-3 w-3 text-gray-400 dark:text-gray-500" />
                       </button>
                     )}
                   </div>

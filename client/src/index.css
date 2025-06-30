@@ -740,6 +740,15 @@
     filter: saturate(1.2) brightness(1.1);
   }
 
+  /* Mobile Calendar Dark Mode Support */
+  .mobile-calendar-container {
+    @apply bg-white dark:bg-slate-900;
+  }
+
+  .mobile-calendar-grid-cell {
+    @apply bg-white dark:bg-slate-900 border-gray-200 dark:border-gray-700;
+  }
+
   /* Prevent ghost session blocks during selection */
   .fc-selecting .fc-event {
     pointer-events: auto;
