@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, Clock, User, DollarSign, Edit, Trash2 } from "lucide-react";
+import { Calendar, Clock, User, DollarSign, Edit, Trash2, ChevronDown, Plus } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
@@ -59,12 +59,14 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
   const [applyToSeries, setApplyToSeries] = useState(false);
   const [sessionColor, setSessionColor] = useState(session?.color || '#3B82F6');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showNotesSection, setShowNotesSection] = useState(false);
 
   // Reset state when modal opens/closes
   const handleClose = () => {
     setNotes(session?.notes || "");
     setApplyToSeries(false);
     setSessionColor(session?.color || '#3B82F6');
+    setShowNotesSection(!!(session?.notes && session?.notes.trim()));
     onClose();
   };
 
@@ -74,6 +76,8 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       setNotes(session.notes || "");
       setSessionColor(session.color || '#3B82F6');
       setApplyToSeries(false);
+      // Show notes section if there are existing notes
+      setShowNotesSection(!!(session.notes && session.notes.trim()));
     }
   }, [session]);
 
@@ -253,31 +257,71 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
           </div>
 
           {/* Notes Section */}
-          <div className="space-y-2">
-            <Label htmlFor="session-notes">Session Notes</Label>
-            <Textarea
-              id="session-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add notes about this session..."
-              rows={4}
-              className="resize-none"
-            />
-          </div>
-
-          {/* Apply to Series Checkbox */}
-          {session.recurrence_id && (
-            <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <Checkbox
-                id="apply-to-series"
-                checked={applyToSeries}
-                onCheckedChange={(checked) => setApplyToSeries(!!checked)}
-              />
-              <Label htmlFor="apply-to-series" className="text-sm">
-                Apply note to all future sessions in this series
-              </Label>
+          <div className="space-y-3">
+            <div 
+              className="flex items-center justify-between cursor-pointer p-2 rounded-md hover:bg-accent/50 transition-colors"
+              onClick={() => setShowNotesSection(!showNotesSection)}
+              role="button"
+              tabIndex={0}
+              aria-expanded={showNotesSection}
+              aria-controls="notes-section-content"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setShowNotesSection(!showNotesSection);
+                }
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm">📝</span>
+                <Label className="text-sm font-medium cursor-pointer">
+                  {showNotesSection || (notes && notes.trim()) ? 'Session Notes' : 'Add Session Notes'}
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                {!showNotesSection && !(notes && notes.trim()) && (
+                  <Plus className="h-4 w-4 text-muted-foreground" />
+                )}
+                <ChevronDown 
+                  className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                    showNotesSection ? 'rotate-180' : ''
+                  }`}
+                />
+              </div>
             </div>
-          )}
+            
+            <div 
+              id="notes-section-content"
+              className={`overflow-hidden transition-all duration-200 ease-in-out ${
+                showNotesSection ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <div className="space-y-3 pt-1">
+                <Textarea
+                  id="session-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Add notes about this session..."
+                  rows={4}
+                  className="resize-none"
+                />
+                
+                {/* Apply to Series Checkbox */}
+                {session.recurrence_id && (
+                  <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <Checkbox
+                      id="apply-to-series"
+                      checked={applyToSeries}
+                      onCheckedChange={(checked) => setApplyToSeries(!!checked)}
+                    />
+                    <Label htmlFor="apply-to-series" className="text-sm">
+                      Apply note to all future sessions in this series
+                    </Label>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Session Color */}
           <div className="space-y-3">
