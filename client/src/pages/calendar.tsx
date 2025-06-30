@@ -715,33 +715,34 @@ export default function Calendar() {
       <MobileCalendarView
         sessions={filteredSessions}
         onSelectSession={(session) => {
-          console.log('📱 Opening session details for:', session);
+          console.log('📱 Mobile session selected:', session);
+          console.log('📱 Session status:', session.status);
+          console.log('📱 Current modal states before:', {
+            showSessionDetailsModal,
+            showPendingRequestsModal,
+            sessionForDetails: !!sessionForDetails
+          });
           
           // For pending sessions, open pending modal instead
           if (session.status === 'pending') {
-            console.log('🟠 Detected pending session, opening modal with ID:', session.id);
-            console.log('🚀 Current modal state before:', showPendingRequestsModal);
-            console.log('🔑 Setting highlightedSessionId to:', session.id);
-            
-            // Prevent default event handling to avoid calendar refresh
-            event?.preventDefault?.();
-            event?.stopPropagation?.();
-            
-            // Force both states immediately
-            console.log('🔧 Force setting both states immediately');
+            console.log('🟠 Detected pending session, opening pending modal with ID:', session.id);
             setHighlightedSessionId(session.id);
-            
-            // Use setTimeout to ensure state is processed
-            setTimeout(() => {
-              console.log('⚡ Force opening modal now!');
-              setShowPendingRequestsModal(true);
-            }, 1);
-            
+            setShowPendingRequestsModal(true);
             return;
           }
           
+          // For regular sessions, open session details modal
+          console.log('📱 Opening session details modal for regular session');
           setSessionForDetails(session);
           setShowSessionDetailsModal(true);
+          
+          // Log state after setting
+          setTimeout(() => {
+            console.log('📱 Modal states after update:', {
+              showSessionDetailsModal: true,
+              sessionForDetails: session
+            });
+          }, 10);
         }}
         tutorCurrency={tutorCurrency}
       />
@@ -975,6 +976,19 @@ export default function Calendar() {
         session={editSession}
         isRecurring={isEditingRecurring}
       />
+
+      {/* Session Details Modal */}
+      {sessionForDetails && (
+        <SessionDetailsModal
+          session={sessionForDetails}
+          isOpen={showSessionDetailsModal}
+          onClose={() => {
+            console.log('📱 Closing session details modal');
+            setShowSessionDetailsModal(false);
+            setSessionForDetails(null);
+          }}
+        />
+      )}
 
       {/* Pending Requests Modal */}
       {console.log('🎭 About to render PendingRequestsModal with open:', showPendingRequestsModal, 'highlightSessionId:', highlightedSessionId)}
