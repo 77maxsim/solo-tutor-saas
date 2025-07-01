@@ -1,28 +1,9 @@
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,7 +18,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { Calendar, Clock, Plus, Trash2, ToggleLeft, ToggleRight, Share2 } from "lucide-react";
-import { format, parseISO, isBefore, isAfter, isWithinInterval } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTimezone } from "@/contexts/TimezoneContext";
 import AddSlotCalendarModal from "@/components/modals/add-slot-calendar-modal";
@@ -47,21 +27,6 @@ import timezone from 'dayjs/plugin/timezone';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-// Form validation schema
-const slotFormSchema = z.object({
-  startTime: z.string().min(1, "Start time is required"),
-  endTime: z.string().min(1, "End time is required"),
-}).refine((data) => {
-  const start = new Date(data.startTime);
-  const end = new Date(data.endTime);
-  return isBefore(start, end);
-}, {
-  message: "Start time must be before end time",
-  path: ["endTime"],
-});
-
-type SlotFormData = z.infer<typeof slotFormSchema>;
 
 interface BookingSlot {
   id: string;
@@ -148,9 +113,9 @@ export default function AvailabilityPage() {
       }
 
       // Get effective timezone - fetch from DB if context is not available
-      let effectiveTimezone = tutorTimezone;
+      let effectiveTimezone = tutorTimezone || 'Asia/Shanghai';
       
-      if (!effectiveTimezone) {
+      if (!tutorTimezone) {
         console.log('Timezone not available from context, fetching from database...');
         try {
           const { data: tutorData } = await supabase
@@ -182,7 +147,7 @@ export default function AvailabilityPage() {
         localEnd: data.endTime,
         utcStart: startTimeUTC.toISOString(),
         utcEnd: endTimeUTC.toISOString(),
-        verificationLocal: dayjs.utc(startTimeUTC).tz(effectiveTimezone).format('YYYY-MM-DD HH:mm')
+        verificationLocal: dayjs.utc(startTimeUTC).tz(effectiveTimezone || 'UTC').format('YYYY-MM-DD HH:mm')
       });
 
       // Check for overlapping active slots
@@ -433,75 +398,13 @@ export default function AvailabilityPage() {
               <span className="sm:hidden">Share Link</span>
             </Button>
             
-            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Slot
-                </Button>
-              </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Add New Booking Slot</DialogTitle>
-              </DialogHeader>
-
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="startTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Start Time</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="datetime-local"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="endTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End Time</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="datetime-local"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex gap-2 pt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowAddDialog(false)}
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={addSlotMutation.isPending}
-                      className="flex-1"
-                    >
-                      {addSlotMutation.isPending ? "Adding..." : "Add Slot"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-            </Dialog>
+            <Button 
+              size="sm"
+              onClick={() => setShowAddDialog(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Slot
+            </Button>
           </div>
         </div>
       </header>
@@ -534,10 +437,10 @@ export default function AvailabilityPage() {
                       <Clock className="h-5 w-5 text-gray-500" />
                       <div>
                         <div className="font-medium">
-                          {dayjs.utc(slot.start_time).tz(tutorTimezone).format('dddd, MMMM D, YYYY')}
+                          {dayjs.utc(slot.start_time).tz((tutorTimezone as string) || 'UTC').format('dddd, MMMM D, YYYY')}
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
-                          {dayjs.utc(slot.start_time).tz(tutorTimezone).format('h:mm A')} - {dayjs.utc(slot.end_time).tz(tutorTimezone).format('h:mm A')}
+                          {dayjs.utc(slot.start_time).tz((tutorTimezone as string) || 'UTC').format('h:mm A')} - {dayjs.utc(slot.end_time).tz((tutorTimezone as string) || 'UTC').format('h:mm A')}
                         </div>
                       </div>
                     </div>
@@ -602,6 +505,16 @@ export default function AvailabilityPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Slot Calendar Modal */}
+      <AddSlotCalendarModal
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onSlotAdded={() => {
+          queryClient.invalidateQueries({ queryKey: ["booking-slots"] });
+          setShowAddDialog(false);
+        }}
+      />
     </div>
   );
 }
