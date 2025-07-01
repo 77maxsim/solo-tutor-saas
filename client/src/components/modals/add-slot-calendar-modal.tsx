@@ -128,6 +128,8 @@ export default function AddSlotCalendarModal({
   const [selectedSlot, setSelectedSlot] = useState<SelectedTimeSlot | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [editingSlot, setEditingSlot] = useState<BookingSlot | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { tutorTimezone } = useTimezone();
@@ -136,6 +138,15 @@ export default function AddSlotCalendarModal({
 
   // Form for mobile fallback
   const form = useForm<SlotFormData>({
+    resolver: zodResolver(slotFormSchema),
+    defaultValues: {
+      startTime: '',
+      endTime: '',
+    },
+  });
+
+  // Edit form for slot editing
+  const editForm = useForm<SlotFormData>({
     resolver: zodResolver(slotFormSchema),
     defaultValues: {
       startTime: '',
@@ -237,8 +248,12 @@ export default function AddSlotCalendarModal({
         backgroundColor: '#10b981',
         borderColor: '#059669',
         textColor: 'white',
-        className: 'slot-event',
-        display: 'block'
+        className: 'slot-event editable-slot',
+        display: 'block',
+        extendedProps: {
+          slotData: slot,
+          type: 'availability'
+        }
       }));
   }, [bookingSlots, tutorTimezone]);
 
@@ -297,8 +312,8 @@ export default function AddSlotCalendarModal({
     }
 
     // Convert to tutor's timezone for display
-    const startLocal = dayjs(start).tz(tutorTimezone).format('YYYY-MM-DD HH:mm');
-    const endLocal = dayjs(end).tz(tutorTimezone).format('YYYY-MM-DD HH:mm');
+    const startLocal = dayjs(start).tz(tutorTimezone || 'UTC').format('YYYY-MM-DD HH:mm');
+    const endLocal = dayjs(end).tz(tutorTimezone || 'UTC').format('YYYY-MM-DD HH:mm');
 
     setSelectedSlot({
       start,
@@ -319,8 +334,8 @@ export default function AddSlotCalendarModal({
       }
 
       // Convert local times to UTC
-      const startUtc = dayjs.tz(data.startTime, tutorTimezone).utc().toISOString();
-      const endUtc = dayjs.tz(data.endTime, tutorTimezone).utc().toISOString();
+      const startUtc = dayjs.tz(data.startTime, tutorTimezone || 'UTC').utc().toISOString();
+      const endUtc = dayjs.tz(data.endTime, tutorTimezone || 'UTC').utc().toISOString();
 
       const { error } = await supabase
         .from("booking_slots")
@@ -464,22 +479,6 @@ export default function AddSlotCalendarModal({
         {isMobile ? (
           // Mobile Form View
           <div className="p-6">
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded"></div>
-                  <span className="text-sm">Available Slot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                  <span className="text-sm">Booked Sessions</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                  <span className="text-sm">Pending Requests</span>
-                </div>
-              </div>
-            </div>
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onMobileSubmit)} className="space-y-6">
@@ -602,7 +601,7 @@ export default function AddSlotCalendarModal({
                   const now = new Date();
                   return selectInfo.start >= now;
                 }}
-                timeZone={tutorTimezone}
+                timeZone={tutorTimezone as string || 'UTC'}
                 eventDisplay="block"
                 eventOverlap={false}
                 selectOverlap={false}
