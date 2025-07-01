@@ -30,7 +30,8 @@ import {
   X,
   RotateCcw,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Smartphone
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -142,6 +143,19 @@ export default function AddSlotCalendarModal({
     },
   });
 
+  // Reset form when modal opens
+  useEffect(() => {
+    if (open && isMobile) {
+      const now = new Date();
+      now.setMinutes(0, 0, 0); // Round to hour
+      const nextHour = new Date(now);
+      nextHour.setHours(now.getHours() + 1);
+      
+      form.setValue('startTime', now.toISOString().slice(0, 16));
+      form.setValue('endTime', nextHour.toISOString().slice(0, 16));
+    }
+  }, [open, isMobile, form]);
+
   // Fetch existing booking slots
   const { data: bookingSlots = [] } = useQuery({
     queryKey: ["booking-slots"],
@@ -169,7 +183,7 @@ export default function AddSlotCalendarModal({
 
   // Fetch existing sessions to show as unavailable times
   const { data: existingSessions = [] } = useQuery({
-    queryKey: ["sessions"],
+    queryKey: ["sessions-for-availability"],
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
@@ -206,7 +220,7 @@ export default function AddSlotCalendarModal({
         duration: 0 // Calculated later
       })) as SessionWithStudent[];
     },
-    enabled: open,
+    enabled: open && !isMobile,
   });
 
   // Convert booking slots to calendar events (green for available slots)
@@ -218,96 +232,63 @@ export default function AddSlotCalendarModal({
       .map(slot => ({
         id: `slot-${slot.id}`,
         title: 'Available',
-        start: new Date(slot.start_time),
-        end: new Date(slot.end_time),
-        backgroundColor: '#10B981',
+        start: dayjs.utc(slot.start_time).tz(tutorTimezone).toDate(),
+        end: dayjs.utc(slot.end_time).tz(tutorTimezone).toDate(),
+        backgroundColor: '#10b981',
         borderColor: '#059669',
-        textColor: '#FFFFFF',
-        className: 'available-slot',
+        textColor: 'white',
+        className: 'slot-event',
         display: 'block'
       }));
   }, [bookingSlots, tutorTimezone]);
 
-  // Convert sessions to calendar events (red/blue for booked sessions)
+  // Convert sessions to calendar events (blue for booked, yellow for pending)
   const sessionEvents: FullCalendarEvent[] = useMemo(() => {
-    if (!sessions.length || !tutorTimezone) return [];
+    if (!existingSessions.length || !tutorTimezone) return [];
 
-    return sessions.map(session => ({
+    return existingSessions.map(session => ({
       id: `session-${session.id}`,
       title: session.student_name || session.unassigned_name || 'Booked Session',
-      start: new Date(session.session_start),
-      end: new Date(session.session_end),
-      backgroundColor: session.status === 'pending' ? '#F59E0B' : session.color,
-      borderColor: session.status === 'pending' ? '#D97706' : session.color,
-      textColor: '#FFFFFF',
-      className: 'booked-session'
+      start: dayjs.utc(session.session_start).tz(tutorTimezone).toDate(),
+      end: dayjs.utc(session.session_end).tz(tutorTimezone).toDate(),
+      backgroundColor: session.color,
+      borderColor: session.color,
+      textColor: 'white',
+      className: 'session-event',
+      display: 'block'
     }));
-  }, [sessions, tutorTimezone]);
+  }, [existingSessions, tutorTimezone]);
 
   // Combine all events
   const allEvents = [...availabilityEvents, ...sessionEvents];
 
-  // Handle time slot selection
-  const handleSelect = (selectInfo: any) => {
-    console.log('🎯 Time slot selected:', selectInfo);
-
-    if (!tutorTimezone) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Timezone not available. Please try again.",
-      });
-      return;
-    }
-
-    const start = selectInfo.start;
-    const end = selectInfo.end;
-
-    // Check for overlaps with existing active slots
-    const hasOverlap = bookingSlots.some((slot) => {
-      if (!slot.is_active) return false;
-      
-      const slotStart = parseISO(slot.start_time);
-      const slotEnd = parseISO(slot.end_time);
-      
-      return (
-        isWithinInterval(start, { start: slotStart, end: slotEnd }) ||
-        isWithinInterval(end, { start: slotStart, end: slotEnd }) ||
-        isWithinInterval(slotStart, { start: start, end: end })
-      );
-    });
-
-    if (hasOverlap) {
-      toast({
-        variant: "destructive",
-        title: "Overlap Detected",
-        description: "Selected time overlaps with an existing availability slot.",
-      });
-      // Clear the selection
-      if (calendarRef.current) {
-        calendarRef.current.getApi().unselect();
-      }
-      return;
-    }
-
-    // Check for overlaps with existing sessions
-    const hasSessionOverlap = sessions.some((session) => {
+  // Check for overlaps with existing sessions
+  const checkForOverlap = (start: Date, end: Date): boolean => {
+    return existingSessions.some(session => {
       const sessionStart = new Date(session.session_start);
       const sessionEnd = new Date(session.session_end);
       
       return (
-        isWithinInterval(start, { start: sessionStart, end: sessionEnd }) ||
-        isWithinInterval(end, { start: sessionStart, end: sessionEnd }) ||
-        isWithinInterval(sessionStart, { start: start, end: end })
+        (start >= sessionStart && start < sessionEnd) ||
+        (end > sessionStart && end <= sessionEnd) ||
+        (start <= sessionStart && end >= sessionEnd)
       );
     });
+  };
 
-    if (hasSessionOverlap) {
+  // Handle calendar time selection
+  const handleSelect = (selectInfo: any) => {
+    const start = selectInfo.start;
+    const end = selectInfo.end;
+
+    // Check for overlap with existing sessions
+    if (checkForOverlap(start, end)) {
       toast({
         variant: "destructive",
-        title: "Time Unavailable",
-        description: "Selected time conflicts with an existing session.",
+        title: "Time Conflict",
+        description: "This time overlaps with an existing session.",
       });
+      
       // Clear the selection
       if (calendarRef.current) {
         calendarRef.current.getApi().unselect();
@@ -315,7 +296,7 @@ export default function AddSlotCalendarModal({
       return;
     }
 
-    // Convert to local time for display
+    // Convert to tutor's timezone for display
     const startLocal = dayjs(start).tz(tutorTimezone).format('YYYY-MM-DD HH:mm');
     const endLocal = dayjs(end).tz(tutorTimezone).format('YYYY-MM-DD HH:mm');
 
@@ -325,239 +306,360 @@ export default function AddSlotCalendarModal({
       startLocal,
       endLocal
     });
-
-    console.log('✅ Valid slot selected:', {
-      start: start.toISOString(),
-      end: end.toISOString(),
-      startLocal,
-      endLocal,
-      duration: dayjs(end).diff(dayjs(start), 'minutes')
-    });
   };
 
-  // Handle slot confirmation
-  const handleConfirmSlot = async () => {
-    if (!selectedSlot) return;
-
+  // Handle form submission for mobile
+  const onMobileSubmit = async (data: SlotFormData) => {
     setIsSubmitting(true);
-
+    
     try {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
-        throw new Error('User not authenticated or tutor record not found');
+        throw new Error("User not authenticated");
       }
+
+      // Convert local times to UTC
+      const startUtc = dayjs.tz(data.startTime, tutorTimezone).utc().toISOString();
+      const endUtc = dayjs.tz(data.endTime, tutorTimezone).utc().toISOString();
 
       const { error } = await supabase
         .from("booking_slots")
         .insert({
           tutor_id: tutorId,
-          start_time: selectedSlot.start.toISOString(),
-          end_time: selectedSlot.end.toISOString(),
-          is_active: true,
+          start_time: startUtc,
+          end_time: endUtc,
+          is_active: true
         });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
-        title: "Slot Added",
-        description: "New availability slot has been created successfully.",
+        title: "Availability slot added!",
+        description: "Your new time slot is now available for booking.",
       });
 
       // Refresh data and close modal
       queryClient.invalidateQueries({ queryKey: ["booking-slots"] });
       onSlotAdded();
-      handleCancel();
+      onOpenChange(false);
+      form.reset();
 
-    } catch (error: any) {
-      console.error('Error adding slot:', error);
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to add slot. Please try again.",
+        description: "Failed to add availability slot.",
       });
-    } finally {
-      setIsSubmitting(false);
     }
+    
+    setIsSubmitting(false);
   };
 
-  // Handle cancel/reset
+  // Handle calendar slot submission
+  const handleAddSlot = async () => {
+    if (!selectedSlot) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error("User not authenticated");
+      }
+
+      // Convert to UTC for storage
+      const startUtc = dayjs(selectedSlot.start).utc().toISOString();
+      const endUtc = dayjs(selectedSlot.end).utc().toISOString();
+
+      const { error } = await supabase
+        .from("booking_slots")
+        .insert({
+          tutor_id: tutorId,
+          start_time: startUtc,
+          end_time: endUtc,
+          is_active: true
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Availability slot added!",
+        description: "Your new time slot is now available for booking.",
+      });
+
+      // Refresh data and close modal
+      queryClient.invalidateQueries({ queryKey: ["booking-slots"] });
+      onSlotAdded();
+
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add availability slot.",
+      });
+    }
+    
+    setIsSubmitting(false);
+  };
+
   const handleCancel = () => {
     setSelectedSlot(null);
     if (calendarRef.current) {
       calendarRef.current.getApi().unselect();
     }
+  };
+
+  const handleClose = () => {
     onOpenChange(false);
   };
 
-  // Reset selection
-  const handleResetSelection = () => {
+  const handleClearSelection = () => {
     setSelectedSlot(null);
-    if (calendarRef.current) {
-      calendarRef.current.getApi().unselect();
-    }
+    setIsFullScreen(false);
   };
 
-  // Clear selection when modal closes
-  useEffect(() => {
-    if (!open) {
-      setSelectedSlot(null);
-      setIsFullScreen(false);
-    }
-  }, [open]);
-
-  if (!tutorTimezone) {
-    return null;
-  }
+  // Generate default datetime values for mobile form
+  const getDefaultDateTime = (hoursOffset: number = 1) => {
+    const date = new Date();
+    date.setHours(date.getHours() + hoursOffset, 0, 0, 0);
+    return date.toISOString().slice(0, 16);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${isFullScreen ? 'max-w-[95vw] max-h-[95vh]' : 'sm:max-w-[900px] max-h-[80vh]'} p-0`}>
-        <DialogHeader className="p-6 pb-2">
+      <DialogContent className={`max-w-6xl w-full ${isFullScreen ? 'h-[95vh]' : 'max-h-[85vh]'} p-0 overflow-hidden`}>
+        <DialogHeader className="p-6 pb-4 border-b">
           <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
-              Add Availability Slot
-            </DialogTitle>
-            <div className="flex items-center gap-2">
-              <Select value={calendarView} onValueChange={(value: any) => setCalendarView(value)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="timeGridWeek">Week</SelectItem>
-                  <SelectItem value="timeGridDay">Day</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsFullScreen(!isFullScreen)}
-              >
-                {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-              </Button>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                {isMobile ? <Smartphone className="h-5 w-5 text-green-700 dark:text-green-300" /> : <CalendarIcon className="h-5 w-5 text-green-700 dark:text-green-300" />}
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-semibold">
+                  Add Availability Slot
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isMobile 
+                    ? "Set your start and end times for student bookings."
+                    : "Click and drag to select an available time slot. Green blocks show existing availability, colored blocks show booked sessions."
+                  }
+                </p>
+              </div>
             </div>
+            
+            {!isMobile && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsFullScreen(!isFullScreen)}
+                >
+                  {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </Button>
+              </div>
+            )}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Click and drag to select an available time slot. Green blocks show existing availability, colored blocks show booked sessions.
-          </p>
         </DialogHeader>
 
-        <div className="flex-1 p-6 pt-2 overflow-hidden">
-          {/* Selected slot confirmation bar */}
-          {selectedSlot && (
-            <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="font-medium text-blue-800 dark:text-blue-200">
-                      Selected Time Slot
-                    </p>
-                    <p className="text-sm text-blue-600 dark:text-blue-300">
-                      {selectedSlot.startLocal} - {selectedSlot.endLocal}
-                      <span className="ml-2 text-xs">
-                        ({dayjs(selectedSlot.end).diff(dayjs(selectedSlot.start), 'minutes')} minutes)
-                      </span>
-                    </p>
-                  </div>
+        {isMobile ? (
+          // Mobile Form View
+          <div className="p-6">
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded"></div>
+                  <span className="text-sm">Available Slot</span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                  <span className="text-sm">Booked Sessions</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-yellow-500 rounded"></div>
+                  <span className="text-sm">Pending Requests</span>
+                </div>
+              </div>
+            </div>
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onMobileSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="startTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Time</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="datetime-local" 
+                          {...field}
+                          min={new Date().toISOString().slice(0, 16)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="endTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End Time</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="datetime-local" 
+                          {...field}
+                          min={form.watch('startTime') || new Date().toISOString().slice(0, 16)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={handleClose}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Adding..." : "Add Slot"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </div>
+        ) : (
+          // Desktop Calendar View
+          <div className="flex-1 overflow-hidden">
+            {/* Legend and View Controls */}
+            <div className="px-6 py-4 border-b bg-gray-50 dark:bg-gray-900">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded"></div>
+                    <span className="text-sm">Available Slots</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                    <span className="text-sm">Booked Sessions</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-yellow-500 rounded"></div>
+                    <span className="text-sm">Pending Requests</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Select value={calendarView} onValueChange={(value: 'timeGridWeek' | 'timeGridDay') => setCalendarView(value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="timeGridWeek">Week</SelectItem>
+                      <SelectItem value="timeGridDay">Day</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleResetSelection}
+                    onClick={() => {
+                      if (calendarRef.current) {
+                        calendarRef.current.getApi().today();
+                      }
+                    }}
                   >
-                    <RotateCcw className="h-4 w-4 mr-1" />
-                    Reset
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleConfirmSlot}
-                    disabled={isSubmitting}
-                  >
-                    <Check className="h-4 w-4 mr-1" />
-                    {isSubmitting ? 'Adding...' : 'Add Slot'}
+                    Today
                   </Button>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Legend */}
-          <div className="mb-4 flex flex-wrap gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-500 rounded"></div>
-              <span>Available Slots</span>
+            {/* Calendar */}
+            <div className={`${isFullScreen ? 'h-[calc(95vh-200px)]' : 'h-[500px]'} p-4`}>
+              <FullCalendar
+                ref={calendarRef}
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, luxonPlugin]}
+                initialView={calendarView}
+                headerToolbar={{
+                  left: 'prev,next',
+                  center: 'title',
+                  right: ''
+                }}
+                height="100%"
+                selectable={true}
+                selectMirror={true}
+                select={handleSelect}
+                events={allEvents}
+                slotMinTime="06:00:00"
+                slotMaxTime="23:00:00"
+                slotDuration="00:15:00"
+                snapDuration="00:15:00"
+                allDaySlot={false}
+                selectAllow={(selectInfo) => {
+                  const now = new Date();
+                  return selectInfo.start >= now;
+                }}
+                timeZone={tutorTimezone}
+                eventDisplay="block"
+                eventOverlap={false}
+                selectOverlap={false}
+                eventInteractive={false}
+                unselectAuto={false}
+                eventClassNames="cursor-default"
+              />
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-blue-500 rounded"></div>
-              <span>Booked Sessions</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-              <span>Pending Requests</span>
+
+            {/* Selected Slot Confirmation */}
+            {selectedSlot && (
+              <div className="px-6 py-4 border-t bg-blue-50 dark:bg-blue-900/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium">Selected Time:</span>
+                    </div>
+                    <Badge variant="secondary" className="text-sm px-3 py-1">
+                      {selectedSlot.startLocal} - {selectedSlot.endLocal}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={handleCancel}>
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={handleAddSlot}
+                      disabled={isSubmitting}
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      {isSubmitting ? "Adding..." : "Add Slot"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="px-6 py-4 border-t">
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={handleClose}>
+                  Close
+                </Button>
+                {selectedSlot && (
+                  <Button onClick={handleClearSelection} variant="outline">
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Clear Selection
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Calendar */}
-          <div className="h-[500px] overflow-hidden rounded-lg border">
-            <FullCalendar
-              ref={calendarRef}
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, luxonPlugin]}
-              initialView={calendarView}
-              headerToolbar={{
-                left: 'prev,next today',
-                center: 'title',
-                right: ''
-              }}
-              height="100%"
-              events={allEvents}
-              selectable={true}
-              selectMirror={true}
-              dayMaxEvents={true}
-              weekends={true}
-              select={handleSelect}
-              timeZone={tutorTimezone}
-              slotMinTime="06:00:00"
-              slotMaxTime="22:00:00"
-              slotDuration="00:15:00"
-              snapDuration="00:15:00"
-              selectConstraint={{
-                start: '06:00',
-                end: '22:00'
-              }}
-              businessHours={{
-                daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
-                startTime: '06:00',
-                endTime: '22:00'
-              }}
-              eventClick={(info) => {
-                // Prevent default behavior for existing events
-                info.jsEvent.preventDefault();
-              }}
-              selectAllow={(selectInfo) => {
-                // Only allow selections that are at least 15 minutes
-                const duration = dayjs(selectInfo.end).diff(dayjs(selectInfo.start), 'minutes');
-                return duration >= 15;
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-6 pt-2 border-t">
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={handleCancel}
-            >
-              <X className="h-4 w-4 mr-1" />
-              Cancel
-            </Button>
-          </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
