@@ -277,6 +277,193 @@ export default function PublicBookingPage() {
     }
   };
 
+  const isSlotBooked = (slotStartTime: string) => {
+    return existingSessions.some(session => 
+      session.start_time === slotStartTime
+    );
+  };
+
+  const getAvailableSlots = () => {
+    const filtered = bookingSlots.filter(slot => !isSlotBooked(slot.start_time));
+    console.log('Available slots filtered:', {
+      totalSlots: bookingSlots.length,
+      availableSlots: filtered.length,
+      studentTimezone,
+      sampleConversion: filtered[0] ? {
+        utc: filtered[0].start_time,
+        local: dayjs.utc(filtered[0].start_time).tz(studentTimezone).format('YYYY-MM-DD HH:mm A')
+      } : null
+    });
+    return filtered;
+  };
+
+  const generateTimeSlots = (startTime: string, endTime: string) => {
+    const slots = [];
+    const start = dayjs.utc(startTime).tz(studentTimezone);
+    const end = dayjs.utc(endTime).tz(studentTimezone);
+    
+    let current = start;
+    while (current.isBefore(end)) {
+      slots.push(current.format('HH:mm'));
+      current = current.add(15, 'minute');
+    }
+    
+    return slots;
+  };
+
+  const isTimeSlotAvailable = (startTime: string, duration: number) => {
+    if (!selectedSlot) return false;
+    
+    const slot = bookingSlots.find(s => s.id === selectedSlot);
+    if (!slot) return false;
+    
+    const slotDate = dayjs.utc(slot.start_time).format('YYYY-MM-DD');
+    const localDateTime = dayjs.tz(`${slotDate}T${startTime}:00`, studentTimezone);
+    const utcDateTime = localDateTime.utc();
+    const requestedStartUTC = utcDateTime.toDate();
+    const requestedEndUTC = new Date(requestedStartUTC.getTime() + duration * 60 * 1000);
+    
+    return !existingSessions.some(session => {
+      if (!session.start_time) return false;
+      const sessionStart = new Date(session.start_time);
+      return Math.abs(sessionStart.getTime() - requestedStartUTC.getTime()) < 30 * 60 * 1000;
+    });
+  };
+
+  const handleTimePickerSubmit = () => {
+    if (!selectedStartTime || !selectedDuration) {
+      toast({
+        variant: "destructive",
+        title: "Missing Selection",
+        description: "Please select both start time and duration.",
+      });
+      return;
+    }
+    
+    setValue("selectedStartTime", selectedStartTime);
+    setValue("selectedDuration", selectedDuration);
+    setShowTimePickerModal(false);
+    
+    console.log('Time picker selection:', {
+      startTime: selectedStartTime,
+      duration: selectedDuration,
+      slot: selectedSlot
+    });
+  };
+
+  const onSubmit = async (data: BookingFormData) => {
+    try {
+      setSubmitting(true);
+      console.log('Form submission started:', data);
+
+      const slot = bookingSlots.find(s => s.id === data.selectedSlotId);
+      if (!slot) {
+        throw new Error('Selected slot not found');
+      }
+
+      if (!data.selectedStartTime || !data.selectedDuration) {
+        throw new Error('Please select a start time and duration');
+      }
+
+      if (!isTimeSlotAvailable(data.selectedStartTime, data.selectedDuration)) {
+        toast({
+          variant: "destructive",
+          title: "Time Slot Unavailable",
+          description: "This time slot is no longer available. Please select a different time.",
+        });
+        return;
+      }
+
+      const slotDate = dayjs.utc(slot.start_time).format('YYYY-MM-DD');
+      const localDateTime = dayjs.tz(`${slotDate}T${data.selectedStartTime}:00`, studentTimezone);
+      const utcDateTime = localDateTime.utc();
+      
+      console.log('Booking submission timezone conversion:', {
+        studentTimezone,
+        selectedTime: data.selectedStartTime,
+        slotDate,
+        localDateTime: localDateTime.format(),
+        utcDateTime: utcDateTime.format(),
+        duration: data.selectedDuration
+      });
+
+      const sessionStartUTC = utcDateTime.toISOString();
+      const sessionEndUTC = utcDateTime.add(data.selectedDuration, 'minute').toISOString();
+
+      const bookingData = {
+        tutor_id: tutorId,
+        student_name: data.name.trim(),
+        session_start: sessionStartUTC,
+        session_end: sessionEndUTC,
+        duration: data.selectedDuration,
+        status: 'pending',
+        booking_slot_id: data.selectedSlotId,
+        student_timezone: studentTimezone,
+        notes: `Booking request from ${data.name.trim()} for ${data.selectedDuration} minutes`
+      };
+
+      console.log('Final booking data to submit:', bookingData);
+
+      const { data: result, error } = await supabase
+        .from('sessions')
+        .insert([bookingData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Booking submission error:', error);
+        throw error;
+      }
+
+      console.log('Booking successful:', result);
+      setBookingSuccess(true);
+
+      toast({
+        title: "Booking Request Submitted!",
+        description: "Your booking request has been sent successfully.",
+      });
+
+    } catch (error) {
+      console.error('Booking submission failed:', error);
+      toast({
+        variant: "destructive",
+        title: "Booking Failed",
+        description: error.message || "There was an error submitting your booking. Please try again.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle success state
+  if (bookingSuccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="max-w-2xl mx-auto px-4">
+          <Card>
+            <CardContent className="text-center py-12">
+              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                Booking Request Submitted!
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
+                Thank you for your booking request. {tutor?.full_name} will review your request and contact you soon.
+              </p>
+              <Button 
+                onClick={() => setBookingSuccess(false)}
+                variant="outline"
+              >
+                Book Another Session
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const availableSlots = getAvailableSlots();
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-2xl mx-auto px-4">
@@ -317,6 +504,63 @@ export default function PublicBookingPage() {
               </div>
             )}
 
+            {/* Student Timezone Selector */}
+            <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800 mb-6">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Globe className="w-5 h-5 text-blue-600" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-blue-900 dark:text-blue-200">Your Timezone</p>
+                        <p className="text-xs text-blue-700 dark:text-blue-400">
+                          All times shown in: {getTimezoneDisplayName(studentTimezone)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowTimezoneSelector(!showTimezoneSelector)}
+                        className="text-blue-700 border-blue-300 hover:bg-blue-100 dark:text-blue-300 dark:border-blue-600 dark:hover:bg-blue-900"
+                      >
+                        Change
+                      </Button>
+                    </div>
+                    
+                    {showTimezoneSelector && (
+                      <div className="mt-3">
+                        <Select
+                          value={studentTimezone}
+                          onValueChange={(value) => {
+                            setStudentTimezone(value);
+                            setShowTimezoneSelector(false);
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select timezone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TIMEZONE_GROUPS.map((group) => (
+                              <div key={group.label}>
+                                <div className="px-2 py-1.5 text-sm font-semibold text-gray-500 dark:text-gray-400">
+                                  {group.label}
+                                </div>
+                                {group.timezones.map((tz) => (
+                                  <SelectItem key={tz.value} value={tz.value}>
+                                    {tz.label}
+                                  </SelectItem>
+                                ))}
+                              </div>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Loading state */}
             {loading && (
               <div className="space-y-4">
@@ -338,8 +582,246 @@ export default function PublicBookingPage() {
                 </p>
               </div>
             )}
+
+            {/* No available slots */}
+            {!loading && tutor && bookingSlots.length === 0 && (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  No Available Slots
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  There are currently no available booking slots. Please check back later.
+                </p>
+              </div>
+            )}
+
+            {/* Booking Form */}
+            {!loading && tutor && bookingSlots.length > 0 && (
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {/* Student Name */}
+                <div>
+                  <Label htmlFor="name">Your Name *</Label>
+                  <Input
+                    id="name"
+                    {...register("name")}
+                    placeholder="Enter your full name"
+                    className="mt-1"
+                  />
+                  {errors.name && (
+                    <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+                  )}
+                </div>
+
+                {/* Available Time Slots */}
+                <div>
+                  <Label>Available Time Slots *</Label>
+                  <div className="grid gap-3 mt-2">
+                    {availableSlots.map((slot) => {
+                        const slotDateTime = dayjs.utc(slot.start_time).tz(studentTimezone);
+                        const endDateTime = dayjs.utc(slot.end_time).tz(studentTimezone);
+                        const isSelected = watchedSlotId === slot.id;
+                        
+                        return (
+                          <div
+                            key={slot.id}
+                            className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                              isSelected
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                                : 'border-gray-200 hover:border-gray-300 dark:border-gray-700'
+                            }`}
+                            onClick={() => {
+                              setValue("selectedSlotId", slot.id);
+                              setSelectedSlot(slot.id);
+                              setShowTimePickerModal(true);
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-gray-900 dark:text-gray-100">
+                                  {slotDateTime.format('dddd, MMMM D')}
+                                </p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  {slotDateTime.format('h:mm A')} - {endDateTime.format('h:mm A')}
+                                </p>
+                              </div>
+                              {isSelected && (
+                                <CheckCircle className="h-5 w-5 text-blue-500" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                  {errors.selectedSlotId && (
+                    <p className="text-red-500 text-sm mt-1">{errors.selectedSlotId.message}</p>
+                  )}
+                </div>
+
+                {/* Session Summary */}
+                {selectedStartTime && selectedDuration && (
+                  <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-green-800 dark:text-green-200">
+                          Session Summary
+                        </p>
+                        <p className="text-sm text-green-600 dark:text-green-300 mt-1">
+                          You are booking with {tutor?.full_name}
+                        </p>
+                        {(() => {
+                          const selectedSlotData = bookingSlots.find(s => s.id === selectedSlot);
+                          if (selectedSlotData) {
+                            const slotDate = dayjs.utc(selectedSlotData.start_time).tz(studentTimezone).format('YYYY-MM-DD');
+                            const localStartDateTime = dayjs.tz(`${slotDate}T${selectedStartTime}:00`, studentTimezone);
+                            const localEndDateTime = localStartDateTime.add(selectedDuration, 'minute');
+
+                            return (
+                              <div className="mt-2 text-sm text-green-700 dark:text-green-300">
+                                <p>📅 {localStartDateTime.format('dddd, MMMM D, YYYY')}</p>
+                                <p>🕒 {localStartDateTime.format('h:mm A')} - {localEndDateTime.format('h:mm A')} ({getTimezoneDisplayName(studentTimezone)})</p>
+                                <p>⏱️ Duration: {selectedDuration} minutes</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={submitting || !watchedSlotId || !selectedStartTime}
+                >
+                  {submitting ? "Submitting Request..." : "Request Booking"}
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
+
+        {/* Time Picker Modal */}
+        <Dialog open={showTimePickerModal} onOpenChange={setShowTimePickerModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Select Session Time</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Selected Slot Info */}
+              {selectedSlot && (() => {
+                const slot = bookingSlots.find(s => s.id === selectedSlot);
+                if (!slot) return null;
+                
+                const slotDateTime = dayjs.utc(slot.start_time).tz(studentTimezone);
+                const endDateTime = dayjs.utc(slot.end_time).tz(studentTimezone);
+                
+                return (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="font-medium text-blue-900 dark:text-blue-200">
+                      {slotDateTime.format('dddd, MMMM D')}
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-400">
+                      Available: {slotDateTime.format('h:mm A')} - {endDateTime.format('h:mm A')}
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* Start Time Selection */}
+              <div>
+                <Label htmlFor="startTime">Start Time *</Label>
+                <Select
+                  value={selectedStartTime}
+                  onValueChange={setSelectedStartTime}
+                >
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select start time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedSlot && (() => {
+                      const slot = bookingSlots.find(s => s.id === selectedSlot);
+                      if (!slot) return [];
+                      
+                      const timeSlots = generateTimeSlots(slot.start_time, slot.end_time);
+                      
+                      return timeSlots.map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {dayjs(`2024-01-01T${time}`).format('h:mm A')}
+                        </SelectItem>
+                      ));
+                    })()}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Duration Selection */}
+              <div>
+                <Label htmlFor="duration">Session Duration *</Label>
+                <Select
+                  value={selectedDuration.toString()}
+                  onValueChange={(value) => setSelectedDuration(parseInt(value))}
+                >
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 minutes</SelectItem>
+                    <SelectItem value="45">45 minutes</SelectItem>
+                    <SelectItem value="60">1 hour</SelectItem>
+                    <SelectItem value="90">1.5 hours</SelectItem>
+                    <SelectItem value="120">2 hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Preview */}
+              {selectedStartTime && selectedDuration && selectedSlot && (() => {
+                const slot = bookingSlots.find(s => s.id === selectedSlot);
+                if (!slot) return null;
+                
+                const slotDate = dayjs.utc(slot.start_time).tz(studentTimezone).format('YYYY-MM-DD');
+                const startDateTime = dayjs.tz(`${slotDate}T${selectedStartTime}:00`, studentTimezone);
+                const endDateTime = startDateTime.add(selectedDuration, 'minute');
+                
+                return (
+                  <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                      Session Preview
+                    </p>
+                    <p className="text-sm text-green-600 dark:text-green-300">
+                      {startDateTime.format('h:mm A')} - {endDateTime.format('h:mm A')} ({selectedDuration} min)
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowTimePickerModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleTimePickerSubmit}
+                  disabled={!selectedStartTime || !selectedDuration}
+                  className="flex-1"
+                >
+                  Confirm Selection
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
