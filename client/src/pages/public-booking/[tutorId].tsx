@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Calendar, Clock, User, CheckCircle, AlertCircle, X, Globe } from "lucide-react";
@@ -22,6 +23,16 @@ import timezone from 'dayjs/plugin/timezone';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+// Helper function to get initials from full name
+const getInitials = (name: string): string => {
+  return name
+    .split(' ')
+    .map(word => word.charAt(0))
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
+};
 
 // Form validation schema
 const bookingFormSchema = z.object({
@@ -45,6 +56,7 @@ interface Tutor {
   id: string;
   full_name: string;
   email: string;
+  avatar_url?: string;
 }
 
 interface ExistingSession {
@@ -151,7 +163,7 @@ export default function PublicBookingPage() {
           
           const fetchPromise = supabase
             .from('tutors')
-            .select('id, full_name, email')
+            .select('id, full_name, email, avatar_url')
             .eq('id', tutorId)
             .single();
           
@@ -673,6 +685,31 @@ export default function PublicBookingPage() {
             <p className="text-gray-600 dark:text-gray-400">
               Select an available time slot and enter your name to request a booking.
             </p>
+          </CardHeader>
+          
+          <CardContent className="pt-0">
+            {/* Tutor Profile Section */}
+            <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-100 dark:border-blue-800">
+              <Avatar className="h-16 w-16 sm:h-20 sm:w-20 ring-4 ring-white dark:ring-gray-800 shadow-lg">
+                <AvatarImage 
+                  src={tutor.avatar_url} 
+                  alt={tutor.full_name}
+                  className="object-cover"
+                />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold text-lg sm:text-xl">
+                  {getInitials(tutor.full_name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                  {tutor.full_name}
+                </h2>
+                <p className="text-blue-600 dark:text-blue-400 text-sm sm:text-base font-medium flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  Certified tutor – Book a session below
+                </p>
+              </div>
+            </div>
             
             {/* Student Timezone Selector */}
             <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800">
@@ -730,9 +767,7 @@ export default function PublicBookingPage() {
                 </div>
               </CardContent>
             </Card>
-          </CardHeader>
-
-          <CardContent>
+            
             {availableSlots.length === 0 ? (
               <div className="text-center py-8">
                 <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
