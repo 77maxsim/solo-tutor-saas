@@ -40,6 +40,7 @@ import { Calendar, Clock, Plus, Trash2, ToggleLeft, ToggleRight, Share2 } from "
 import { format, parseISO, isBefore, isAfter, isWithinInterval } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import AddSlotCalendarModal from "@/components/modals/add-slot-calendar-modal";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
