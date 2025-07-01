@@ -291,6 +291,65 @@ export default function AddSlotCalendarModal({
     });
   };
 
+  // Handle slot click for editing
+  const handleSlotClick = (clickInfo: any) => {
+    const eventType = clickInfo.event.extendedProps?.type;
+    if (eventType === 'availability') {
+      const slotData = clickInfo.event.extendedProps?.slotData;
+      if (slotData) {
+        setEditingSlot(slotData);
+        // Set form values for editing
+        const startLocal = dayjs.utc(slotData.start_time).tz(tutorTimezone as string || 'UTC').format('YYYY-MM-DDTHH:mm');
+        const endLocal = dayjs.utc(slotData.end_time).tz(tutorTimezone as string || 'UTC').format('YYYY-MM-DDTHH:mm');
+        editForm.setValue('startTime', startLocal);
+        editForm.setValue('endTime', endLocal);
+        setShowEditModal(true);
+      }
+    }
+  };
+
+  // Handle slot drag/resize
+  const handleEventChange = async (changeInfo: any) => {
+    const eventType = changeInfo.event.extendedProps?.type;
+    if (eventType === 'availability') {
+      const slotData = changeInfo.event.extendedProps?.slotData;
+      if (slotData) {
+        try {
+          // Convert back to UTC for storage
+          const startUtc = dayjs(changeInfo.event.start).utc().toISOString();
+          const endUtc = dayjs(changeInfo.event.end).utc().toISOString();
+
+          const { error } = await supabase
+            .from("booking_slots")
+            .update({
+              start_time: startUtc,
+              end_time: endUtc,
+            })
+            .eq("id", slotData.id);
+
+          if (error) throw error;
+
+          toast({
+            title: "Slot updated!",
+            description: "Your availability slot has been moved.",
+          });
+
+          // Refresh data
+          queryClient.invalidateQueries({ queryKey: ["booking-slots"] });
+
+        } catch (error) {
+          // Revert the change
+          changeInfo.revert();
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to update slot.",
+          });
+        }
+      }
+    }
+  };
+
   // Handle calendar time selection
   const handleSelect = (selectInfo: any) => {
     const start = selectInfo.start;
@@ -411,6 +470,83 @@ export default function AddSlotCalendarModal({
         variant: "destructive",
         title: "Error",
         description: "Failed to add availability slot.",
+      });
+    }
+    
+    setIsSubmitting(false);
+  };
+
+  // Handle edit form submission
+  const onEditSubmit = async (data: SlotFormData) => {
+    if (!editingSlot) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Convert local times to UTC
+      const startUtc = dayjs.tz(data.startTime, tutorTimezone as string || 'UTC').utc().toISOString();
+      const endUtc = dayjs.tz(data.endTime, tutorTimezone as string || 'UTC').utc().toISOString();
+
+      const { error } = await supabase
+        .from("booking_slots")
+        .update({
+          start_time: startUtc,
+          end_time: endUtc,
+        })
+        .eq("id", editingSlot.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Slot updated!",
+        description: "Your availability slot has been updated.",
+      });
+
+      // Refresh data and close modal
+      queryClient.invalidateQueries({ queryKey: ["booking-slots"] });
+      setShowEditModal(false);
+      setEditingSlot(null);
+
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update availability slot.",
+      });
+    }
+    
+    setIsSubmitting(false);
+  };
+
+  // Handle slot deletion
+  const handleDeleteSlot = async () => {
+    if (!editingSlot) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await supabase
+        .from("booking_slots")
+        .delete()
+        .eq("id", editingSlot.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Slot deleted!",
+        description: "Your availability slot has been removed.",
+      });
+
+      // Refresh data and close modal
+      queryClient.invalidateQueries({ queryKey: ["booking-slots"] });
+      setShowEditModal(false);
+      setEditingSlot(null);
+
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete availability slot.",
       });
     }
     
@@ -590,7 +726,12 @@ export default function AddSlotCalendarModal({
                 height="100%"
                 selectable={true}
                 selectMirror={true}
+                editable={true}
+                eventStartEditable={true}
+                eventDurationEditable={true}
                 select={handleSelect}
+                eventClick={handleSlotClick}
+                eventChange={handleEventChange}
                 events={allEvents}
                 slotMinTime="06:00:00"
                 slotMaxTime="23:00:00"
@@ -605,9 +746,7 @@ export default function AddSlotCalendarModal({
                 eventDisplay="block"
                 eventOverlap={false}
                 selectOverlap={false}
-                eventInteractive={false}
                 unselectAuto={false}
-                eventClassNames="cursor-default"
               />
             </div>
 
@@ -660,6 +799,78 @@ export default function AddSlotCalendarModal({
           </div>
         )}
       </DialogContent>
+
+      {/* Edit Slot Modal */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Availability Slot</DialogTitle>
+          </DialogHeader>
+          
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="startTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Time</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="datetime-local" 
+                        {...field}
+                        min={new Date().toISOString().slice(0, 16)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="endTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Time</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="datetime-local" 
+                        {...field}
+                        min={editForm.watch('startTime') || new Date().toISOString().slice(0, 16)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-between pt-4">
+                <Button 
+                  type="button" 
+                  variant="destructive" 
+                  onClick={handleDeleteSlot}
+                  disabled={isSubmitting}
+                >
+                  Delete Slot
+                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowEditModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
