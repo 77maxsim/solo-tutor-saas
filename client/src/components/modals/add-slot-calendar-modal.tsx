@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -14,6 +17,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { getCurrentTutorId } from '@/lib/tutorHelpers';
@@ -35,6 +40,38 @@ import { isWithinInterval, parseISO } from 'date-fns';
 // Enable dayjs plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+// Mobile detection hook
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  return isMobile;
+};
+
+// Form schema for mobile fallback
+const slotFormSchema = z.object({
+  startTime: z.string().min(1, "Start time is required"),
+  endTime: z.string().min(1, "End time is required"),
+}).refine((data) => {
+  const start = new Date(data.startTime);
+  const end = new Date(data.endTime);
+  return end > start;
+}, {
+  message: "End time must be after start time",
+  path: ["endTime"],
+});
+
+type SlotFormData = z.infer<typeof slotFormSchema>;
 
 interface BookingSlot {
   id: string;
@@ -94,6 +131,16 @@ export default function AddSlotCalendarModal({
   const queryClient = useQueryClient();
   const { tutorTimezone } = useTimezone();
   const calendarRef = useRef<FullCalendar>(null);
+  const isMobile = useIsMobile();
+
+  // Form for mobile fallback
+  const form = useForm<SlotFormData>({
+    resolver: zodResolver(slotFormSchema),
+    defaultValues: {
+      startTime: '',
+      endTime: '',
+    },
+  });
 
   // Fetch existing booking slots
   const { data: bookingSlots = [] } = useQuery({
@@ -121,44 +168,42 @@ export default function AddSlotCalendarModal({
   });
 
   // Fetch existing sessions to show as unavailable times
-  const { data: sessions = [] } = useQuery({
-    queryKey: ['calendar-sessions-for-slots'],
+  const { data: existingSessions = [] } = useQuery({
+    queryKey: ["sessions"],
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
-        throw new Error('User not authenticated or tutor record not found');
+        throw new Error("User not authenticated or tutor record not found");
       }
 
       const { data, error } = await supabase
-        .from('sessions')
+        .from("sessions")
         .select(`
           id,
           session_start,
           session_end,
-          duration,
-          color,
-          status,
-          unassigned_name
+          student:students(name),
+          unassigned_name,
+          status
         `)
-        .eq('tutor_id', tutorId)
-        .neq('status', 'cancelled')
-        .gte('session_start', new Date().toISOString()) // Only future sessions
-        .order('session_start', { ascending: true });
+        .eq("tutor_id", tutorId)
+        .gte("session_start", new Date().toISOString())
+        .order("session_start", { ascending: true });
 
       if (error) {
-        console.error('Error fetching sessions:', error);
+        console.error("Error fetching sessions:", error);
         throw error;
       }
 
-      return data.map((session: any) => ({
+      return data.map(session => ({
         id: session.id,
         session_start: session.session_start,
         session_end: session.session_end,
-        student_name: undefined, // We don't need student names for slot creation
+        student_name: session.student?.[0]?.name,
         unassigned_name: session.unassigned_name,
-        color: session.color || '#3B82F6',
         status: session.status,
-        duration: session.duration
+        color: session.status === 'confirmed' ? '#3b82f6' : '#eab308', // Blue for confirmed, yellow for pending
+        duration: 0 // Calculated later
       })) as SessionWithStudent[];
     },
     enabled: open,
