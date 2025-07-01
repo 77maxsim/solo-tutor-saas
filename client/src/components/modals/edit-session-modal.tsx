@@ -23,6 +23,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
 import { TimePicker } from "@/components/ui/time-picker";
 import { useTimezone } from "@/contexts/TimezoneContext";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
@@ -117,7 +119,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
         tutor_timezone: tutorTimezone,
         is_recurring: isRecurring
       });
-      
+
       // Reset form first to clear any previous values
       form.reset({
         time: formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm'),
@@ -132,7 +134,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
   const convertToUTC = (existingDate: string, localTime: string, timezone: string) => {
     const datetimeStr = `${existingDate} ${localTime}`;
     const utcTimestamp = dayjs.tz(datetimeStr, timezone).utc();
-    
+
     console.log('🌍 Converting to UTC for edit:', {
       existing_date: existingDate,
       local_time: localTime,
@@ -140,13 +142,13 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       combined_local: datetimeStr,
       converted_utc: utcTimestamp.toISOString()
     });
-    
+
     return utcTimestamp;
   };
 
   const onSubmit = async (data: EditSessionForm) => {
     setIsSubmitting(true);
-    
+
     if (!tutorTimezone || !session) {
       toast({
         variant: "destructive",
@@ -156,7 +158,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       setIsSubmitting(false);
       return;
     }
-    
+
     try {
       // Convert local datetime to UTC for storage using tutor's timezone
       const startUTC = dayjs.utc(session.session_start).tz(tutorTimezone).hour(parseInt(data.time.split(':')[0])).minute(parseInt(data.time.split(':')[1])).utc();
@@ -207,7 +209,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['student-session-history'] });
-      
+
       // Reset form and close modal
       setTimeout(() => {
         form.reset();
@@ -225,6 +227,36 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       setIsSubmitting(false);
     }
   };
+
+  const handleDeleteSession = () => {
+    deleteSessionMutation.mutate();
+  };
+
+  const deleteSessionMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('id', session.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      toast({
+        title: "Session deleted",
+        description: "The session has been successfully deleted.",
+      });
+      onClose();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete session. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleCancel = () => {
     form.reset();
@@ -355,6 +387,23 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
               >
                 Cancel
               </Button>
+              <ConfirmActionModal
+            trigger={
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={deleteSessionMutation.isPending}
+              >
+                {deleteSessionMutation.isPending ? "Deleting..." : "Delete Session"}
+              </Button>
+            }
+            title="Delete Session"
+            description="Are you sure you want to delete this session? This action cannot be undone."
+            confirmText="Delete Session"
+            onConfirm={handleDeleteSession}
+            isDestructive={true}
+            disabled={deleteSessionMutation.isPending}
+          />
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Updating..." : "Update Session"}
               </Button>

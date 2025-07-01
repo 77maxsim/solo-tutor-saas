@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
 import {
   Table,
   TableBody,
@@ -83,7 +84,7 @@ export default function Students() {
   const queryClient = useQueryClient();
   const { tutorTimezone } = useTimezone();
   const { toast } = useToast();
-  
+
   // Modal states
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isEditStudentOpen, setIsEditStudentOpen] = useState(false);
@@ -300,10 +301,10 @@ export default function Students() {
       }
 
       console.log('Students page - fetching sessions for tutor:', tutorId);
-      
+
       // Use the query optimizer to determine the best approach
       const useOptimizedQuery = await shouldUseOptimizedQuery(tutorId);
-      
+
       if (useOptimizedQuery) {
         console.log('Students page - using optimized query pattern');
         return await getOptimizedSessions(tutorId);
@@ -395,14 +396,14 @@ export default function Students() {
         const sessionDate = new Date(session.session_start);
         const earnings = (session.duration / 60) * session.rate;
         const isPaid = session.paid === true;
-        
+
         // Only count earnings from paid sessions
         if (isPaid) {
           totalEarnings += earnings;
         }
-        
+
         totalDuration += session.duration;
-        
+
         if (sessionDate >= now) {
           upcomingSessions++;
         }
@@ -429,7 +430,7 @@ export default function Students() {
   };
 
   const studentSummaries = students && sessions ? calculateStudentSummaries(students, sessions) : [];
-  
+
 
 
   if (isLoading) {
@@ -570,7 +571,7 @@ export default function Students() {
                             >
                               {(() => {
                                 const avatarDisplay = getAvatarDisplay(student.avatarUrl);
-                                
+
                                 if (avatarDisplay.type === 'image') {
                                   return (
                                     <img
@@ -627,7 +628,7 @@ export default function Students() {
                               )}
                             </div>
                           </div>
-                          
+
 
                         </div>
                       </TableCell>

@@ -12,6 +12,7 @@ import { Coins, AlertTriangle, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
 
 interface UnpaidSession {
   id: string;
@@ -162,9 +163,7 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
   });
 
   const handleMarkAsPaid = (sessionId: string, studentName: string) => {
-    if (window.confirm(`Mark overdue session with ${studentName} as paid?`)) {
-      markAsPaidMutation.mutate(sessionId);
-    }
+    markAsPaidMutation.mutate(sessionId);
   };
 
   const getDaysOverdue = (sessionStart: string) => {
@@ -290,16 +289,25 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
                     <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full font-medium">
                       {formatCurrency(earnings, currency)}
                     </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 text-xs px-2 text-green-600 border-green-200 hover:bg-green-50"
-                      onClick={() => handleMarkAsPaid(session.id, session.student_name)}
+                    <ConfirmActionModal
+                      trigger={
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-6 text-xs px-2 text-green-600 border-green-200 hover:bg-green-50"
+                          disabled={markAsPaidMutation.isPending}
+                        >
+                          <Coins className="h-3 w-3 mr-1" />
+                          Mark Paid
+                        </Button>
+                      }
+                      title={`Mark session with ${session.student_name} as paid?`}
+                      description="This will move the session out of overdue payments."
+                      confirmText="Confirm"
+                      cancelText="Cancel"
+                      onConfirm={() => handleMarkAsPaid(session.id, session.student_name)}
                       disabled={markAsPaidMutation.isPending}
-                    >
-                      <Coins className="h-3 w-3 mr-1" />
-                      Mark Paid
-                    </Button>
+                    />
                   </div>
                 </div>
               );

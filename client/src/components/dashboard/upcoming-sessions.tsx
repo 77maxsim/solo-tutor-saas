@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { X, Coins, Repeat } from "lucide-react";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
 
 interface Session {
   id: string;
@@ -180,9 +181,30 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
   };
 
   const handleMarkAsPaid = (sessionId: string, studentName: string) => {
-    if (window.confirm(`Mark session with ${studentName} as paid?`)) {
+    // if (window.confirm(`Mark session with ${studentName} as paid?`)) {
+    //   markAsPaidMutation.mutate(sessionId);
+    // }
+    const onConfirm = () => {
       markAsPaidMutation.mutate(sessionId);
-    }
+    };
+
+    return (
+      <ConfirmActionModal
+        title="Mark session as paid?"
+        description={`Mark session with ${studentName} as paid?`}
+        onConfirm={onConfirm}
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-6 text-xs px-2 text-green-600 dark:text-green-400 border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
+          disabled={markAsPaidMutation.isPending}
+        >
+          <Coins className="h-3 w-3 mr-1" />
+          Mark Paid
+        </Button>
+      </ConfirmActionModal>
+    );
   };
 
   if (isLoading) {
@@ -268,15 +290,15 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
         <div className="space-y-4">
           {sessions.map((session, index) => {
             const calculatedPrice = (session.duration / 60) * session.rate;
-            
+
             // Create full datetime for the session using UTC timestamp
             const sessionDateTime = new Date(session.session_start);
             const createdDate = new Date(session.created_at);
             const now = new Date();
-            
+
             // Session is "logged late" if it was created after the session time had already passed
             const isLoggedLate = createdDate > sessionDateTime && now > sessionDateTime;
-            
+
             return (
               <div key={session.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 dark:bg-gray-800/50 hover:bg-muted/70 dark:hover:bg-gray-800/70 transition-colors">
                 <div className={`w-2 h-2 rounded-full ${
@@ -325,16 +347,7 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
                       Paid
                     </span>
                   ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 text-xs px-2 text-green-600 dark:text-green-400 border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
-                      onClick={() => handleMarkAsPaid(session.id, session.student_name)}
-                      disabled={markAsPaidMutation.isPending}
-                    >
-                      <Coins className="h-3 w-3 mr-1" />
-                      Mark Paid
-                    </Button>
+                    handleMarkAsPaid(session.id, session.student_name)
                   )}
                   <Button
                     variant="ghost"
