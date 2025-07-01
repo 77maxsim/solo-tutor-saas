@@ -72,13 +72,7 @@ export default function AvailabilityPage() {
     fetchTutorId();
   }, []);
 
-  const form = useForm<SlotFormData>({
-    resolver: zodResolver(slotFormSchema),
-    defaultValues: {
-      startTime: "",
-      endTime: "",
-    },
-  });
+
 
   // Fetch booking slots for the current tutor
   const { data: bookingSlots, isLoading, error } = useQuery({
@@ -104,102 +98,7 @@ export default function AvailabilityPage() {
     },
   });
 
-  // Add new booking slot mutation
-  const addSlotMutation = useMutation({
-    mutationFn: async (data: SlotFormData) => {
-      const tutorId = await getCurrentTutorId();
-      if (!tutorId) {
-        throw new Error("User not authenticated");
-      }
 
-      // Get effective timezone - fetch from DB if context is not available
-      let effectiveTimezone = tutorTimezone || 'Asia/Shanghai';
-      
-      if (!tutorTimezone) {
-        console.log('Timezone not available from context, fetching from database...');
-        try {
-          const { data: tutorData } = await supabase
-            .from('tutors')
-            .select('timezone')
-            .eq('id', tutorId)
-            .single();
-          
-          effectiveTimezone = tutorData?.timezone || 'Asia/Shanghai';
-          console.log('Fetched timezone from database:', {
-            contextTimezone: tutorTimezone,
-            dbTimezone: tutorData?.timezone,
-            effectiveTimezone
-          });
-        } catch (error) {
-          console.error('Failed to fetch timezone from database:', error);
-          effectiveTimezone = 'Asia/Shanghai';
-        }
-      }
-      
-      // Convert tutor's local time to UTC properly
-      const startTimeUTC = dayjs.tz(data.startTime, effectiveTimezone).utc().toDate();
-      const endTimeUTC = dayjs.tz(data.endTime, effectiveTimezone).utc().toDate();
-
-      console.log('Slot creation timezone conversion:', {
-        contextTimezone: tutorTimezone,
-        effectiveTimezone,
-        localStart: data.startTime,
-        localEnd: data.endTime,
-        utcStart: startTimeUTC.toISOString(),
-        utcEnd: endTimeUTC.toISOString(),
-        verificationLocal: dayjs.utc(startTimeUTC).tz(effectiveTimezone || 'UTC').format('YYYY-MM-DD HH:mm')
-      });
-
-      // Check for overlapping active slots
-      if (bookingSlots) {
-        const hasOverlap = bookingSlots.some((slot) => {
-          if (!slot.is_active) return false;
-          
-          const slotStart = parseISO(slot.start_time);
-          const slotEnd = parseISO(slot.end_time);
-          
-          return (
-            isWithinInterval(startTimeUTC, { start: slotStart, end: slotEnd }) ||
-            isWithinInterval(endTimeUTC, { start: slotStart, end: slotEnd }) ||
-            isWithinInterval(slotStart, { start: startTimeUTC, end: endTimeUTC })
-          );
-        });
-
-        if (hasOverlap) {
-          throw new Error("New slot overlaps with an existing active slot");
-        }
-      }
-
-      const { error: insertError } = await supabase
-        .from("booking_slots")
-        .insert({
-          tutor_id: tutorId,
-          start_time: startTimeUTC.toISOString(),
-          end_time: endTimeUTC.toISOString(),
-          is_active: true,
-        });
-
-      if (insertError) {
-        throw insertError;
-      }
-    },
-    onSuccess: () => {
-      toast({
-        title: "Slot Added",
-        description: "New booking slot has been created successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["booking-slots"] });
-      setShowAddDialog(false);
-      form.reset();
-    },
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
-    },
-  });
 
   // Toggle slot active status mutation
   const toggleSlotMutation = useMutation({
@@ -258,9 +157,7 @@ export default function AvailabilityPage() {
     },
   });
 
-  const onSubmit = (data: SlotFormData) => {
-    addSlotMutation.mutate(data);
-  };
+
 
   const handleToggleSlot = (slotId: string, currentStatus: boolean) => {
     toggleSlotMutation.mutate({ slotId, isActive: !currentStatus });
@@ -305,19 +202,9 @@ export default function AvailabilityPage() {
     }
   };
 
-  // Generate default datetime values for form
-  const getDefaultDateTime = (hoursOffset: number = 1) => {
-    const date = new Date();
-    date.setHours(date.getHours() + hoursOffset, 0, 0, 0);
-    return date.toISOString().slice(0, 16);
-  };
 
-  useEffect(() => {
-    if (showAddDialog) {
-      form.setValue("startTime", getDefaultDateTime(1));
-      form.setValue("endTime", getDefaultDateTime(2));
-    }
-  }, [showAddDialog, form]);
+
+
 
   if (isLoading) {
     return (
