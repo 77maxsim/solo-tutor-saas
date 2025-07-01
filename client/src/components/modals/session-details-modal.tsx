@@ -89,7 +89,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       if (applyToSeries && session.recurrence_id) {
         // Update all future sessions in the series
         const sessionDate = new Date(session.session_start);
-        
+
         const { error } = await supabase
           .from('sessions')
           .update({ notes, color })
@@ -121,17 +121,17 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       const message = data.type === 'series' 
         ? "Session data updated for all future sessions in this series"
         : "Session data updated successfully";
-        
+
       toast({
         title: "Session Updated",
         description: message,
       });
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
-      
+
       handleClose();
     },
     onError: (error: any) => {
@@ -150,9 +150,9 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
   // Delete session function - handles individual session deletion
   const handleDeleteSession = async () => {
     if (!session?.id) return;
-    
+
     setIsDeleting(true);
-    
+
     try {
       const { error } = await supabase
         .from('sessions')
@@ -205,233 +205,235 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-md sm:max-w-lg md:max-w-xl max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             📄 Session Details
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Session Info */}
-          <div className="space-y-3 p-4 bg-accent/50 rounded-lg">
-            <div className="flex items-center gap-2 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{session.student_name}</span>
-            </div>
-            
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {session.session_start && tutorTimezone
-                  ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MM/dd/yyyy')
-                  : session.session_start ? dayjs.utc(session.session_start).format('YYYY-MM-DD') : 'N/A'}
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {tutorTimezone
-                  ? (() => {
-                      const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
-                      const endTime = formatUtcToTutorTimezone(session.session_end, tutorTimezone, 'HH:mm');
-                      const duration = calculateDurationMinutes(session.session_start, session.session_end);
-                      console.log('🔍 Session details modal time display:', {
-                        student: session.student_name,
-                        utc_start: session.session_start,
-                        utc_end: session.session_end,
-                        tutor_timezone: tutorTimezone,
-                        displayed_times: `${startTime} - ${endTime}`
-                      });
-                      return `${startTime} - ${endTime} (${duration} minutes)`;
-                    })()
-                  : 'Loading timezone...'}
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-2 text-sm">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <span>{formatCurrency(earnings, 'USD')}</span>
-            </div>
-          </div>
-
-          {/* Notes Section */}
-          <div className="space-y-3">
-            <div 
-              className="flex items-center justify-between cursor-pointer p-2 rounded-md hover:bg-accent/50 transition-colors"
-              onClick={() => setShowNotesSection(!showNotesSection)}
-              role="button"
-              tabIndex={0}
-              aria-expanded={showNotesSection}
-              aria-controls="notes-section-content"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setShowNotesSection(!showNotesSection);
-                }
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-sm">📝</span>
-                <Label className="text-sm font-medium cursor-pointer">
-                  {showNotesSection || (notes && notes.trim()) ? 'Session Notes' : 'Add Session Notes'}
-                </Label>
+        <div className="overflow-y-auto flex-1 px-1">
+          <div className="space-y-4 pb-4">
+            {/* Session Info */}
+            <div className="space-y-3 p-4 bg-accent/50 rounded-lg">
+              <div className="flex items-center gap-2 text-sm">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{session.student_name}</span>
               </div>
-              <div className="flex items-center gap-2">
-                {!showNotesSection && !(notes && notes.trim()) && (
-                  <Plus className="h-4 w-4 text-muted-foreground" />
-                )}
-                <ChevronDown 
-                  className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
-                    showNotesSection ? 'rotate-180' : ''
-                  }`}
-                />
-              </div>
-            </div>
-            
-            <div 
-              id="notes-section-content"
-              className={`overflow-hidden transition-all duration-200 ease-in-out ${
-                showNotesSection ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-              }`}
-            >
-              <div className="space-y-3 pt-1">
-                <Textarea
-                  id="session-notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Add notes about this session..."
-                  rows={4}
-                  className="resize-none"
-                />
-                
-                {/* Apply to Series Checkbox */}
-                {session.recurrence_id && (
-                  <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <Checkbox
-                      id="apply-to-series"
-                      checked={applyToSeries}
-                      onCheckedChange={(checked) => setApplyToSeries(!!checked)}
-                    />
-                    <Label htmlFor="apply-to-series" className="text-sm">
-                      Apply note to all future sessions in this series
-                    </Label>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
 
-          {/* Session Color */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Session Color</Label>
-            <div className="flex gap-3 flex-wrap">
-              {[
-                { color: "#3B82F6", name: "Blue" },
-                { color: "#F87171", name: "Red" },
-                { color: "#34D399", name: "Green" },
-                { color: "#FBBF24", name: "Yellow" },
-                { color: "#A78BFA", name: "Purple" },
-                { color: "#6B7280", name: "Gray" },
-              ].map((colorOption) => (
-                <button
-                  key={colorOption.color}
-                  type="button"
-                  onClick={() => setSessionColor(colorOption.color)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                    sessionColor === colorOption.color 
-                      ? 'border-gray-900 dark:border-gray-100 ring-2 ring-offset-2 ring-gray-400 scale-110' 
-                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-500'
-                  }`}
-                  style={{ backgroundColor: colorOption.color }}
-                  title={colorOption.name}
-                  aria-label={`Select ${colorOption.name} color`}
-                />
-              ))}
-            </div>
-          </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span>
+                  {session.session_start && tutorTimezone
+                    ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MM/dd/yyyy')
+                    : session.session_start ? dayjs.utc(session.session_start).format('YYYY-MM-DD') : 'N/A'}
+                </span>
+              </div>
 
-          {/* Session Actions */}
-          <div className="space-y-4 pt-4 border-t">
-            {/* This Session Section */}
-            <div className="border rounded-md p-3 bg-gray-50/50 dark:bg-gray-800/50">
-              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">This Session</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  onClick={() => {
-                    console.log('🔧 Edit this session button clicked');
-                    // Dispatch edit session event
-                    window.dispatchEvent(new CustomEvent('editSession', { 
-                      detail: { session } 
-                    }));
-                    handleClose();
-                  }}
-                  className="flex items-center justify-center gap-2 h-10"
-                >
-                  <Pencil className="w-4 h-4" />
-                  <span className="text-sm">Edit</span>
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  onClick={handleDeleteSession}
-                  disabled={isDeleting}
-                  className="flex items-center justify-center gap-2 h-10"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span className="text-sm">
-                    {isDeleting ? "Canceling..." : "Cancel"}
-                  </span>
-                </Button>
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span>
+                  {tutorTimezone
+                    ? (() => {
+                        const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
+                        const endTime = formatUtcToTutorTimezone(session.session_end, tutorTimezone, 'HH:mm');
+                        const duration = calculateDurationMinutes(session.session_start, session.session_end);
+                        console.log('🔍 Session details modal time display:', {
+                          student: session.student_name,
+                          utc_start: session.session_start,
+                          utc_end: session.session_end,
+                          tutor_timezone: tutorTimezone,
+                          displayed_times: `${startTime} - ${endTime}`
+                        });
+                        return `${startTime} - ${endTime} (${duration} minutes)`;
+                      })()
+                    : 'Loading timezone...'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-sm">
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <span>{formatCurrency(earnings, 'USD')}</span>
               </div>
             </div>
 
-            {/* Entire Series Section - only show if session has recurrence_id */}
-            {session.recurrence_id && (
-              <div className="border rounded-md p-3 bg-blue-50/50 dark:bg-blue-950/50">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Entire Series</h4>
-                <div className="grid grid-cols-1 gap-3">
+            {/* Notes Section */}
+            <div className="space-y-3">
+              <div 
+                className="flex items-center justify-between cursor-pointer p-2 rounded-md hover:bg-accent/50 transition-colors"
+                onClick={() => setShowNotesSection(!showNotesSection)}
+                role="button"
+                tabIndex={0}
+                aria-expanded={showNotesSection}
+                aria-controls="notes-section-content"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setShowNotesSection(!showNotesSection);
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">📝</span>
+                  <Label className="text-sm font-medium cursor-pointer">
+                    {showNotesSection || (notes && notes.trim()) ? 'Session Notes' : 'Add Session Notes'}
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!showNotesSection && !(notes && notes.trim()) && (
+                    <Plus className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <ChevronDown 
+                    className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                      showNotesSection ? 'rotate-180' : ''
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div 
+                id="notes-section-content"
+                className={`overflow-hidden transition-all duration-200 ease-in-out ${
+                  showNotesSection ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                }`}
+              >
+                <div className="space-y-3 pt-1">
+                  <Textarea
+                    id="session-notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Add notes about this session..."
+                    rows={4}
+                    className="resize-none"
+                  />
+
+                  {/* Apply to Series Checkbox */}
+                  {session.recurrence_id && (
+                    <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <Checkbox
+                        id="apply-to-series"
+                        checked={applyToSeries}
+                        onCheckedChange={(checked) => setApplyToSeries(!!checked)}
+                      />
+                      <Label htmlFor="apply-to-series" className="text-sm">
+                        Apply note to all future sessions in this series
+                      </Label>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Session Color */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Session Color</Label>
+              <div className="flex gap-3 flex-wrap">
+                {[
+                  { color: "#3B82F6", name: "Blue" },
+                  { color: "#F87171", name: "Red" },
+                  { color: "#34D399", name: "Green" },
+                  { color: "#FBBF24", name: "Yellow" },
+                  { color: "#A78BFA", name: "Purple" },
+                  { color: "#6B7280", name: "Gray" },
+                ].map((colorOption) => (
+                  <button
+                    key={colorOption.color}
+                    type="button"
+                    onClick={() => setSessionColor(colorOption.color)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                      sessionColor === colorOption.color 
+                        ? 'border-gray-900 dark:border-gray-100 ring-2 ring-offset-2 ring-gray-400 scale-110' 
+                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-500'
+                    }`}
+                    style={{ backgroundColor: colorOption.color }}
+                    title={colorOption.name}
+                    aria-label={`Select ${colorOption.name} color`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Session Actions */}
+            <div className="space-y-4 pt-4 border-t">
+              {/* This Session Section */}
+              <div className="border rounded-md p-3 bg-gray-50/50 dark:bg-gray-800/50">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">This Session</h4>
+                <div className="grid grid-cols-2 gap-3">
                   <Button 
                     variant="secondary" 
                     size="sm" 
                     onClick={() => {
-                      console.log('🔧 Edit future sessions button clicked');
-                      // Dispatch edit series event
-                      window.dispatchEvent(new CustomEvent('editSeries', { 
+                      console.log('🔧 Edit this session button clicked');
+                      // Dispatch edit session event
+                      window.dispatchEvent(new CustomEvent('editSession', { 
                         detail: { session } 
                       }));
                       handleClose();
                     }}
                     className="flex items-center justify-center gap-2 h-10"
                   >
-                    <Repeat className="w-4 h-4" />
-                    <span className="text-sm">Edit future sessions</span>
+                    <Pencil className="w-4 h-4" />
+                    <span className="text-sm">Edit</span>
                   </Button>
                   <Button 
                     variant="destructive" 
                     size="sm" 
-                    onClick={() => {
-                      // Dispatch cancel series event
-                      window.dispatchEvent(new CustomEvent('cancelSeries', { 
-                        detail: { session } 
-                      }));
-                      handleClose();
-                    }}
+                    onClick={handleDeleteSession}
+                    disabled={isDeleting}
                     className="flex items-center justify-center gap-2 h-10"
                   >
                     <Trash2 className="w-4 h-4" />
-                    <span className="text-sm">Cancel future sessions</span>
+                    <span className="text-sm">
+                      {isDeleting ? "Canceling..." : "Cancel"}
+                    </span>
                   </Button>
                 </div>
               </div>
-            )}
+
+              {/* Entire Series Section - only show if session has recurrence_id */}
+              {session.recurrence_id && (
+                <div className="border rounded-md p-3 bg-blue-50/50 dark:bg-blue-950/50">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Entire Series</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      onClick={() => {
+                        console.log('🔧 Edit future sessions button clicked');
+                        // Dispatch edit series event
+                        window.dispatchEvent(new CustomEvent('editSeries', { 
+                          detail: { session } 
+                        }));
+                        handleClose();
+                      }}
+                      className="flex items-center justify-center gap-2 h-10"
+                    >
+                      <Repeat className="w-4 h-4" />
+                      <span className="text-sm">Edit future sessions</span>
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => {
+                        // Dispatch cancel series event
+                        window.dispatchEvent(new CustomEvent('cancelSeries', { 
+                          detail: { session } 
+                        }));
+                        handleClose();
+                      }}
+                      className="flex items-center justify-center gap-2 h-10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span className="text-sm">Cancel future sessions</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
+        <div className="flex justify-end gap-2 pt-4 border-t bg-background flex-shrink-0">
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
