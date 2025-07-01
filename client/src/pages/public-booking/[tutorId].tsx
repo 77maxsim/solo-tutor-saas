@@ -188,6 +188,7 @@ export default function PublicBookingPage() {
             console.log('Tutor data fetched successfully:', tutorData);
             break;
           }
+        
         } catch (err) {
           console.error(`Tutor fetch attempt ${attempt + 1} exception:`, {
             error: err,
@@ -203,102 +204,50 @@ export default function PublicBookingPage() {
       }
 
       if (!tutorData) {
-        throw new Error(`Tutor not found after ${maxRetries} attempts: ${tutorError?.message || 'Unknown error'}`);
+        throw tutorError || new Error('Failed to fetch tutor data after all attempts');
       }
+
+      // Fetch booking slots
+      const { data: slotsData, error: slotsError } = await supabase
+        .from('booking_slots')
+        .select('*')
+        .eq('tutor_id', tutorId)
+        .eq('is_active', true)
+        .gte('end_time', new Date().toISOString());
+
+      if (slotsError) {
+        console.error('Error fetching booking slots:', slotsError);
+        throw slotsError;
+      }
+
+      // Fetch existing sessions to check availability
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from('sessions')
+        .select('session_start, status')
+        .eq('tutor_id', tutorId)
+        .gte('session_start', new Date().toISOString());
+
+      if (sessionsError) {
+        console.error('Error fetching existing sessions:', sessionsError);
+        throw sessionsError;
+      }
+
+      // Transform session data to match expected format
+      const transformedSessions = sessionsData.map(session => ({
+        start_time: session.session_start,
+        status: session.status
+      }));
 
       setTutor(tutorData);
+      setBookingSlots(slotsData || []);
+      setExistingSessions(transformedSessions || []);
 
-      // Fetch available booking slots with retry
-      let slotsData = [];
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        try {
-          console.log(`Fetching booking slots - attempt ${attempt + 1}`);
-          const result = await supabase
-            .from('booking_slots')
-            .select('id, start_time, end_time, is_active, tutor_id')
-            .eq('tutor_id', tutorId)
-            .eq('is_active', true)
-            .order('start_time', { ascending: true });
-
-          if (result.error) {
-            console.error(`Slots fetch attempt ${attempt + 1} failed:`, result.error);
-            if (attempt < maxRetries - 1) {
-              await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
-              continue;
-            }
-          } else {
-            slotsData = result.data || [];
-            console.log('Booking slots fetched successfully:', slotsData.length);
-            break;
-          }
-        } catch (err) {
-          console.error(`Slots fetch attempt ${attempt + 1} exception:`, err);
-          if (attempt < maxRetries - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
-            continue;
-          }
-        }
-      }
-
-      // Filter out past slots - check against student's timezone
-      const futureSlots = slotsData.filter(slot => {
-        const utcSlotTime = dayjs.utc(slot.start_time);
-        const localSlotTime = utcSlotTime.tz(studentTimezone);
-        const isInFuture = localSlotTime.isAfter(dayjs().tz(studentTimezone));
-        
-        console.log('Slot time check:', {
-          slotId: slot.id,
-          utcTime: utcSlotTime.format(),
-          localTime: localSlotTime.format(),
-          currentTime: dayjs().tz(studentTimezone).format(),
-          isInFuture,
-          studentTimezone
-        });
-        
-        return isInFuture;
+      console.log('Mobile booking - Data fetched successfully:', {
+        tutor: tutorData?.full_name,
+        slotsCount: slotsData?.length || 0,
+        sessionsCount: transformedSessions?.length || 0,
+        studentTimezone
       });
-      setBookingSlots(futureSlots);
-
-      // Fetch existing sessions to check for conflicts (with retry)
-      let sessionsData = [];
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        try {
-          console.log(`Fetching existing sessions - attempt ${attempt + 1}`);
-          const result = await supabase
-            .from('sessions')
-            .select('session_start, session_end, status')
-            .eq('tutor_id', tutorId)
-            .neq('status', 'cancelled');
-
-          if (result.error) {
-            console.error(`Sessions fetch attempt ${attempt + 1} failed:`, result.error);
-            if (attempt < maxRetries - 1) {
-              await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
-              continue;
-            }
-          } else {
-            sessionsData = result.data || [];
-            console.log('Existing sessions fetched successfully:', sessionsData.length);
-            break;
-          }
-        } catch (err) {
-          console.error(`Sessions fetch attempt ${attempt + 1} exception:`, err);
-          if (attempt < maxRetries - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
-            continue;
-          }
-        }
-      }
-
-      // Convert session format to match booking slots
-      const sessions = sessionsData.map(session => ({
-        start_time: session.session_start,
-        end_time: session.session_end,
-        status: 'booked',
-      }));
-      setExistingSessions(sessions);
-
-      console.log('Mobile booking - All data fetched successfully');
 
     } catch (error) {
       console.error('Mobile booking - Error fetching data:', {
@@ -328,351 +277,6 @@ export default function PublicBookingPage() {
     }
   };
 
-  const isSlotBooked = (slotStartTime: string) => {
-    return existingSessions.some(session => 
-      session.start_time === slotStartTime
-    );
-  };
-
-  const getAvailableSlots = () => {
-    const filtered = bookingSlots.filter(slot => !isSlotBooked(slot.start_time));
-    console.log('Available slots filtered:', {
-      totalSlots: bookingSlots.length,
-      availableSlots: filtered.length,
-      studentTimezone,
-      sampleConversion: filtered[0] ? {
-        utc: filtered[0].start_time,
-        local: dayjs.utc(filtered[0].start_time).tz(studentTimezone).format('YYYY-MM-DD HH:mm A')
-      } : null
-    });
-    return filtered;
-  };
-
-  const handleSlotSelect = (slotId: string) => {
-    setSelectedSlot(slotId);
-    setValue("selectedSlotId", slotId);
-    
-    // Generate available start times for this slot
-    const slot = bookingSlots.find(s => s.id === slotId);
-    if (slot) {
-      const startTimes = generateAvailableStartTimes(slot);
-      setAvailableStartTimes(startTimes);
-      
-      // Reset time selection
-      setSelectedStartTime("");
-      setSelectedDuration(60);
-      setValue("selectedStartTime", "");
-      setValue("selectedDuration", 60);
-      
-      // Open time picker modal
-      setShowTimePickerModal(true);
-    }
-  };
-
-  const generateAvailableStartTimes = (slot: BookingSlot): string[] => {
-    // Convert UTC slot times to student's timezone
-    const utcStartTime = dayjs.utc(slot.start_time);
-    const utcEndTime = dayjs.utc(slot.end_time);
-    const localStartTime = utcStartTime.tz(studentTimezone);
-    const localEndTime = utcEndTime.tz(studentTimezone);
-    
-    console.log('Generating time options for student:', {
-      utcSlot: `${utcStartTime.format()} - ${utcEndTime.format()}`,
-      localSlot: `${localStartTime.format()} - ${localEndTime.format()}`,
-      studentTimezone
-    });
-    
-    const times: string[] = [];
-    
-    // Generate 30-minute intervals in student's local timezone
-    let current = localStartTime.clone();
-    while (current.isBefore(localEndTime)) {
-      const timeString = current.format('HH:mm');
-      times.push(timeString);
-      current = current.add(30, 'minutes');
-    }
-    
-    console.log('Generated time options:', times);
-    return times;
-  };
-
-  const getAvailableDurations = (startTime: string): number[] => {
-    if (!selectedSlot || !startTime) return [];
-    
-    const slot = bookingSlots.find(s => s.id === selectedSlot);
-    if (!slot) return [];
-    
-    // Convert slot times to student's timezone
-    const utcSlotStart = dayjs.utc(slot.start_time);
-    const utcSlotEnd = dayjs.utc(slot.end_time);
-    const localSlotStart = utcSlotStart.tz(studentTimezone);
-    const localSlotEnd = utcSlotEnd.tz(studentTimezone);
-    
-    // Create selected start time in student's timezone
-    const slotDate = localSlotStart.format('YYYY-MM-DD');
-    const selectedLocalStart = dayjs.tz(`${slotDate}T${startTime}:00`, studentTimezone);
-    
-    // Calculate available durations
-    const maxMinutes = localSlotEnd.diff(selectedLocalStart, 'minutes');
-    const durations: number[] = [];
-    
-    // Add 30-minute intervals up to the maximum
-    for (let duration = 30; duration <= maxMinutes && duration <= 120; duration += 30) {
-      durations.push(duration);
-    }
-    
-    return durations;
-  };
-
-  const handleStartTimeSelect = (startTime: string) => {
-    setSelectedStartTime(startTime);
-    setValue("selectedStartTime", startTime);
-    
-    // Reset duration and set to maximum available or 60 minutes
-    const availableDurations = getAvailableDurations(startTime);
-    const defaultDuration = availableDurations.includes(60) ? 60 : availableDurations[0] || 30;
-    setSelectedDuration(defaultDuration);
-    setValue("selectedDuration", defaultDuration);
-  };
-
-  const handleDurationSelect = (duration: number) => {
-    setSelectedDuration(duration);
-    setValue("selectedDuration", duration);
-  };
-
-  const isTimeSlotAvailable = (startTime: string, duration: number): boolean => {
-    if (!selectedSlot) return false;
-    
-    const slot = bookingSlots.find(s => s.id === selectedSlot);
-    if (!slot) return false;
-    
-    // Convert student's local time back to UTC for comparison with existing sessions
-    const slotDate = dayjs.utc(slot.start_time).format('YYYY-MM-DD');
-    const localDateTime = dayjs.tz(`${slotDate}T${startTime}:00`, studentTimezone);
-    const utcDateTime = localDateTime.utc();
-    const requestedStartUTC = utcDateTime.toDate();
-    const requestedEndUTC = new Date(requestedStartUTC.getTime() + duration * 60 * 1000);
-    
-    // Check if this exact time conflicts with existing sessions
-    return !existingSessions.some(session => {
-      if (!session.start_time) return false;
-      const sessionStart = new Date(session.start_time);
-      
-      // Simple overlap check - for now we'll just check start times
-      return Math.abs(sessionStart.getTime() - requestedStartUTC.getTime()) < 30 * 60 * 1000; // 30 min buffer
-    });
-  };
-
-  const handleTimePickerSubmit = () => {
-    if (!selectedStartTime || !selectedDuration) {
-      toast({
-        variant: "destructive",
-        title: "Missing Selection",
-        description: "Please select both start time and duration.",
-      });
-      return;
-    }
-    
-    setValue("selectedStartTime", selectedStartTime);
-    setValue("selectedDuration", selectedDuration);
-    setShowTimePickerModal(false);
-    
-    console.log('Time picker selection:', {
-      startTime: selectedStartTime,
-      duration: selectedDuration,
-      slot: selectedSlot
-    });
-  };
-
-  const onSubmit = async (data: BookingFormData) => {
-    try {
-      setSubmitting(true);
-      console.log('Form submission started:', data);
-
-      const slot = bookingSlots.find(s => s.id === data.selectedSlotId);
-      if (!slot) {
-        throw new Error('Selected slot not found');
-      }
-
-      // Validate that start time and duration are selected
-      if (!data.selectedStartTime || !data.selectedDuration) {
-        throw new Error('Please select a start time and duration');
-      }
-
-      // Check if the selected time is still available
-      if (!isTimeSlotAvailable(data.selectedStartTime, data.selectedDuration)) {
-        toast({
-          variant: "destructive",
-          title: "Time Slot Unavailable",
-          description: "This time slot is no longer available. Please select a different time.",
-        });
-        return;
-      }
-
-      // Convert student's local time selection back to UTC for storage
-      const slotDate = dayjs.utc(slot.start_time).format('YYYY-MM-DD');
-      const localDateTime = dayjs.tz(`${slotDate}T${data.selectedStartTime}:00`, studentTimezone);
-      const utcDateTime = localDateTime.utc();
-      
-      console.log('Booking submission timezone conversion:', {
-        studentTimezone,
-        selectedTime: data.selectedStartTime,
-        slotDate,
-        localDateTime: localDateTime.format(),
-        utcDateTime: utcDateTime.format(),
-        finalDate: utcDateTime.format('YYYY-MM-DD'),
-        finalTime: utcDateTime.format('HH:mm')
-      });
-
-      const duration = data.selectedDuration;
-      const sessionStart = utcDateTime.toISOString();
-      const sessionEnd = utcDateTime.add(duration, 'minutes').toISOString();
-
-      // Prepare session payload using correct field names from Drizzle schema
-      const sessionPayload = {
-        tutor_id: tutorId,
-        student_id: null,
-        session_start: sessionStart,
-        session_end: sessionEnd,
-        duration: duration,
-        rate: "0", // Must be string for decimal field
-        paid: false,
-        unassigned_name: data.name,
-        notes: `Booking request from ${data.name}`,
-        status: 'pending'
-      };
-
-      console.log("Submitting session:", sessionPayload);
-      
-      // Add debug toast
-      toast({
-        title: "Submitting Booking...",
-        description: `Booking ${data.name} for ${data.selectedStartTime} (${duration} min)`,
-      });
-
-      // Create session record
-      const { error: sessionError } = await supabase
-        .from('sessions')
-        .insert(sessionPayload);
-
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      setBookingSuccess(true);
-      toast({
-        title: "Booking Request Submitted!",
-        description: "Your booking request has been sent to the tutor. They will contact you soon.",
-      });
-
-      // Refresh available slots
-      await fetchTutorAndSlots();
-
-    } catch (error) {
-      console.error('Error submitting booking:', {
-        error,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-        sessionPayload
-      });
-      toast({
-        variant: "destructive",
-        title: "Booking Failed",
-        description: `Could not submit your booking request. ${error.message || 'Please try again.'}`,
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-        <div className="max-w-2xl mx-auto px-4">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-96" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
-              <div className="text-center text-sm text-gray-500 mt-4">
-                Loading booking information...
-                <br />
-                <span className="text-xs">This may take a moment on mobile devices</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (!tutor) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-        <div className="max-w-2xl mx-auto px-4">
-          <Card>
-            <CardContent className="text-center py-12">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Tutor Not Found
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                The tutor you're looking for could not be found.
-              </p>
-              <p className="text-sm text-red-500 mb-6">
-                Error: Could not load booking information. Please try again.
-              </p>
-              <Button 
-                onClick={() => {
-                  setTutor(null);
-                  setLoading(true);
-                  fetchTutorAndSlots();
-                }}
-                variant="outline"
-              >
-                Retry
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (bookingSuccess) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-        <div className="max-w-2xl mx-auto px-4">
-          <Card>
-            <CardContent className="text-center py-12">
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Booking Request Submitted!
-              </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-                Thank you for your booking request. {tutor.full_name} will review your request and contact you soon.
-              </p>
-              <Button 
-                onClick={() => setBookingSuccess(false)}
-                variant="outline"
-              >
-                Book Another Session
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  const availableSlots = getAvailableSlots();
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-2xl mx-auto px-4">
@@ -680,7 +284,7 @@ export default function PublicBookingPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-2xl">
               <User className="h-6 w-6" />
-              Book a Session with {tutor.full_name}
+              Book a Session with {tutor?.full_name || 'Loading...'}
             </CardTitle>
             <p className="text-gray-600 dark:text-gray-400">
               Select an available time slot and enter your name to request a booking.
@@ -688,365 +292,54 @@ export default function PublicBookingPage() {
           </CardHeader>
           
           <CardContent className="pt-0">
-            {/* Tutor Profile Section */}
-            <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-100 dark:border-blue-800">
-              <Avatar className="h-16 w-16 sm:h-20 sm:w-20 ring-4 ring-white dark:ring-gray-800 shadow-lg">
-                <AvatarImage 
-                  src={tutor.avatar_url} 
-                  alt={tutor.full_name}
-                  className="object-cover"
-                />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold text-lg sm:text-xl">
-                  {getInitials(tutor.full_name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                  {tutor.full_name}
-                </h2>
-                <p className="text-blue-600 dark:text-blue-400 text-sm sm:text-base font-medium flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4" />
-                  Certified tutor – Book a session below
-                </p>
-              </div>
-            </div>
-            
-            {/* Student Timezone Selector */}
-            <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <Globe className="w-5 h-5 text-blue-600" />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-blue-900 dark:text-blue-200">Your Timezone</p>
-                        <p className="text-xs text-blue-700 dark:text-blue-400">
-                          All times shown in: {getTimezoneDisplayName(studentTimezone)}
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowTimezoneSelector(!showTimezoneSelector)}
-                        className="text-blue-700 border-blue-300 hover:bg-blue-100 dark:text-blue-300 dark:border-blue-600 dark:hover:bg-blue-900"
-                      >
-                        Change
-                      </Button>
-                    </div>
-                    
-                    {showTimezoneSelector && (
-                      <div className="mt-3">
-                        <Select
-                          value={studentTimezone}
-                          onValueChange={(value) => {
-                            setStudentTimezone(value);
-                            setShowTimezoneSelector(false);
-                          }}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select your timezone" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[200px]">
-                            {Object.entries(TIMEZONE_GROUPS).map(([region, timezones]) => (
-                              <div key={region}>
-                                <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                                  {region}
-                                </div>
-                                {timezones.map((timezone) => (
-                                  <SelectItem key={timezone.value} value={timezone.value}>
-                                    {timezone.label}
-                                  </SelectItem>
-                                ))}
-                              </div>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </div>
+            {/* Tutor Profile Section - Only show when tutor is loaded */}
+            {tutor && (
+              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                <Avatar className="h-16 w-16 sm:h-20 sm:w-20 ring-4 ring-white dark:ring-gray-800 shadow-lg">
+                  <AvatarImage 
+                    src={tutor.avatar_url} 
+                    alt={tutor.full_name}
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold text-lg sm:text-xl">
+                    {getInitials(tutor.full_name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                    {tutor.full_name}
+                  </h2>
+                  <p className="text-blue-600 dark:text-blue-400 text-sm sm:text-base font-medium flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Certified tutor – Book a session below
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-            
-            {availableSlots.length === 0 ? (
+              </div>
+            )}
+
+            {/* Loading state */}
+            {loading && (
+              <div className="space-y-4">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+            )}
+
+            {/* Error/No slots state */}
+            {!loading && !tutor && (
               <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  No Available Slots
+                  Tutor Not Found
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  There are currently no available booking slots. Please check back later.
+                  The requested tutor could not be found. Please check the link and try again.
                 </p>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                {/* Available Time Slots */}
-                <div>
-                  <Label className="text-base font-semibold mb-4 block">
-                    Available Time Slots
-                  </Label>
-                  <div className="grid gap-3">
-                    {availableSlots.map((slot) => {
-                      // Convert UTC times to student's local timezone
-                      const utcStartTime = dayjs.utc(slot.start_time);
-                      const utcEndTime = dayjs.utc(slot.end_time);
-                      const localStartTime = utcStartTime.tz(studentTimezone);
-                      const localEndTime = utcEndTime.tz(studentTimezone);
-                      
-                      // Debug logging for each slot
-                      console.log("Booking slot:", {
-                        slotId: slot.id,
-                        utc: slot.start_time,
-                        studentTZ: studentTimezone,
-                        localTime: localStartTime.format(),
-                        displayTime: `${localStartTime.format('h:mm A')} - ${localEndTime.format('h:mm A')}`,
-                        rawUTC: utcStartTime.format(),
-                        convertedLocal: localStartTime.format('YYYY-MM-DD HH:mm A')
-                      });
-                      
-                      const isSelected = watchedSlotId === slot.id;
-
-                      return (
-                        <Card
-                          key={slot.id}
-                          className={`cursor-pointer transition-all hover:shadow-md ${
-                            isSelected
-                              ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950"
-                              : "hover:bg-gray-50 dark:hover:bg-gray-800"
-                          }`}
-                          onClick={() => handleSlotSelect(slot.id)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <Clock className="h-5 w-5 text-gray-500" />
-                                <div>
-                                  <div className="font-medium">
-                                    {localStartTime.format('dddd, MMMM D, YYYY')}
-                                  </div>
-                                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    {localStartTime.format('h:mm A')} - {localEndTime.format('h:mm A')}
-                                  </div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                                    {getTimezoneDisplayName(studentTimezone)}
-                                  </div>
-
-                                </div>
-                              </div>
-                              {isSelected && (
-                                <Badge variant="default">Selected</Badge>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                  {errors.selectedSlotId && (
-                    <p className="text-sm text-red-600 mt-2">
-                      {errors.selectedSlotId.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Name Input */}
-                <div>
-                  <Label htmlFor="name" className="text-base font-semibold">
-                    Your Name
-                  </Label>
-                  <Input
-                    id="name"
-                    {...register("name")}
-                    placeholder="Enter your full name"
-                    className="mt-2"
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-red-600 mt-1">
-                      {errors.name.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  disabled={submitting || !watchedSlotId || !watchedStartTime || !watchedDuration}
-                  className="w-full"
-                  size="lg"
-                >
-                  {submitting ? "Submitting..." : "Submit Booking Request"}
-                </Button>
-
-                <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                  By submitting this request, you agree that the tutor will contact you 
-                  to confirm the booking details.
-                </p>
-              </form>
             )}
           </CardContent>
         </Card>
-
-        {/* Time Picker Modal */}
-        <Dialog open={showTimePickerModal} onOpenChange={setShowTimePickerModal}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Select Your Session Time
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="space-y-6 pt-4">
-              {selectedSlot && (
-                <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                    Selected Date
-                  </p>
-                  {(() => {
-                    const selectedSlotData = bookingSlots.find(s => s.id === selectedSlot);
-                    if (selectedSlotData) {
-                      const localStartTime = dayjs.utc(selectedSlotData.start_time).tz(studentTimezone);
-                      const localEndTime = dayjs.utc(selectedSlotData.end_time).tz(studentTimezone);
-                      return (
-                        <>
-                          <p className="text-blue-600 dark:text-blue-300">
-                            {localStartTime.format('dddd, MMMM D, YYYY')}
-                          </p>
-                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                            Available: {localStartTime.format('h:mm A')} - {localEndTime.format('h:mm A')} ({getTimezoneDisplayName(studentTimezone)})
-                          </p>
-                        </>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-              )}
-
-              {/* Start Time Selection */}
-              <div>
-                <Label className="text-base font-semibold mb-3 block">
-                  Choose Start Time
-                </Label>
-                <Select value={selectedStartTime} onValueChange={setSelectedStartTime}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select start time..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableStartTimes.map((time) => {
-                      const isAvailable = isTimeSlotAvailable(time, selectedDuration);
-                      
-                      // Since time is already in student's timezone from generateAvailableStartTimes,
-                      // we just need to format it for display
-                      const displayTime = dayjs(`2000-01-01T${time}:00`).format('h:mm A');
-                      
-                      return (
-                        <SelectItem 
-                          key={time} 
-                          value={time}
-                          disabled={!isAvailable}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            {displayTime}
-                            {!isAvailable && <span className="text-xs text-red-500">(Unavailable)</span>}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Duration Selection */}
-              {selectedStartTime && (
-                <div>
-                  <Label className="text-base font-semibold mb-3 block">
-                    Choose Duration
-                  </Label>
-                  <Select value={selectedDuration.toString()} onValueChange={(value) => setSelectedDuration(parseInt(value))}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select duration..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getAvailableDurations(selectedStartTime).map((duration) => (
-                        <SelectItem key={duration} value={duration.toString()}>
-                          {duration} minutes
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Session Summary */}
-              {selectedStartTime && selectedDuration && (
-                <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-green-800 dark:text-green-200">
-                        Session Summary
-                      </p>
-                      <p className="text-sm text-green-600 dark:text-green-300 mt-1">
-                        You are booking with {tutor?.full_name}
-                      </p>
-                      {(() => {
-                        const selectedSlotData = bookingSlots.find(s => s.id === selectedSlot);
-                        if (selectedSlotData) {
-                          // Get the slot date in student's timezone
-                          const slotDate = dayjs.utc(selectedSlotData.start_time).tz(studentTimezone).format('YYYY-MM-DD');
-                          
-                          // selectedStartTime is already in student's local timezone (e.g., "10:00")
-                          // Create datetime in student's timezone directly, no double conversion
-                          const localStartDateTime = dayjs.tz(`${slotDate}T${selectedStartTime}:00`, studentTimezone);
-                          const localEndDateTime = localStartDateTime.add(selectedDuration, 'minute');
-                          
-                          console.log('Session Summary Time Debug:', {
-                            selectedStartTime,
-                            slotDate,
-                            studentTimezone,
-                            localStartDateTime: localStartDateTime.format(),
-                            displayTime: localStartDateTime.format('h:mm A')
-                          });
-                          
-                          return (
-                            <p className="text-sm text-green-600 dark:text-green-300">
-                              {localStartDateTime.format('h:mm A')} - {localEndDateTime.format('h:mm A')} ({selectedDuration} minutes)
-                              <br />
-                              <span className="text-xs">
-                                {getTimezoneDisplayName(studentTimezone)}
-                              </span>
-                            </p>
-                          );
-                        }
-                        return null;
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Modal Actions */}
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowTimePickerModal(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleTimePickerSubmit}
-                  disabled={!selectedStartTime || !selectedDuration}
-                  className="flex-1"
-                >
-                  Confirm Time
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

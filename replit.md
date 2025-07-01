@@ -81,6 +81,13 @@ TutorTrack is a comprehensive tutoring management platform built with React and 
 
 ## Changelog
 
+### July 1, 2025: Tutor Avatar Display on Student Booking Page
+- **Avatar Integration**: Added tutor profile display with avatar and name at the top of student booking pages
+- **Avatar Component**: Implemented shadcn/ui Avatar component with fallback to initials
+- **Responsive Design**: Mobile-friendly avatar sizing (16x16 on mobile, 20x20 on desktop) with gradient backgrounds
+- **Database Schema**: Tutor avatar_url column integration for profile image display
+- **Professional Layout**: Enhanced booking page with tutor credentials and visual profile section
+
 ### June 29, 2025: Complete UTC Timestamp Migration & Booking System Fixes
 - **UTC Migration**: Completed full migration from legacy date/time fields to session_start/session_end UTC timestamps
 - **Booking System**: Fixed student booking page timezone conversion and form submission
