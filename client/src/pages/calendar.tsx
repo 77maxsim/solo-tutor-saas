@@ -1012,7 +1012,13 @@ export default function Calendar() {
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, luxonPlugin]}
             initialView={view}
+            locale="en"
             timeZone={tutorTimezone || 'UTC'}
+            initialDate={new Date()}
+            validRange={{
+              start: '2020-01-01',
+              end: '2030-12-31'
+            }}
             events={events}
             eventDidMount={(info) => {
               const session = info.event.extendedProps;
@@ -1060,7 +1066,7 @@ export default function Calendar() {
             allDaySlot={false}
             nowIndicator={true}
             eventDisplay="block"
-            dayHeaderFormat={{ weekday: 'short', month: 'numeric', day: 'numeric' }}
+            dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
             slotLabelFormat={{
               hour: 'numeric',
               minute: '2-digit',
