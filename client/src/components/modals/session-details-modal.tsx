@@ -205,12 +205,12 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       console.log('🔄 Cancelling future sessions for recurrence:', session.recurrence_id);
       console.log('🔄 Current session date:', session.session_start);
 
-      // Delete future sessions in the same recurrence group (use session_start instead of date)
+      // Delete current and future sessions in the same recurrence group (use session_start instead of date)
       const { error } = await supabase
         .from('sessions')
         .delete()
         .eq('recurrence_id', session.recurrence_id)
-        .gt('session_start', session.session_start);
+        .gte('session_start', session.session_start);
 
       if (error) {
         console.error('❌ Error cancelling future sessions:', error);
