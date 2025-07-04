@@ -97,22 +97,16 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
 
       // Handle repeat weekly logic first (only for non-recurring sessions)
       if (repeatWeekly && !session.recurrence_id) {
+        // Get the current tutor ID
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+        
+        const tutorId = user.id;
         const recurrenceCount = 12; // 12 weeks = ~3 months
         const recurringGroupId = session.id;
         const newSessions = [];
 
-        // Update the current session to have the recurrence_id
-        const { error: updateError } = await supabase
-          .from('sessions')
-          .update({ notes, color, recurrence_id: recurringGroupId })
-          .eq('id', session.id);
-
-        if (updateError) {
-          console.error('Error updating current session:', updateError);
-          throw updateError;
-        }
-
-        // Create future weekly sessions
+        // Create future weekly sessions FIRST (don't update current session yet)
         for (let i = 1; i <= recurrenceCount; i++) {
           const nextStart = new Date(session.session_start);
           const nextEnd = new Date(session.session_end);
@@ -120,26 +114,39 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
           nextEnd.setDate(nextEnd.getDate() + i * 7);
 
           newSessions.push({
-            tutor_id: session.student_id, // This should be tutor_id from session context
+            tutor_id: tutorId,
             student_id: session.student_id,
             duration: session.duration,
             rate: session.rate,
             notes,
             color,
-            status: "confirmed",
+            paid: false,
             session_start: nextStart.toISOString(),
             session_end: nextEnd.toISOString(),
             recurrence_id: recurringGroupId,
+            created_at: new Date().toISOString(),
           });
         }
 
+        // Step 1: Try inserting future sessions
         const { error: insertError } = await supabase
           .from('sessions')
           .insert(newSessions);
 
         if (insertError) {
           console.error('Error creating recurring sessions:', insertError);
-          throw insertError;
+          throw new Error(`Failed to create recurring sessions: ${insertError.message}`);
+        }
+
+        // Step 2: Update the original session ONLY AFTER successful creation
+        const { error: updateError } = await supabase
+          .from('sessions')
+          .update({ notes, color, recurrence_id: recurringGroupId })
+          .eq('id', session.id);
+
+        if (updateError) {
+          console.error('Error updating current session:', updateError);
+          throw new Error(`Failed to update current session: ${updateError.message}`);
         }
 
         return { type: 'recurring', count: recurrenceCount + 1 };
