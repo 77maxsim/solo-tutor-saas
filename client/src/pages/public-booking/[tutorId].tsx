@@ -376,9 +376,20 @@ export default function PublicBookingPage() {
       }
     });
 
-    // Ensure required fields for RLS policy compliance
-    sanitized.status = 'pending'; // Required for public booking RLS policy
-    sanitized.student_id = null; // Required to be NULL for unassigned bookings
+    // Ensure required fields for RLS policy compliance - the policy checks for status = 'pending'::session_status
+    if (payload.status) {
+      sanitized.status = payload.status;
+    } else {
+      sanitized.status = 'pending';
+    }
+    
+    // Explicitly set to null for RLS policy (student_id IS NULL)
+    sanitized.student_id = null;
+    
+    // Ensure unassigned_name is present and not null (unassigned_name IS NOT NULL)  
+    if (payload.unassigned_name && payload.unassigned_name.trim() !== '') {
+      sanitized.unassigned_name = payload.unassigned_name.trim();
+    }
 
     console.log('Payload sanitization:', {
       original: payload,
@@ -435,16 +446,15 @@ export default function PublicBookingPage() {
       const sessionStartUTC = utcDateTime.toISOString();
       const sessionEndUTC = utcDateTime.add(data.selectedDuration, 'minute').toISOString();
 
+      // Create minimal payload that matches RLS policy exactly
       const bookingData = {
         tutor_id: tutorId,
-        student_id: null, // Required to be NULL for RLS policy
-        unassigned_name: data.name.trim(),
+        student_id: null, // Must be NULL per RLS policy
+        unassigned_name: data.name.trim(), // Must be NOT NULL per RLS policy
+        status: 'pending', // Must equal 'pending' per RLS policy
         session_start: sessionStartUTC,
         session_end: sessionEndUTC,
-        duration: data.selectedDuration,
-        rate: 0, // Default rate for booking requests
-        status: 'pending',
-        notes: `Booking request from ${data.name.trim()} for ${data.selectedDuration} minutes`
+        duration: data.selectedDuration
       };
 
       console.log('Final booking data to submit:', bookingData);
