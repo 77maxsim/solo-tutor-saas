@@ -376,11 +376,22 @@ export default function PublicBookingPage() {
       }
     });
 
+    // Ensure required fields for RLS policy compliance
+    sanitized.status = 'pending'; // Required for public booking RLS policy
+    sanitized.student_id = null; // Required to be NULL for unassigned bookings
+
     console.log('Payload sanitization:', {
       original: payload,
       sanitized: sanitized,
-      removedFields: Object.keys(payload).filter(key => !allowedFields.includes(key))
+      removedFields: Object.keys(payload).filter(key => !allowedFields.includes(key)),
+      requiredFieldsSet: {
+        status: sanitized.status,
+        student_id: sanitized.student_id,
+        unassigned_name: sanitized.unassigned_name
+      }
     });
+
+    console.log("🧪 Final Booking Payload", sanitized);
 
     return sanitized;
   };
@@ -456,6 +467,19 @@ export default function PublicBookingPage() {
 
       // Sanitize the payload before submission
       const sanitizedPayload = sanitizePayloadForSessionInsert(bookingData);
+
+      // Validate critical RLS policy requirements before submission
+      if (!sanitizedPayload.unassigned_name || sanitizedPayload.unassigned_name.trim() === '') {
+        throw new Error('unassigned_name is required for public booking');
+      }
+      if (sanitizedPayload.student_id !== null) {
+        throw new Error('student_id must be null for public booking');
+      }
+      if (sanitizedPayload.status !== 'pending') {
+        throw new Error('status must be "pending" for public booking');
+      }
+
+      console.log("🚀 Submitting booking with validated payload:", sanitizedPayload);
 
       const { data: result, error } = await supabase
         .from('sessions')
