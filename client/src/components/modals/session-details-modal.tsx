@@ -17,6 +17,7 @@ import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
 import { getSessionDisplayInfo } from "@/lib/sessionDisplay";
+import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -221,9 +222,6 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
   const handleDeleteSession = async () => {
     if (!session?.id) return;
 
-    const confirm = window.confirm("Are you sure you want to cancel this session?");
-    if (!confirm) return;
-
     setIsDeleting(true);
 
     try {
@@ -267,9 +265,6 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       });
       return;
     }
-
-    const confirm = window.confirm("Are you sure you want to cancel this and all future sessions?");
-    if (!confirm) return;
 
     try {
       console.log('🔄 Cancelling future sessions for recurrence:', session.recurrence_id);
@@ -523,18 +518,28 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                     <Pencil className="w-4 h-4" />
                     <span className="text-sm">Edit</span>
                   </Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    onClick={handleDeleteSession}
+                  <ConfirmActionModal
+                    trigger={
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        disabled={isDeleting}
+                        className="flex items-center justify-center gap-2 h-10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span className="text-sm">
+                          {isDeleting ? "Canceling..." : "Cancel"}
+                        </span>
+                      </Button>
+                    }
+                    title="Cancel this session?"
+                    description="This will remove the session from your calendar and cannot be undone."
+                    confirmText="Yes, cancel session"
+                    cancelText="No, keep session"
+                    onConfirm={handleDeleteSession}
+                    isDestructive={true}
                     disabled={isDeleting}
-                    className="flex items-center justify-center gap-2 h-10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span className="text-sm">
-                      {isDeleting ? "Canceling..." : "Cancel"}
-                    </span>
-                  </Button>
+                  />
                 </div>
               </div>
 
@@ -559,15 +564,25 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                       <Repeat className="w-4 h-4" />
                       <span className="text-sm">Edit future sessions</span>
                     </Button>
-                    <Button 
-                      variant="destructive"
-                      onClick={handleCancelFutureSessions}
-                      className="w-full"
+                    <ConfirmActionModal
+                      trigger={
+                        <Button 
+                          variant="destructive"
+                          className="w-full"
+                          disabled={!session?.recurrence_id}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          <span className="text-sm">Cancel future sessions</span>
+                        </Button>
+                      }
+                      title="Cancel all future sessions?"
+                      description="This will cancel this session and all future sessions in this recurring series. This action cannot be undone."
+                      confirmText="Yes, cancel all future sessions"
+                      cancelText="No, keep sessions"
+                      onConfirm={handleCancelFutureSessions}
+                      isDestructive={true}
                       disabled={!session?.recurrence_id}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      <span className="text-sm">Cancel future sessions</span>
-                    </Button>
+                    />
                   </div>
                 </div>
               )}
