@@ -1,0 +1,36 @@
+💰 Unpaid sessions time display: 
+Object {student: "King", utc_start: "2025-06-18T05:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "13:00"}
+💰 Unpaid sessions time display: 
+Object {student: "Enoch", utc_start: "2025-06-17T13:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "21:00"}
+💰 Unpaid sessions time display: 
+Object {student: "Kola", utc_start: "2025-06-17T12:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "20:30"}
+💰 Unpaid sessions time display: 
+Object {student: "Rod", utc_start: "2025-06-17T12:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "20:00"}
+💰 Unpaid sessions time display: 
+Object {student: "Bruce", utc_start: "2025-06-17T11:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "19:30"}
+💰 Unpaid sessions time display: 
+Object {student: "Joy", utc_start: "2025-06-17T11:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "19:00"}
+💰 Unpaid sessions time display: 
+Object {student: "Kylie", utc_start: "2025-06-17T10:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "18:30"}
+💰 Unpaid sessions time display: 
+Object {student: "Eric NEW", utc_start: "2025-06-17T10:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "18:00"}
+💰 Unpaid sessions time display: 
+Object {student: "Joy", utc_start: "2025-06-16T11:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "19:00"}
+💰 Unpaid sessions time display: 
+Object {student: "King", utc_start: "2025-06-16T05:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "13:00"}
+💰 Unpaid sessions time display: 
+Object {student: "Bruce", utc_start: "2025-06-15T14:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "22:00"}
+💰 Unpaid sessions time display: 
+Object {student: "Max", utc_start: "2025-06-15T12:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "20:30"}
+💰 Unpaid sessions time display: 
+Object {student: "Chloe", utc_start: "2025-06-15T12:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "20:00"}
+💰 Unpaid sessions time display: 
+Object {student: "CiCi", utc_start: "2025-06-15T11:00:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "19:00"}
+💰 Unpaid sessions time display: 
+Object {student: "Sea", utc_start: "2025-06-15T07:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "15:30"}
+💰 Unpaid sessions time display: 
+Object {student: "Allen", utc_start: "2025-06-15T05:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "13:30"}
+💰 Unpaid sessions time display: 
+Object {student: "Sea", utc_start: "2025-06-14T04:30:00+00:00", tutor_timezone: "Asia/Shanghai", displayed_time: "12:30"}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "Asia/Shanghai", isTimezoneLoading: false, open: false}

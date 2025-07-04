@@ -171,12 +171,14 @@ export default function UnpaidSessions() {
         sessionIds: sessionIds
       });
 
-      // Call the Supabase RPC function
-      const { data, error } = await supabase.rpc('mark_sessions_paid', {
-        session_ids: sessionIds
-      });
+      // Update sessions directly using Supabase query (no RPC needed)
+      const { data, error } = await supabase
+        .from('sessions')
+        .update({ paid: true })
+        .in('id', sessionIds)
+        .eq('paid', false); // Only update unpaid sessions for safety
 
-      console.log('RPC mark_sessions_paid response:', { data, error, sessionIds });
+      console.log('Bulk update sessions response:', { data, error, sessionIds });
 
       if (error) {
         console.error('Error marking all sessions as paid:', error);
