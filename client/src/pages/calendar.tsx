@@ -392,6 +392,76 @@ export default function Calendar() {
     // Apply faded styling for past sessions
     const fadeClass = session.isPastSession ? 'opacity-50 grayscale' : '';
 
+    // Check if this is an agenda/list view
+    const isAgendaView = eventInfo.view.type === 'listWeek';
+
+    if (isAgendaView) {
+      // Get student initials for avatar fallback
+      const getInitials = (name: string) => {
+        return name
+          .split(' ')
+          .map(word => word[0])
+          .join('')
+          .toUpperCase()
+          .substring(0, 2);
+      };
+
+      const studentName = session.student_name || session.unassigned_name || 'Unassigned';
+      const initials = getInitials(studentName);
+
+      return (
+        <div 
+          className={`agenda-session flex items-center gap-2 p-2 text-sm transition-all duration-200 ease-in-out hover:saturate-150 hover:brightness-110 ${fadeClass} cursor-pointer group w-full`}
+          title={tooltipContent}
+        >
+          {/* Student Avatar */}
+          <div className="avatar shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium text-white border-2 border-white shadow-sm overflow-hidden">
+            {session.avatarUrl ? (
+              <img 
+                src={session.avatarUrl} 
+                alt={`${studentName} avatar`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to initials if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  target.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <div 
+              className={`w-full h-full flex items-center justify-center ${session.avatarUrl ? 'hidden' : ''}`}
+              style={{ backgroundColor: session.color || '#3b82f6' }}
+            >
+              {initials}
+            </div>
+          </div>
+
+          {/* Session Color Dot */}
+          <div 
+            className="color-dot shrink-0 w-2.5 h-2.5 rounded-full shadow-sm"
+            style={{ backgroundColor: session.color || '#3b82f6' }}
+          ></div>
+
+          {/* Session Content */}
+          <div className="flex-1 min-w-0">
+            <div className="student-name font-medium truncate transition-transform duration-200 ease-in-out group-hover:translate-x-1">
+              {studentName}
+            </div>
+            <div className="text-xs opacity-75 transition-opacity duration-200 group-hover:opacity-100">
+              {durationMinutes}min • {formatCurrency(earning, tutorCurrency)}
+            </div>
+          </div>
+
+          {/* Session Time */}
+          <div className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+            {displayTime}
+          </div>
+        </div>
+      );
+    }
+
+    // Default grid/timeline view content
     return (
       <div 
         className={`p-1 text-xs transition-all duration-200 ease-in-out hover:saturate-150 hover:brightness-110 ${fadeClass} cursor-pointer group`} 
