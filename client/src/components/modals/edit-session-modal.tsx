@@ -172,50 +172,87 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
     }
 
     try {
-      // Convert local datetime to UTC for storage using tutor's timezone
-      const startUTC = dayjs.utc(session.session_start).tz(tutorTimezone).hour(parseInt(data.time.split(':')[0])).minute(parseInt(data.time.split(':')[1])).utc();
-      const endUTC = startUTC.add(data.duration, 'minutes');
-
-      console.log('📅 Edit session - local to UTC conversion:', {
-        session_id: session.id,
-        existing_date: session.session_start ? dayjs.utc(session.session_start).tz(tutorTimezone).format('YYYY-MM-DD') : 'N/A',
-        selected_time: data.time,
-        tutor_timezone: tutorTimezone,
-        start_utc: startUTC.toISOString(),
-        end_utc: endUTC.toISOString(),
-        duration_minutes: data.duration,
-        verification: {
-          will_display_as: startUTC.tz(tutorTimezone).format('YYYY-MM-DD HH:mm'),
-          original_input: `${session.session_start} ${data.time}`
-        }
-      });
-
-      // Update single session with UTC timestamps only
-      const { error } = await supabase
-        .from('sessions')
-        .update({
-          session_start: startUTC.toISOString(),
-          session_end: endUTC.toISOString(),
-          duration: data.duration,
-          rate: data.rate,
-          color: data.color,
-        })
-        .eq('id', session.id);
-
-      if (error) {
-        console.error('Supabase error updating session:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to update session. Please try again.",
+      if (isRecurring && session.recurrence_id) {
+        // For recurring sessions, update all future sessions in the series
+        console.log('📅 Bulk updating future sessions in series:', {
+          recurrence_id: session.recurrence_id,
+          session_start_threshold: session.session_start,
+          updates: {
+            duration: data.duration,
+            rate: data.rate,
+            color: data.color
+          }
         });
-        return;
-      }
 
-      toast({
-        title: "Session Updated",
-        description: "Session has been updated successfully.",
-      });
+        const { error } = await supabase
+          .from('sessions')
+          .update({
+            duration: data.duration,
+            rate: data.rate,
+            color: data.color,
+          })
+          .eq('recurrence_id', session.recurrence_id)
+          .gte('session_start', session.session_start);
+
+        if (error) {
+          console.error('Supabase error updating future sessions:', error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to update future sessions. Please try again.",
+          });
+          return;
+        }
+
+        toast({
+          title: "Future Sessions Updated",
+          description: "All future sessions in the series have been updated successfully.",
+        });
+      } else {
+        // For single session, update with time change
+        const startUTC = dayjs.utc(session.session_start).tz(tutorTimezone).hour(parseInt(data.time.split(':')[0])).minute(parseInt(data.time.split(':')[1])).utc();
+        const endUTC = startUTC.add(data.duration, 'minutes');
+
+        console.log('📅 Edit single session - local to UTC conversion:', {
+          session_id: session.id,
+          existing_date: session.session_start ? dayjs.utc(session.session_start).tz(tutorTimezone).format('YYYY-MM-DD') : 'N/A',
+          selected_time: data.time,
+          tutor_timezone: tutorTimezone,
+          start_utc: startUTC.toISOString(),
+          end_utc: endUTC.toISOString(),
+          duration_minutes: data.duration,
+          verification: {
+            will_display_as: startUTC.tz(tutorTimezone).format('YYYY-MM-DD HH:mm'),
+            original_input: `${session.session_start} ${data.time}`
+          }
+        });
+
+        const { error } = await supabase
+          .from('sessions')
+          .update({
+            session_start: startUTC.toISOString(),
+            session_end: endUTC.toISOString(),
+            duration: data.duration,
+            rate: data.rate,
+            color: data.color,
+          })
+          .eq('id', session.id);
+
+        if (error) {
+          console.error('Supabase error updating session:', error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to update session. Please try again.",
+          });
+          return;
+        }
+
+        toast({
+          title: "Session Updated",
+          description: "Session has been updated successfully.",
+        });
+      }
 
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
@@ -283,29 +320,33 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px] w-[95vw] sm:w-full">
         <DialogHeader>
-          <DialogTitle>Edit Session</DialogTitle>
+          <DialogTitle>
+            {isRecurring ? "Edit Future Sessions" : "Edit Session"}
+          </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Time */}
-            <FormField
-              control={form.control}
-              name="time"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Time</FormLabel>
-                  <FormControl>
-                    <TimePicker 
-                      value={field.value} 
-                      onChange={field.onChange}
-                      timeFormat={tutorPreferences.time_format}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Time - Hide for recurring sessions since we can't change time for bulk updates */}
+            {!isRecurring && (
+              <FormField
+                control={form.control}
+                name="time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Time</FormLabel>
+                    <FormControl>
+                      <TimePicker 
+                        value={field.value} 
+                        onChange={field.onChange}
+                        timeFormat={tutorPreferences.time_format}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {/* Duration */}
             <FormField
@@ -389,9 +430,15 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
             />
 
             {/* Recurring session warning */}
-            {session && session.recurrence_id && (
+            {isRecurring && session && session.recurrence_id && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                <strong>Bulk Edit Mode:</strong> Changes will apply to all future sessions in this recurring series (including this one).
+              </div>
+            )}
+            
+            {!isRecurring && session && session.recurrence_id && (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-                This session is already part of a recurring series.
+                This session is part of a recurring series. Only this individual session will be updated.
               </div>
             )}
 
