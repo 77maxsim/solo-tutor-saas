@@ -81,6 +81,14 @@ TutorTrack is a comprehensive tutoring management platform built with React and 
 
 ## Changelog
 
+### July 4, 2025: Mark All as Paid Feature Implementation
+- **Bulk Payment Processing**: Added "Mark All as Paid" button to Earnings > Unpaid Sessions view
+- **Smart Filtering**: Button only appears when unpaid sessions exist, filters past sessions using dayjs.utc().isAfter(session.session_end)
+- **Direct Database Updates**: Uses Supabase .update() query with .in('id', sessionIds) for bulk operations
+- **Safety Checks**: Added .eq('paid', false) filter to prevent duplicate updates
+- **Enhanced UX**: Includes confirmation dialog, success confetti animation, and comprehensive error handling
+- **Query Invalidation**: Automatically refreshes all related caches (unpaid sessions, dashboard stats, earnings)
+
 ### July 4, 2025: Session Persistence and Profile Timezone Fix
 - **Session Persistence**: Fixed logout on page refresh by enabling `persistSession: true` and `autoRefreshToken: true` in Supabase client
 - **Profile Timezone Save**: Fixed timezone not being saved when updating profile settings - added missing timezone field to update payload
