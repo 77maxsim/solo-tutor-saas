@@ -1,0 +1,48 @@
+# 🛠️ Bug: "Cancel Future Sessions" button in Session Details modal closes the modal but does not trigger cancellation
+
+# 📌 Goal:
+# Ensure that when the user clicks "Cancel future sessions", it:
+# - Calls the appropriate delete/update mutation
+# - Cancels all upcoming sessions in the same recurrence group
+# - Provides success/failure feedback
+# - Keeps existing session cancellation and modal logic intact
+
+# ✅ Steps:
+# 1. Open the Session Details modal component (likely: SessionDetailsModal.tsx)
+# 2. Find the onClick handler for the "Cancel future sessions" button
+# 3. Make sure it calls a function like cancelRecurringSessions(recurring_group_id)
+# 4. If the function exists but does nothing, update it to perform the Supabase mutation:
+
+# ✅ Example fix:
+const handleCancelFutureSessions = async () => {
+  if (!session?.recurring_group_id) return;
+
+  const { error } = await supabase
+    .from("sessions")
+    .update({ status: "cancelled" }) // or use .delete() if you're fully removing
+    .gt("session_start", session.session_start) // only future sessions
+    .eq("recurring_group_id", session.recurring_group_id);
+
+  if (error) {
+    console.error("❌ Failed to cancel future sessions:", error);
+    toast.error("Failed to cancel future sessions");
+  } else {
+    toast.success("✅ Future sessions cancelled");
+    closeModal(); // or refresh calendar if needed
+  }
+};
+
+# 5. Make sure the Cancel Future Sessions button calls this handler:
+<Button onClick={handleCancelFutureSessions}>Cancel future sessions</Button>
+
+# ⚠️ Notes:
+# - Use .update() if you support historical analytics or restore
+# - Use .delete() if you want to remove them completely
+# - Do NOT break existing cancel/edit logic for single sessions
+# - Confirm .gt() logic uses proper UTC timestamps to avoid timezone bugs
+
+# 🧪 Test:
+# - Open Session Details for a recurring session
+# - Click "Cancel future sessions"
+# - Sessions after the selected one should be cancelled/removed
+# - Modal closes, toast shown, calendar updates correctly
