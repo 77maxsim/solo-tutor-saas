@@ -1,0 +1,76 @@
+# 🛠️ Feature: Add "Repeat Weekly" checkbox to the Session Details modal (like the Schedule Session modal)
+
+# 📌 Goal:
+# Allow tutors to convert an existing session into a recurring weekly session (for the next 3 months) from the Session Details modal using a "Repeat Weekly" checkbox.
+
+# ✅ Steps:
+# 1. Open SessionDetailsModal.tsx
+# 2. Add a "Repeat Weekly" checkbox below the Session Color picker, similar to how it's done in the Schedule Session modal
+# 3. Add a local state variable (e.g. `repeatWeekly`) to track whether the box is checked
+# 4. On Save Changes, if repeatWeekly is true and the session is not already recurring:
+#    - Generate additional sessions 1 week apart
+#    - Use current session’s data
+#    - Recurrence ends after 3 months (about 12 weeks)
+#    - Assign a new `recurring_group_id` using the base session ID
+
+# ✅ Example UI Addition:
+
+<div className="mt-4">
+  {!session.recurring_group_id && (
+    <label className="flex items-center space-x-2">
+      <input
+        type="checkbox"
+        checked={repeatWeekly}
+        onChange={(e) => setRepeatWeekly(e.target.checked)}
+      />
+      <span>Repeat Weekly (next 3 months)</span>
+    </label>
+  )}
+</div>
+
+# ✅ Logic in Save Changes handler:
+
+if (repeatWeekly && !session.recurring_group_id) {
+  const recurrenceCount = 12; // 12 weeks = ~3 months
+  const recurringGroupId = session.id;
+  const newSessions = [];
+
+  for (let i = 1; i <= recurrenceCount; i++) {
+    const nextStart = new Date(session.session_start);
+    const nextEnd = new Date(session.session_end);
+    nextStart.setDate(nextStart.getDate() + i * 7);
+    nextEnd.setDate(nextEnd.getDate() + i * 7);
+
+    newSessions.push({
+      tutor_id: session.tutor_id,
+      student_id: session.student_id,
+      duration: session.duration,
+      rate: session.rate,
+      color: session.color,
+      status: "scheduled",
+      session_start: nextStart.toISOString(),
+      session_end: nextEnd.toISOString(),
+      recurring_group_id: recurringGroupId,
+    });
+  }
+
+  const { error } = await supabase.from("sessions").insert(newSessions);
+  if (error) {
+    toast.error("❌ Failed to create recurring sessions");
+    return;
+  } else {
+    toast.success("✅ Weekly sessions added for 3 months");
+  }
+}
+
+# ✅ Notes:
+# - Only show "Repeat Weekly" checkbox if the session is not already recurring
+# - Don't duplicate recurring logic — reuse your existing logic from the Schedule Session modal if modular
+# - Ensure timezone consistency when generating session_start/end timestamps
+
+# 🧪 Test:
+# - Open any non-recurring session
+# - Check "Repeat Weekly"
+# - Click Save Changes
+# - The current session remains + 12 future sessions added weekly
+# - Verify in calendar
