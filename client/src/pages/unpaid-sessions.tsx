@@ -231,6 +231,8 @@ export default function UnpaidSessions() {
 
     const confirmMessage = `Mark all ${pastUnpaidSessions.length} past unpaid sessions as paid?`;
     if (window.confirm(confirmMessage)) {
+      const sessionIds = pastUnpaidSessions.map(session => session.id);
+      console.log("Marking sessions as paid:", sessionIds);
       markAllAsPaidMutation.mutate();
     }
   };
