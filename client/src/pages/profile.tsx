@@ -148,18 +148,25 @@ export default function Profile() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      const updatePayload = {
+        full_name: data.full_name.trim(),
+        currency: data.currency,
+        time_format: data.time_format,
+        timezone: data.timezone, // ✅ Include timezone in update
+      };
+
+      console.log("✅ Tutor profile update payload:", updatePayload);
+
       const { error } = await supabase
         .from('tutors')
-        .update({
-          full_name: data.full_name.trim(),
-          currency: data.currency,
-          time_format: data.time_format,
-        })
+        .update(updatePayload)
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error updating profile:', error);
+        console.error('❌ Failed to update tutor:', error);
         throw error;
+      } else {
+        console.log("✅ Tutor profile updated with timezone:", data.timezone);
       }
 
       return data;
@@ -169,9 +176,10 @@ export default function Profile() {
         title: "Profile Updated",
         description: "Your profile settings have been saved successfully.",
       });
-      // Invalidate and refetch profile data
+      // Invalidate and refetch profile data and timezone cache
       queryClient.invalidateQueries({ queryKey: ['tutor-profile'] });
       queryClient.invalidateQueries({ queryKey: ['tutor-info'] });
+      queryClient.invalidateQueries({ queryKey: ['tutor-timezone'] });
     },
     onError: (error) => {
       console.error('Profile update error:', error);

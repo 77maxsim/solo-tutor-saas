@@ -81,6 +81,12 @@ TutorTrack is a comprehensive tutoring management platform built with React and 
 
 ## Changelog
 
+### July 4, 2025: Session Persistence and Profile Timezone Fix
+- **Session Persistence**: Fixed logout on page refresh by enabling `persistSession: true` and `autoRefreshToken: true` in Supabase client
+- **Profile Timezone Save**: Fixed timezone not being saved when updating profile settings - added missing timezone field to update payload
+- **Enhanced Logging**: Added detailed session restoration and timezone update logging for better debugging
+- **Cache Invalidation**: Improved timezone cache invalidation to reflect changes throughout the app immediately
+
 ### July 1, 2025: Tutor Avatar Display on Student Booking Page
 - **Avatar Integration**: Added tutor profile display with avatar and name at the top of student booking pages
 - **Avatar Component**: Implemented shadcn/ui Avatar component with fallback to initials
