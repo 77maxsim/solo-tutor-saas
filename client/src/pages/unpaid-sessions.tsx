@@ -172,9 +172,11 @@ export default function UnpaidSessions() {
       });
 
       // Call the Supabase RPC function
-      const { error } = await supabase.rpc('mark_sessions_paid', {
+      const { data, error } = await supabase.rpc('mark_sessions_paid', {
         session_ids: sessionIds
       });
+
+      console.log('RPC mark_sessions_paid response:', { data, error, sessionIds });
 
       if (error) {
         console.error('Error marking all sessions as paid:', error);
@@ -197,11 +199,16 @@ export default function UnpaidSessions() {
       queryClient.invalidateQueries({ queryKey: ['earnings-sessions'] });
     },
     onError: (error) => {
-      console.error('Error marking all sessions as paid:', error);
+      console.error('Mark all as paid mutation failed:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update payment status. Please try again.",
+        description: `Failed to update payment status: ${error.message}`,
       });
     },
   });
