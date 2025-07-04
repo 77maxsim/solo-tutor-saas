@@ -322,16 +322,22 @@ function Router() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
+    // Restore session from localStorage on app startup
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        console.log("✅ Session restored on reload:", session.user?.email);
+      } else {
+        console.log("❌ No session found on reload");
+      }
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    // Listen for auth changes
+    // Keep session synced with storage
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("🔄 Auth state changed:", _event, session?.user?.email);
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -376,16 +382,24 @@ function AppLayout() {
   const [loading, setLoading] = useState(true);
   const [location] = useLocation();
 
-  // Track authentication state
+  // Track authentication state with session persistence
   useEffect(() => {
+    // Restore session from localStorage
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        console.log("✅ AppLayout: Session restored on reload:", session.user?.email);
+      } else {
+        console.log("❌ AppLayout: No session found on reload");
+      }
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
+    // Keep session synced with storage
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("🔄 AppLayout: Auth state changed:", _event, session?.user?.email);
       setUser(session?.user ?? null);
       setLoading(false);
     });

@@ -35,8 +35,9 @@ try {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: false, // Don't persist auth for public pages
-    autoRefreshToken: false,
+    persistSession: true, // Enable session persistence for staying logged in
+    autoRefreshToken: true, // Automatically refresh tokens to maintain session
+    detectSessionInUrl: true, // Support auth redirects
   },
   global: {
     headers: {
