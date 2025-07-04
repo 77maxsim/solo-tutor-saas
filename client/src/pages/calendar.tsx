@@ -98,6 +98,20 @@ export default function Calendar() {
   }, [highlightedSessionId]);
   
   const [calendarView, setCalendarView] = useState<'week' | 'month' | 'agenda'>('week');
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Helper function to check if two dates are in the same month
+  const isSameMonth = (date1: Date, date2: Date): boolean => {
+    return dayjs(date1).isSame(dayjs(date2), 'month');
+  };
+
+  // Handle calendar date changes (for month view title)
+  const handleDatesSet = useCallback((arg: any) => {
+    const newDate = arg.start;
+    if (!isSameMonth(newDate, currentDate)) {
+      setCurrentDate(newDate);
+    }
+  }, [currentDate]);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [editSession, setEditSession] = useState<SessionWithStudent | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -1003,6 +1017,13 @@ export default function Calendar() {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
+            
+            {/* Month Title (only for month view) */}
+            {calendarView === 'month' && (
+              <div className="ml-4 text-lg font-semibold text-gray-900 dark:text-white">
+                {dayjs(currentDate).format('MMMM YYYY')}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1066,7 +1087,7 @@ export default function Calendar() {
             allDaySlot={false}
             nowIndicator={true}
             eventDisplay="block"
-            dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
+            dayHeaderFormat={{ weekday: 'short' }}
             slotLabelFormat={{
               hour: 'numeric',
               minute: '2-digit',
@@ -1077,9 +1098,12 @@ export default function Calendar() {
               dayGridMonth: {
                 dayMaxEventRows: 3,  // Allow up to 3 events before showing "+X more"
                 eventLimit: true,
-                moreLinkClick: 'popover'  // Show popover when clicking "+X more"
+                moreLinkClick: 'popover',  // Show popover when clicking "+X more"
+                fixedWeekCount: false,  // Don't show extra weeks
+                showNonCurrentDates: false  // Hide dates from other months
               }
             }}
+            datesSet={handleDatesSet}
           />
         </div>
       </div>
