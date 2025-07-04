@@ -23,6 +23,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { triggerEarningsConfetti } from "@/lib/confetti";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+// Configure dayjs plugins
+dayjs.extend(utc);
 
 interface UnpaidSession {
   id: string;
@@ -143,9 +148,90 @@ export default function UnpaidSessions() {
     },
   });
 
+  // Mark all as paid mutation
+  const markAllAsPaidMutation = useMutation({
+    mutationFn: async () => {
+      // Filter sessions to only include unpaid past sessions
+      const now = dayjs.utc();
+      const pastUnpaidSessions = sessions.filter(session => {
+        const isUnpaid = !session.paid;
+        const isPast = now.isAfter(session.session_end);
+        return isUnpaid && isPast;
+      });
+
+      if (pastUnpaidSessions.length === 0) {
+        throw new Error('No past unpaid sessions to mark as paid');
+      }
+
+      const sessionIds = pastUnpaidSessions.map(session => session.id);
+      
+      console.log('🔧 Marking sessions as paid:', {
+        totalSessions: sessions.length,
+        pastUnpaidSessions: pastUnpaidSessions.length,
+        sessionIds: sessionIds
+      });
+
+      // Call the Supabase RPC function
+      const { error } = await supabase.rpc('mark_sessions_paid', {
+        session_ids: sessionIds
+      });
+
+      if (error) {
+        console.error('Error marking all sessions as paid:', error);
+        throw error;
+      }
+
+      return pastUnpaidSessions.length;
+    },
+    onSuccess: (sessionCount) => {
+      // Trigger confetti for bulk payment success
+      triggerEarningsConfetti();
+      
+      toast({
+        title: "🎉 All payments recorded!",
+        description: `Marked ${sessionCount} sessions as paid.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['all-unpaid-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['unpaid-past-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['earnings-sessions'] });
+    },
+    onError: (error) => {
+      console.error('Error marking all sessions as paid:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update payment status. Please try again.",
+      });
+    },
+  });
+
   const handleMarkAsPaid = (sessionId: string, studentName: string) => {
     if (window.confirm(`Mark overdue session with ${studentName} as paid?`)) {
       markAsPaidMutation.mutate(sessionId);
+    }
+  };
+
+  const handleMarkAllAsPaid = () => {
+    // Filter sessions to only include unpaid past sessions
+    const now = dayjs.utc();
+    const pastUnpaidSessions = sessions.filter(session => {
+      const isUnpaid = !session.paid;
+      const isPast = now.isAfter(session.session_end);
+      return isUnpaid && isPast;
+    });
+
+    if (pastUnpaidSessions.length === 0) {
+      toast({
+        title: "No sessions to mark",
+        description: "There are no past unpaid sessions to mark as paid.",
+      });
+      return;
+    }
+
+    const confirmMessage = `Mark all ${pastUnpaidSessions.length} past unpaid sessions as paid?`;
+    if (window.confirm(confirmMessage)) {
+      markAllAsPaidMutation.mutate();
     }
   };
 
@@ -329,10 +415,24 @@ export default function UnpaidSessions() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">All Unpaid Sessions</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Overdue sessions grouped by date, sorted chronologically
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl font-bold">All Unpaid Sessions</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Overdue sessions grouped by date, sorted chronologically
+                </p>
+              </div>
+              {totalSessions > 0 && (
+                <Button
+                  onClick={handleMarkAllAsPaid}
+                  disabled={markAllAsPaidMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Coins className="h-4 w-4 mr-2" />
+                  {markAllAsPaidMutation.isPending ? 'Processing...' : 'Mark All as Paid'}
+                </Button>
+              )}
+            </div>
           </CardHeader>
 
           <CardContent>
