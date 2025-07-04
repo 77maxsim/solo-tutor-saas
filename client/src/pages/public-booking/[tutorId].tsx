@@ -392,13 +392,12 @@ export default function PublicBookingPage() {
 
       const bookingData = {
         tutor_id: tutorId,
-        student_name: data.name.trim(),
+        unassigned_name: data.name.trim(),
         session_start: sessionStartUTC,
         session_end: sessionEndUTC,
         duration: data.selectedDuration,
+        rate: 0, // Default rate for booking requests
         status: 'pending',
-        booking_slot_id: data.selectedSlotId,
-        student_timezone: studentTimezone,
         notes: `Booking request from ${data.name.trim()} for ${data.selectedDuration} minutes`
       };
 
