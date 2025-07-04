@@ -444,18 +444,20 @@ export default function Earnings() {
               <Coins className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(
-                  earningsView === 'week' 
-                    ? earnings?.thisWeekEarnings || 0
-                    : earnings?.thisMonthEarnings || 0, 
-                  tutorCurrency
-                )}
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-xs text-muted-foreground">
-                  {earningsView === 'week' ? 'Earned This Week' : 'Earned This Month'}
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formatCurrency(
+                      earningsView === 'week' 
+                        ? earnings?.thisWeekEarnings || 0
+                        : earnings?.thisMonthEarnings || 0, 
+                      tutorCurrency
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {earningsView === 'week' ? 'Earned This Week' : 'Earned This Month'}
+                  </p>
+                </div>
                 <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1">
                   <button
                     onClick={() => setEarningsView('week')}
