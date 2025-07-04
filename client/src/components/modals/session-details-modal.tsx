@@ -157,6 +157,9 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
   const handleDeleteSession = async () => {
     if (!session?.id) return;
 
+    const confirm = window.confirm("Are you sure you want to cancel this session?");
+    if (!confirm) return;
+
     setIsDeleting(true);
 
     try {
@@ -200,6 +203,9 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       });
       return;
     }
+
+    const confirm = window.confirm("Are you sure you want to cancel this and all future sessions?");
+    if (!confirm) return;
 
     try {
       console.log('🔄 Cancelling future sessions for recurrence:', session.recurrence_id);
