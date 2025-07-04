@@ -66,6 +66,7 @@ interface EditSessionModalProps {
 
 export function EditSessionModal({ open, onOpenChange, session, isRecurring = false }: EditSessionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rateInput, setRateInput] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { tutorTimezone } = useTimezone();
@@ -105,6 +106,15 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
     },
   });
 
+  // Handle rate input changes
+  const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/^0+(?=\d)/, ""); // remove leading zeros
+    if (/^\d*\.?\d*$/.test(val)) { // allow decimal numbers
+      setRateInput(val);
+      form.setValue('rate', parseFloat(val) || 0);
+    }
+  };
+
   // Prefill form when editing a session
   useEffect(() => {
     if (session && open && tutorTimezone && session.session_start) {
@@ -126,6 +136,9 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
         rate: session.rate || 0,
         color: session.color || "#3B82F6",
       });
+
+      // Set the rate input value
+      setRateInput(session.rate?.toString() || "");
     }
   }, [session, open, form, tutorTimezone, isRecurring]);
 
@@ -212,6 +225,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       // Reset form and close modal
       setTimeout(() => {
         form.reset();
+        setRateInput("");
         onOpenChange(false);
       }, 100);
 
@@ -259,6 +273,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
 
   const handleCancel = () => {
     form.reset();
+    setRateInput("");
     onOpenChange(false);
   };
 
@@ -322,12 +337,15 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
                   <FormLabel>Rate (per hour in {tutorPreferences.currency})</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      type="text"
+                      inputMode="numeric"
+                      value={rateInput}
+                      onChange={handleRateChange}
+                      placeholder="Enter hourly rate"
+                      onFocus={(e) => {
+                        // Select all text when focused for easy replacement
+                        e.target.select();
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
