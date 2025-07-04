@@ -126,7 +126,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
             rate: session.rate,
             notes,
             color,
-            status: "scheduled",
+            status: "confirmed",
             session_start: nextStart.toISOString(),
             session_end: nextEnd.toISOString(),
             recurrence_id: recurringGroupId,
