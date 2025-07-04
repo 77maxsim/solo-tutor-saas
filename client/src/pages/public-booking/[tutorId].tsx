@@ -460,65 +460,41 @@ export default function PublicBookingPage() {
         status: 'pending'
       };
 
-      console.log('Final booking data to submit:', bookingData);
-      console.log('Booking payload detailed analysis:', {
-        payload: bookingData,
-        payloadKeys: Object.keys(bookingData),
-        tutorId: tutorId,
-        tutorIdType: typeof tutorId,
-        sessionStart: sessionStartUTC,
-        sessionEnd: sessionEndUTC
+      console.log("Submitting session:", bookingData);
+      
+      // Add debug toast
+      toast({
+        title: "Submitting Booking...",
+        description: `Booking ${data.name} for ${data.selectedStartTime} (${data.selectedDuration} min)`,
       });
 
-      // Check current auth state before submission
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      console.log('Auth state during booking submission:', {
-        user: user ? { id: user.id, email: user.email } : null,
-        authError: authError,
-        isAuthenticated: !!user
-      });
-
-      // Sanitize the payload before submission
-      const sanitizedPayload = sanitizePayloadForSessionInsert(bookingData);
-
-      // Validate critical RLS policy requirements before submission
-      if (!sanitizedPayload.unassigned_name || sanitizedPayload.unassigned_name.trim() === '') {
-        throw new Error('unassigned_name is required for public booking');
-      }
-      if (sanitizedPayload.student_id !== null) {
-        throw new Error('student_id must be null for public booking');
-      }
-      if (sanitizedPayload.status !== 'pending') {
-        throw new Error('status must be "pending" for public booking');
-      }
-
-      console.log("🚀 Submitting booking with validated payload:", sanitizedPayload);
-
-      const { data: result, error } = await supabase
+      // Create session record using exact same approach as working version
+      const { error } = await supabase
         .from('sessions')
-        .insert([sanitizedPayload])
-        .select()
-        .single();
+        .insert(bookingData);
 
       if (error) {
-        console.error('Booking submission error:', error);
         throw error;
       }
 
-      console.log('Booking successful:', result);
       setBookingSuccess(true);
-
       toast({
         title: "Booking Request Submitted!",
-        description: "Your booking request has been sent successfully.",
+        description: "Your booking request has been sent to the tutor. They will contact you soon.",
       });
 
+      // Refresh available slots
+      await fetchTutorAndSlots();
+
     } catch (error) {
-      console.error('Booking submission failed:', error);
+      console.error('Booking submission failed:', {
+        error,
+        bookingData
+      });
       toast({
         variant: "destructive",
         title: "Booking Failed",
-        description: error.message || "There was an error submitting your booking. Please try again.",
+        description: `Could not submit your booking request. ${error.message || 'Please try again.'}`,
       });
     } finally {
       setSubmitting(false);
