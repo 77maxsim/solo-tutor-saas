@@ -103,6 +103,7 @@ export default function Calendar() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [isEditingRecurring, setIsEditingRecurring] = useState(false);
   const [loadingSlot, setLoadingSlot] = useState<{x: number, y: number} | null>(null);
+  const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
   const calendarRef = useRef<FullCalendar>(null);
   
   const isMobile = useIsMobile();
@@ -774,18 +775,21 @@ export default function Calendar() {
   const handlePrevious = () => {
     if (calendarRef.current) {
       calendarRef.current.getApi().prev();
+      setCurrentCalendarDate(calendarRef.current.getApi().getDate());
     }
   };
 
   const handleNext = () => {
     if (calendarRef.current) {
       calendarRef.current.getApi().next();
+      setCurrentCalendarDate(calendarRef.current.getApi().getDate());
     }
   };
 
   const handleToday = () => {
     if (calendarRef.current) {
       calendarRef.current.getApi().today();
+      setCurrentCalendarDate(calendarRef.current.getApi().getDate());
     }
   };
 
@@ -1004,6 +1008,16 @@ export default function Calendar() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+          
+          {/* Month Title - only show for month view */}
+          {calendarView === 'month' && (
+            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+              {currentCalendarDate.toLocaleDateString('en-US', { 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </div>
+          )}
         </div>
 
         {/* Calendar */}
@@ -1059,6 +1073,9 @@ export default function Calendar() {
             eventContent={renderEventContent}
             height="100%"
             headerToolbar={false}
+            datesSet={(dateInfo) => {
+              setCurrentCalendarDate(dateInfo.start);
+            }}
             slotMinTime="06:00:00"
             slotMaxTime="23:00:00"
             slotDuration="00:15:00"
@@ -1066,7 +1083,7 @@ export default function Calendar() {
             allDaySlot={false}
             nowIndicator={true}
             eventDisplay="block"
-            dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
+            dayHeaderFormat={{ weekday: 'short' }}
             slotLabelFormat={{
               hour: 'numeric',
               minute: '2-digit',
@@ -1077,7 +1094,9 @@ export default function Calendar() {
               dayGridMonth: {
                 dayMaxEventRows: 3,  // Allow up to 3 events before showing "+X more"
                 eventLimit: true,
-                moreLinkClick: 'popover'  // Show popover when clicking "+X more"
+                moreLinkClick: 'popover',  // Show popover when clicking "+X more"
+                fixedWeekCount: false,  // Only show weeks that contain days of the month
+                showNonCurrentDates: false  // Hide dates from adjacent months
               }
             }}
           />

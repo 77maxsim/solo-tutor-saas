@@ -81,6 +81,14 @@ TutorTrack is a comprehensive tutoring management platform built with React and 
 
 ## Changelog
 
+### July 4, 2025: Calendar Month View Complete Overhaul
+- **Month View Session Previews**: Added compact session previews showing time, color dots, and student info with "dayMaxEventRows: 3" limit
+- **Fixed Date Display Issues**: Corrected dayHeaderFormat to show only weekday names (Sun, Mon, etc.) instead of duplicate dates
+- **Dynamic Month Title**: Added visible month/year label (e.g., "July 2025") that updates with navigation
+- **Improved Month Navigation**: Fixed navigation arrows to properly increment/decrement by full months with date tracking
+- **Enhanced Month Layout**: Added proper day cell styling, today highlighting, and month-specific view configuration
+- **CSS Improvements**: Added comprehensive month view styling for better visual hierarchy and responsive design
+
 ### July 4, 2025: Session Persistence and Profile Timezone Fix
 - **Session Persistence**: Fixed logout on page refresh by enabling `persistSession: true` and `autoRefreshToken: true` in Supabase client
 - **Profile Timezone Save**: Fixed timezone not being saved when updating profile settings - added missing timezone field to update payload
