@@ -78,6 +78,12 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       setApplyToSeries(false);
       // Show notes section if there are existing notes
       setShowNotesSection(!!(session.notes && session.notes.trim()));
+      console.log('📋 Session Details Modal - Session data:', {
+        id: session.id,
+        recurrence_id: session.recurrence_id,
+        date: session.date,
+        hasRecurrence: !!session.recurrence_id
+      });
     }
   }, [session]);
 
@@ -181,6 +187,46 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       });
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleCancelFutureSessions = async () => {
+    if (!session?.recurrence_id) {
+      console.log('❌ No recurrence_id found for session');
+      toast.error('Cannot cancel future sessions: No recurrence group found');
+      return;
+    }
+
+    try {
+      console.log('🔄 Cancelling future sessions for recurrence:', session.recurrence_id);
+      console.log('🔄 Current session date:', session.date);
+
+      // Delete future sessions in the same recurrence group
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('recurrence_id', session.recurrence_id)
+        .gt('date', session.date);
+
+      if (error) {
+        console.error('❌ Error cancelling future sessions:', error);
+        toast.error('Failed to cancel future sessions');
+        return;
+      }
+
+      console.log('✅ Successfully cancelled future sessions');
+      toast.success('Future sessions cancelled successfully');
+
+      // Invalidate queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+
+      // Close the modal after successful cancellation
+      onClose();
+    } catch (error) {
+      console.error('❌ Error in handleCancelFutureSessions:', error);
+      toast.error('Failed to cancel future sessions');
     }
   };
 
@@ -412,18 +458,12 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                       <span className="text-sm">Edit future sessions</span>
                     </Button>
                     <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      onClick={() => {
-                        // Dispatch cancel series event
-                        window.dispatchEvent(new CustomEvent('cancelSeries', { 
-                          detail: { session } 
-                        }));
-                        handleClose();
-                      }}
-                      className="flex items-center justify-center gap-2 h-10"
+                      variant="destructive"
+                      onClick={handleCancelFutureSessions}
+                      className="w-full"
+                      disabled={!session?.recurrence_id}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4 mr-2" />
                       <span className="text-sm">Cancel future sessions</span>
                     </Button>
                   </div>
