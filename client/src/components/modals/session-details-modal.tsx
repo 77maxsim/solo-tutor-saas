@@ -60,6 +60,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
   const [sessionColor, setSessionColor] = useState(session?.color || '#3B82F6');
   const [isDeleting, setIsDeleting] = useState(false);
   const [showNotesSection, setShowNotesSection] = useState(false);
+  const [repeatWeekly, setRepeatWeekly] = useState(false);
 
   // Reset state when modal opens/closes
   const handleClose = () => {
@@ -67,6 +68,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
     setApplyToSeries(false);
     setSessionColor(session?.color || '#3B82F6');
     setShowNotesSection(!!(session?.notes && session?.notes.trim()));
+    setRepeatWeekly(false);
     onClose();
   };
 
@@ -76,6 +78,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       setNotes(session.notes || "");
       setSessionColor(session.color || '#3B82F6');
       setApplyToSeries(false);
+      setRepeatWeekly(false);
       // Show notes section if there are existing notes
       setShowNotesSection(!!(session.notes && session.notes.trim()));
       console.log('📋 Session Details Modal - Session data:', {
@@ -89,8 +92,58 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
 
   // Update session data mutation
   const updateSessionMutation = useMutation({
-    mutationFn: async ({ notes, color, applyToSeries }: { notes: string; color: string; applyToSeries: boolean }) => {
+    mutationFn: async ({ notes, color, applyToSeries, repeatWeekly }: { notes: string; color: string; applyToSeries: boolean; repeatWeekly: boolean }) => {
       if (!session) throw new Error("No session selected");
+
+      // Handle repeat weekly logic first (only for non-recurring sessions)
+      if (repeatWeekly && !session.recurrence_id) {
+        const recurrenceCount = 12; // 12 weeks = ~3 months
+        const recurringGroupId = session.id;
+        const newSessions = [];
+
+        // Update the current session to have the recurrence_id
+        const { error: updateError } = await supabase
+          .from('sessions')
+          .update({ notes, color, recurrence_id: recurringGroupId })
+          .eq('id', session.id);
+
+        if (updateError) {
+          console.error('Error updating current session:', updateError);
+          throw updateError;
+        }
+
+        // Create future weekly sessions
+        for (let i = 1; i <= recurrenceCount; i++) {
+          const nextStart = new Date(session.session_start);
+          const nextEnd = new Date(session.session_end);
+          nextStart.setDate(nextStart.getDate() + i * 7);
+          nextEnd.setDate(nextEnd.getDate() + i * 7);
+
+          newSessions.push({
+            tutor_id: session.student_id, // This should be tutor_id from session context
+            student_id: session.student_id,
+            duration: session.duration,
+            rate: session.rate,
+            notes,
+            color,
+            status: "scheduled",
+            session_start: nextStart.toISOString(),
+            session_end: nextEnd.toISOString(),
+            recurrence_id: recurringGroupId,
+          });
+        }
+
+        const { error: insertError } = await supabase
+          .from('sessions')
+          .insert(newSessions);
+
+        if (insertError) {
+          console.error('Error creating recurring sessions:', insertError);
+          throw insertError;
+        }
+
+        return { type: 'recurring', count: recurrenceCount + 1 };
+      }
 
       if (applyToSeries && session.recurrence_id) {
         // Update all future sessions in the series
@@ -124,9 +177,13 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       }
     },
     onSuccess: (data) => {
-      const message = data.type === 'series' 
-        ? "Session data updated for all future sessions in this series"
-        : "Session data updated successfully";
+      let message = "Session data updated successfully";
+      
+      if (data.type === 'series') {
+        message = "Session data updated for all future sessions in this series";
+      } else if (data.type === 'recurring') {
+        message = `✅ Weekly sessions created! Added ${data.count} sessions for the next 3 months`;
+      }
 
       toast({
         title: "Session Updated",
@@ -150,7 +207,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
   });
 
   const handleSave = () => {
-    updateSessionMutation.mutate({ notes, color: sessionColor, applyToSeries });
+    updateSessionMutation.mutate({ notes, color: sessionColor, applyToSeries, repeatWeekly });
   };
 
   // Delete session function - handles individual session deletion
@@ -420,6 +477,22 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                 ))}
               </div>
             </div>
+
+            {/* Repeat Weekly Section - only show for non-recurring sessions */}
+            {!session.recurrence_id && (
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <Checkbox
+                    id="repeat-weekly"
+                    checked={repeatWeekly}
+                    onCheckedChange={(checked) => setRepeatWeekly(!!checked)}
+                  />
+                  <Label htmlFor="repeat-weekly" className="text-sm">
+                    Repeat Weekly (next 3 months)
+                  </Label>
+                </div>
+              </div>
+            )}
 
             {/* Session Actions */}
             <div className="space-y-4 pt-4 border-t">
