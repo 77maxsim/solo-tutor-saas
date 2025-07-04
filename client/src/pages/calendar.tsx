@@ -32,6 +32,7 @@ import { convertSessionToCalendarEvent, debugSessionConversion } from '@/lib/ses
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import { format } from 'date-fns';
 
 // Configure dayjs plugins
 dayjs.extend(utc);
@@ -103,6 +104,7 @@ export default function Calendar() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [isEditingRecurring, setIsEditingRecurring] = useState(false);
   const [loadingSlot, setLoadingSlot] = useState<{x: number, y: number} | null>(null);
+  const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(new Date());
   const calendarRef = useRef<FullCalendar>(null);
   
   const isMobile = useIsMobile();
@@ -774,18 +776,29 @@ export default function Calendar() {
   const handlePrevious = () => {
     if (calendarRef.current) {
       calendarRef.current.getApi().prev();
+      // Update date tracking for month view
+      if (calendarView === 'month') {
+        const newDate = dayjs(currentCalendarDate).subtract(1, 'month').toDate();
+        setCurrentCalendarDate(newDate);
+      }
     }
   };
 
   const handleNext = () => {
     if (calendarRef.current) {
       calendarRef.current.getApi().next();
+      // Update date tracking for month view
+      if (calendarView === 'month') {
+        const newDate = dayjs(currentCalendarDate).add(1, 'month').toDate();
+        setCurrentCalendarDate(newDate);
+      }
     }
   };
 
   const handleToday = () => {
     if (calendarRef.current) {
       calendarRef.current.getApi().today();
+      setCurrentCalendarDate(new Date());
     }
   };
 
@@ -1004,6 +1017,13 @@ export default function Calendar() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+          
+          {/* Month/Year Display for Month View */}
+          {calendarView === 'month' && (
+            <div className="font-semibold text-lg text-gray-900 dark:text-white">
+              {format(currentCalendarDate, 'MMMM yyyy')}
+            </div>
+          )}
         </div>
 
         {/* Calendar */}
@@ -1059,6 +1079,12 @@ export default function Calendar() {
             eventContent={renderEventContent}
             height="100%"
             headerToolbar={false}
+            datesSet={(dateInfo) => {
+              // Update current date for month view display
+              if (calendarView === 'month') {
+                setCurrentCalendarDate(dateInfo.start);
+              }
+            }}
             slotMinTime="06:00:00"
             slotMaxTime="23:00:00"
             slotDuration="00:15:00"
@@ -1066,7 +1092,7 @@ export default function Calendar() {
             allDaySlot={false}
             nowIndicator={true}
             eventDisplay="block"
-            dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
+            dayHeaderFormat={{ weekday: 'short' }}
             slotLabelFormat={{
               hour: 'numeric',
               minute: '2-digit',
@@ -1077,7 +1103,11 @@ export default function Calendar() {
               dayGridMonth: {
                 dayMaxEventRows: 3,  // Allow up to 3 events before showing "+X more"
                 eventLimit: true,
-                moreLinkClick: 'popover'  // Show popover when clicking "+X more"
+                moreLinkClick: 'popover',  // Show popover when clicking "+X more"
+                firstDay: 0,  // Sunday start
+                showNonCurrentDates: false,
+                fixedWeekCount: false,
+                dayHeaderFormat: { weekday: 'short' }
               }
             }}
           />
