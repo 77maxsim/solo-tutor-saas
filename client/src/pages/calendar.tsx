@@ -392,23 +392,50 @@ export default function Calendar() {
     // Apply faded styling for past sessions
     const fadeClass = session.isPastSession ? 'opacity-50 grayscale' : '';
 
-    // Check if this is an agenda/list view
+    // Check view types
     const isAgendaView = eventInfo.view.type === 'listWeek';
+    const isMonthView = eventInfo.view.type === 'dayGridMonth';
+
+    // Get student initials for avatar fallback
+    const getInitials = (name: string) => {
+      return name
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+    };
+
+    const studentName = session.student_name || session.unassigned_name || 'Unassigned';
+    const initials = getInitials(studentName);
+
+    if (isMonthView) {
+      // Month view: Compact session preview with time, color dot, and student info
+      return (
+        <div 
+          className={`calendar-session-preview flex items-center gap-1 text-xs overflow-hidden transition-all duration-200 ease-in-out hover:saturate-150 hover:brightness-110 ${fadeClass} cursor-pointer group`}
+          title={tooltipContent}
+        >
+          {/* Session Color Dot */}
+          <div 
+            className="dot shrink-0 w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: session.color || '#3b82f6' }}
+          ></div>
+
+          {/* Session Time */}
+          <span className="font-medium text-gray-700 dark:text-gray-300">
+            {displayTime.split(' – ')[0]}
+          </span>
+
+          {/* Student Name/Initials */}
+          <span className="truncate text-gray-600 dark:text-gray-400 flex-1">
+            {studentName.length > 12 ? initials : studentName}
+          </span>
+        </div>
+      );
+    }
 
     if (isAgendaView) {
-      // Get student initials for avatar fallback
-      const getInitials = (name: string) => {
-        return name
-          .split(' ')
-          .map(word => word[0])
-          .join('')
-          .toUpperCase()
-          .substring(0, 2);
-      };
-
-      const studentName = session.student_name || session.unassigned_name || 'Unassigned';
-      const initials = getInitials(studentName);
-
       return (
         <div 
           className={`agenda-session flex items-center gap-2 p-2 text-sm transition-all duration-200 ease-in-out hover:saturate-150 hover:brightness-110 ${fadeClass} cursor-pointer group w-full`}
@@ -1039,6 +1066,13 @@ export default function Calendar() {
               minute: '2-digit',
               omitZeroMinute: false,
               meridiem: 'short'
+            }}
+            views={{
+              dayGridMonth: {
+                dayMaxEventRows: 3,  // Allow up to 3 events before showing "+X more"
+                eventLimit: true,
+                moreLinkClick: 'popover'  // Show popover when clicking "+X more"
+              }
             }}
           />
         </div>
