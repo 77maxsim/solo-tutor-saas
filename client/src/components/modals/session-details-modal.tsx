@@ -193,40 +193,56 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
   const handleCancelFutureSessions = async () => {
     if (!session?.recurrence_id) {
       console.log('❌ No recurrence_id found for session');
-      toast.error('Cannot cancel future sessions: No recurrence group found');
+      toast({
+        title: "Error",
+        description: "Cannot cancel future sessions: No recurrence group found",
+        variant: "destructive",
+      });
       return;
     }
 
     try {
       console.log('🔄 Cancelling future sessions for recurrence:', session.recurrence_id);
-      console.log('🔄 Current session date:', session.date);
+      console.log('🔄 Current session date:', session.session_start);
 
-      // Delete future sessions in the same recurrence group
+      // Delete future sessions in the same recurrence group (use session_start instead of date)
       const { error } = await supabase
         .from('sessions')
         .delete()
         .eq('recurrence_id', session.recurrence_id)
-        .gt('date', session.date);
+        .gt('session_start', session.session_start);
 
       if (error) {
         console.error('❌ Error cancelling future sessions:', error);
-        toast.error('Failed to cancel future sessions');
+        toast({
+          title: "Error",
+          description: "Failed to cancel future sessions",
+          variant: "destructive",
+        });
         return;
       }
 
       console.log('✅ Successfully cancelled future sessions');
-      toast.success('Future sessions cancelled successfully');
+      toast({
+        title: "Success",
+        description: "Future sessions cancelled successfully",
+      });
 
       // Invalidate queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
 
       // Close the modal after successful cancellation
-      onClose();
+      handleClose();
     } catch (error) {
       console.error('❌ Error in handleCancelFutureSessions:', error);
-      toast.error('Failed to cancel future sessions');
+      toast({
+        title: "Error", 
+        description: "Failed to cancel future sessions",
+        variant: "destructive",
+      });
     }
   };
 
