@@ -376,17 +376,17 @@ export default function PublicBookingPage() {
       }
     });
 
-    // Ensure required fields for RLS policy compliance - the policy checks for status = 'pending'::session_status
-    if (payload.status) {
-      sanitized.status = payload.status;
-    } else {
-      sanitized.status = 'pending';
+    // Ensure required fields match the working deployed version
+    sanitized.status = payload.status || 'pending';
+    sanitized.student_id = null; // Always null for public bookings
+    sanitized.paid = payload.paid !== undefined ? payload.paid : false;
+    
+    // Rate must be string for decimal field compatibility
+    if (payload.rate !== undefined) {
+      sanitized.rate = typeof payload.rate === 'string' ? payload.rate : String(payload.rate);
     }
     
-    // Explicitly set to null for RLS policy (student_id IS NULL)
-    sanitized.student_id = null;
-    
-    // Ensure unassigned_name is present and not null (unassigned_name IS NOT NULL)  
+    // Ensure unassigned_name is present
     if (payload.unassigned_name && payload.unassigned_name.trim() !== '') {
       sanitized.unassigned_name = payload.unassigned_name.trim();
     }
@@ -446,15 +446,18 @@ export default function PublicBookingPage() {
       const sessionStartUTC = utcDateTime.toISOString();
       const sessionEndUTC = utcDateTime.add(data.selectedDuration, 'minute').toISOString();
 
-      // Create minimal payload that matches RLS policy exactly
+      // Create payload matching the working deployed version
       const bookingData = {
         tutor_id: tutorId,
-        student_id: null, // Must be NULL per RLS policy
-        unassigned_name: data.name.trim(), // Must be NOT NULL per RLS policy
-        status: 'pending', // Must equal 'pending' per RLS policy
+        student_id: null,
         session_start: sessionStartUTC,
         session_end: sessionEndUTC,
-        duration: data.selectedDuration
+        duration: data.selectedDuration,
+        rate: "0", // Must be string for decimal field - this was the missing piece!
+        paid: false,
+        unassigned_name: data.name.trim(),
+        notes: `Booking request from ${data.name.trim()}`,
+        status: 'pending'
       };
 
       console.log('Final booking data to submit:', bookingData);
