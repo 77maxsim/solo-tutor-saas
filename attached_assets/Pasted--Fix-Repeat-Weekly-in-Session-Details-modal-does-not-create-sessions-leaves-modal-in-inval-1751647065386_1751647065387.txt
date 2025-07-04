@@ -1,0 +1,69 @@
+# 🛠️ Fix: "Repeat Weekly" in Session Details modal does not create sessions + leaves modal in invalid recurring state
+
+# 📌 Problem:
+# - SessionDetails modal allows setting "Repeat Weekly"
+# - But fails to insert future sessions (due to RLS or payload issue)
+# - Still updates the current session with a recurring_group_id
+# - This causes UI to treat it like a recurring session (incorrectly)
+
+# ✅ Goal:
+# - Use the same recurring session creation logic as the Schedule Session modal
+# - Only update the current session with recurring_group_id **after future sessions are successfully created**
+# - Ensure consistency and prevent ghost recurrence behavior
+
+# ✅ Steps:
+# 1. Refactor the "Repeat Weekly" logic in SessionDetailsModal.tsx
+# 2. Reuse or import the same recurrence utility logic used in ScheduleSessionModal.tsx
+# 3. DO NOT update the current session's recurring_group_id until the insert of recurring sessions succeeds
+
+# ✅ Pseudocode Fix:
+
+const handleMakeRecurring = async () => {
+  const confirm = window.confirm("Repeat this session weekly for 3 months?");
+  if (!confirm) return;
+
+  const recurrenceCount = 12;
+  const recurringGroupId = session.id;
+  const newSessions = [];
+
+  for (let i = 1; i <= recurrenceCount; i++) {
+    const start = new Date(session.session_start);
+    const end = new Date(session.session_end);
+    start.setDate(start.getDate() + i * 7);
+    end.setDate(end.getDate() + i * 7);
+
+    newSessions.push({
+      tutor_id: session.tutor_id,
+      student_id: session.student_id,
+      duration: session.duration,
+      rate: session.rate,
+      color: session.color,
+      status: "confirmed",  // ✅ not "scheduled"
+      session_start: start.toISOString(),
+      session_end: end.toISOString(),
+      recurring_group_id: recurringGroupId,
+    });
+  }
+
+  // ✅ Step 1: Try inserting future sessions
+  const { error } = await supabase.from("sessions").insert(newSessions);
+
+  if (error) {
+    toast.error("❌ Failed to create recurring sessions");
+    return; // ❌ Don't touch the original session
+  }
+
+  // ✅ Step 2: Update the original session AFTER success
+  await supabase.from("sessions").update({ recurring_group_id: recurringGroupId }).eq("id", session.id);
+
+  toast.success("✅ Weekly sessions created");
+  refreshCalendar();
+  closeModal();
+};
+
+# 🧪 Test:
+# - Click on any one-time session
+# - Enable "Repeat Weekly"
+# - Save
+# - ✅ New sessions should appear in calendar
+# - ✅ No "ghost" recurring status if insertion fails
