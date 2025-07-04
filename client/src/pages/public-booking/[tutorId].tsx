@@ -351,6 +351,40 @@ export default function PublicBookingPage() {
     });
   };
 
+  // Sanitize payload to ensure only valid session fields are included
+  const sanitizePayloadForSessionInsert = (payload: any) => {
+    const allowedFields = [
+      'tutor_id',
+      'student_id', 
+      'unassigned_name',
+      'session_start',
+      'session_end', 
+      'duration',
+      'rate',
+      'status',
+      'notes',
+      'color',
+      'paid',
+      'recurrence_id',
+      'recurrence_group_id'
+    ];
+
+    const sanitized = {};
+    allowedFields.forEach(field => {
+      if (payload[field] !== undefined) {
+        sanitized[field] = payload[field];
+      }
+    });
+
+    console.log('Payload sanitization:', {
+      original: payload,
+      sanitized: sanitized,
+      removedFields: Object.keys(payload).filter(key => !allowedFields.includes(key))
+    });
+
+    return sanitized;
+  };
+
   const onSubmit = async (data: BookingFormData) => {
     try {
       setSubmitting(true);
@@ -392,6 +426,7 @@ export default function PublicBookingPage() {
 
       const bookingData = {
         tutor_id: tutorId,
+        student_id: null, // Required to be NULL for RLS policy
         unassigned_name: data.name.trim(),
         session_start: sessionStartUTC,
         session_end: sessionEndUTC,
@@ -402,10 +437,29 @@ export default function PublicBookingPage() {
       };
 
       console.log('Final booking data to submit:', bookingData);
+      console.log('Booking payload detailed analysis:', {
+        payload: bookingData,
+        payloadKeys: Object.keys(bookingData),
+        tutorId: tutorId,
+        tutorIdType: typeof tutorId,
+        sessionStart: sessionStartUTC,
+        sessionEnd: sessionEndUTC
+      });
+
+      // Check current auth state before submission
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('Auth state during booking submission:', {
+        user: user ? { id: user.id, email: user.email } : null,
+        authError: authError,
+        isAuthenticated: !!user
+      });
+
+      // Sanitize the payload before submission
+      const sanitizedPayload = sanitizePayloadForSessionInsert(bookingData);
 
       const { data: result, error } = await supabase
         .from('sessions')
-        .insert([bookingData])
+        .insert([sanitizedPayload])
         .select()
         .single();
 
