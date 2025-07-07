@@ -129,11 +129,6 @@ export default function WelcomeAnimation({
     }
   };
 
-  const greeting = getTimeBasedGreeting();
-  const IconComponent = greeting.icon;
-  const firstName = tutorInfo?.full_name?.split(' ')[0] || 'Tutor';
-  const { text: timeOfDay, emoji } = getGreetingInfo();
-  
   // Get greeting info with time-based text and emoji
   const getGreetingInfo = () => {
     const hour = currentTime.getHours();
@@ -143,6 +138,11 @@ export default function WelcomeAnimation({
     if (hour < 21) return { text: 'evening', emoji: '🌆' };
     return { text: 'night', emoji: '🌙' };
   };
+
+  const greeting = getTimeBasedGreeting();
+  const IconComponent = greeting.icon;
+  const firstName = tutorInfo?.full_name?.split(' ')[0] || 'Tutor';
+  const { text: timeOfDay, emoji } = getGreetingInfo();
 
   // Get personalized stats message - only show when delta exists or meaningful data
   const getPersonalizedMessage = () => {
