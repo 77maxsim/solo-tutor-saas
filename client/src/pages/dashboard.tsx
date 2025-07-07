@@ -15,6 +15,7 @@ import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from "@/lib/queryOptimizer";
 import { calculateEarnings } from "@/lib/earningsCalculator";
 import { ScheduleSessionModal } from "@/components/modals/schedule-session-modal";
+import WelcomeAnimation from "@/components/WelcomeAnimation";
 import { 
   BookOpen, 
   Coins, 
@@ -354,42 +355,26 @@ export default function Dashboard() {
 
   return (
     <div className="flex-1 overflow-auto w-full">
-      {/* Header with Micro-interactions - Hidden on mobile since we have MobileHeader */}
-      <header className="hidden md:block bg-white dark:bg-card border-b border-border px-4 sm:px-6 py-4 animate-fade-in">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12 hover-scale cursor-pointer transition-all duration-300 hover:shadow-lg">
-              {tutorInfo?.avatar_url ? (
-                <AvatarImage 
-                  src={tutorInfo.avatar_url} 
-                  alt={tutorInfo.full_name || "Profile"} 
-                  className="transition-all duration-300"
-                />
-              ) : null}
-              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
-                {tutorInfo?.full_name 
-                  ? tutorInfo.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
-                  : 'TU'
-                }
-              </AvatarFallback>
-            </Avatar>
-            <div className="animate-slide-up">
-              <h1 className="text-xl sm:text-2xl font-semibold text-foreground dark:text-gray-100 hover:text-primary dark:hover:text-blue-400 transition-colors duration-200">
-                Welcome back, {tutorInfo?.full_name || 'Tutor'}!
-              </h1>
-              <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
-                Here's what's happening with your tutoring business today.
-              </p>
-            </div>
+      {/* Enhanced Welcome Header with Animation */}
+      <header className="hidden md:block bg-white dark:bg-card border-b border-border animate-fade-in overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-2">
+          <div className="flex-1">
+            <WelcomeAnimation 
+              tutorInfo={tutorInfo}
+              dashboardStats={dashboardStats}
+              isLoading={isLoading}
+            />
           </div>
-          <Button 
-            onClick={handleScheduleSession} 
-            size="sm"
-            className="hover-lift click-scale bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            <Plus className="w-4 h-4 mr-2 animate-bounce-subtle" />
-            Schedule a Session
-          </Button>
+          <div className="px-4 sm:px-6">
+            <Button 
+              onClick={handleScheduleSession} 
+              size="sm"
+              className="hover-lift click-scale bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              <Plus className="w-4 h-4 mr-2 animate-bounce-subtle" />
+              Schedule a Session
+            </Button>
+          </div>
         </div>
       </header>
 
