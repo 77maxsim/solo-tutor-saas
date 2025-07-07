@@ -13,7 +13,8 @@ import {
   TrendingUp,
   Calendar,
   Users,
-  ArrowUpRight
+  ArrowUpRight,
+  X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -42,6 +43,7 @@ export default function WelcomeAnimation({
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hasTriggeredConfetti, setHasTriggeredConfetti] = useState(false);
   const [isCompact, setIsCompact] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
 
   // Update time every minute for dynamic greeting
   useEffect(() => {
@@ -139,6 +141,14 @@ export default function WelcomeAnimation({
     return 'evening';
   };
 
+  // Get time-based emoji
+  const getGreetingEmoji = () => {
+    const hour = currentTime.getHours();
+    if (hour < 12) return '🌞';      // Morning
+    if (hour < 18) return '☕';      // Afternoon
+    return '🌙';                     // Evening
+  };
+
   // Get personalized stats message - only show when delta exists or meaningful data
   const getPersonalizedMessage = () => {
     if (!dashboardStats) return null;
@@ -197,7 +207,7 @@ export default function WelcomeAnimation({
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="flex flex-col md:flex-row items-start md:items-center justify-between px-6 pt-6 gap-4"
+        className="flex flex-col md:flex-row items-start md:items-center justify-between px-6 pt-4 md:pt-6 gap-4"
       >
         <div className="flex items-center gap-4">
           <motion.div
@@ -228,7 +238,7 @@ export default function WelcomeAnimation({
               transition={{ delay: 0.7 }}
               className="text-xl font-bold"
             >
-              Good {getTimeOfDay()}, <span className="font-semibold">{firstName}</span>!
+              {getGreetingEmoji()} Good {getTimeOfDay()}, <span className="font-semibold">{firstName}</span>!
             </motion.h1>
             <motion.p
               initial={{ opacity: 0 }}
@@ -254,20 +264,32 @@ export default function WelcomeAnimation({
         )}
       </motion.div>
 
-      {/* Session Delta Banner - Only if delta exists */}
-      {sessionDelta !== 0 && (
+      {/* Session Delta Banner - Only if delta exists and not dismissed */}
+      {sessionDelta !== 0 && !isDismissed && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
           transition={{ delay: 1.3 }}
-          className={`mx-6 mt-4 px-4 py-2 rounded-md border text-sm font-medium flex items-center gap-2 ${
+          className="mx-6 mt-4 mb-4"
+        >
+          <div className={`max-w-2xl px-4 py-3 rounded-md border text-sm font-medium flex items-center justify-between gap-3 ${
             sessionDelta > 0 
               ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300' 
               : 'bg-red-100 border-red-300 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300'
-          }`}
-        >
-          <ArrowUpRight className="h-4 w-4" />
-          You're {sessionDelta > 0 ? `up ${sessionDelta}` : `down ${Math.abs(sessionDelta)}`} from last week!
+          }`}>
+            <div className="flex items-center gap-2">
+              <ArrowUpRight className="h-4 w-4 flex-shrink-0" />
+              <span>You're {sessionDelta > 0 ? `up ${sessionDelta}` : `down ${Math.abs(sessionDelta)}`} session{Math.abs(sessionDelta) !== 1 ? 's' : ''} from last week!</span>
+            </div>
+            <button
+              onClick={() => setIsDismissed(true)}
+              className="flex-shrink-0 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+              aria-label="Dismiss message"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
         </motion.div>
       )}
 
