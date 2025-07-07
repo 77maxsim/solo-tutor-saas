@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   Sun, 
   Moon, 
@@ -37,7 +38,7 @@ export default function WelcomeAnimation({
   const [showPersonalizedGreeting, setShowPersonalizedGreeting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hasTriggeredConfetti, setHasTriggeredConfetti] = useState(false);
-  const [showCompactHeader, setShowCompactHeader] = useState(false);
+  const [isCompact, setIsCompact] = useState(false);
 
   // Update time every minute for dynamic greeting
   useEffect(() => {
@@ -50,7 +51,7 @@ export default function WelcomeAnimation({
   // Handle scroll for compact header
   useEffect(() => {
     const handleScroll = () => {
-      setShowCompactHeader(window.scrollY > 80);
+      setIsCompact(window.scrollY > 80);
     };
     
     window.addEventListener('scroll', handleScroll);
@@ -126,6 +127,14 @@ export default function WelcomeAnimation({
   const greeting = getTimeBasedGreeting();
   const IconComponent = greeting.icon;
   const firstName = tutorInfo?.full_name?.split(' ')[0] || 'Tutor';
+  
+  // Get simple time of day for compact header
+  const getTimeOfDay = () => {
+    const hour = currentTime.getHours();
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
+  };
 
   // Get personalized stats message - only show when delta exists or meaningful data
   const getPersonalizedMessage = () => {
@@ -178,131 +187,79 @@ export default function WelcomeAnimation({
 
   return (
     <div className="relative">
-      {/* Main Welcome Header */}
+      {/* Horizontal Header Layout */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
-        animate={{ 
-          opacity: 1, 
-          y: 0,
-          scale: showCompactHeader ? 0.9 : 1
-        }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className={`flex items-center gap-4 transition-all duration-300 ${
-          showCompactHeader ? 'px-4 py-2' : 'px-6 py-4'
+        className={`flex items-center justify-between transition-all duration-300 ${
+          isCompact ? 'px-4 py-2' : 'px-6 py-4'
         }`}
       >
-        {/* Animated Avatar */}
-        <motion.div
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 200, 
-            damping: 15,
-            delay: 0.3 
-          }}
-          className="relative"
-        >
-          <Avatar className={`border-4 border-white shadow-lg ring-2 ring-primary/20 transition-all duration-300 ${
-            showCompactHeader ? 'w-12 h-12' : 'w-16 h-16'
-          }`}>
-            <AvatarImage src={tutorInfo?.avatar_url || ''} alt={tutorInfo?.full_name || 'Tutor'} />
-            <AvatarFallback className={`bg-gradient-to-br ${greeting.gradient} text-white text-lg font-bold`}>
-              {tutorInfo?.full_name 
-                ? tutorInfo.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
-                : 'TU'
-              }
-            </AvatarFallback>
-          </Avatar>
-          
-          {/* Floating time icon */}
+        <div className="flex items-center space-x-4">
           <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="absolute -top-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md"
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 200, 
+              damping: 15,
+              delay: 0.3 
+            }}
           >
-            <IconComponent className="w-3 h-3 text-gray-600" />
-          </motion.div>
-        </motion.div>
-
-        {/* Main Greeting */}
-        <div className="flex-1">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-          >
-            <h1 className={`font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent transition-all duration-300 ${
-              showCompactHeader ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl'
+            <Avatar className={`transition-all duration-300 ${
+              isCompact ? 'h-8 w-8' : 'h-12 w-12'
             }`}>
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
-              >
-                {greeting.text}
-              </motion.span>
-              <motion.span
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 1, type: "spring" }}
-                className="inline-block ml-2"
-                style={{ filter: 'hue-rotate(0deg) saturate(1)' }}
-              >
-                <IconComponent className={`inline-block ${showCompactHeader ? 'w-4 h-4' : 'w-5 h-5'} text-amber-500`} />
-              </motion.span>
-              <motion.span
+              <AvatarImage src={tutorInfo?.avatar_url || ''} alt={tutorInfo?.full_name || 'Tutor'} />
+              <AvatarFallback className={`bg-gradient-to-br ${greeting.gradient} text-white font-bold`}>
+                {tutorInfo?.full_name 
+                  ? tutorInfo.full_name.split(' ').map(name => name[0]).join('').toUpperCase()
+                  : 'T'
+                }
+              </AvatarFallback>
+            </Avatar>
+          </motion.div>
+          
+          <div>
+            <motion.h2 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              className={`font-semibold transition-all duration-300 ${
+                isCompact ? 'text-sm' : 'text-lg lg:text-xl'
+              }`}
+            >
+              Good {getTimeOfDay()}, <span className="font-bold">{firstName}</span>!
+            </motion.h2>
+            {!isCompact && (
+              <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.9 }}
-                className="ml-2"
+                className="text-sm text-muted-foreground"
               >
-                {firstName}!
-              </motion.span>
-            </h1>
-          </motion.div>
-
-          {!showCompactHeader && (
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.1, duration: 0.5 }}
-              className="text-sm text-muted-foreground mt-1"
-            >
-              Here's what's happening with your tutoring business today.
-            </motion.p>
-          )}
+                Here's what's happening with your tutoring business today.
+              </motion.p>
+            )}
+          </div>
         </div>
 
-        {/* Floating sparkles animation - only in full mode */}
-        {!showCompactHeader && (
+        <div className="hidden md:block">
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-            className="absolute top-2 right-8"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1.1 }}
           >
-            <motion.div
-              animate={{ 
-                y: [0, -8, 0],
-                rotate: [0, 180, 360]
-              }}
-              transition={{ 
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              <Sparkles className="w-4 h-4 text-yellow-400" />
-            </motion.div>
+            <Button className="text-sm" size="sm">
+              + Schedule a Session
+            </Button>
           </motion.div>
-        )}
+        </div>
       </motion.div>
 
       {/* Personalized Stats Message - Only when delta exists */}
       <AnimatePresence>
-        {showPersonalizedGreeting && personalizedMessage && !showCompactHeader && (
+        {showPersonalizedGreeting && personalizedMessage && !isCompact && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
