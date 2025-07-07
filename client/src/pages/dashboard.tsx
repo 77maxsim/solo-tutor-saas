@@ -357,26 +357,12 @@ export default function Dashboard() {
     <div className="flex-1 overflow-auto w-full">
       {/* Enhanced Welcome Header with Animation */}
       <header className="hidden md:block bg-white dark:bg-card border-b border-border animate-fade-in overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-2">
-          <div className="flex-1">
-            <WelcomeAnimation 
-              tutorInfo={tutorInfo}
-              dashboardStats={dashboardStats}
-              isLoading={isLoading}
-              openScheduleModal={handleScheduleSession}
-            />
-          </div>
-          <div className="px-4 sm:px-6">
-            <Button 
-              onClick={handleScheduleSession} 
-              size="sm"
-              className="hover-lift click-scale bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              <Plus className="w-4 h-4 mr-2 animate-bounce-subtle" />
-              Schedule a Session
-            </Button>
-          </div>
-        </div>
+        <WelcomeAnimation 
+          tutorInfo={tutorInfo}
+          dashboardStats={dashboardStats}
+          isLoading={isLoading}
+          openScheduleModal={handleScheduleSession}
+        />
       </header>
 
       {/* Dashboard Content */}
