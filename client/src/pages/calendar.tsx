@@ -1095,6 +1095,9 @@ export default function Calendar() {
               meridiem: 'short'
             }}
             views={{
+              timeGridWeek: {
+                dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'short' }, // e.g. "Mon 8 Jul"
+              },
               dayGridMonth: {
                 dayMaxEventRows: 3,  // Allow up to 3 events before showing "+X more"
                 eventLimit: true,
