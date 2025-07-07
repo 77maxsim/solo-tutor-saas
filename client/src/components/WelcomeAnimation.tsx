@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   Sun, 
   Moon, 
@@ -11,7 +12,8 @@ import {
   Sparkles,
   TrendingUp,
   Calendar,
-  Users
+  Users,
+  ArrowUpRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -27,12 +29,14 @@ interface WelcomeAnimationProps {
     weeklySessionsDelta?: number;
   } | null;
   isLoading?: boolean;
+  openScheduleModal?: () => void;
 }
 
 export default function WelcomeAnimation({ 
   tutorInfo, 
   dashboardStats, 
-  isLoading = false 
+  isLoading = false,
+  openScheduleModal
 }: WelcomeAnimationProps) {
   const [showPersonalizedGreeting, setShowPersonalizedGreeting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -184,18 +188,18 @@ export default function WelcomeAnimation({
     );
   }
 
+  const sessionDelta = dashboardStats?.weeklySessionsDelta || 0;
+
   return (
     <div className="relative">
-      {/* Horizontal Header Layout */}
+      {/* Unified Responsive Header */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className={`flex items-center justify-between transition-all duration-300 ${
-          isCompact ? 'px-4 py-2' : 'px-6 py-4'
-        }`}
+        className="flex flex-col md:flex-row items-start md:items-center justify-between px-6 pt-6 gap-4"
       >
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-4">
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -206,9 +210,7 @@ export default function WelcomeAnimation({
               delay: 0.3 
             }}
           >
-            <Avatar className={`transition-all duration-300 ${
-              isCompact ? 'h-8 w-8' : 'h-12 w-12'
-            }`}>
+            <Avatar className="h-12 w-12">
               <AvatarImage src={tutorInfo?.avatar_url || ''} alt={tutorInfo?.full_name || 'Tutor'} />
               <AvatarFallback className={`bg-gradient-to-br ${greeting.gradient} text-white font-bold`}>
                 {tutorInfo?.full_name 
@@ -219,79 +221,57 @@ export default function WelcomeAnimation({
             </Avatar>
           </motion.div>
           
-          <div>
-            <motion.h2 
+          <div className="flex flex-col">
+            <motion.h1 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
-              className={`font-semibold transition-all duration-300 ${
-                isCompact ? 'text-sm' : 'text-lg lg:text-xl'
-              }`}
+              className="text-xl font-bold"
             >
-              Good {getTimeOfDay()}, <span className="font-bold">{firstName}</span>!
-            </motion.h2>
-            {!isCompact && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.9 }}
-                className="text-sm text-muted-foreground"
-              >
-                Here's what's happening with your tutoring business today.
-              </motion.p>
-            )}
+              Good {getTimeOfDay()}, <span className="font-semibold">{firstName}</span>!
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9 }}
+              className="text-sm text-muted-foreground"
+            >
+              Here's what's happening with your tutoring business today.
+            </motion.p>
           </div>
         </div>
 
-
-      </motion.div>
-
-      {/* Personalized Stats Message - Only when delta exists */}
-      <AnimatePresence>
-        {showPersonalizedGreeting && personalizedMessage && !isCompact && (
+        {openScheduleModal && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            transition={{ 
-              type: "spring",
-              stiffness: 200,
-              damping: 20
-            }}
-            className="mx-6 mb-4"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1.1 }}
           >
-            <Card className={`p-4 border-l-4 ${
-              personalizedMessage.type === 'positive' 
-                ? 'border-l-green-500 bg-green-50 dark:bg-green-900/20' 
-                : personalizedMessage.type === 'neutral'
-                ? 'border-l-gray-500 bg-gray-50 dark:bg-gray-900/20'
-                : personalizedMessage.type === 'achievement'
-                ? 'border-l-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                : 'border-l-orange-500 bg-orange-50 dark:bg-orange-900/20'
-            }`}>
-              <div className="flex items-center gap-3">
-                <motion.div
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <personalizedMessage.icon className={`w-5 h-5 ${
-                    personalizedMessage.type === 'positive' 
-                      ? 'text-green-600' 
-                      : personalizedMessage.type === 'neutral'
-                      ? 'text-gray-600'
-                      : personalizedMessage.type === 'achievement'
-                      ? 'text-purple-600'
-                      : 'text-orange-600'
-                  }`} />
-                </motion.div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                  {personalizedMessage.message}
-                </p>
-              </div>
-            </Card>
+            <Button className="mt-2 md:mt-0" onClick={openScheduleModal}>
+              + Schedule a Session
+            </Button>
           </motion.div>
         )}
-      </AnimatePresence>
+      </motion.div>
+
+      {/* Session Delta Banner - Only if delta exists */}
+      {sessionDelta !== 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.3 }}
+          className={`mx-6 mt-4 px-4 py-2 rounded-md border text-sm font-medium flex items-center gap-2 ${
+            sessionDelta > 0 
+              ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300' 
+              : 'bg-red-100 border-red-300 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300'
+          }`}
+        >
+          <ArrowUpRight className="h-4 w-4" />
+          You're {sessionDelta > 0 ? `up ${sessionDelta}` : `down ${Math.abs(sessionDelta)}`} from last week!
+        </motion.div>
+      )}
+
+
     </div>
   );
 }

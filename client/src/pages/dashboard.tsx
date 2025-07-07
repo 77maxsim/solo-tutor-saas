@@ -363,6 +363,7 @@ export default function Dashboard() {
               tutorInfo={tutorInfo}
               dashboardStats={dashboardStats}
               isLoading={isLoading}
+              openScheduleModal={handleScheduleSession}
             />
           </div>
           <div className="px-4 sm:px-6">
