@@ -57,11 +57,38 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     };
   };
   
+  // Calculate previous week boundaries for delta comparison
+  const getPreviousWeekBoundaries = () => {
+    if (!tutorTimezone) {
+      // Fallback to local time (for backwards compatibility)
+      const now = new Date();
+      const lastWeekStart = new Date(now);
+      lastWeekStart.setDate(now.getDate() - now.getDay() - 7);
+      lastWeekStart.setHours(0, 0, 0, 0);
+      
+      const lastWeekEnd = new Date(now);
+      lastWeekEnd.setDate(now.getDate() - now.getDay() - 1);
+      lastWeekEnd.setHours(23, 59, 59, 999);
+      
+      return { lastWeekStart, lastWeekEnd };
+    }
+    
+    // Use timezone-aware boundaries
+    const nowInTimezone = dayjs().tz(tutorTimezone);
+    const lastWeekStart = nowInTimezone.subtract(1, 'week').startOf('week').utc().toDate();
+    const lastWeekEnd = nowInTimezone.subtract(1, 'week').endOf('week').utc().toDate();
+    
+    return { lastWeekStart, lastWeekEnd };
+  };
+
   const boundaries = getTimezoneBoundaries();
+  const previousWeekBoundaries = getPreviousWeekBoundaries();
+  
   console.log('📦 EarningsCalculator: Using boundaries', {
     timezone: tutorTimezone || 'local',
     month: `${boundaries.firstDayOfMonth.toISOString()} to ${boundaries.lastDayOfMonth.toISOString()}`,
     week: `${boundaries.startOfWeek.toISOString()} to ${boundaries.endOfWeek.toISOString()}`,
+    lastWeek: `${previousWeekBoundaries.lastWeekStart.toISOString()} to ${previousWeekBoundaries.lastWeekEnd.toISOString()}`,
     today: `${boundaries.startOfToday.toISOString()} to ${boundaries.endOfToday.toISOString()}`
   });
   
@@ -74,6 +101,8 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
   let thisWeekEarnings = 0;
   let thisMonthEarnings = 0;
   let thisMonthSessions = 0;
+  let thisWeekSessions = 0;
+  let lastWeekSessions = 0;
   const studentEarningsMap = new Map<string, { total: number; count: number }>();
   const activeStudentsSet = new Set<string>();
 
@@ -113,6 +142,16 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
       thisMonthSessions++;
     }
     
+    // This week sessions count (all sessions in current week regardless of payment)
+    if (sessionDate >= boundaries.startOfWeek && sessionDate <= boundaries.endOfWeek) {
+      thisWeekSessions++;
+    }
+    
+    // Last week sessions count (all sessions in previous week regardless of payment)
+    if (sessionDate >= previousWeekBoundaries.lastWeekStart && sessionDate <= previousWeekBoundaries.lastWeekEnd) {
+      lastWeekSessions++;
+    }
+    
     // Active students (sessions in last 30 days, regardless of payment)
     if (sessionDate >= boundaries.thirtyDaysAgo) {
       activeStudentsSet.add(session.student_name);
@@ -144,6 +183,9 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     thisWeekEarnings,
     thisMonthEarnings,
     thisMonthSessions,
+    thisWeekSessions,
+    lastWeekSessions,
+    weeklySessionsDelta: thisWeekSessions - lastWeekSessions,
     activeStudentsCount: activeStudentsSet.size,
     studentEarnings
   };

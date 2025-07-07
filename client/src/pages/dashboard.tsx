@@ -193,7 +193,8 @@ export default function Dashboard() {
       console.log('📦 Dashboard: Earnings data returned:', earningsData);
       
       const result = {
-        sessionsThisWeek: earningsData.thisMonthSessions,
+        sessionsThisWeek: earningsData.thisWeekSessions,
+        weeklySessionsDelta: earningsData.weeklySessionsDelta,
         todayEarnings: earningsData.todayEarnings,
         currentWeekEarnings: earningsData.thisWeekEarnings,
         currentMonthEarnings: earningsData.thisMonthEarnings,
@@ -238,12 +239,20 @@ export default function Dashboard() {
   const renderCard = (card: DashboardCard, index: number) => {
     switch (card.id) {
       case 'sessions_this_week':
+        const weeklyDelta = dashboardStats?.weeklySessionsDelta || 0;
+        const deltaText = weeklyDelta === 0 
+          ? "no change from last week" 
+          : weeklyDelta > 0 
+            ? `+${weeklyDelta} from last week`
+            : `${weeklyDelta} from last week`;
+        const deltaType = weeklyDelta >= 0 ? "positive" : "negative";
+        
         return (
           <StatsCard
             title="Sessions This Week"
             value={isLoading ? "..." : (dashboardStats?.sessionsThisWeek.toString() || "0")}
-            change="+3 from last week"
-            changeType="positive"
+            change={deltaText}
+            changeType={deltaType}
             icon={BookOpen}
             iconColor="text-blue-600"
             iconBgColor="bg-blue-100"
