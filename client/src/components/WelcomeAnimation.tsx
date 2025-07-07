@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { DateTime } from 'luxon';
 import { 
   Sun, 
   Moon, 
@@ -129,9 +130,9 @@ export default function WelcomeAnimation({
     }
   };
 
-  // Get greeting info with time-based text and emoji
-  const getGreetingInfo = () => {
-    const hour = currentTime.getHours();
+  // Get greeting info with timezone-aware time-based text and emoji
+  const getGreetingInfo = (timezone: string) => {
+    const hour = DateTime.now().setZone(timezone).hour;
 
     if (hour < 12) return { text: 'morning', emoji: '🌞' };
     if (hour < 17) return { text: 'afternoon', emoji: '☕' };
@@ -142,7 +143,8 @@ export default function WelcomeAnimation({
   const greeting = getTimeBasedGreeting();
   const IconComponent = greeting.icon;
   const firstName = tutorInfo?.full_name?.split(' ')[0] || 'Tutor';
-  const { text: timeOfDay, emoji } = getGreetingInfo();
+  const timezone = tutorInfo?.timezone || 'UTC';
+  const { text: timeOfDay, emoji } = getGreetingInfo(timezone);
 
   // Get personalized stats message - only show when delta exists or meaningful data
   const getPersonalizedMessage = () => {
