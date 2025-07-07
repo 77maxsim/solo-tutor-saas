@@ -132,21 +132,16 @@ export default function WelcomeAnimation({
   const greeting = getTimeBasedGreeting();
   const IconComponent = greeting.icon;
   const firstName = tutorInfo?.full_name?.split(' ')[0] || 'Tutor';
+  const { text: timeOfDay, emoji } = getGreetingInfo();
   
-  // Get simple time of day for compact header
-  const getTimeOfDay = () => {
+  // Get greeting info with time-based text and emoji
+  const getGreetingInfo = () => {
     const hour = currentTime.getHours();
-    if (hour < 12) return 'morning';
-    if (hour < 17) return 'afternoon';
-    return 'evening';
-  };
 
-  // Get time-based emoji
-  const getGreetingEmoji = () => {
-    const hour = currentTime.getHours();
-    if (hour < 12) return '🌞';      // Morning
-    if (hour < 18) return '☕';      // Afternoon
-    return '🌙';                     // Evening
+    if (hour < 12) return { text: 'morning', emoji: '🌞' };
+    if (hour < 17) return { text: 'afternoon', emoji: '☕' };
+    if (hour < 21) return { text: 'evening', emoji: '🌆' };
+    return { text: 'night', emoji: '🌙' };
   };
 
   // Get personalized stats message - only show when delta exists or meaningful data
@@ -207,7 +202,7 @@ export default function WelcomeAnimation({
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="flex flex-col md:flex-row items-start md:items-center justify-between px-6 pt-4 md:pt-6 gap-4"
+        className="flex flex-col md:flex-row items-start md:items-center justify-between px-6 pt-4 md:pt-6 pb-6 gap-4"
       >
         <div className="flex items-center gap-4">
           <motion.div
@@ -238,7 +233,7 @@ export default function WelcomeAnimation({
               transition={{ delay: 0.7 }}
               className="text-xl font-bold"
             >
-              {getGreetingEmoji()} Good {getTimeOfDay()}, <span className="font-semibold">{firstName}</span>!
+              {emoji} Good {timeOfDay}, <span className="font-semibold">{firstName}</span>!
             </motion.h1>
             <motion.p
               initial={{ opacity: 0 }}
