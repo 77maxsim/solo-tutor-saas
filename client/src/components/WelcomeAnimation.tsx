@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DateTime } from 'luxon';
+import { useTimezone } from '@/contexts/TimezoneContext';
 import { 
   Sun, 
   Moon, 
@@ -45,6 +46,9 @@ export default function WelcomeAnimation({
   const [hasTriggeredConfetti, setHasTriggeredConfetti] = useState(false);
   const [isCompact, setIsCompact] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  
+  // Get timezone from context
+  const { tutorTimezone } = useTimezone();
 
   // Update time every minute for dynamic greeting
   useEffect(() => {
@@ -143,8 +147,16 @@ export default function WelcomeAnimation({
   const greeting = getTimeBasedGreeting();
   const IconComponent = greeting.icon;
   const firstName = tutorInfo?.full_name?.split(' ')[0] || 'Tutor';
-  const timezone = tutorInfo?.timezone || 'UTC';
+  const timezone = tutorTimezone || 'UTC';
   const { text: timeOfDay, emoji } = getGreetingInfo(timezone);
+  
+  // Debug logging for timezone
+  useEffect(() => {
+    if (timezone && timezone !== 'UTC') {
+      const luxonTime = DateTime.now().setZone(timezone);
+      console.log(`🌍 Greeting timezone: ${timezone}, local hour: ${luxonTime.hour}, greeting: ${timeOfDay} ${emoji}`);
+    }
+  }, [timezone, timeOfDay, emoji]);
 
   // Get personalized stats message - only show when delta exists or meaningful data
   const getPersonalizedMessage = () => {
