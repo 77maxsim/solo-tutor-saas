@@ -37,6 +37,7 @@ export default function WelcomeAnimation({
   const [showPersonalizedGreeting, setShowPersonalizedGreeting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hasTriggeredConfetti, setHasTriggeredConfetti] = useState(false);
+  const [showCompactHeader, setShowCompactHeader] = useState(false);
 
   // Update time every minute for dynamic greeting
   useEffect(() => {
@@ -44,6 +45,16 @@ export default function WelcomeAnimation({
       setCurrentTime(new Date());
     }, 60000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Handle scroll for compact header
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowCompactHeader(window.scrollY > 80);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Show personalized greeting after initial load
@@ -116,33 +127,35 @@ export default function WelcomeAnimation({
   const IconComponent = greeting.icon;
   const firstName = tutorInfo?.full_name?.split(' ')[0] || 'Tutor';
 
-  // Get personalized stats message
+  // Get personalized stats message - only show when delta exists or meaningful data
   const getPersonalizedMessage = () => {
     if (!dashboardStats) return null;
     
     const { sessionsThisWeek = 0, activeStudents = 0, weeklySessionsDelta = 0 } = dashboardStats;
     
+    // Only show banner when there's a delta or meaningful achievement
     if (weeklySessionsDelta > 0) {
       return {
-        message: `You're up ${weeklySessionsDelta} session${weeklySessionsDelta > 1 ? 's' : ''} from last week! 🚀`,
-        type: 'positive' as const
+        message: `You're up ${weeklySessionsDelta} session${weeklySessionsDelta > 1 ? 's' : ''} from last week!`,
+        type: 'positive' as const,
+        icon: TrendingUp
       };
-    } else if (sessionsThisWeek === 0) {
+    } else if (weeklySessionsDelta < 0) {
       return {
-        message: "Ready to make this week amazing? Let's schedule some sessions! 💪",
-        type: 'motivational' as const
+        message: `You're down ${Math.abs(weeklySessionsDelta)} session${Math.abs(weeklySessionsDelta) > 1 ? 's' : ''} from last week`,
+        type: 'neutral' as const,
+        icon: TrendingUp
       };
-    } else if (activeStudents > 5) {
+    } else if (activeStudents > 10) {
       return {
-        message: `You're inspiring ${activeStudents} students this month! Keep up the great work! ⭐`,
-        type: 'achievement' as const
-      };
-    } else {
-      return {
-        message: "Every great tutoring session starts with one step forward! ✨",
-        type: 'encouraging' as const
+        message: `You're inspiring ${activeStudents} students this month! Keep up the great work!`,
+        type: 'achievement' as const,
+        icon: Star
       };
     }
+    
+    // Return null for no banner when delta is 0 and no achievements
+    return null;
   };
 
   const personalizedMessage = getPersonalizedMessage();
@@ -168,9 +181,15 @@ export default function WelcomeAnimation({
       {/* Main Welcome Header */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={{ 
+          opacity: 1, 
+          y: 0,
+          scale: showCompactHeader ? 0.9 : 1
+        }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="flex items-center gap-4 p-6"
+        className={`flex items-center gap-4 transition-all duration-300 ${
+          showCompactHeader ? 'px-4 py-2' : 'px-6 py-4'
+        }`}
       >
         {/* Animated Avatar */}
         <motion.div
@@ -184,7 +203,9 @@ export default function WelcomeAnimation({
           }}
           className="relative"
         >
-          <Avatar className="w-16 h-16 border-4 border-white shadow-lg ring-2 ring-primary/20">
+          <Avatar className={`border-4 border-white shadow-lg ring-2 ring-primary/20 transition-all duration-300 ${
+            showCompactHeader ? 'w-12 h-12' : 'w-16 h-16'
+          }`}>
             <AvatarImage src={tutorInfo?.avatar_url || ''} alt={tutorInfo?.full_name || 'Tutor'} />
             <AvatarFallback className={`bg-gradient-to-br ${greeting.gradient} text-white text-lg font-bold`}>
               {tutorInfo?.full_name 
@@ -212,7 +233,9 @@ export default function WelcomeAnimation({
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
           >
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
+            <h1 className={`font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent transition-all duration-300 ${
+              showCompactHeader ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl'
+            }`}>
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -225,8 +248,9 @@ export default function WelcomeAnimation({
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 1, type: "spring" }}
                 className="inline-block ml-2"
+                style={{ filter: 'hue-rotate(0deg) saturate(1)' }}
               >
-                {greeting.emoji}
+                <IconComponent className={`inline-block ${showCompactHeader ? 'w-4 h-4' : 'w-5 h-5'} text-amber-500`} />
               </motion.span>
               <motion.span
                 initial={{ opacity: 0 }}
@@ -239,42 +263,46 @@ export default function WelcomeAnimation({
             </h1>
           </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1, duration: 0.5 }}
-            className="text-sm text-muted-foreground mt-1"
-          >
-            Here's what's happening with your tutoring business today.
-          </motion.p>
+          {!showCompactHeader && (
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.1, duration: 0.5 }}
+              className="text-sm text-muted-foreground mt-1"
+            >
+              Here's what's happening with your tutoring business today.
+            </motion.p>
+          )}
         </div>
 
-        {/* Floating sparkles animation */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5 }}
-          className="absolute top-2 right-8"
-        >
+        {/* Floating sparkles animation - only in full mode */}
+        {!showCompactHeader && (
           <motion.div
-            animate={{ 
-              y: [0, -8, 0],
-              rotate: [0, 180, 360]
-            }}
-            transition={{ 
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.5 }}
+            className="absolute top-2 right-8"
           >
-            <Sparkles className="w-4 h-4 text-yellow-400" />
+            <motion.div
+              animate={{ 
+                y: [0, -8, 0],
+                rotate: [0, 180, 360]
+              }}
+              transition={{ 
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
+              <Sparkles className="w-4 h-4 text-yellow-400" />
+            </motion.div>
           </motion.div>
-        </motion.div>
+        )}
       </motion.div>
 
-      {/* Personalized Stats Message */}
+      {/* Personalized Stats Message - Only when delta exists */}
       <AnimatePresence>
-        {showPersonalizedGreeting && personalizedMessage && (
+        {showPersonalizedGreeting && personalizedMessage && !showCompactHeader && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -289,21 +317,26 @@ export default function WelcomeAnimation({
             <Card className={`p-4 border-l-4 ${
               personalizedMessage.type === 'positive' 
                 ? 'border-l-green-500 bg-green-50 dark:bg-green-900/20' 
+                : personalizedMessage.type === 'neutral'
+                ? 'border-l-gray-500 bg-gray-50 dark:bg-gray-900/20'
                 : personalizedMessage.type === 'achievement'
                 ? 'border-l-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                : personalizedMessage.type === 'motivational'
-                ? 'border-l-blue-500 bg-blue-50 dark:bg-blue-900/20'
                 : 'border-l-orange-500 bg-orange-50 dark:bg-orange-900/20'
             }`}>
               <div className="flex items-center gap-3">
                 <motion.div
-                  animate={{ scale: [1, 1.2, 1] }}
+                  animate={{ scale: [1, 1.1, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  {personalizedMessage.type === 'positive' && <TrendingUp className="w-5 h-5 text-green-600" />}
-                  {personalizedMessage.type === 'achievement' && <Star className="w-5 h-5 text-purple-600" />}
-                  {personalizedMessage.type === 'motivational' && <Calendar className="w-5 h-5 text-blue-600" />}
-                  {personalizedMessage.type === 'encouraging' && <Users className="w-5 h-5 text-orange-600" />}
+                  <personalizedMessage.icon className={`w-5 h-5 ${
+                    personalizedMessage.type === 'positive' 
+                      ? 'text-green-600' 
+                      : personalizedMessage.type === 'neutral'
+                      ? 'text-gray-600'
+                      : personalizedMessage.type === 'achievement'
+                      ? 'text-purple-600'
+                      : 'text-orange-600'
+                  }`} />
                 </motion.div>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
                   {personalizedMessage.message}
