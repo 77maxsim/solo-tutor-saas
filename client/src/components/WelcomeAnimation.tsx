@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { 
   Sun, 
   Moon, 
@@ -244,17 +243,7 @@ export default function WelcomeAnimation({
           </div>
         </div>
 
-        <div className="hidden md:block">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1.1 }}
-          >
-            <Button className="text-sm" size="sm">
-              + Schedule a Session
-            </Button>
-          </motion.div>
-        </div>
+
       </motion.div>
 
       {/* Personalized Stats Message - Only when delta exists */}
