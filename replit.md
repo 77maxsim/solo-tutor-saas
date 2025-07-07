@@ -81,6 +81,13 @@ TutorTrack is a comprehensive tutoring management platform built with React and 
 
 ## Changelog
 
+### July 7, 2025: Fixed Sessions This Week Count and Weekly Delta
+- **Session Count Fix**: Fixed "Sessions This Week" dashboard card to show actual weekly sessions instead of monthly sessions
+- **Dynamic Weekly Delta**: Replaced hardcoded "+3 from last week" with dynamic calculation comparing current week vs previous week
+- **Enhanced Earnings Calculator**: Extended shared earnings calculator to include weekly session counts and delta calculations
+- **Timezone Awareness**: Weekly boundaries respect tutor's timezone settings for accurate week-start calculations
+- **Smart Delta Display**: Shows "no change", positive deltas (+N), or negative deltas (-N) based on actual session comparison
+
 ### July 4, 2025: Mark All as Paid Feature Implementation
 - **Bulk Payment Processing**: Added "Mark All as Paid" button to Earnings > Unpaid Sessions view
 - **Smart Filtering**: Button only appears when unpaid sessions exist, filters past sessions using dayjs.utc().isAfter(session.session_end)
