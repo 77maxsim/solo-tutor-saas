@@ -13,7 +13,7 @@ interface StatsCardProps {
 }
 
 export default function StatsCard({ title, value, change, icon, loading }: StatsCardProps) {
-  const { tutor } = useTutor();
+  const { data: tutor } = useTutor();
   const queryClient = useQueryClient();
 
   // Set up real-time subscription for sessions changes (affects multiple stats)

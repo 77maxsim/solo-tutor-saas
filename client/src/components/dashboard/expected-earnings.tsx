@@ -7,7 +7,7 @@ import { calculateExpectedEarnings } from '@/lib/earningsCalculator';
 import { useEffect } from 'react';
 
 export default function ExpectedEarnings() {
-  const { tutor } = useTutor();
+  const { data: tutor } = useTutor();
   const queryClient = useQueryClient();
 
   // Set up real-time subscription for sessions changes
