@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
-import { DateTime } from "luxon";
 import { useTimezone } from "@/contexts/TimezoneContext";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,8 +27,9 @@ export function StatsCard({
   iconColor,
   iconBgColor,
 }: StatsCardProps) {
-  const { tutorTimezone } = useTimezone();
   const queryClient = useQueryClient();
+  const [isHovered, setIsHovered] = useState(false);
+  const [isClicked, setIsClicked] = useState(false);
 
   // Set up real-time subscriptions for sessions and students
   useEffect(() => {
@@ -52,8 +52,6 @@ export function StatsCard({
       supabase.removeChannel(studentsChannel);
     };
   }, [queryClient]);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isClicked, setIsClicked] = useState(false);
 
   const handleClick = () => {
     setIsClicked(true);

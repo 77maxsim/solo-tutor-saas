@@ -5,11 +5,11 @@ import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { TrendingUp } from "lucide-react";
-
-// Import dayjs for timezone handling
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+
+// Configure dayjs plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
