@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -88,7 +88,7 @@ export default function Calendar() {
   console.log('🔍 Current pending modal state:', showPendingRequestsModal);
   const [highlightedSessionId, setHighlightedSessionId] = useState<string | undefined>(undefined);
   console.log('🔍 Current highlightedSessionId:', highlightedSessionId);
-
+  
   // Effect to ensure modal opens when highlightedSessionId is set
   useEffect(() => {
     if (highlightedSessionId) {
@@ -96,7 +96,7 @@ export default function Calendar() {
       setShowPendingRequestsModal(true);
     }
   }, [highlightedSessionId]);
-
+  
   const [calendarView, setCalendarView] = useState<'week' | 'month' | 'agenda'>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -118,7 +118,7 @@ export default function Calendar() {
   const [isEditingRecurring, setIsEditingRecurring] = useState(false);
   const [loadingSlot, setLoadingSlot] = useState<{x: number, y: number} | null>(null);
   const calendarRef = useRef<FullCalendar>(null);
-
+  
   const isMobile = useIsMobile();
   const { tutorTimezone } = useTimezone();
   const { toast } = useToast();
@@ -129,11 +129,11 @@ export default function Calendar() {
     const handleEditSession = (event: CustomEvent) => {
       const session = event.detail.session;
       console.log('📝 Edit session event received:', session);
-
+      
       // Close session details modal
       setShowSessionDetailsModal(false);
       setSessionForDetails(null);
-
+      
       // Set edit session data and open edit modal
       setEditSession(session);
       setIsEditingRecurring(false);
@@ -143,11 +143,11 @@ export default function Calendar() {
     const handleEditSeries = (event: CustomEvent) => {
       const session = event.detail.session;
       console.log('📝 Edit series event received:', session);
-
+      
       // Close session details modal
       setShowSessionDetailsModal(false);
       setSessionForDetails(null);
-
+      
       // Set edit session data and open edit modal for recurring
       setEditSession(session);
       setIsEditingRecurring(true);
@@ -172,13 +172,13 @@ export default function Calendar() {
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) throw new Error('No tutor found');
-
+      
       const { data, error } = await supabase
         .from('tutors')
         .select('currency, time_format')
         .eq('id', tutorId)
         .single();
-
+      
       if (error) throw error;
       return data;
     },
@@ -195,7 +195,7 @@ export default function Calendar() {
       if (!tutorId) return [];
 
       console.log('🔍 Fetching calendar sessions for tutor:', tutorId);
-
+      
       const useOptimized = await shouldUseOptimizedQuery(tutorId);
       if (useOptimized) {
         const results = await getOptimizedSessions(tutorId);
@@ -224,7 +224,7 @@ export default function Calendar() {
         }
         return acc;
       }, []);
-
+    
     console.log('📊 Unique students found:', students.length, students.map(s => s.name));
     return students.sort((a, b) => a.name.localeCompare(b.name));
   }, [sessions]);
@@ -233,7 +233,7 @@ export default function Calendar() {
   const filteredSessions = useMemo(() => {
     console.log('🔍 Filtering sessions - selected student:', selectedStudent);
     console.log('🔍 Raw sessions count:', sessions.length);
-
+    
     // Check for June 23rd sessions specifically
     const june23Sessions = sessions.filter(s => 
       s.session_start && s.session_start.includes('2025-06-23')
@@ -252,12 +252,12 @@ export default function Calendar() {
         });
       });
     }
-
+    
     if (selectedStudent === 'all') {
       console.log('🔍 Returning all sessions');
       return sessions;
     }
-
+    
     const filtered = sessions.filter(session => {
       // Include sessions assigned to selected student
       if (session.student_id === selectedStudent) return true;
@@ -265,7 +265,7 @@ export default function Calendar() {
       if (selectedStudent === 'all' && !session.student_id) return true;
       return false;
     });
-
+    
     console.log('🔍 Filtered sessions count:', filtered.length);
     return filtered;
   }, [sessions, selectedStudent]);
@@ -286,7 +286,7 @@ export default function Calendar() {
       session_end: s.session_end,
       has_timestamps: !!(s.session_start && s.session_end)
     })));
-
+    
     // Debug: Specifically check for booking requests
     const bookingRequestsInFiltered = filteredSessions.filter(s => 
       s.unassigned_name && s.unassigned_name.includes('Booking request from')
@@ -303,11 +303,11 @@ export default function Calendar() {
         has_valid_timestamps: !!(s.session_start && s.session_end)
       });
     });
-
+    
     const validEvents = [];
     const skippedSessions = [];
     const tutorTz = tutorTimezone || 'UTC';
-
+    
     filteredSessions.forEach(session => {
       // Only process sessions with UTC timestamps
       if (!session.session_start || !session.session_end) {
@@ -319,7 +319,7 @@ export default function Calendar() {
           student_name: session.student_name,
           unassigned_name: session.unassigned_name
         });
-
+        
         skippedSessions.push(session);
         return;
       }
@@ -328,7 +328,7 @@ export default function Calendar() {
         // Use the proper utility function that handles colors correctly
         const event = convertSessionToCalendarEvent(session, tutorTz);
         validEvents.push(event);
-
+        
         // Log event creation for verification including color
         console.log('✅ Calendar event created:', {
           id: session.id?.substring(0, 8) + '...',
@@ -345,7 +345,7 @@ export default function Calendar() {
         skippedSessions.push(session);
       }
     });
-
+    
     console.log('📊 Calendar event summary:', {
       totalFiltered: filteredSessions.length,
       validEvents: validEvents.length,
@@ -362,7 +362,7 @@ export default function Calendar() {
         reason: !s.session_start ? 'missing session_start' : !s.session_end ? 'missing session_end' : 'unknown'
       }))
     });
-
+    
     // Final check: Log events being passed to FullCalendar
     console.log('📅 Final events array for FullCalendar:', {
       totalEvents: validEvents.length,
@@ -376,20 +376,20 @@ export default function Calendar() {
           start_local: e.start.toLocaleString('en-US', { timeZone: tutorTz })
         }))
     });
-
+    
     return validEvents;
   }, [filteredSessions, tutorTimezone, timeFormat, tutorCurrency]);
 
   // Handle schedule session
   const handleScheduleSession = () => {
     console.log('✅ Opening single schedule modal from calendar');
-
+    
     // Prevent multiple modal instances
     if (showScheduleModal) {
       console.log('⚠️ Schedule modal already open, ignoring duplicate request');
       return;
     }
-
+    
     setEditSession(null); // Clear any existing edit session
     setShowScheduleModal(true);
   };
@@ -521,7 +521,7 @@ export default function Calendar() {
   // Handle event click to show session details modal
   const handleEventClick = (clickInfo: any) => {
     const session = clickInfo.event.extendedProps as SessionWithStudent;
-
+    
     if (session.status === 'pending' && session.student_id === null) {
       setSessionForDetails(session);
       setShowPendingRequestsModal(true);
@@ -537,7 +537,7 @@ export default function Calendar() {
   // Handle slot selection to schedule new session
   const handleDateSelect = useCallback((selectInfo: any) => {
     console.log('📅 Calendar select triggered:', selectInfo);
-
+    
     // Clear any existing timeout
     if (selectTimeoutRef.current) {
       clearTimeout(selectTimeoutRef.current);
@@ -571,11 +571,11 @@ export default function Calendar() {
       // FullCalendar selection is already in the display timezone
       const startInTutorTz = dayjs(selectInfo.start).tz(tutorTimezone || 'UTC');
       const endInTutorTz = dayjs(selectInfo.end).tz(tutorTimezone || 'UTC');
-
+      
       const selectedDate = startInTutorTz.format('YYYY-MM-DD');
       const selectedTime = startInTutorTz.format('HH:mm');
       const duration = endInTutorTz.diff(startInTutorTz, 'minutes');
-
+      
       console.log('🎯 Slot selected for new session:', {
         selected_start_js: selectInfo.start,
         selected_end_js: selectInfo.end,
@@ -588,7 +588,7 @@ export default function Calendar() {
       // Clear any existing edit session and open modal
       setEditSession(null);
       setShowScheduleModal(true);
-
+      
       // Store prefill data for the modal to use when it mounts
       window.sessionPrefillData = {
         date: selectedDate,
@@ -604,7 +604,7 @@ export default function Calendar() {
   // Handle single date clicks as fallback when select doesn't work
   const handleDateClick = useCallback((dateClickInfo: any) => {
     console.log('📅 Calendar dateClick triggered:', dateClickInfo);
-
+    
     // Prevent multiple modal instances
     if (showScheduleModal) {
       console.log('⚠️ Schedule modal already open, ignoring date click');
@@ -625,7 +625,7 @@ export default function Calendar() {
     const selectedDate = clickDate.format('YYYY-MM-DD');
     const selectedTime = clickDate.format('HH:mm');
     const duration = 60; // Default 1 hour duration for single clicks
-
+    
     console.log('🎯 Date clicked for new session:', {
       clicked_date: dateClickInfo.date,
       tutor_timezone: tutorTimezone || 'UTC',
@@ -638,7 +638,7 @@ export default function Calendar() {
       // Clear any existing edit session and open modal
       setEditSession(null);
       setShowScheduleModal(true);
-
+      
       // Store prefill data for the modal to use when it mounts
       window.sessionPrefillData = {
         date: selectedDate,
@@ -663,13 +663,13 @@ export default function Calendar() {
   // Handle event drop (drag and drop)
   const handleEventDrop = async (dropInfo: any) => {
     const session = dropInfo.event.extendedProps as SessionWithStudent;
-
+    
     // Convert FullCalendar's JS Date to UTC for storage
     const newStartUTC = dayjs(dropInfo.event.start).utc().toISOString();
     const newEndUTC = dayjs(dropInfo.event.end).utc().toISOString();
     // For legacy fields, convert to tutor timezone
     const newStartInTutorTz = dayjs(dropInfo.event.start).tz(tutorTimezone || 'UTC');
-
+    
     console.log('🔄 Drag & Drop - Converting times:', {
       session_id: session.id,
       js_start: dropInfo.event.start,
@@ -714,7 +714,7 @@ export default function Calendar() {
   // Handle event resize (drag-to-resize duration)
   const handleEventResize = async (resizeInfo: any) => {
     const session = resizeInfo.event.extendedProps as SessionWithStudent;
-
+    
     // Prevent resizing past sessions
     if (session.isPastSession) {
       resizeInfo.revert();
@@ -725,11 +725,11 @@ export default function Calendar() {
       });
       return;
     }
-
+    
     // Convert new end time to UTC for storage
     const newEndUTC = dayjs(resizeInfo.event.end).utc().toISOString();
     const newDuration = calculateDurationMinutes(resizeInfo.event.start, resizeInfo.event.end);
-
+    
     console.log('🔧 Resizing session duration:', {
       session_id: session.id,
       old_duration: session.duration,
@@ -808,23 +808,6 @@ export default function Calendar() {
     setIsFullScreen(!isFullScreen);
   };
 
-  // Set up real-time subscription for calendar sessions
-  useEffect(() => {
-    const tutorId = getCurrentTutorId();
-
-    const channel = supabase
-      .channel('calendar-sessions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, (payload) => {
-        console.log('Real-time update received:', payload);
-        queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-
   if (isLoading) {
     return (
       <div className="flex-1 overflow-auto">
@@ -852,7 +835,7 @@ export default function Calendar() {
               showPendingRequestsModal,
               sessionForDetails: !!sessionForDetails
             });
-
+            
             // For pending sessions, open pending modal instead
             if (session.status === 'pending') {
               console.log('🟠 Detected pending session, opening pending modal with ID:', session.id);
@@ -860,12 +843,12 @@ export default function Calendar() {
               setShowPendingRequestsModal(true);
               return;
             }
-
+            
             // For regular sessions, open session details modal
             console.log('📱 Opening session details modal for regular session');
             setSessionForDetails(session);
             setShowSessionDetailsModal(true);
-
+            
             // Log state after setting
             setTimeout(() => {
               console.log('📱 Modal states after update:', {
@@ -933,7 +916,7 @@ export default function Calendar() {
               <CalendarIcon className="h-6 w-6" />
               Calendar
             </h1>
-
+            
             {/* View Toggle */}
             <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
               <Button
@@ -1034,7 +1017,7 @@ export default function Calendar() {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-
+            
             {/* Month Title (only for month view) */}
             {calendarView === 'month' && (
               <div className="ml-4 text-lg font-semibold text-gray-900 dark:text-white">
@@ -1060,18 +1043,18 @@ export default function Calendar() {
             events={events}
             eventDidMount={(info) => {
               const session = info.event.extendedProps;
-
+              
               // Apply faded styling to past sessions
               if (session.isPastSession) {
                 info.el.style.opacity = '0.5';
                 info.el.style.filter = 'grayscale(50%)';
               }
-
+              
               // Disable resizing for past sessions
               if (session.isPastSession) {
                 info.el.style.cursor = 'default';
               }
-
+              
               // Debug: Log when June 23 events are mounted
               if (info.event.start && info.event.start.toISOString().includes('2025-06-23')) {
                 console.log('📅 FullCalendar mounted June 23 event:', {
@@ -1215,15 +1198,15 @@ export default function Calendar() {
           <div className="relative">
             {/* Outer Pulsing Ring */}
             <div className="absolute inset-0 w-10 h-10 rounded-full border-2 border-blue-400 animate-ping opacity-75"></div>
-
+            
             {/* Middle Spinning Circle */}
             <div className="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-gray-700 border-t-blue-500 animate-spin"></div>
-
+            
             {/* Center Dot */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
             </div>
-
+            
             {/* Floating "+" Icon */}
             <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold animate-bounce">
               +

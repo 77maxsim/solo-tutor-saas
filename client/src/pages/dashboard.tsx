@@ -272,7 +272,7 @@ export default function Dashboard() {
           />
         );
       case 'expected_earnings':
-        return <ExpectedEarnings tutor={tutorInfo} />;
+        return <ExpectedEarnings currency={tutorInfo?.currency || 'USD'} />;
       case 'earnings_summary':
         return (
           <Card className="hover-lift cursor-pointer transition-all duration-300 group hover:shadow-lg hover:shadow-green-100/50 dark:hover:shadow-green-900/20 border-2 hover:border-green-200 dark:hover:border-green-700 dark:bg-card dark:shadow-md dark:border-gray-700">
