@@ -1,6 +1,3 @@
-The StatsCard props interface is updated to include change, changeType, iconColor, and iconBgColor.
-```
-```replit_final_file
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
