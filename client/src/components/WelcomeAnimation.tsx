@@ -45,7 +45,16 @@ export default function WelcomeAnimation({
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hasTriggeredConfetti, setHasTriggeredConfetti] = useState(false);
   const [isCompact, setIsCompact] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(() => {
+    // Check if banner was dismissed today
+    const dismissedAt = localStorage.getItem("dashboardBannerDismissedAt");
+    if (!dismissedAt) return false;
+    
+    const now = new Date();
+    const lastDismissed = new Date(dismissedAt);
+    // If dismissed today, keep it dismissed
+    return now.toDateString() === lastDismissed.toDateString();
+  });
   
   // Get timezone from context
   const { tutorTimezone } = useTimezone();
@@ -78,11 +87,15 @@ export default function WelcomeAnimation({
     }
   }, [isLoading, tutorInfo]);
 
-  // Trigger celebration confetti for positive weekly delta
+  // Trigger celebration confetti for positive weekly delta - only once per login session
   useEffect(() => {
     if (!isLoading && dashboardStats && !hasTriggeredConfetti) {
       const weeklyDelta = dashboardStats.weeklySessionsDelta || 0;
-      if (weeklyDelta > 0) {
+      
+      // Check if confetti was already shown this session
+      const hasShownConfetti = sessionStorage.getItem("confettiShown");
+      
+      if (weeklyDelta > 0 && !hasShownConfetti) {
         setTimeout(() => {
           confetti({
             particleCount: 50,
@@ -91,6 +104,7 @@ export default function WelcomeAnimation({
             colors: ['#3B82F6', '#10B981', '#8B5CF6']
           });
           setHasTriggeredConfetti(true);
+          sessionStorage.setItem("confettiShown", "true");
         }, 2000);
       }
     }
@@ -292,7 +306,11 @@ export default function WelcomeAnimation({
               <span>You're {sessionDelta > 0 ? `up ${sessionDelta}` : `down ${Math.abs(sessionDelta)}`} session{Math.abs(sessionDelta) !== 1 ? 's' : ''} from last week!</span>
             </div>
             <button
-              onClick={() => setIsDismissed(true)}
+              onClick={() => {
+                const dismissDate = new Date().toISOString();
+                localStorage.setItem("dashboardBannerDismissedAt", dismissDate);
+                setIsDismissed(true);
+              }}
               className="flex-shrink-0 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               aria-label="Dismiss message"
             >

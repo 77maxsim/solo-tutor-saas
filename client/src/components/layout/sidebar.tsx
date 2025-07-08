@@ -91,6 +91,10 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
       // Clear all cached queries to prevent data leakage between users
       queryClient.clear();
       
+      // Clear session-specific localStorage items for fresh login experience
+      sessionStorage.removeItem("confettiShown");
+      localStorage.removeItem("dashboardBannerDismissedAt");
+      
       const { error } = await supabase.auth.signOut();
       if (error) {
         toast({
