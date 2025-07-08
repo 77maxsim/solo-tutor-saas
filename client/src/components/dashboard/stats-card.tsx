@@ -1,18 +1,19 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LucideIcon } from 'lucide-react';
 import { useTutor } from '@/lib/tutorHelpers';
 import { useEffect } from 'react';
 
 interface StatsCardProps {
   title: string;
   value: string | number;
-  change?: string;
-  icon: React.ReactNode;
-  loading?: boolean;
+  icon: LucideIcon;
+  subtitle?: string;
+  className?: string;
 }
 
-export function StatsCard({ title, value, change, icon, loading }: StatsCardProps) {
+export default function StatsCard({ title, value, icon: Icon, subtitle, className = "" }: StatsCardProps) {
   const { data: tutor } = useTutor();
   const queryClient = useQueryClient();
 
@@ -41,26 +42,14 @@ export function StatsCard({ title, value, change, icon, loading }: StatsCardProp
   }, [tutor, queryClient]);
 
   return (
-    <Card>
+    <Card className={`${className}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">
-          {title}
-        </CardTitle>
-        {icon}
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">
-          {loading ? (
-            <div className="animate-pulse bg-gray-200 h-6 w-16 rounded"></div>
-          ) : (
-            value
-          )}
-        </div>
-        {change && (
-          <p className="text-xs text-muted-foreground">
-            {change}
-          </p>
-        )}
+        <div className="text-2xl font-bold">{value}</div>
+        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
       </CardContent>
     </Card>
   );

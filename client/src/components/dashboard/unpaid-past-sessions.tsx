@@ -109,7 +109,7 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
   // Set up Supabase realtime subscription
   useEffect(() => {
     const channel = supabase
-      .channel('payment-overview-changes')
+      .channel('unpaid-sessions-changes-component')
       .on(
         'postgres_changes',
         {
@@ -118,7 +118,7 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
           table: 'sessions'
         },
         (payload) => {
-          console.log('Sessions updated, refreshing payment overview:', payload);
+          console.log('Sessions updated, refreshing unpaid sessions:', payload);
           queryClient.invalidateQueries({ queryKey: ['unpaid-past-sessions'] });
         }
       )

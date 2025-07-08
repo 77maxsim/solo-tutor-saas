@@ -137,6 +137,29 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
     };
   }, [queryClient]);
 
+  // Set up Supabase realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('schedule-modal-sessions-changes-component')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sessions'
+        },
+        (payload) => {
+          console.log('Sessions updated, refreshing schedule modal:', payload);
+          queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
 
   // Fetch tutor's currency and time format preferences
   const { data: tutorPreferences = { currency: 'USD', time_format: '24h' } } = useQuery({

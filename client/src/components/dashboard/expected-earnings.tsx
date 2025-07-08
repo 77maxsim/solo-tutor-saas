@@ -2,29 +2,33 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
-import { useTutor } from '@/lib/tutorHelpers';
 import { calculateExpectedEarnings } from '@/lib/earningsCalculator';
 import { useEffect } from 'react';
 
-export function ExpectedEarnings() {
-  const { data: tutor } = useTutor();
+interface ExpectedEarningsProps {
+  tutor: any;
+}
+
+export default function ExpectedEarnings({ tutor }: ExpectedEarningsProps) {
   const queryClient = useQueryClient();
 
-  // Set up real-time subscription for sessions changes
+  // Set up Supabase realtime subscription for sessions
   useEffect(() => {
-    if (!tutor) return;
+    if (!tutor?.id) return;
 
     const channel = supabase
-      .channel('expected-earnings-sessions')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
+      .channel(`expected-earnings-sessions-${tutor.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
           table: 'sessions',
           filter: `tutor_id=eq.${tutor.id}`
-        }, 
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['expected-earnings'] });
+        },
+        (payload) => {
+          console.log('Sessions updated, refreshing expected earnings:', payload);
+          queryClient.invalidateQueries({ queryKey: ['expected-earnings', tutor.id] });
         }
       )
       .subscribe();
@@ -32,20 +36,34 @@ export function ExpectedEarnings() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tutor, queryClient]);
+  }, [tutor?.id, queryClient]);
 
+  // Fetch scheduled sessions for expected earnings calculation
   const { data: expectedEarnings, isLoading, error } = useQuery({
     queryKey: ['expected-earnings', tutor?.id],
     queryFn: async () => {
-      if (!tutor) return { amount: 0, currency: 'USD' };
+      if (!tutor?.id) return { amount: 0, currency: 'USD' };
 
       const { data: sessions, error } = await supabase
         .from('sessions')
-        .select('*')
+        .select(`
+          id,
+          session_start,
+          session_end,
+          duration,
+          rate,
+          status,
+          tutor_id
+        `)
         .eq('tutor_id', tutor.id)
-        .eq('status', 'scheduled');
+        .eq('status', 'confirmed')
+        .gte('session_start', new Date().toISOString())
+        .order('session_start', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching scheduled sessions:', error);
+        throw error;
+      }
 
       return calculateExpectedEarnings(sessions || [], tutor);
     },
