@@ -1,122 +1,65 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/lib/supabaseClient";
-import { getCurrentTutorId } from "@/lib/tutorHelpers";
-import { useTimezone } from "@/contexts/TimezoneContext";
-import { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabaseClient';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTutor } from '@/lib/tutorHelpers';
+import { useEffect } from 'react';
 
 interface StatsCardProps {
   title: string;
-  value: string;
+  value: string | number;
   change?: string;
-  changeType?: "positive" | "negative" | "neutral";
-  icon: LucideIcon;
-  iconColor: string;
-  iconBgColor: string;
+  icon: React.ReactNode;
+  loading?: boolean;
 }
 
-export function StatsCard({
-  title,
-  value,
-  change,
-  changeType = "neutral",
-  icon: Icon,
-  iconColor,
-  iconBgColor,
-}: StatsCardProps) {
+export default function StatsCard({ title, value, change, icon, loading }: StatsCardProps) {
+  const { tutor } = useTutor();
   const queryClient = useQueryClient();
-  const [isHovered, setIsHovered] = useState(false);
-  const [isClicked, setIsClicked] = useState(false);
 
-  // Set up real-time subscriptions for sessions and students
+  // Set up real-time subscription for sessions changes (affects multiple stats)
   useEffect(() => {
-    const sessionsChannel = supabase
-      .channel('stats-sessions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['dashboard-sessions-this-week'] });
-      })
-      .subscribe();
+    if (!tutor) return;
 
-    const studentsChannel = supabase
-      .channel('stats-students')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['dashboard-active-students'] });
-      })
+    const channel = supabase
+      .channel('stats-card-sessions')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'sessions',
+          filter: `tutor_id=eq.${tutor.id}`
+        }, 
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+        }
+      )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(sessionsChannel);
-      supabase.removeChannel(studentsChannel);
+      supabase.removeChannel(channel);
     };
-  }, [queryClient]);
-
-  const handleClick = () => {
-    setIsClicked(true);
-    setTimeout(() => setIsClicked(false), 200);
-  };
-
-  const isLoading = value === "...";
+  }, [tutor, queryClient]);
 
   return (
-    <Card 
-      className={cn(
-        "hover-lift cursor-pointer transition-all duration-300 group animate-scale-in",
-        "hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20 border-2 hover:border-blue-200 dark:hover:border-blue-700",
-        "dark:bg-card dark:shadow-md dark:border-gray-700",
-        isClicked && "animate-bounce-subtle",
-        isLoading && "shimmer"
-      )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={handleClick}
-    >
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <p className={cn(
-              "text-sm font-medium transition-colors duration-200",
-              isHovered ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground dark:text-gray-400"
-            )}>
-              {title}
-            </p>
-            <p className={cn(
-              "text-2xl font-bold transition-all duration-300",
-              isHovered ? "text-blue-700 dark:text-blue-300 scale-105" : "text-foreground dark:text-gray-100",
-              isLoading && "animate-pulse text-muted-foreground dark:text-gray-500"
-            )}>
-              {value}
-            </p>
-          </div>
-          <div className={cn(
-            "h-12 w-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110",
-            iconBgColor,
-            "dark:bg-opacity-20 dark:border dark:border-gray-600",
-            isHovered && "shadow-lg animate-pulse-glow dark:shadow-gray-900/50"
-          )}>
-            <Icon className={cn(
-              "h-6 w-6 transition-all duration-300",
-              iconColor,
-              "dark:brightness-125",
-              isHovered && "animate-bounce-subtle"
-            )} />
-          </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">
+          {title}
+        </CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">
+          {loading ? (
+            <div className="animate-pulse bg-gray-200 h-6 w-16 rounded"></div>
+          ) : (
+            value
+          )}
         </div>
-        {change && !isLoading && (
-          <div className="mt-3 animate-slide-up" style={{animationDelay: '0.2s'}}>
-            <span
-              className={cn(
-                "text-sm font-medium transition-all duration-200 hover:scale-105 inline-block",
-                changeType === "positive" && "text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300",
-                changeType === "negative" && "text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300",
-                changeType === "neutral" && "text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200"
-              )}
-            >
-              {change}
-            </span>
-          </div>
+        {change && (
+          <p className="text-xs text-muted-foreground">
+            {change}
+          </p>
         )}
       </CardContent>
     </Card>
