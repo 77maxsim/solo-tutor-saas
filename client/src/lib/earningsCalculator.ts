@@ -190,3 +190,26 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     studentEarnings
   };
 }
+
+// Calculate expected earnings from scheduled sessions
+export function calculateExpectedEarnings(sessions: any[], tutor: any) {
+  const now = new Date();
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  
+  let totalExpected = 0;
+  
+  sessions.forEach(session => {
+    const sessionDate = new Date(session.session_start);
+    
+    // Only count sessions within the next 30 days
+    if (sessionDate >= now && sessionDate <= thirtyDaysFromNow) {
+      const earnings = (session.duration / 60) * session.rate;
+      totalExpected += earnings;
+    }
+  });
+  
+  return {
+    amount: totalExpected,
+    currency: tutor?.currency || 'USD'
+  };
+}

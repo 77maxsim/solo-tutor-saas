@@ -1,4 +1,28 @@
 import { supabase } from "./supabaseClient";
+import { useQuery } from '@tanstack/react-query';
+
+export function useTutor() {
+  return useQuery({
+    queryKey: ['tutor-profile'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: tutor, error } = await supabase
+        .from('tutors')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching tutor:', error);
+        return null;
+      }
+
+      return tutor;
+    },
+  });
+}
 
 export async function getCurrentTutorId(): Promise<string | null> {
   try {

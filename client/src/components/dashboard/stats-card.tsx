@@ -12,7 +12,7 @@ interface StatsCardProps {
   loading?: boolean;
 }
 
-export default function StatsCard({ title, value, change, icon, loading }: StatsCardProps) {
+export function StatsCard({ title, value, change, icon, loading }: StatsCardProps) {
   const { data: tutor } = useTutor();
   const queryClient = useQueryClient();
 

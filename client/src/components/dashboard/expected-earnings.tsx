@@ -6,7 +6,7 @@ import { useTutor } from '@/lib/tutorHelpers';
 import { calculateExpectedEarnings } from '@/lib/earningsCalculator';
 import { useEffect } from 'react';
 
-export default function ExpectedEarnings() {
+export function ExpectedEarnings() {
   const { data: tutor } = useTutor();
   const queryClient = useQueryClient();
 
