@@ -174,10 +174,8 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
     },
   });
 
-  const handleCancelSession = (sessionId: string, studentName: string) => {
-    if (window.confirm(`Are you sure you want to cancel the session with ${studentName}?`)) {
-      cancelSessionMutation.mutate(sessionId);
-    }
+  const handleCancelSession = (sessionId: string) => {
+    cancelSessionMutation.mutate(sessionId);
   };
 
   const handleMarkAsPaid = (sessionId: string, studentName: string) => {
@@ -349,15 +347,25 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
                   ) : (
                     handleMarkAsPaid(session.id, session.student_name)
                   )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
-                    onClick={() => handleCancelSession(session.id, session.student_name)}
+                  <ConfirmActionModal
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
+                        disabled={cancelSessionMutation.isPending}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    }
+                    title="Cancel this session?"
+                    description={`This will remove the session with ${session.student_name} from your calendar and cannot be undone.`}
+                    confirmText="Yes, cancel session"
+                    cancelText="No, keep session"
+                    onConfirm={() => handleCancelSession(session.id)}
+                    isDestructive={true}
                     disabled={cancelSessionMutation.isPending}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
+                  />
                 </div>
               </div>
             );
