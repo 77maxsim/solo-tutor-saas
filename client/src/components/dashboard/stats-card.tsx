@@ -1,3 +1,6 @@
+The StatsCard props interface is updated to include change, changeType, iconColor, and iconBgColor.
+```
+```replit_final_file
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,13 +10,17 @@ import { useEffect } from 'react';
 
 interface StatsCardProps {
   title: string;
-  value: string | number;
-  icon: LucideIcon;
+  value: string;
+  change?: string;
+  changeType?: "positive" | "negative";
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor?: string;
+  iconBgColor?: string;
   subtitle?: string;
   className?: string;
 }
 
-export function StatsCard({ title, value, icon: Icon, subtitle, className = "" }: StatsCardProps) {
+export function StatsCard({ title, value, change, changeType, icon: Icon, iconColor, iconBgColor, subtitle, className = "" }: StatsCardProps) {
   const { data: tutor } = useTutor();
   const queryClient = useQueryClient();
 
