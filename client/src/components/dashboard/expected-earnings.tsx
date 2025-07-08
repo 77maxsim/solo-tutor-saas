@@ -9,7 +9,7 @@ interface ExpectedEarningsProps {
   tutor: any;
 }
 
-export default function ExpectedEarnings({ tutor }: ExpectedEarningsProps) {
+export function ExpectedEarnings({ tutor }: ExpectedEarningsProps) {
   const queryClient = useQueryClient();
 
   // Set up Supabase realtime subscription for sessions

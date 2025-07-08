@@ -13,7 +13,7 @@ interface StatsCardProps {
   className?: string;
 }
 
-export default function StatsCard({ title, value, icon: Icon, subtitle, className = "" }: StatsCardProps) {
+export function StatsCard({ title, value, icon: Icon, subtitle, className = "" }: StatsCardProps) {
   const { data: tutor } = useTutor();
   const queryClient = useQueryClient();
 
