@@ -1,0 +1,79 @@
+// replit:
+Safely implement real-time data synchronization for the following 5 components using Supabase’s `supabase.channel().on('postgres_changes')` API.
+
+📌 Important:
+- DO NOT change Supabase schema, indexes, RLS policies, or column types.
+- DO NOT alter how UTC timestamps are stored.
+- DO NOT modify the existing Luxon-based timezone conversion logic.
+- Reuse the existing `tutor.timezone` value when formatting dates.
+- Clean up all subscriptions inside `useEffect` using a return function.
+
+---
+
+🧩 1. ExpectedEarnings (client/src/components/dashboard/expected-earnings.tsx)
+
+Goal: Auto-refresh the projected earnings (next 30 days) when sessions are added/updated/deleted.
+
+Implementation:
+- Subscribe to `INSERT`, `UPDATE`, `DELETE` on `sessions`
+- On any change, call `queryClient.invalidateQueries('expected-earnings')`
+
+---
+
+🧩 2. StatsCard (client/src/components/dashboard/stats-card.tsx)
+
+Goal: Update “Active Students” and “Sessions This Week” in real time.
+
+Implementation:
+- Subscribe to `sessions` and `students` tables
+- Invalidate queries:
+  - `queryClient.invalidateQueries('dashboard-sessions-this-week')`
+  - `queryClient.invalidateQueries('dashboard-active-students')`
+
+---
+
+🧩 3. Calendar Views (client/src/pages/calendar.tsx)
+
+Goal: Automatically show new/rescheduled sessions on the calendar without reload.
+
+Implementation:
+- Subscribe to `sessions` table for current tutor_id
+- On change, refetch or invalidate `calendar-sessions` query
+- Apply `.setZone(tutor.timezone)` when rendering session times
+
+---
+
+🧩 4. UnpaidPastSessions (client/src/components/dashboard/unpaid-past-sessions.tsx)
+
+Goal: When a session is marked as paid, remove it from the “Overdue Payments” section immediately.
+
+Implementation:
+- Subscribe to `sessions` where `paid = false` (can filter client-side after receiving)
+- On update, refetch `unpaid-sessions`
+
+---
+
+🧩 5. Student Dropdown in ScheduleSessionModal (client/src/components/modals/schedule-session-modal.tsx)
+
+Goal: When a new student is added, automatically appear in dropdown.
+
+Implementation:
+- Subscribe to `students` table where `tutor_id = current user`
+- Invalidate or refetch `students` query used in dropdown
+
+---
+
+✅ Boilerplate Template (Reusable):
+```tsx
+useEffect(() => {
+  const channel = supabase
+    .channel('realtime-updates')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
+      queryClient.invalidateQueries('your-query-key');
+    })
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, []);
