@@ -323,7 +323,16 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         fieldsToUpdate.push({ field: 'duration', value: lastSession.duration });
       }
       
-      // Remove time field prefilling since we use sessionStart directly
+      // Prefill time from last session's session_start if available and not manually modified
+      if (!userModifiedFields.has('sessionStart') && lastSession.session_start && tutorTimezone) {
+        const lastSessionTime = formatUtcToTutorTimezone(lastSession.session_start, tutorTimezone, 'HH:mm');
+        const existingDate = form.watch('sessionStart') ? 
+          dayjs.utc(form.watch('sessionStart')).tz(tutorTimezone).format('YYYY-MM-DD') : 
+          dayjs().format('YYYY-MM-DD');
+        
+        const newSessionStart = createSessionStart(existingDate, lastSessionTime, tutorTimezone);
+        fieldsToUpdate.push({ field: 'sessionStart', value: newSessionStart });
+      }
       
       // Apply the updates
       if (fieldsToUpdate.length > 0) {
@@ -332,6 +341,8 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
             form.setValue('rate', value);
           } else if (field === 'duration') {
             form.setValue('duration', value);
+          } else if (field === 'sessionStart') {
+            form.setValue('sessionStart', value);
           }
         });
         
