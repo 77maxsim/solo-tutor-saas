@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
@@ -45,6 +44,22 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
     localStorage.setItem('expected-earnings-timeframe', expectedTimeframe);
   }, [expectedTimeframe]);
 
+  const queryClient = useQueryClient();
+
+  // Set up real-time subscription for sessions changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('expected-earnings-sessions')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['upcoming-sessions-expected'] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   // Fetch upcoming sessions for expected earnings
   const { data: upcomingSessions, isLoading: isLoadingUpcoming } = useQuery({
     queryKey: ['upcoming-sessions-expected'],
@@ -60,7 +75,7 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
         .select('timezone')
         .eq('id', tutorId)
         .single();
-      
+
       const tutorTimezone = tutorInfo?.timezone;
       console.log('📦 ExpectedEarnings: Using tutor timezone:', tutorTimezone);
 
@@ -95,7 +110,7 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
         ...session,
         student_name: session.students?.name || 'Unknown Student'
       })) || [];
-      
+
       // Attach timezone info for calculations
       return { sessions, tutorTimezone };
     },
@@ -120,7 +135,7 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
         // Use timezone-aware calculation for "next calendar month" (1st to last day of next month only)
         let startOfNextMonth: Date;
         let endOfNextMonth: Date;
-        
+
         if (tutorTimezone) {
           // Get start and end of next month in tutor's timezone
           const nowInTimezone = dayjs().tz(tutorTimezone);
@@ -135,7 +150,7 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
           endOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0);
           endOfNextMonth.setHours(23, 59, 59, 999);
         }
-        
+
         filteredSessions = sessions.filter(session => {
           const sessionDate = new Date(session.session_start);
           return sessionDate >= startOfNextMonth && sessionDate <= endOfNextMonth;

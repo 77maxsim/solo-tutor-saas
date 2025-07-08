@@ -7,7 +7,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -124,6 +123,19 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
   // Track which fields user has manually modified to prevent overwriting
   const [userModifiedFields, setUserModifiedFields] = useState<Set<string>>(new Set());
 
+  // Set up real-time subscription for students
+  useEffect(() => {
+    const channel = supabase
+      .channel('schedule-modal-students')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['students'] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
 
   // Fetch tutor's currency and time format preferences
@@ -205,17 +217,17 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
     onSuccess: (newStudent) => {
       // Trigger confetti for new student
       triggerStudentConfetti();
-      
+
       // Refresh students list
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      
+
       // Auto-select the new student
       form.setValue('studentId', newStudent.id);
-      
+
       // Reset add student form
       setNewStudentName("");
       setShowAddStudent(false);
-      
+
       // Show success message
       toast({
         title: "🎓 Student added!",
@@ -255,7 +267,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         session_start: editSession.session_start,
         tutor_timezone: tutorTimezone
       });
-      
+
       form.setValue('studentId', editSession.student_id);
       form.setValue('sessionStart', editSession.session_start);
       form.setValue('duration', editSession.duration);
@@ -265,10 +277,10 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
       form.setValue('repeatWeekly', false); // Don't allow editing recurring sessions
       form.setValue('repeatWeeks', 1);
       form.setValue('applyNotesToSeries', false);
-      
+
       // Mark all fields as user-modified to prevent auto-prefilling
       setUserModifiedFields(new Set(['studentId', 'sessionStart', 'duration', 'rate', 'color', 'notes']));
-      
+
       // Show notes section if there are notes
       if (editSession.notes) {
         setShowNotes(true);
@@ -307,33 +319,33 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
   const handleStudentChange = async (studentId: string) => {
     // Update the student field
     form.setValue('studentId', studentId);
-    
+
     // Fetch student's last session data
     const lastSession = await fetchStudentLastSession(studentId);
-    
+
     if (lastSession) {
       // Only prefill fields that haven't been manually modified by the user
       const fieldsToUpdate: Array<{ field: string; value: any }> = [];
-      
+
       if (!userModifiedFields.has('rate') && lastSession.rate !== null) {
         fieldsToUpdate.push({ field: 'rate', value: Number(lastSession.rate) });
       }
-      
+
       if (!userModifiedFields.has('duration') && lastSession.duration !== null) {
         fieldsToUpdate.push({ field: 'duration', value: lastSession.duration });
       }
-      
+
       // Prefill time from last session's session_start if available and not manually modified
       if (!userModifiedFields.has('sessionStart') && lastSession.session_start && tutorTimezone) {
         const lastSessionTime = formatUtcToTutorTimezone(lastSession.session_start, tutorTimezone, 'HH:mm');
         const existingDate = form.watch('sessionStart') ? 
           dayjs.utc(form.watch('sessionStart')).tz(tutorTimezone).format('YYYY-MM-DD') : 
           dayjs().format('YYYY-MM-DD');
-        
+
         const newSessionStart = createSessionStart(existingDate, lastSessionTime, tutorTimezone);
         fieldsToUpdate.push({ field: 'sessionStart', value: newSessionStart });
       }
-      
+
       // Apply the updates
       if (fieldsToUpdate.length > 0) {
         fieldsToUpdate.forEach(({ field, value }) => {
@@ -345,7 +357,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
             form.setValue('sessionStart', value);
           }
         });
-        
+
         // Show success toast
         toast({
           title: "Prefilled from last session",
@@ -375,7 +387,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
     // Handle prefill data from calendar slot selection
     if (open && (window as any).sessionPrefillData && tutorTimezone) {
       const { date, time, duration } = (window as any).sessionPrefillData;
-      
+
       // Convert date + time to UTC sessionStart if provided
       if (date && time) {
         const localDateTime = `${date} ${time}`;
@@ -387,7 +399,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         form.setValue('duration', duration);
         setUserModifiedFields(prev => new Set(prev).add('duration'));
       }
-      
+
       // Clear the prefill data after using it
       delete (window as any).sessionPrefillData;
     }
@@ -398,7 +410,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
     };
 
     window.addEventListener('openScheduleModalFromButton', handleOpenFromButton);
-    
+
     return () => {
       window.removeEventListener('openScheduleModalFromButton', handleOpenFromButton);
     };
@@ -408,7 +420,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
   const createSessionStart = (localDate: string, localTime: string, timezone: string) => {
     const datetimeStr = `${localDate} ${localTime}`;
     const utcTimestamp = dayjs.tz(datetimeStr, timezone).utc();
-    
+
     console.log('Creating UTC sessionStart:', {
       local_date: localDate,
       local_time: localTime,
@@ -416,25 +428,25 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
       combined_local: datetimeStr,
       utc_result: utcTimestamp.toISOString()
     });
-    
+
     return utcTimestamp.toISOString();
   };
 
   const onSubmit = async (data: ScheduleSessionForm) => {
     setIsSubmitting(true);
-    
+
     console.log('Session submission data:', {
       sessionStart: data.sessionStart,
       duration: data.duration,
       tutorTimezone
     });
-    
+
     if (!tutorTimezone) {
       console.error('Timezone validation failed - tutorTimezone is:', tutorTimezone);
       setIsSubmitting(false);
       return;
     }
-    
+
     try {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
@@ -497,11 +509,11 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         // Create new session(s) with UTC timestamps
         const recurrenceId = data.repeatWeekly ? crypto.randomUUID() : null;
         const sessionsToInsert = [];
-        
+
         // First session
         const firstStartUTC = startUTC;
         const firstEndUTC = endUTC;
-        
+
         sessionsToInsert.push({
           student_id: data.studentId,
           session_start: firstStartUTC.toISOString(),
@@ -521,13 +533,13 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
             // Calculate recurring session times by adding weeks to the original sessionStart
             const weeklyStartUTC = startUTC.add(week * 7, 'days');
             const weeklyEndUTC = weeklyStartUTC.add(data.duration, 'minutes');
-            
+
             console.log(`Recurring session ${week} UTC:`, {
               week_offset: week,
               start_utc: weeklyStartUTC.toISOString(),
               end_utc: weeklyEndUTC.toISOString()
             });
-            
+
             sessionsToInsert.push({
               student_id: data.studentId,
               session_start: weeklyStartUTC.toISOString(),
@@ -560,7 +572,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         }
 
         triggerSuccessConfetti();
-        
+
         const sessionCount = sessionsToInsert.length;
         toast({
           title: "🎉 Success!",
@@ -574,7 +586,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
 
         console.log("Session created:", insertedData);
       }
-      
+
       // Reset form and close modal
       setTimeout(() => {
         form.reset();
@@ -606,7 +618,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
       });
       return;
     }
-    
+
     addStudentMutation.mutate(newStudentName);
   };
 
@@ -779,7 +791,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
                         />
                       </PopoverContent>
                     </Popover>
-                    
+
                     {/* Time Picker */}
                     <TimePicker
                       value={field.value ? dayjs.utc(field.value).tz(tutorTimezone || 'UTC').format('HH:mm') : ''}

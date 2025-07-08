@@ -1,3 +1,11 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/lib/supabaseClient";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
+import { DateTime } from "luxon";
+import { useTimezone } from "@/contexts/TimezoneContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,6 +30,30 @@ export function StatsCard({
   iconColor,
   iconBgColor,
 }: StatsCardProps) {
+  const { tutorTimezone } = useTimezone();
+  const queryClient = useQueryClient();
+
+  // Set up real-time subscriptions for sessions and students
+  useEffect(() => {
+    const sessionsChannel = supabase
+      .channel('stats-sessions')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['dashboard-sessions-this-week'] });
+      })
+      .subscribe();
+
+    const studentsChannel = supabase
+      .channel('stats-students')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['dashboard-active-students'] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(sessionsChannel);
+      supabase.removeChannel(studentsChannel);
+    };
+  }, [queryClient]);
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
 
