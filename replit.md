@@ -81,6 +81,13 @@ TutorTrack is a comprehensive tutoring management platform built with React and 
 
 ## Changelog
 
+### July 19, 2025: Real-time Data Synchronization Implementation
+- **Real-time ExpectedEarnings**: Added Supabase real-time subscription to ExpectedEarnings component for instant updates when session data changes
+- **Real-time UnpaidSessions**: Enhanced UnpaidPastSessions component with filtered real-time subscription by tutor_id
+- **Query Cache Invalidation**: Implemented proper cache invalidation using 'upcoming-sessions-expected' and 'unpaid-past-sessions' query keys
+- **Tutor-scoped Subscriptions**: All subscriptions filter by current tutor ID using `tutor_id=eq.${tutorId}` for data privacy
+- **Event Filtering**: Subscriptions listen for INSERT, UPDATE, DELETE events on sessions table for comprehensive real-time updates
+
 ### July 7, 2025: Fixed Sessions This Week Count and Weekly Delta
 - **Session Count Fix**: Fixed "Sessions This Week" dashboard card to show actual weekly sessions instead of monthly sessions
 - **Dynamic Weekly Delta**: Replaced hardcoded "+3 from last week" with dynamic calculation comparing current week vs previous week
