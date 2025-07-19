@@ -106,26 +106,37 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
     },
   });
 
-  // Set up Supabase realtime subscription
+  // Set up real-time subscription for sessions changes
   useEffect(() => {
-    const channel = supabase
-      .channel('payment-overview-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'sessions'
-        },
-        (payload) => {
-          console.log('Sessions updated, refreshing payment overview:', payload);
-          queryClient.invalidateQueries({ queryKey: ['unpaid-past-sessions'] });
-        }
-      )
-      .subscribe();
+    let channel: any = null;
+    
+    const setupSubscription = async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) return;
+
+      channel = supabase
+        .channel('unpaid-sessions-changes')
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'sessions',
+            filter: `tutor_id=eq.${tutorId}`
+          }, 
+          (payload) => {
+            console.log('📡 UnpaidSessions: Sessions changed, invalidating queries', payload);
+            queryClient.invalidateQueries({ queryKey: ['unpaid-past-sessions'] });
+          }
+        )
+        .subscribe();
+    };
+
+    setupSubscription();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [queryClient]);
 

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
@@ -33,6 +33,8 @@ interface ExpectedEarningsProps {
 type ExpectedTimeframe = 'next30days' | 'nextMonth' | 'allFuture';
 
 export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
+  const queryClient = useQueryClient();
+  
   // Toggle state for expected earnings timeframe
   const [expectedTimeframe, setExpectedTimeframe] = useState<ExpectedTimeframe>(() => {
     // Persist toggle state in localStorage
@@ -44,6 +46,40 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
   useEffect(() => {
     localStorage.setItem('expected-earnings-timeframe', expectedTimeframe);
   }, [expectedTimeframe]);
+
+  // Set up real-time subscription for sessions changes
+  useEffect(() => {
+    let channel: any = null;
+    
+    const setupSubscription = async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) return;
+
+      channel = supabase
+        .channel('expected-earnings-sessions')
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'sessions',
+            filter: `tutor_id=eq.${tutorId}`
+          }, 
+          () => {
+            console.log('📡 ExpectedEarnings: Sessions changed, invalidating queries');
+            queryClient.invalidateQueries({ queryKey: ['upcoming-sessions-expected'] });
+          }
+        )
+        .subscribe();
+    };
+
+    setupSubscription();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [queryClient]);
 
   // Fetch upcoming sessions for expected earnings
   const { data: upcomingSessions, isLoading: isLoadingUpcoming } = useQuery({
