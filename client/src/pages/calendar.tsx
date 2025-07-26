@@ -550,14 +550,18 @@ export default function Calendar() {
       return;
     }
 
-    // Prevent default scroll behavior
+    // Prevent default scroll behavior immediately
     if (selectInfo.jsEvent) {
       selectInfo.jsEvent.preventDefault();
-      selectInfo.jsEvent.stopPropagation();
+      selectInfo.jsEvent.stopImmediatePropagation();
     }
     
     // Store current scroll position to preserve it
     const currentScrollY = window.scrollY;
+    
+    // Prevent any scroll behavior by temporarily disabling scrolling
+    document.documentElement.style.scrollBehavior = 'auto';
+    document.body.style.scrollBehavior = 'auto';
 
     // Show loading indicator at click position
     const rect = selectInfo.jsEvent?.target?.getBoundingClientRect();
@@ -594,12 +598,6 @@ export default function Calendar() {
         duration: duration
       });
 
-      // Prevent body scroll before opening modal
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${currentScrollY}px`;
-      document.body.style.width = '100%';
-
       // Clear any existing edit session and open modal
       setEditSession(null);
       setShowScheduleModal(true);
@@ -613,6 +611,22 @@ export default function Calendar() {
 
       // Clear loading indicator when modal opens
       setLoadingSlot(null);
+      
+      // Maintain scroll position after modal opens - multiple approaches for reliability
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+        
+        // Double-check scroll position in next frame
+        requestAnimationFrame(() => {
+          if (window.scrollY !== currentScrollY) {
+            window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+          }
+          
+          // Re-enable scroll behavior after positioning
+          document.documentElement.style.scrollBehavior = '';
+          document.body.style.scrollBehavior = '';
+        });
+      });
     }, 100); // 100ms debounce delay
   }, [showScheduleModal, tutorTimezone]);
 
@@ -659,12 +673,6 @@ export default function Calendar() {
     });
 
     setTimeout(() => {
-      // Prevent body scroll before opening modal
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${currentScrollY}px`;
-      document.body.style.width = '100%';
-
       // Clear any existing edit session and open modal
       setEditSession(null);
       setShowScheduleModal(true);
@@ -678,6 +686,22 @@ export default function Calendar() {
 
       // Clear loading indicator when modal opens
       setLoadingSlot(null);
+      
+      // Maintain scroll position after modal opens - multiple approaches for reliability
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+        
+        // Double-check scroll position in next frame
+        requestAnimationFrame(() => {
+          if (window.scrollY !== currentScrollY) {
+            window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+          }
+          
+          // Re-enable scroll behavior after positioning
+          document.documentElement.style.scrollBehavior = '';
+          document.body.style.scrollBehavior = '';
+        });
+      });
     }, 100);
   }, [showScheduleModal, tutorTimezone]);
 
@@ -1103,8 +1127,9 @@ export default function Calendar() {
             eventClick={handleEventClick}
             select={handleDateSelect}
             dateClick={handleDateClick}
-            unselectAuto={true}
+            unselectAuto={false}
             selectMinDistance={5}
+            selectAllow={() => true}
             eventDrop={handleEventDrop}
             eventResize={handleEventResize}
             eventContent={renderEventContent}
@@ -1162,16 +1187,6 @@ export default function Calendar() {
         onOpenChange={(open) => {
           setShowScheduleModal(open);
           if (!open) {
-            // Restore body scroll when modal closes
-            const scrollY = document.body.style.top;
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.overflow = '';
-            document.body.style.width = '';
-            if (scrollY) {
-              window.scrollTo(0, parseInt(scrollY || '0') * -1);
-            }
-            
             setEditSession(null);
             setLoadingSlot(null); // Clear loading indicator when modal closes
             // Force calendar to clear any selection state

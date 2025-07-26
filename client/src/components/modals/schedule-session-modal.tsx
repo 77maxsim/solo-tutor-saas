@@ -625,10 +625,12 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="sm:max-w-[425px] max-h-[90vh] w-[95vw] sm:w-full flex flex-col p-0 gap-0"
+        className="sm:max-w-[425px] max-h-[90vh] w-[95vw] sm:w-full flex flex-col p-0 gap-0 focus:outline-none"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={() => onOpenChange(false)}
+        style={{ position: 'fixed' }}
       >
         <DialogHeader className="shrink-0 p-4 sm:p-6 pb-2">
           <DialogTitle className="text-lg">
