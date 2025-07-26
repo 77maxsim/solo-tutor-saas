@@ -119,23 +119,61 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
         .channel('unpaid-sessions-changes')
         .on('postgres_changes', 
           { 
-            event: '*', 
+            event: 'UPDATE', 
             schema: 'public', 
             table: 'sessions',
             filter: `tutor_id=eq.${tutorId}`
           }, 
           (payload) => {
-            console.log('📡 UnpaidSessions: Sessions changed, invalidating queries', payload);
-            queryClient.invalidateQueries({ queryKey: ['unpaid-past-sessions', limit] });
+            console.log('📡 UnpaidSessions: Session UPDATE detected', payload);
+            console.log('📡 UnpaidSessions: Query key being invalidated:', ['unpaid-past-sessions', limit]);
+            // Invalidate all unpaid-past-sessions queries regardless of limit
+            queryClient.invalidateQueries({ 
+              queryKey: ['unpaid-past-sessions'],
+              exact: false 
+            });
+          }
+        )
+        .on('postgres_changes', 
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'sessions',
+            filter: `tutor_id=eq.${tutorId}`
+          }, 
+          (payload) => {
+            console.log('📡 UnpaidSessions: Session INSERT detected', payload);
+            queryClient.invalidateQueries({ 
+              queryKey: ['unpaid-past-sessions'],
+              exact: false 
+            });
+          }
+        )
+        .on('postgres_changes', 
+          { 
+            event: 'DELETE', 
+            schema: 'public', 
+            table: 'sessions',
+            filter: `tutor_id=eq.${tutorId}`
+          }, 
+          (payload) => {
+            console.log('📡 UnpaidSessions: Session DELETE detected', payload);
+            queryClient.invalidateQueries({ 
+              queryKey: ['unpaid-past-sessions'],
+              exact: false 
+            });
           }
         )
         .subscribe();
 
-      // Fallback polling every 60 seconds in case WebSocket disconnects
+      // Fallback polling every 30 seconds in case WebSocket disconnects
       pollingInterval = setInterval(() => {
         console.log('📡 UnpaidSessions: Fallback polling, refreshing data');
-        queryClient.invalidateQueries({ queryKey: ['unpaid-past-sessions', limit] });
-      }, 60000);
+        queryClient.invalidateQueries({ 
+          queryKey: ['unpaid-past-sessions'],
+          exact: false 
+        });
+      }, 30000);
     };
 
     setupSubscription();
@@ -164,11 +202,16 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
       }
     },
     onSuccess: () => {
+      console.log('✅ UnpaidSessions: Payment marked as paid, invalidating caches');
       toast({
         title: "Payment recorded",
         description: "The session has been marked as paid.",
       });
-      queryClient.invalidateQueries({ queryKey: ['unpaid-past-sessions'] });
+      // Use exact: false to catch all variations of the query key
+      queryClient.invalidateQueries({ 
+        queryKey: ['unpaid-past-sessions'], 
+        exact: false 
+      });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['earnings-sessions'] });
