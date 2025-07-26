@@ -81,6 +81,12 @@ TutorTrack is a comprehensive tutoring management platform built with React and 
 
 ## Changelog
 
+### July 26, 2025: Real-time Updates & Calendar Modal Scroll Fix
+- **Hybrid Real-time System**: Implemented robust combination of Supabase real-time subscriptions with polling fallbacks (10-25 second intervals)
+- **Enhanced Reliability**: Dashboard components now use both WebSocket subscriptions and periodic data refresh to ensure updates work consistently
+- **Calendar Modal Fix**: Resolved scroll jump issue when opening Schedule Session modal by implementing body scroll lock mechanism
+- **Improved UX**: Calendar maintains scroll position when scheduling sessions, preventing disruptive page jumps during workflow
+
 ### July 19, 2025: Real-time Data Synchronization Implementation
 - **Real-time ExpectedEarnings**: Added Supabase real-time subscription to ExpectedEarnings component for instant updates when session data changes
 - **Real-time UnpaidSessions**: Enhanced UnpaidPastSessions component with filtered real-time subscription by tutor_id

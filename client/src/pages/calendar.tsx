@@ -594,6 +594,12 @@ export default function Calendar() {
         duration: duration
       });
 
+      // Prevent body scroll before opening modal
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${currentScrollY}px`;
+      document.body.style.width = '100%';
+
       // Clear any existing edit session and open modal
       setEditSession(null);
       setShowScheduleModal(true);
@@ -607,11 +613,6 @@ export default function Calendar() {
 
       // Clear loading indicator when modal opens
       setLoadingSlot(null);
-      
-      // Restore scroll position to prevent jump
-      setTimeout(() => {
-        window.scrollTo({ top: currentScrollY, behavior: 'instant' });
-      }, 50);
     }, 100); // 100ms debounce delay
   }, [showScheduleModal, tutorTimezone]);
 
@@ -658,6 +659,12 @@ export default function Calendar() {
     });
 
     setTimeout(() => {
+      // Prevent body scroll before opening modal
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${currentScrollY}px`;
+      document.body.style.width = '100%';
+
       // Clear any existing edit session and open modal
       setEditSession(null);
       setShowScheduleModal(true);
@@ -671,11 +678,6 @@ export default function Calendar() {
 
       // Clear loading indicator when modal opens
       setLoadingSlot(null);
-      
-      // Restore scroll position to prevent jump
-      setTimeout(() => {
-        window.scrollTo({ top: currentScrollY, behavior: 'instant' });
-      }, 50);
     }, 100);
   }, [showScheduleModal, tutorTimezone]);
 
@@ -1160,6 +1162,16 @@ export default function Calendar() {
         onOpenChange={(open) => {
           setShowScheduleModal(open);
           if (!open) {
+            // Restore body scroll when modal closes
+            const scrollY = document.body.style.top;
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.overflow = '';
+            document.body.style.width = '';
+            if (scrollY) {
+              window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            }
+            
             setEditSession(null);
             setLoadingSlot(null); // Clear loading indicator when modal closes
             // Force calendar to clear any selection state
