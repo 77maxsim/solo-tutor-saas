@@ -1,0 +1,28 @@
+/* Scroll Lock Utility Classes */
+.scroll-locked {
+  position: fixed !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  height: 100vh !important;
+}
+
+.scroll-locked-html {
+  overflow: hidden !important;
+  height: 100% !important;
+}
+
+/* Prevent FullCalendar from auto-scrolling */
+.fc-scroller {
+  scroll-behavior: auto !important;
+}
+
+.fc-view-harness {
+  scroll-behavior: auto !important;
+}
+
+/* Additional scroll prevention for modal interactions */
+.modal-open {
+  position: fixed !important;
+  overflow: hidden !important;
+  width: 100% !important;
+}

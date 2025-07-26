@@ -554,18 +554,36 @@ export default function Calendar() {
     if (selectInfo.jsEvent) {
       selectInfo.jsEvent.preventDefault();
       selectInfo.jsEvent.stopImmediatePropagation();
+      
+      // Prevent any scroll-related events
+      if (selectInfo.jsEvent.type === 'mousedown' || selectInfo.jsEvent.type === 'click') {
+        selectInfo.jsEvent.target?.addEventListener('scroll', (e) => e.preventDefault(), { once: true });
+      }
     }
     
     // Store current scroll position BEFORE any actions
     const preservedScrollY = window.scrollY;
     
-    // Immediately lock the scroll position
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${preservedScrollY}px`;
-    document.body.style.left = '0';
-    document.body.style.right = '0';
-    document.body.style.width = '100%';
-    document.body.style.overflow = 'hidden';
+    // Immediately lock the scroll position with comprehensive prevention
+    const scrollLockStyles = {
+      position: 'fixed' as const,
+      top: `-${preservedScrollY}px`,
+      left: '0',
+      right: '0', 
+      width: '100%',
+      overflow: 'hidden' as const,
+      height: '100vh'
+    };
+    
+    Object.assign(document.body.style, scrollLockStyles);
+    
+    // Also prevent scroll on document element
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.height = '100%';
+    
+    // Add CSS classes for additional scroll prevention
+    document.body.classList.add('scroll-locked', 'modal-open');
+    document.documentElement.classList.add('scroll-locked-html');
 
     // Show loading indicator at click position
     const rect = selectInfo.jsEvent?.target?.getBoundingClientRect();
@@ -1103,6 +1121,8 @@ export default function Calendar() {
             unselectAuto={false}
             selectMinDistance={5}
             selectAllow={() => true}
+            scrollTime="06:00:00"
+            scrollTimeReset={false}
             eventDrop={handleEventDrop}
             eventResize={handleEventResize}
             eventContent={renderEventContent}

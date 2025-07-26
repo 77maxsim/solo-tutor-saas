@@ -624,9 +624,20 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         document.body.style.right = '';
         document.body.style.width = '';
         document.body.style.overflow = '';
+        document.body.style.height = '';
+        
+        // Restore document element styles
+        document.documentElement.style.overflow = '';
+        document.documentElement.style.height = '';
+        
+        // Remove CSS classes
+        document.body.classList.remove('scroll-locked', 'modal-open');
+        document.documentElement.classList.remove('scroll-locked-html');
         
         // Restore scroll position
-        window.scrollTo(0, scrollY);
+        requestAnimationFrame(() => {
+          window.scrollTo(0, scrollY);
+        });
       }
     }
   }, [open]);
