@@ -624,7 +624,11 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] w-[95vw] sm:w-full flex flex-col p-0 gap-0">
+      <DialogContent 
+        className="sm:max-w-[425px] max-h-[90vh] w-[95vw] sm:w-full flex flex-col p-0 gap-0"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader className="shrink-0 p-4 sm:p-6 pb-2">
           <DialogTitle className="text-lg">
             {(editMode || (editSession && editSession.id)) ? "Edit Session" : "Schedule a Session"}

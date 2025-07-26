@@ -550,6 +550,15 @@ export default function Calendar() {
       return;
     }
 
+    // Prevent default scroll behavior
+    if (selectInfo.jsEvent) {
+      selectInfo.jsEvent.preventDefault();
+      selectInfo.jsEvent.stopPropagation();
+    }
+    
+    // Store current scroll position to preserve it
+    const currentScrollY = window.scrollY;
+
     // Show loading indicator at click position
     const rect = selectInfo.jsEvent?.target?.getBoundingClientRect();
     if (rect) {
@@ -598,6 +607,11 @@ export default function Calendar() {
 
       // Clear loading indicator when modal opens
       setLoadingSlot(null);
+      
+      // Restore scroll position to prevent jump
+      setTimeout(() => {
+        window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+      }, 50);
     }, 100); // 100ms debounce delay
   }, [showScheduleModal, tutorTimezone]);
 
@@ -605,11 +619,20 @@ export default function Calendar() {
   const handleDateClick = useCallback((dateClickInfo: any) => {
     console.log('📅 Calendar dateClick triggered:', dateClickInfo);
     
+    // Prevent default scroll behavior
+    if (dateClickInfo.jsEvent) {
+      dateClickInfo.jsEvent.preventDefault();
+      dateClickInfo.jsEvent.stopPropagation();
+    }
+    
     // Prevent multiple modal instances
     if (showScheduleModal) {
       console.log('⚠️ Schedule modal already open, ignoring date click');
       return;
     }
+
+    // Store current scroll position to preserve it
+    const currentScrollY = window.scrollY;
 
     // Show loading indicator at click position
     const rect = dateClickInfo.jsEvent?.target?.getBoundingClientRect();
@@ -648,6 +671,11 @@ export default function Calendar() {
 
       // Clear loading indicator when modal opens
       setLoadingSlot(null);
+      
+      // Restore scroll position to prevent jump
+      setTimeout(() => {
+        window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+      }, 50);
     }, 100);
   }, [showScheduleModal, tutorTimezone]);
 
