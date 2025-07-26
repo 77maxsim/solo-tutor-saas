@@ -317,12 +317,12 @@ export default function Students() {
 
 
 
-  const isLoading = isLoadingStudents || isLoadingSessions;
+  const isLoading = isLoadingStudents; // Only wait for students, sessions can be empty
 
-  // Set up Supabase realtime subscription
+  // Set up Supabase realtime subscription for both students and sessions
   useEffect(() => {
     const channel = supabase
-      .channel('student-sessions-changes')
+      .channel('students-and-sessions-changes')
       .on(
         'postgres_changes',
         {
@@ -335,6 +335,18 @@ export default function Students() {
           queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'students'
+        },
+        (payload) => {
+          console.log('Students updated, refreshing student data:', payload);
+          queryClient.invalidateQueries({ queryKey: ['students'] });
+        }
+      )
       .subscribe();
 
     return () => {
@@ -342,40 +354,11 @@ export default function Students() {
     };
   }, [queryClient]);
 
-  // Calculate student summaries with correct business logic
+  // Calculate student summaries with correct business logic - includes ALL students
   const calculateStudentSummaries = (students: any[], sessions: Session[]): StudentSummary[] => {
-    if (!sessions || sessions.length === 0) return [];
+    if (!students || students.length === 0) return [];
 
     const now = new Date();
-    const studentMap = new Map<string, any>();
-
-    // Handle both optimized query format (student_name directly) and standard query format (nested students)
-    sessions?.forEach((session: any) => {
-      if (session.student_id && !studentMap.has(session.student_id)) {
-        // For optimized queries: data is directly on session
-        if (session.student_name && !session.students) {
-          studentMap.set(session.student_id, {
-            id: session.student_id,
-            name: session.student_name,
-            phone: null, // Not available in optimized query
-            email: null, // Not available in optimized query
-            tags: [],
-            avatar_url: session.avatarUrl
-          });
-        }
-        // For standard queries: data is nested in students object
-        else if (session.students) {
-          studentMap.set(session.student_id, {
-            id: session.student_id,
-            name: session.students.name,
-            phone: session.students.phone,
-            email: session.students.email,
-            tags: session.students.tags,
-            avatar_url: session.students.avatar_url
-          });
-        }
-      }
-    });
 
     // Group sessions by student_id
     const sessionsByStudentId = new Map<string, Session[]>();
@@ -386,7 +369,8 @@ export default function Students() {
       sessionsByStudentId.get(session.student_id)!.push(session);
     });
 
-    return Array.from(studentMap.values()).map(student => {
+    // Process ALL students from the students query, not just those with sessions
+    return students.map(student => {
       const studentSessions = sessionsByStudentId.get(student.id) || [];
       let totalEarnings = 0;
       let totalDuration = 0;
@@ -426,10 +410,10 @@ export default function Students() {
         avgSessionDuration: studentSessions.length > 0 ? totalDuration / studentSessions.length : 0,
         upcomingSessions
       };
-    }).sort((a, b) => b.totalEarnings - a.totalEarnings);
+    }).sort((a, b) => a.name.localeCompare(b.name)); // Sort by name instead of earnings to show all students consistently
   };
 
-  const studentSummaries = students && sessions ? calculateStudentSummaries(students, sessions) : [];
+  const studentSummaries = students ? calculateStudentSummaries(students, sessions || []) : [];
 
 
 
@@ -538,7 +522,7 @@ export default function Students() {
             {studentSummaries.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
-                  No students found. Start by scheduling your first session.
+                  No students found. Click "Add Student" to create your first student profile.
                 </p>
               </div>
             ) : (
