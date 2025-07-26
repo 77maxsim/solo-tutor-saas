@@ -556,12 +556,16 @@ export default function Calendar() {
       selectInfo.jsEvent.stopImmediatePropagation();
     }
     
-    // Store current scroll position to preserve it
-    const currentScrollY = window.scrollY;
+    // Store current scroll position BEFORE any actions
+    const preservedScrollY = window.scrollY;
     
-    // Prevent any scroll behavior by temporarily disabling scrolling
-    document.documentElement.style.scrollBehavior = 'auto';
-    document.body.style.scrollBehavior = 'auto';
+    // Immediately lock the scroll position
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${preservedScrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
 
     // Show loading indicator at click position
     const rect = selectInfo.jsEvent?.target?.getBoundingClientRect();
@@ -611,22 +615,6 @@ export default function Calendar() {
 
       // Clear loading indicator when modal opens
       setLoadingSlot(null);
-      
-      // Maintain scroll position after modal opens - multiple approaches for reliability
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: currentScrollY, behavior: 'instant' });
-        
-        // Double-check scroll position in next frame
-        requestAnimationFrame(() => {
-          if (window.scrollY !== currentScrollY) {
-            window.scrollTo({ top: currentScrollY, behavior: 'instant' });
-          }
-          
-          // Re-enable scroll behavior after positioning
-          document.documentElement.style.scrollBehavior = '';
-          document.body.style.scrollBehavior = '';
-        });
-      });
     }, 100); // 100ms debounce delay
   }, [showScheduleModal, tutorTimezone]);
 
@@ -647,7 +635,7 @@ export default function Calendar() {
     }
 
     // Store current scroll position to preserve it
-    const currentScrollY = window.scrollY;
+    const preservedScrollY = window.scrollY;
 
     // Show loading indicator at click position
     const rect = dateClickInfo.jsEvent?.target?.getBoundingClientRect();
@@ -687,21 +675,6 @@ export default function Calendar() {
       // Clear loading indicator when modal opens
       setLoadingSlot(null);
       
-      // Maintain scroll position after modal opens - multiple approaches for reliability
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: currentScrollY, behavior: 'instant' });
-        
-        // Double-check scroll position in next frame
-        requestAnimationFrame(() => {
-          if (window.scrollY !== currentScrollY) {
-            window.scrollTo({ top: currentScrollY, behavior: 'instant' });
-          }
-          
-          // Re-enable scroll behavior after positioning
-          document.documentElement.style.scrollBehavior = '';
-          document.body.style.scrollBehavior = '';
-        });
-      });
     }, 100);
   }, [showScheduleModal, tutorTimezone]);
 

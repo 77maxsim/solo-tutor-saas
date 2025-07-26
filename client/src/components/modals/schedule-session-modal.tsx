@@ -610,24 +610,14 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
     addStudentMutation.mutate(newStudentName);
   };
 
-  // Manage scroll lock when modal opens
+  // Manage scroll restoration when modal closes
   useEffect(() => {
-    let scrollY = 0;
-    
-    if (open) {
-      // Capture current scroll position
-      scrollY = window.scrollY;
-      
-      // Prevent scrolling on body
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-      document.body.style.width = '100%';
-      document.body.style.overflow = 'hidden';
-      
-      return () => {
-        // Restore scroll position when modal closes
+    if (!open) {
+      // When modal closes, restore scroll if body was locked
+      if (document.body.style.position === 'fixed') {
+        const scrollY = parseInt(document.body.style.top || '0') * -1;
+        
+        // Restore body styles
         document.body.style.position = '';
         document.body.style.top = '';
         document.body.style.left = '';
@@ -637,7 +627,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         
         // Restore scroll position
         window.scrollTo(0, scrollY);
-      };
+      }
     }
   }, [open]);
 
