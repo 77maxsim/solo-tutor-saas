@@ -221,7 +221,10 @@ export default function Dashboard() {
     
     const setupSubscriptions = async () => {
       const tutorId = await getCurrentTutorId();
-      if (!tutorId) return;
+      if (!tutorId) {
+        console.log('📡 Dashboard: No tutor ID found, skipping subscription setup');
+        return;
+      }
 
       console.log('📡 Dashboard: Setting up real-time subscriptions for tutor:', tutorId);
 
@@ -273,7 +276,9 @@ export default function Dashboard() {
             });
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('📡 Dashboard: Sessions subscription status:', status);
+        });
 
       // Subscribe to students table changes for active students count
       studentsChannel = supabase
@@ -323,12 +328,18 @@ export default function Dashboard() {
             });
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('📡 Dashboard: Students subscription status:', status);
+        });
     };
 
-    setupSubscriptions();
+    // Add a delay to ensure authentication is established
+    const timer = setTimeout(() => {
+      setupSubscriptions();
+    }, 2000);
 
     return () => {
+      clearTimeout(timer);
       if (sessionsChannel) {
         console.log('📡 Dashboard: Cleaning up sessions subscription');
         supabase.removeChannel(sessionsChannel);

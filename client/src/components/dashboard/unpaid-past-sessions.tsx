@@ -113,7 +113,12 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
     
     const setupSubscription = async () => {
       const tutorId = await getCurrentTutorId();
-      if (!tutorId) return;
+      if (!tutorId) {
+        console.log('📡 UnpaidSessions: No tutor ID found, skipping subscription setup');
+        return;
+      }
+
+      console.log('📡 UnpaidSessions: Setting up real-time subscription for tutor:', tutorId);
 
       channel = supabase
         .channel('unpaid-sessions-changes')
@@ -164,7 +169,9 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
             });
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('📡 UnpaidSessions: Subscription status:', status);
+        });
 
       // Fallback polling every 30 seconds in case WebSocket disconnects
       pollingInterval = setInterval(() => {
@@ -176,9 +183,13 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
       }, 30000);
     };
 
-    setupSubscription();
+    // Add a delay to ensure authentication is established
+    const timer = setTimeout(() => {
+      setupSubscription();
+    }, 2000);
 
     return () => {
+      clearTimeout(timer);
       if (channel) {
         supabase.removeChannel(channel);
       }

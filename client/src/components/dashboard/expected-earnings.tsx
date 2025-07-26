@@ -53,7 +53,10 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
     
     const setupSubscription = async () => {
       const tutorId = await getCurrentTutorId();
-      if (!tutorId) return;
+      if (!tutorId) {
+        console.log('📡 ExpectedEarnings: No tutor ID found, skipping subscription setup');
+        return;
+      }
 
       console.log('📡 ExpectedEarnings: Setting up real-time subscription for tutor:', tutorId);
 
@@ -104,12 +107,18 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
             });
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('📡 ExpectedEarnings: Subscription status:', status);
+        });
     };
 
-    setupSubscription();
+    // Add a delay to ensure authentication is established
+    const timer = setTimeout(() => {
+      setupSubscription();
+    }, 2000);
 
     return () => {
+      clearTimeout(timer);
       if (channel) {
         console.log('📡 ExpectedEarnings: Cleaning up subscription');
         supabase.removeChannel(channel);
