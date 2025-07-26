@@ -223,19 +223,54 @@ export default function Dashboard() {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) return;
 
-      // Subscribe to sessions table changes
+      console.log('📡 Dashboard: Setting up real-time subscriptions for tutor:', tutorId);
+
+      // Subscribe to sessions table changes with specific events
       sessionsChannel = supabase
         .channel('dashboard-sessions-changes')
         .on('postgres_changes', 
           { 
-            event: '*', 
+            event: 'INSERT', 
             schema: 'public', 
             table: 'sessions',
             filter: `tutor_id=eq.${tutorId}`
           }, 
           (payload) => {
-            console.log('📡 Dashboard: Sessions changed, invalidating dashboard stats', payload);
-            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            console.log('📡 Dashboard: Session INSERT detected', payload);
+            queryClient.invalidateQueries({ 
+              queryKey: ['dashboard-stats'],
+              exact: false 
+            });
+          }
+        )
+        .on('postgres_changes', 
+          { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'sessions',
+            filter: `tutor_id=eq.${tutorId}`
+          }, 
+          (payload) => {
+            console.log('📡 Dashboard: Session UPDATE detected', payload);
+            queryClient.invalidateQueries({ 
+              queryKey: ['dashboard-stats'],
+              exact: false 
+            });
+          }
+        )
+        .on('postgres_changes', 
+          { 
+            event: 'DELETE', 
+            schema: 'public', 
+            table: 'sessions',
+            filter: `tutor_id=eq.${tutorId}`
+          }, 
+          (payload) => {
+            console.log('📡 Dashboard: Session DELETE detected', payload);
+            queryClient.invalidateQueries({ 
+              queryKey: ['dashboard-stats'],
+              exact: false 
+            });
           }
         )
         .subscribe();
@@ -245,14 +280,47 @@ export default function Dashboard() {
         .channel('dashboard-students-changes')
         .on('postgres_changes', 
           { 
-            event: '*', 
+            event: 'INSERT', 
             schema: 'public', 
             table: 'students',
             filter: `tutor_id=eq.${tutorId}`
           }, 
           (payload) => {
-            console.log('📡 Dashboard: Students changed, invalidating dashboard stats', payload);
-            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            console.log('📡 Dashboard: Student INSERT detected', payload);
+            queryClient.invalidateQueries({ 
+              queryKey: ['dashboard-stats'],
+              exact: false 
+            });
+          }
+        )
+        .on('postgres_changes', 
+          { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'students',
+            filter: `tutor_id=eq.${tutorId}`
+          }, 
+          (payload) => {
+            console.log('📡 Dashboard: Student UPDATE detected', payload);
+            queryClient.invalidateQueries({ 
+              queryKey: ['dashboard-stats'],
+              exact: false 
+            });
+          }
+        )
+        .on('postgres_changes', 
+          { 
+            event: 'DELETE', 
+            schema: 'public', 
+            table: 'students',
+            filter: `tutor_id=eq.${tutorId}`
+          }, 
+          (payload) => {
+            console.log('📡 Dashboard: Student DELETE detected', payload);
+            queryClient.invalidateQueries({ 
+              queryKey: ['dashboard-stats'],
+              exact: false 
+            });
           }
         )
         .subscribe();
@@ -262,9 +330,11 @@ export default function Dashboard() {
 
     return () => {
       if (sessionsChannel) {
+        console.log('📡 Dashboard: Cleaning up sessions subscription');
         supabase.removeChannel(sessionsChannel);
       }
       if (studentsChannel) {
+        console.log('📡 Dashboard: Cleaning up students subscription');
         supabase.removeChannel(studentsChannel);
       }
     };
@@ -414,7 +484,7 @@ export default function Dashboard() {
       {/* Enhanced Welcome Header with Animation */}
       <header className="hidden md:block bg-white dark:bg-card border-b border-border animate-fade-in overflow-hidden">
         <WelcomeAnimation 
-          tutorInfo={tutorInfo}
+          tutorInfo={tutorInfo || null}
           dashboardStats={dashboardStats}
           isLoading={isLoading}
           openScheduleModal={handleScheduleSession}

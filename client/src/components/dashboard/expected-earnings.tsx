@@ -55,18 +55,53 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) return;
 
+      console.log('📡 ExpectedEarnings: Setting up real-time subscription for tutor:', tutorId);
+
       channel = supabase
         .channel('expected-earnings-sessions')
         .on('postgres_changes', 
           { 
-            event: '*', 
+            event: 'INSERT', 
             schema: 'public', 
             table: 'sessions',
             filter: `tutor_id=eq.${tutorId}`
           }, 
           (payload) => {
-            console.log('📡 ExpectedEarnings: Sessions changed, invalidating queries', payload);
-            queryClient.invalidateQueries({ queryKey: ['upcoming-sessions-expected'] });
+            console.log('📡 ExpectedEarnings: Session INSERT detected', payload);
+            queryClient.invalidateQueries({ 
+              queryKey: ['upcoming-sessions-expected'],
+              exact: false 
+            });
+          }
+        )
+        .on('postgres_changes', 
+          { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'sessions',
+            filter: `tutor_id=eq.${tutorId}`
+          }, 
+          (payload) => {
+            console.log('📡 ExpectedEarnings: Session UPDATE detected', payload);
+            queryClient.invalidateQueries({ 
+              queryKey: ['upcoming-sessions-expected'],
+              exact: false 
+            });
+          }
+        )
+        .on('postgres_changes', 
+          { 
+            event: 'DELETE', 
+            schema: 'public', 
+            table: 'sessions',
+            filter: `tutor_id=eq.${tutorId}`
+          }, 
+          (payload) => {
+            console.log('📡 ExpectedEarnings: Session DELETE detected', payload);
+            queryClient.invalidateQueries({ 
+              queryKey: ['upcoming-sessions-expected'],
+              exact: false 
+            });
           }
         )
         .subscribe();
@@ -76,6 +111,7 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
 
     return () => {
       if (channel) {
+        console.log('📡 ExpectedEarnings: Cleaning up subscription');
         supabase.removeChannel(channel);
       }
     };
