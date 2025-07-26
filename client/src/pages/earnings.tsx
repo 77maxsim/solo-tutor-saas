@@ -23,6 +23,7 @@ import {
   Calendar,
   Users
 } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface Session {
   id: string;
@@ -50,6 +51,14 @@ interface StudentEarnings {
   student_name: string;
   total_earnings: number;
   session_count: number;
+}
+
+interface MonthlyEarnings {
+  month: string;
+  year: number;
+  monthNum: number;
+  earnings: number;
+  isCurrentMonth: boolean;
 }
 
 interface EarningsCard {
@@ -283,6 +292,157 @@ export default function Earnings() {
     };
   }, [queryClient]);
 
+  // Calculate monthly earnings for the last 6 months
+  const calculateMonthlyEarnings = (sessions: SessionWithStudent[]): MonthlyEarnings[] => {
+    if (!sessions || sessions.length === 0) {
+      return [];
+    }
+
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    // Generate last 6 months including current month
+    const months: MonthlyEarnings[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(currentYear, currentMonth - i, 1);
+      const year = date.getFullYear();
+      const monthNum = date.getMonth() + 1;
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      months.push({
+        month: monthNames[date.getMonth()],
+        year,
+        monthNum,
+        earnings: 0,
+        isCurrentMonth: year === currentYear && monthNum === currentMonth + 1
+      });
+    }
+
+    // Aggregate earnings by month for paid sessions only
+    sessions.forEach(session => {
+      if (session.paid === true) {
+        const sessionDate = new Date(session.session_start);
+        const sessionYear = sessionDate.getFullYear();
+        const sessionMonth = sessionDate.getMonth() + 1;
+        const earnings = (session.duration / 60) * session.rate;
+        
+        const monthData = months.find(m => m.year === sessionYear && m.monthNum === sessionMonth);
+        if (monthData) {
+          monthData.earnings += earnings;
+        }
+      }
+    });
+
+    return months;
+  };
+
+  // MonthlyEarningsChart component
+  const MonthlyEarningsChart = ({ monthlyData, currency }: { monthlyData: MonthlyEarnings[], currency: string }) => {
+    if (!monthlyData || monthlyData.length === 0) {
+      return (
+        <div className="h-64 flex items-center justify-center text-muted-foreground">
+          No earnings data available for the chart
+        </div>
+      );
+    }
+
+    const maxEarnings = Math.max(...monthlyData.map(m => m.earnings));
+    const currentMonthEarnings = monthlyData.find(m => m.isCurrentMonth)?.earnings || 0;
+    const previousMonthEarnings = monthlyData[monthlyData.length - 2]?.earnings || 0;
+    const percentageChange = previousMonthEarnings > 0 
+      ? ((currentMonthEarnings - previousMonthEarnings) / previousMonthEarnings) * 100 
+      : currentMonthEarnings > 0 ? 100 : 0;
+
+    const CustomTooltip = ({ active, payload, label }: any) => {
+      if (active && payload && payload.length) {
+        return (
+          <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg">
+            <p className="font-medium">{`${label}`}</p>
+            <p className="text-green-600 dark:text-green-400">
+              {`Earnings: ${formatCurrency(payload[0].value, currency)}`}
+            </p>
+          </div>
+        );
+      }
+      return null;
+    };
+
+    const CustomDot = (props: any) => {
+      const { cx, cy, payload } = props;
+      if (payload.isCurrentMonth) {
+        return (
+          <circle 
+            cx={cx} 
+            cy={cy} 
+            r={6} 
+            fill="#16a34a" 
+            stroke="#ffffff" 
+            strokeWidth={2}
+            className="animate-pulse"
+          />
+        );
+      }
+      return <circle cx={cx} cy={cy} r={3} fill="#16a34a" />;
+    };
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Monthly Earnings Trend</h3>
+            <p className="text-sm text-muted-foreground">Last 6 months earnings overview</p>
+          </div>
+          {percentageChange !== 0 && (
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+              percentageChange > 0 
+                ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' 
+                : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+            }`}>
+              <TrendingUp className={`h-3 w-3 ${percentageChange < 0 ? 'rotate-180' : ''}`} />
+              {Math.abs(percentageChange).toFixed(1)}%
+            </div>
+          )}
+        </div>
+        
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={monthlyData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+              <XAxis 
+                dataKey="month" 
+                axisLine={false}
+                tickLine={false}
+                className="text-xs fill-muted-foreground"
+              />
+              <YAxis 
+                axisLine={false}
+                tickLine={false}
+                className="text-xs fill-muted-foreground"
+                tickFormatter={(value) => {
+                  // Format currency for chart axis (shorter format)
+                  if (value >= 1000) {
+                    return `${currency === 'USD' ? '$' : currency}${(value / 1000).toFixed(1)}k`;
+                  }
+                  return formatCurrency(value, currency);
+                }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Line 
+                type="monotone" 
+                dataKey="earnings" 
+                stroke="#16a34a" 
+                strokeWidth={3}
+                dot={<CustomDot />}
+                activeDot={{ r: 8, stroke: "#16a34a", strokeWidth: 2, fill: "#ffffff" }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  };
+
   // Calculate earnings metrics with correct business logic
   const calculateEarnings = (sessions: SessionWithStudent[]) => {
     if (!sessions || sessions.length === 0) {
@@ -391,6 +551,7 @@ export default function Earnings() {
   });
 
   const earnings = sessions ? calculateEarnings(sessions) : null;
+  const monthlyEarningsData = sessions ? calculateMonthlyEarnings(sessions) : [];
   
   // Debug earnings calculation results
   if (earnings) {
@@ -437,6 +598,12 @@ export default function Earnings() {
           </Card>
         );
       case 'earnings_summary':
+        const currentMonthData = monthlyEarningsData.find(m => m.isCurrentMonth);
+        const previousMonthData = monthlyEarningsData[monthlyEarningsData.length - 2];
+        const monthlyPercentageChange = previousMonthData && previousMonthData.earnings > 0 
+          ? ((currentMonthData?.earnings || 0) - previousMonthData.earnings) / previousMonthData.earnings * 100 
+          : (currentMonthData?.earnings || 0) > 0 ? 100 : 0;
+
         return (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -445,13 +612,25 @@ export default function Earnings() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(
-                      earningsView === 'week' 
-                        ? earnings?.thisWeekEarnings || 0
-                        : earnings?.thisMonthEarnings || 0, 
-                      tutorCurrency
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(
+                        earningsView === 'week' 
+                          ? earnings?.thisWeekEarnings || 0
+                          : earnings?.thisMonthEarnings || 0, 
+                        tutorCurrency
+                      )}
+                    </div>
+                    {earningsView === 'month' && monthlyPercentageChange !== 0 && (
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        monthlyPercentageChange > 0 
+                          ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' 
+                          : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                      }`}>
+                        <TrendingUp className={`h-3 w-3 ${monthlyPercentageChange < 0 ? 'rotate-180' : ''}`} />
+                        {Math.abs(monthlyPercentageChange).toFixed(1)}%
+                      </div>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -648,44 +827,16 @@ export default function Earnings() {
           </Droppable>
         </DragDropContext>
 
-        {/* Earnings by Student Table */}
+        {/* Monthly Earnings Trend Chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">🧑‍🎓 Earnings by Student</CardTitle>
+            <CardTitle className="flex items-center gap-2">📈 Monthly Earnings Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            {earnings?.studentEarnings.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  No session data available yet.
-                </p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student Name</TableHead>
-                    <TableHead className="text-center">Sessions</TableHead>
-                    <TableHead className="text-right">Total Earnings</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {earnings?.studentEarnings.map((student) => (
-                    <TableRow key={student.student_name}>
-                      <TableCell className="font-medium">
-                        {student.student_name}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {student.session_count}
-                      </TableCell>
-                      <TableCell className="text-right font-medium text-green-600">
-                        {formatCurrency(student.total_earnings, tutorCurrency)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <MonthlyEarningsChart 
+              monthlyData={monthlyEarningsData} 
+              currency={tutorCurrency} 
+            />
           </CardContent>
         </Card>
       </div>
