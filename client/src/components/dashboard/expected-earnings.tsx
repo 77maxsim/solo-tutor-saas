@@ -47,81 +47,73 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
     localStorage.setItem('expected-earnings-timeframe', expectedTimeframe);
   }, [expectedTimeframe]);
 
-  // Set up real-time subscription for sessions changes
+  // Set up real-time updates with periodic refetching as fallback
   useEffect(() => {
     let channel: any = null;
-    
-    const setupSubscription = async () => {
+    let intervalId: NodeJS.Timeout | null = null;
+
+    const refetchData = () => {
+      console.log('📡 ExpectedEarnings: Force refetching data');
+      queryClient.invalidateQueries({ 
+        queryKey: ['upcoming-sessions-expected'],
+        exact: false 
+      });
+    };
+
+    const setupRealtimeUpdates = async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
-        console.log('📡 ExpectedEarnings: No tutor ID found, skipping subscription setup');
+        console.log('📡 ExpectedEarnings: No tutor ID found, using polling only');
+        // Set up polling as fallback
+        intervalId = setInterval(refetchData, 15000); // Every 15 seconds
         return;
       }
 
-      console.log('📡 ExpectedEarnings: Setting up real-time subscription for tutor:', tutorId);
+      console.log('📡 ExpectedEarnings: Setting up real-time updates for tutor:', tutorId);
 
+      // Set up Supabase real-time subscription
       channel = supabase
-        .channel('expected-earnings-sessions')
+        .channel(`expected-earnings-${tutorId}`)
         .on('postgres_changes', 
           { 
-            event: 'INSERT', 
+            event: '*', 
             schema: 'public', 
             table: 'sessions',
             filter: `tutor_id=eq.${tutorId}`
           }, 
           (payload) => {
-            console.log('📡 ExpectedEarnings: Session INSERT detected', payload);
-            queryClient.invalidateQueries({ 
-              queryKey: ['upcoming-sessions-expected'],
-              exact: false 
-            });
-          }
-        )
-        .on('postgres_changes', 
-          { 
-            event: 'UPDATE', 
-            schema: 'public', 
-            table: 'sessions',
-            filter: `tutor_id=eq.${tutorId}`
-          }, 
-          (payload) => {
-            console.log('📡 ExpectedEarnings: Session UPDATE detected', payload);
-            queryClient.invalidateQueries({ 
-              queryKey: ['upcoming-sessions-expected'],
-              exact: false 
-            });
-          }
-        )
-        .on('postgres_changes', 
-          { 
-            event: 'DELETE', 
-            schema: 'public', 
-            table: 'sessions',
-            filter: `tutor_id=eq.${tutorId}`
-          }, 
-          (payload) => {
-            console.log('📡 ExpectedEarnings: Session DELETE detected', payload);
-            queryClient.invalidateQueries({ 
-              queryKey: ['upcoming-sessions-expected'],
-              exact: false 
-            });
+            console.log('📡 ExpectedEarnings: Real-time change detected', payload.eventType, payload.new);
+            refetchData();
           }
         )
         .subscribe((status) => {
           console.log('📡 ExpectedEarnings: Subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('📡 ExpectedEarnings: Successfully subscribed to real-time updates');
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            console.log('📡 ExpectedEarnings: Subscription failed, falling back to polling');
+            // Fallback to polling if subscription fails
+            if (!intervalId) {
+              intervalId = setInterval(refetchData, 15000);
+            }
+          }
         });
+
+      // Also set up periodic polling as additional fallback
+      intervalId = setInterval(refetchData, 30000); // Every 30 seconds
     };
 
-    // Add a delay to ensure authentication is established
-    const timer = setTimeout(() => {
-      setupSubscription();
-    }, 2000);
+    // Start immediately, no delay
+    setupRealtimeUpdates();
 
     return () => {
-      clearTimeout(timer);
       if (channel) {
         console.log('📡 ExpectedEarnings: Cleaning up subscription');
         supabase.removeChannel(channel);
+      }
+      if (intervalId) {
+        console.log('📡 ExpectedEarnings: Cleaning up polling interval');
+        clearInterval(intervalId);
       }
     };
   }, [queryClient]);

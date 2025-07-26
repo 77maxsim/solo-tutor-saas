@@ -106,94 +106,75 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
     },
   });
 
-  // Set up real-time subscription for sessions changes with fallback polling
+  // Set up real-time updates with aggressive polling fallback
   useEffect(() => {
     let channel: any = null;
     let pollingInterval: NodeJS.Timeout | null = null;
-    
-    const setupSubscription = async () => {
+
+    const refetchData = () => {
+      console.log('📡 UnpaidSessions: Force refetching unpaid sessions data');
+      queryClient.invalidateQueries({ 
+        queryKey: ['unpaid-past-sessions'],
+        exact: false 
+      });
+    };
+
+    const setupRealtimeUpdates = async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
-        console.log('📡 UnpaidSessions: No tutor ID found, skipping subscription setup');
+        console.log('📡 UnpaidSessions: No tutor ID found, using polling only');
+        // Set up aggressive polling as fallback
+        pollingInterval = setInterval(refetchData, 10000); // Every 10 seconds
         return;
       }
 
-      console.log('📡 UnpaidSessions: Setting up real-time subscription for tutor:', tutorId);
+      console.log('📡 UnpaidSessions: Setting up real-time updates for tutor:', tutorId);
 
+      // Set up Supabase real-time subscription
       channel = supabase
-        .channel('unpaid-sessions-changes')
+        .channel(`unpaid-sessions-${tutorId}`)
         .on('postgres_changes', 
           { 
-            event: 'UPDATE', 
+            event: '*', 
             schema: 'public', 
             table: 'sessions',
             filter: `tutor_id=eq.${tutorId}`
           }, 
           (payload) => {
-            console.log('📡 UnpaidSessions: Session UPDATE detected', payload);
-            console.log('📡 UnpaidSessions: Query key being invalidated:', ['unpaid-past-sessions', limit]);
-            // Invalidate all unpaid-past-sessions queries regardless of limit
-            queryClient.invalidateQueries({ 
-              queryKey: ['unpaid-past-sessions'],
-              exact: false 
-            });
-          }
-        )
-        .on('postgres_changes', 
-          { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'sessions',
-            filter: `tutor_id=eq.${tutorId}`
-          }, 
-          (payload) => {
-            console.log('📡 UnpaidSessions: Session INSERT detected', payload);
-            queryClient.invalidateQueries({ 
-              queryKey: ['unpaid-past-sessions'],
-              exact: false 
-            });
-          }
-        )
-        .on('postgres_changes', 
-          { 
-            event: 'DELETE', 
-            schema: 'public', 
-            table: 'sessions',
-            filter: `tutor_id=eq.${tutorId}`
-          }, 
-          (payload) => {
-            console.log('📡 UnpaidSessions: Session DELETE detected', payload);
-            queryClient.invalidateQueries({ 
-              queryKey: ['unpaid-past-sessions'],
-              exact: false 
-            });
+            console.log('📡 UnpaidSessions: Real-time change detected', payload.eventType, payload.new);
+            // Only invalidate if the change affects paid status or is relevant to unpaid sessions
+            if (payload.eventType === 'UPDATE' && payload.new && 'paid' in payload.new) {
+              console.log('📡 UnpaidSessions: Payment status change detected');
+            }
+            refetchData();
           }
         )
         .subscribe((status) => {
           console.log('📡 UnpaidSessions: Subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('📡 UnpaidSessions: Successfully subscribed to real-time updates');
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            console.log('📡 UnpaidSessions: Subscription failed, increasing polling frequency');
+            // Increase polling frequency if subscription fails
+            if (pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = setInterval(refetchData, 5000); // Every 5 seconds
+          }
         });
 
-      // Fallback polling every 30 seconds in case WebSocket disconnects
-      pollingInterval = setInterval(() => {
-        console.log('📡 UnpaidSessions: Fallback polling, refreshing data');
-        queryClient.invalidateQueries({ 
-          queryKey: ['unpaid-past-sessions'],
-          exact: false 
-        });
-      }, 30000);
+      // Set up regular polling as additional fallback
+      pollingInterval = setInterval(refetchData, 20000); // Every 20 seconds
     };
 
-    // Add a delay to ensure authentication is established
-    const timer = setTimeout(() => {
-      setupSubscription();
-    }, 2000);
+    // Start immediately
+    setupRealtimeUpdates();
 
     return () => {
-      clearTimeout(timer);
       if (channel) {
+        console.log('📡 UnpaidSessions: Cleaning up subscription');
         supabase.removeChannel(channel);
       }
       if (pollingInterval) {
+        console.log('📡 UnpaidSessions: Cleaning up polling interval');
         clearInterval(pollingInterval);
       }
     };

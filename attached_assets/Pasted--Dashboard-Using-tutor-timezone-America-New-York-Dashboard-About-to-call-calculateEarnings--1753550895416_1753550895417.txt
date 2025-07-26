@@ -1,0 +1,27 @@
+📦 Dashboard: Using tutor timezone: America/New_York
+📦 Dashboard: About to call calculateEarnings with 39 sessions
+📦 EarningsCalculator: Starting with 39 sessions in timezone America/New_York
+📦 EarningsCalculator: Using boundaries 
+Object {timezone: "America/New_York", month: "2025-07-01T04:00:00.000Z to 2025-08-01T03:59:59.999Z", week: "2025-07-20T04:00:00.000Z to 2025-07-27T03:59:59.999Z", lastWeek: "2025-07-13T04:00:00.000Z to 2025-07-20T03:59:59.999Z", today: "2025-07-26T04:00:00.000Z to 2025-07-27T03:59:59.999Z"}
+[Debug] tutor timezone: America/New_York
+[Debug] startOfMonthUtc: 2025-07-01T04:00:00.000Z
+[Debug] endOfMonthUtc: 2025-08-01T03:59:59.999Z
+📦 EarningsCalculator: Final month earnings: 10211 from 4 paid sessions
+📦 Dashboard: Earnings data returned: 
+Object {totalEarnings: 10211, todayEarnings: 10211, thisWeekEarnings: 10211, thisMonthEarnings: 10211, thisMonthSessions: 6, …}
+📦 Dashboard: Final result: 
+Object {sessionsThisWeek: 3, weeklySessionsDelta: 3, todayEarnings: 10211, currentWeekEarnings: 10211, currentMonthEarnings: 10211, …}
+📊 Dashboard session time display: 
+Object {student: "Orok", utc_start: "2025-07-27T13:00:00+00:00", tutor_timezone: "America/New_York", displayed_time: "07/27/2025 at 09:00"}
+📊 Dashboard session time display: 
+Object {student: "Test", utc_start: "2025-07-27T14:45:00+00:00", tutor_timezone: "America/New_York", displayed_time: "07/27/2025 at 10:45"}
+📊 Dashboard session time display: 
+Object {student: "Test", utc_start: "2025-07-28T13:00:00+00:00", tutor_timezone: "America/New_York", displayed_time: "07/28/2025 at 09:00"}
+📊 Dashboard session time display: 
+Object {student: "Zach", utc_start: "2025-08-03T13:30:00+00:00", tutor_timezone: "America/New_York", displayed_time: "08/03/2025 at 09:30"}
+📊 Dashboard session time display: 
+Object {student: "Test", utc_start: "2025-08-03T14:45:00+00:00", tutor_timezone: "America/New_York", displayed_time: "08/03/2025 at 10:45"}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "America/New_York", isTimezoneLoading: false, open: false}
+ScheduleSessionModal - Timezone state: 
+Object {tutorTimezone: "America/New_York", isTimezoneLoading: false, open: false}

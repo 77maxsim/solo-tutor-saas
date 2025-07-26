@@ -214,132 +214,83 @@ export default function Dashboard() {
     },
   });
 
-  // Set up real-time subscriptions for dashboard stats
+  // Set up real-time updates for dashboard stats with polling fallback
   useEffect(() => {
     let sessionsChannel: any = null;
     let studentsChannel: any = null;
-    
-    const setupSubscriptions = async () => {
+    let pollingInterval: NodeJS.Timeout | null = null;
+
+    const refetchStats = () => {
+      console.log('📡 Dashboard: Force refetching dashboard stats');
+      queryClient.invalidateQueries({ 
+        queryKey: ['dashboard-stats'],
+        exact: false 
+      });
+    };
+
+    const setupRealtimeUpdates = async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
-        console.log('📡 Dashboard: No tutor ID found, skipping subscription setup');
+        console.log('📡 Dashboard: No tutor ID found, using polling only');
+        // Set up polling as fallback
+        pollingInterval = setInterval(refetchStats, 15000); // Every 15 seconds
         return;
       }
 
-      console.log('📡 Dashboard: Setting up real-time subscriptions for tutor:', tutorId);
+      console.log('📡 Dashboard: Setting up real-time updates for tutor:', tutorId);
 
-      // Subscribe to sessions table changes with specific events
+      // Set up sessions subscription
       sessionsChannel = supabase
-        .channel('dashboard-sessions-changes')
+        .channel(`dashboard-sessions-${tutorId}`)
         .on('postgres_changes', 
           { 
-            event: 'INSERT', 
+            event: '*', 
             schema: 'public', 
             table: 'sessions',
             filter: `tutor_id=eq.${tutorId}`
           }, 
           (payload) => {
-            console.log('📡 Dashboard: Session INSERT detected', payload);
-            queryClient.invalidateQueries({ 
-              queryKey: ['dashboard-stats'],
-              exact: false 
-            });
-          }
-        )
-        .on('postgres_changes', 
-          { 
-            event: 'UPDATE', 
-            schema: 'public', 
-            table: 'sessions',
-            filter: `tutor_id=eq.${tutorId}`
-          }, 
-          (payload) => {
-            console.log('📡 Dashboard: Session UPDATE detected', payload);
-            queryClient.invalidateQueries({ 
-              queryKey: ['dashboard-stats'],
-              exact: false 
-            });
-          }
-        )
-        .on('postgres_changes', 
-          { 
-            event: 'DELETE', 
-            schema: 'public', 
-            table: 'sessions',
-            filter: `tutor_id=eq.${tutorId}`
-          }, 
-          (payload) => {
-            console.log('📡 Dashboard: Session DELETE detected', payload);
-            queryClient.invalidateQueries({ 
-              queryKey: ['dashboard-stats'],
-              exact: false 
-            });
+            console.log('📡 Dashboard: Session change detected', payload.eventType, payload.new?.id);
+            refetchStats();
           }
         )
         .subscribe((status) => {
           console.log('📡 Dashboard: Sessions subscription status:', status);
+          if (status !== 'SUBSCRIBED') {
+            console.log('📡 Dashboard: Sessions subscription failed, relying on polling');
+          }
         });
 
-      // Subscribe to students table changes for active students count
+      // Set up students subscription
       studentsChannel = supabase
-        .channel('dashboard-students-changes')
+        .channel(`dashboard-students-${tutorId}`)
         .on('postgres_changes', 
           { 
-            event: 'INSERT', 
+            event: '*', 
             schema: 'public', 
             table: 'students',
             filter: `tutor_id=eq.${tutorId}`
           }, 
           (payload) => {
-            console.log('📡 Dashboard: Student INSERT detected', payload);
-            queryClient.invalidateQueries({ 
-              queryKey: ['dashboard-stats'],
-              exact: false 
-            });
-          }
-        )
-        .on('postgres_changes', 
-          { 
-            event: 'UPDATE', 
-            schema: 'public', 
-            table: 'students',
-            filter: `tutor_id=eq.${tutorId}`
-          }, 
-          (payload) => {
-            console.log('📡 Dashboard: Student UPDATE detected', payload);
-            queryClient.invalidateQueries({ 
-              queryKey: ['dashboard-stats'],
-              exact: false 
-            });
-          }
-        )
-        .on('postgres_changes', 
-          { 
-            event: 'DELETE', 
-            schema: 'public', 
-            table: 'students',
-            filter: `tutor_id=eq.${tutorId}`
-          }, 
-          (payload) => {
-            console.log('📡 Dashboard: Student DELETE detected', payload);
-            queryClient.invalidateQueries({ 
-              queryKey: ['dashboard-stats'],
-              exact: false 
-            });
+            console.log('📡 Dashboard: Student change detected', payload.eventType, payload.new?.id);
+            refetchStats();
           }
         )
         .subscribe((status) => {
           console.log('📡 Dashboard: Students subscription status:', status);
+          if (status !== 'SUBSCRIBED') {
+            console.log('📡 Dashboard: Students subscription failed, relying on polling');
+          }
         });
+
+      // Set up polling as primary mechanism (more reliable)
+      pollingInterval = setInterval(refetchStats, 25000); // Every 25 seconds
     };
 
-    // Add a delay to ensure authentication is established
-    const timer = setTimeout(() => {
-      setupSubscriptions();
-    }, 2000);
+    // Start immediately
+    setupRealtimeUpdates();
 
     return () => {
-      clearTimeout(timer);
       if (sessionsChannel) {
         console.log('📡 Dashboard: Cleaning up sessions subscription');
         supabase.removeChannel(sessionsChannel);
@@ -347,6 +298,10 @@ export default function Dashboard() {
       if (studentsChannel) {
         console.log('📡 Dashboard: Cleaning up students subscription');
         supabase.removeChannel(studentsChannel);
+      }
+      if (pollingInterval) {
+        console.log('📡 Dashboard: Cleaning up polling interval');
+        clearInterval(pollingInterval);
       }
     };
   }, [queryClient]);
