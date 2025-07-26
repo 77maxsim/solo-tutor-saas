@@ -214,6 +214,62 @@ export default function Dashboard() {
     },
   });
 
+  // Set up real-time subscriptions for dashboard stats
+  useEffect(() => {
+    let sessionsChannel: any = null;
+    let studentsChannel: any = null;
+    
+    const setupSubscriptions = async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) return;
+
+      // Subscribe to sessions table changes
+      sessionsChannel = supabase
+        .channel('dashboard-sessions-changes')
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'sessions',
+            filter: `tutor_id=eq.${tutorId}`
+          }, 
+          (payload) => {
+            console.log('📡 Dashboard: Sessions changed, invalidating dashboard stats', payload);
+            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+          }
+        )
+        .subscribe();
+
+      // Subscribe to students table changes for active students count
+      studentsChannel = supabase
+        .channel('dashboard-students-changes')
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'students',
+            filter: `tutor_id=eq.${tutorId}`
+          }, 
+          (payload) => {
+            console.log('📡 Dashboard: Students changed, invalidating dashboard stats', payload);
+            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+          }
+        )
+        .subscribe();
+    };
+
+    setupSubscriptions();
+
+    return () => {
+      if (sessionsChannel) {
+        supabase.removeChannel(sessionsChannel);
+      }
+      if (studentsChannel) {
+        supabase.removeChannel(studentsChannel);
+      }
+    };
+  }, [queryClient]);
+
   // Debug the query state
   console.log('🔍 Dashboard query state:', { 
     isLoading, 
@@ -264,7 +320,7 @@ export default function Dashboard() {
           <StatsCard
             title="Active Students"
             value={isLoading ? "..." : (dashboardStats?.activeStudents.toString() || "0")}
-            change="+2 new this week"
+            change="last 30 days"
             changeType="positive"
             icon={Users}
             iconColor="text-purple-600"

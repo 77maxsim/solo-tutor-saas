@@ -106,9 +106,10 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
     },
   });
 
-  // Set up real-time subscription for sessions changes
+  // Set up real-time subscription for sessions changes with fallback polling
   useEffect(() => {
     let channel: any = null;
+    let pollingInterval: NodeJS.Timeout | null = null;
     
     const setupSubscription = async () => {
       const tutorId = await getCurrentTutorId();
@@ -125,10 +126,16 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
           }, 
           (payload) => {
             console.log('📡 UnpaidSessions: Sessions changed, invalidating queries', payload);
-            queryClient.invalidateQueries({ queryKey: ['unpaid-past-sessions'] });
+            queryClient.invalidateQueries({ queryKey: ['unpaid-past-sessions', limit] });
           }
         )
         .subscribe();
+
+      // Fallback polling every 60 seconds in case WebSocket disconnects
+      pollingInterval = setInterval(() => {
+        console.log('📡 UnpaidSessions: Fallback polling, refreshing data');
+        queryClient.invalidateQueries({ queryKey: ['unpaid-past-sessions', limit] });
+      }, 60000);
     };
 
     setupSubscription();
@@ -137,8 +144,11 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
       if (channel) {
         supabase.removeChannel(channel);
       }
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
     };
-  }, [queryClient]);
+  }, [queryClient, limit]);
 
   // Mark as paid mutation
   const markAsPaidMutation = useMutation({

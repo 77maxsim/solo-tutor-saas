@@ -64,8 +64,8 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
             table: 'sessions',
             filter: `tutor_id=eq.${tutorId}`
           }, 
-          () => {
-            console.log('📡 ExpectedEarnings: Sessions changed, invalidating queries');
+          (payload) => {
+            console.log('📡 ExpectedEarnings: Sessions changed, invalidating queries', payload);
             queryClient.invalidateQueries({ queryKey: ['upcoming-sessions-expected'] });
           }
         )
