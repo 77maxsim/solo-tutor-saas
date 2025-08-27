@@ -195,8 +195,12 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
   useEffect(() => {
     const fetchStudentLastRate = async (studentId: string) => {
       try {
+        console.log('🔍 Fetching last rate for student:', studentId);
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          console.log('❌ No user found');
+          return;
+        }
 
         // Get tutor_id first
         const { data: tutorData } = await supabase
@@ -205,7 +209,12 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
           .eq('user_id', user.id)
           .single();
 
-        if (!tutorData) return;
+        if (!tutorData) {
+          console.log('❌ No tutor data found');
+          return;
+        }
+
+        console.log('🔍 Querying sessions for tutor_id:', tutorData.id, 'student_id:', studentId);
 
         const { data, error } = await supabase
           .from('sessions')
@@ -222,15 +231,21 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
           return;
         }
 
+        console.log('💰 Found rate data:', data);
+
         if (data?.rate_per_hour) {
           // Find student name
           const student = students.find(s => s.id === studentId);
           const studentName = student?.name || 'this student';
           
+          console.log('✅ Setting rate to:', data.rate_per_hour, 'for student:', studentName);
+          
           // Set the rate and show suggestion
           setRateInput(data.rate_per_hour.toString());
           form.setValue('rate', data.rate_per_hour);
           setSuggestedRate({ value: data.rate_per_hour, studentName });
+        } else {
+          console.log('❌ No rate data found for student');
         }
       } catch (error) {
         console.error('Error fetching student last rate:', error);
@@ -242,12 +257,26 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       if (name === 'student_id' && value.student_id) {
         const selectedStudentId = value.student_id;
         
+        console.log('🔄 Student changed in edit modal:', {
+          selectedStudentId,
+          originalStudentId,
+          rateDirty,
+          isDifferentStudent: selectedStudentId !== originalStudentId
+        });
+        
         // Only auto-prefill if:
         // 1. Rate hasn't been manually modified
-        // 2. Student is different from the original
+        // 2. Student is different from the original (to allow changing to different students)
         // 3. We have a valid student ID
         if (!rateDirty && selectedStudentId !== originalStudentId && selectedStudentId) {
+          console.log('✅ Conditions met, fetching rate for student:', selectedStudentId);
           fetchStudentLastRate(selectedStudentId);
+        } else {
+          console.log('❌ Conditions not met for auto-prefill:', {
+            rateDirty,
+            isDifferent: selectedStudentId !== originalStudentId,
+            hasStudentId: !!selectedStudentId
+          });
         }
       }
     });
