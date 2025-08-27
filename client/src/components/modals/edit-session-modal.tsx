@@ -34,6 +34,7 @@ import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
 import { TimePicker } from "@/components/ui/time-picker";
 import { useTimezone } from "@/contexts/TimezoneContext";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -75,14 +76,8 @@ interface EditSessionModalProps {
 export function EditSessionModal({ open, onOpenChange, session, isRecurring = false }: EditSessionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rateInput, setRateInput] = useState("");
-  const [rate, setRate] = useState(0);
-  const [rateDirty, setRateDirty] = useState(false);
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [userModifiedFields, setUserModifiedFields] = useState<Set<string>>(new Set());
   const [prefillNote, setPrefillNote] = useState<string | null>(null);
-  
-  // Use refs to freeze initial values for the lifetime of the open modal
-  const initialStudentIdRef = useRef<string | null>(null);
-  const initialRateRef = useRef<number>(0);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -160,20 +155,58 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
     const val = e.target.value.replace(/^0+(?=\d)/, ""); // remove leading zeros
     if (/^\d*\.?\d*$/.test(val)) { // allow decimal numbers
       setRateInput(val);
-      const newRate = parseFloat(val) || 0;
-      setRate(newRate);
-      form.setValue('rate', newRate);
-      setRateDirty(true); // Mark rate as manually modified
+      form.setValue('rate', parseFloat(val) || 0);
+      
+      // Mark rate as manually modified
+      setUserModifiedFields(prev => new Set(prev).add('rate'));
       setPrefillNote(null); // Clear any prefill note
     }
   };
 
-  // Handle student selection changes
-  const handleStudentChange = (studentId: string) => {
-    setSelectedStudentId(studentId);
-    setRateDirty(false); // Allow one-time prefill for the new student
-    setPrefillNote(null);
+  // Fetch student's last session data (matching schedule modal pattern)
+  const fetchStudentLastSession = async (studentId: string) => {
+    try {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) return null;
+
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('rate, duration, session_start')
+        .eq('student_id', studentId)
+        .eq('tutor_id', tutorId)
+        .order('session_start', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching student last session:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Unexpected error fetching student session:', error);
+      return null;
+    }
+  };
+
+  // Handle student selection changes (matching schedule modal pattern)
+  const handleStudentChange = async (studentId: string) => {
+    // Update the student field
     form.setValue('student_id', studentId);
+    
+    // Fetch student's last session data
+    const lastSession = await fetchStudentLastSession(studentId);
+    
+    if (lastSession) {
+      // Only prefill rate if it hasn't been manually modified by the user
+      if (!userModifiedFields.has('rate') && lastSession.rate !== null) {
+        const rateValue = Number(lastSession.rate);
+        form.setValue('rate', rateValue);
+        setRateInput(rateValue.toString());
+        setPrefillNote('Prefilled from last session with this student');
+      }
+    }
   };
 
   // Prefill form when editing a session
@@ -202,68 +235,14 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
         color: session.color || "#3B82F6",
       });
 
-      // Set initial state and freeze initial values in refs
-      setRate(initialRate);
+      // Set initial state
       setRateInput(initialRate.toString());
-      setRateDirty(false);
-      setSelectedStudentId(initialStudentId);
+      setUserModifiedFields(new Set());
       setPrefillNote(null);
-      
-      // Freeze initial values for the lifetime of the open modal
-      initialStudentIdRef.current = initialStudentId;
-      initialRateRef.current = initialRate;
     }
   }, [session, open, form, tutorTimezone, isRecurring]);
 
-  // Fetch last rate for selected student
-  useEffect(() => {
-    const fetchStudentLastRate = async () => {
-      // Guards: skip if conditions not met
-      if (!selectedStudentId || rateDirty || selectedStudentId === initialStudentIdRef.current) {
-        return;
-      }
 
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        // Get tutor_id first (if sessions.tutor_id references tutors.id rather than auth.uid)
-        const { data: tutorData } = await supabase
-          .from('tutors')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (!tutorData) return;
-
-        const { data, error } = await supabase
-          .from('sessions')
-          .select('rate_per_hour, session_start')
-          .eq('tutor_id', tutorData.id)
-          .eq('student_id', selectedStudentId)
-          .not('rate_per_hour', 'is', null)
-          .order('session_start', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error fetching student last rate:', error);
-          return;
-        }
-
-        if (data?.rate_per_hour) {
-          setRate(data.rate_per_hour);
-          setRateInput(data.rate_per_hour.toString());
-          form.setValue('rate', data.rate_per_hour);
-          setPrefillNote('Prefilled from last session with this student');
-        }
-      } catch (error) {
-        console.error('Error fetching student last rate:', error);
-      }
-    };
-
-    fetchStudentLastRate();
-  }, [selectedStudentId, rateDirty, form]);
 
   // Helper function to convert local time to UTC
   const convertToUTC = (existingDate: string, localTime: string, timezone: string) => {
@@ -388,12 +367,8 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       setTimeout(() => {
         form.reset();
         setRateInput("");
-        setRate(0);
-        setRateDirty(false);
-        setSelectedStudentId(null);
+        setUserModifiedFields(new Set());
         setPrefillNote(null);
-        initialStudentIdRef.current = null;
-        initialRateRef.current = 0;
         onOpenChange(false);
       }, 100);
 
@@ -445,12 +420,8 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
   const handleCancel = () => {
     form.reset();
     setRateInput("");
-    setRate(0);
-    setRateDirty(false);
-    setSelectedStudentId(null);
+    setUserModifiedFields(new Set());
     setPrefillNote(null);
-    initialStudentIdRef.current = null;
-    initialRateRef.current = 0;
     onOpenChange(false);
   };
 
@@ -567,16 +538,15 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
                   {/* Rate prefill note with undo */}
                   {prefillNote && (
                     <p className="text-xs text-muted-foreground flex items-center gap-2">
-                      <span>Suggested: {tutorPreferences.currency === 'USD' ? '$' : tutorPreferences.currency}{rate} from last session • </span>
+                      <span>Suggested: {tutorPreferences.currency === 'USD' ? '$' : tutorPreferences.currency}{form.watch('rate')} from last session • </span>
                       <button
                         type="button"
                         onClick={() => {
                           // Restore original rate from when modal opened
-                          const originalRate = initialRateRef.current;
-                          setRate(originalRate);
+                          const originalRate = session?.rate || 0;
                           setRateInput(originalRate.toString());
                           form.setValue('rate', originalRate);
-                          setRateDirty(true);
+                          setUserModifiedFields(prev => new Set(prev).add('rate'));
                           setPrefillNote(null);
                         }}
                         className="text-blue-600 hover:text-blue-800 underline"
