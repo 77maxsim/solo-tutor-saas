@@ -22,6 +22,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/lib/supabaseClient";
 import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
 import { TimePicker } from "@/components/ui/time-picker";
@@ -36,6 +43,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const editSessionSchema = z.object({
+  student_id: z.string().min(1, "Please select a student"),
   time: z.string().min(1, "Please select a time"),
   duration: z.number().min(15, "Duration must be at least 15 minutes"),
   rate: z.number().min(0, "Rate must be 0 or greater"),
@@ -96,9 +104,41 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
     },
   });
 
+  // Fetch students for the current tutor
+  const { data: students = [], isLoading: isStudentsLoading } = useQuery({
+    queryKey: ['tutor-students'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Get tutor_id first
+      const { data: tutorData } = await supabase
+        .from('tutors')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!tutorData) throw new Error('Tutor record not found');
+
+      const { data, error } = await supabase
+        .from('students')
+        .select('id, name')
+        .eq('tutor_id', tutorData.id)
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching students:', error);
+        return [];
+      }
+
+      return data || [];
+    },
+  });
+
   const form = useForm<EditSessionForm>({
     resolver: zodResolver(editSessionSchema),
     defaultValues: {
+      student_id: "",
       time: "",
       duration: 60,
       rate: 0,
@@ -131,6 +171,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
 
       // Reset form first to clear any previous values
       form.reset({
+        student_id: session.student_id || "",
         time: formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm'),
         duration: session.duration || 60,
         rate: session.rate || 0,
@@ -187,6 +228,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
         const { error } = await supabase
           .from('sessions')
           .update({
+            student_id: data.student_id,
             duration: data.duration,
             rate: data.rate,
             color: data.color,
@@ -230,6 +272,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
         const { error } = await supabase
           .from('sessions')
           .update({
+            student_id: data.student_id,
             session_start: startUTC.toISOString(),
             session_end: endUTC.toISOString(),
             duration: data.duration,
@@ -284,6 +327,8 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
 
   const deleteSessionMutation = useMutation({
     mutationFn: async () => {
+      if (!session) throw new Error('No session to delete');
+      
       const { error } = await supabase
         .from('sessions')
         .delete()
@@ -293,11 +338,12 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
       toast({
         title: "Session deleted",
         description: "The session has been successfully deleted.",
       });
-      onClose();
+      onOpenChange(false);
     },
     onError: (error) => {
       toast({
@@ -347,6 +393,41 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
                 )}
               />
             )}
+
+            {/* Student Selector */}
+            <FormField
+              control={form.control}
+              name="student_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Student</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a student" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {isStudentsLoading ? (
+                        <SelectItem value="" disabled>Loading students...</SelectItem>
+                      ) : students.length === 0 ? (
+                        <SelectItem value="" disabled>No students found</SelectItem>
+                      ) : (
+                        students.map((student) => (
+                          <SelectItem key={student.id} value={student.id}>
+                            {student.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Only students you teach are listed.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Duration */}
             <FormField

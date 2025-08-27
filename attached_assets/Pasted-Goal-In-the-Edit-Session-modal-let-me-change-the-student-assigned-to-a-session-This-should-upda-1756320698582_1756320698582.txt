@@ -1,0 +1,94 @@
+Goal: In the “Edit Session” modal, let me change the student assigned to a session. This should update the sessions.student_id in Supabase and refresh the calendar.
+
+Tech context: React + TypeScript, FullCalendar on the calendar view, Supabase client already set up. Schema: sessions(id, tutor_id, student_id, start_time, duration_min, rate_per_hour, color, …), students(id, tutor_id, name, …). RLS: each table scoped by tutor_id.
+
+Tasks
+
+UI: Add Student selector to the “Edit Session” modal
+
+File(s): the modal that currently edits time/duration/rate/color (e.g., src/components/sessions/EditSessionModal.tsx or similar).
+
+Add a Select (searchable) labeled “Student” above “Rate”.
+
+Pre-select current session’s student.
+
+Fetch list of students for the signed-in tutor:
+select id, name from students where tutor_id = current_user (using existing auth) ordered by name.
+
+Support typeahead filter for 50+ students (client filter is fine for now).
+
+Show helper text: “Only students you teach are listed.”
+
+State + Data loading
+
+When modal opens, load students (memoize in React Query/SWR if available).
+
+Hold selectedStudentId in local state initialized from session.student_id.
+
+Validation
+
+Require a selection (selectedStudentId not null).
+
+If user chooses the same student, allow save (no-op on student_id change).
+
+Mutation
+
+On “Update Session”, do a single Supabase update:
+
+const { error } = await supabase
+  .from('sessions')
+  .update({
+    student_id: selectedStudentId,
+    // existing fields if they changed:
+    start_time: newStartISO,
+    duration_min: Number(duration),
+    rate_per_hour: Number(rate),
+    color
+  })
+  .eq('id', sessionId)
+  .select('id, student_id'); // return minimal data
+
+
+Handle errors with a toast; disable button during request.
+
+Calendar refresh
+
+After success, close modal and:
+
+Update the in-memory event (title should reflect the NEW student’s name) or
+
+Call the existing refetch that reloads events from Supabase and re-renders FullCalendar.
+
+Permissions + Safety
+
+Ensure the dropdown only lists students where students.tutor_id = current_user.
+
+Do not allow changing to a student belonging to a different tutor (RLS should block, but also guard client-side).
+
+If RLS returns an error like 401/403, surface a friendly message.
+
+UX polish (optional)
+
+Show the current student inline in the Session Details view as well.
+
+If you store a per-student default rate, add a tiny link under the selector: “Use student’s default rate” → sets the rate input to that value (no auto-change unless clicked).
+
+Acceptance Criteria
+
+I can open Edit Session → see a Student selector with my students, current one preselected.
+
+I can change the student and save; the event title on the calendar updates to the new student’s name without a page reload.
+
+RLS prevents cross-tutor changes; the UI never shows other tutors’ students.
+
+No change to recurrence logic; only this single session is updated (exactly as time/duration/rate behave today).
+
+Code hints
+
+Reuse your existing Supabase client and user context to get tutor_id.
+
+If you render event titles from joined data, make sure you either:
+
+Eager-load students.name when fetching events, or
+
+Keep an in-memory map studentId -> name to re-title quickly after the update.
