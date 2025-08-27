@@ -75,6 +75,9 @@ interface EditSessionModalProps {
 export function EditSessionModal({ open, onOpenChange, session, isRecurring = false }: EditSessionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rateInput, setRateInput] = useState("");
+  const [rateDirty, setRateDirty] = useState(false);
+  const [suggestedRate, setSuggestedRate] = useState<{ value: number; studentName: string } | null>(null);
+  const [originalStudentId, setOriginalStudentId] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { tutorTimezone } = useTimezone();
@@ -152,6 +155,8 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
     if (/^\d*\.?\d*$/.test(val)) { // allow decimal numbers
       setRateInput(val);
       form.setValue('rate', parseFloat(val) || 0);
+      setRateDirty(true); // Mark rate as manually modified
+      setSuggestedRate(null); // Clear any suggestion UI
     }
   };
 
@@ -178,10 +183,77 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
         color: session.color || "#3B82F6",
       });
 
-      // Set the rate input value
+      // Set the rate input value and reset dirty states
       setRateInput(session.rate?.toString() || "");
+      setRateDirty(false);
+      setSuggestedRate(null);
+      setOriginalStudentId(session.student_id || "");
     }
   }, [session, open, form, tutorTimezone, isRecurring]);
+
+  // Handle student change and auto-prefill rate
+  useEffect(() => {
+    const fetchStudentLastRate = async (studentId: string) => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Get tutor_id first
+        const { data: tutorData } = await supabase
+          .from('tutors')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!tutorData) return;
+
+        const { data, error } = await supabase
+          .from('sessions')
+          .select('rate_per_hour, session_start')
+          .eq('tutor_id', tutorData.id)
+          .eq('student_id', studentId)
+          .not('rate_per_hour', 'is', null)
+          .order('session_start', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching student last rate:', error);
+          return;
+        }
+
+        if (data?.rate_per_hour) {
+          // Find student name
+          const student = students.find(s => s.id === studentId);
+          const studentName = student?.name || 'this student';
+          
+          // Set the rate and show suggestion
+          setRateInput(data.rate_per_hour.toString());
+          form.setValue('rate', data.rate_per_hour);
+          setSuggestedRate({ value: data.rate_per_hour, studentName });
+        }
+      } catch (error) {
+        console.error('Error fetching student last rate:', error);
+      }
+    };
+
+    // Watch for student_id changes in the form
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'student_id' && value.student_id) {
+        const selectedStudentId = value.student_id;
+        
+        // Only auto-prefill if:
+        // 1. Rate hasn't been manually modified
+        // 2. Student is different from the original
+        // 3. We have a valid student ID
+        if (!rateDirty && selectedStudentId !== originalStudentId && selectedStudentId) {
+          fetchStudentLastRate(selectedStudentId);
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form, rateDirty, originalStudentId, students]);
 
   // Helper function to convert local time to UTC
   const convertToUTC = (existingDate: string, localTime: string, timezone: string) => {
@@ -306,6 +378,9 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       setTimeout(() => {
         form.reset();
         setRateInput("");
+        setRateDirty(false);
+        setSuggestedRate(null);
+        setOriginalStudentId("");
         onOpenChange(false);
       }, 100);
 
@@ -357,6 +432,9 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
   const handleCancel = () => {
     form.reset();
     setRateInput("");
+    setRateDirty(false);
+    setSuggestedRate(null);
+    setOriginalStudentId("");
     onOpenChange(false);
   };
 
@@ -470,6 +548,26 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
                       }}
                     />
                   </FormControl>
+                  {/* Rate suggestion UI */}
+                  {suggestedRate && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                      <span>Suggested: {tutorPreferences.currency === 'USD' ? '$' : tutorPreferences.currency}{suggestedRate.value} from last session with {suggestedRate.studentName}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Restore original rate
+                          const originalRate = session?.rate?.toString() || "";
+                          setRateInput(originalRate);
+                          form.setValue('rate', session?.rate || 0);
+                          setRateDirty(true);
+                          setSuggestedRate(null);
+                        }}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Undo
+                      </button>
+                    </p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

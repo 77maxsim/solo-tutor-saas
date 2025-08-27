@@ -1,0 +1,60 @@
+Goal: In Edit Session modal, when the Student changes, auto-prefill the Rate (per hour) input with that student’s most recent rate_per_hour from prior sessions. Do not overwrite the field if the user has already typed in it during this edit.
+
+Tech: React + TS, Supabase client available. Tables: sessions(id, tutor_id, student_id, start_time, duration_min, rate_per_hour, …).
+
+Tasks
+
+Track “dirty” state for Rate
+
+Add const [rateDirty, setRateDirty] = useState(false);
+
+On manual typing in the Rate input, set rateDirty(true).
+
+When Student changes, fetch last rate
+
+useEffect that runs on selectedStudentId change.
+
+If !selectedStudentId or rateDirty → skip.
+
+Query Supabase for the newest non-null rate_per_hour for that student:
+
+const { data, error } = await supabase
+  .from('sessions')
+  .select('rate_per_hour, start_time')
+  .eq('tutor_id', user.id)
+  .eq('student_id', selectedStudentId)
+  .not('rate_per_hour', 'is', null)
+  .order('start_time', { ascending: false })
+  .limit(1)
+  .maybeSingle();
+
+
+If data?.rate_per_hour exists → set the Rate input to that value and show a small helper text “Prefilled from last session with {StudentName}”.
+
+Do NOT override on modal open
+
+Initialize rateDirty to false.
+
+Only run the prefill logic when the user changes Student (i.e., compare to original session.student_id; if it didn’t change, don’t fetch).
+
+UI cues
+
+Under the Rate field, show a muted line when we auto-fill: “Suggested: ¥{value} from last session” with an “Undo” link that restores previous rate and sets rateDirty(true).
+
+Save behavior
+
+No schema change; on save, we already write the rate_per_hour value the user sees.
+
+(Optional) prefetch for performance
+
+When the modal opens, prefetch each student’s last rate for the tutor in one call and cache in a map.
+
+Implementation shortcut: keep the on-change query for now; optimize later if needed.
+
+Acceptance
+
+Changing Student updates Rate to the last charged value (if any), unless the user has typed in the Rate already.
+
+No override on open; only on Student change.
+
+Works under RLS; no other tutor’s data is visible.
