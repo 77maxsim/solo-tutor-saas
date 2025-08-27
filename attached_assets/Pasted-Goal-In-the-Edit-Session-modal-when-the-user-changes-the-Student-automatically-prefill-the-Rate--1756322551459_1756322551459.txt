@@ -1,0 +1,115 @@
+Goal: In the Edit Session modal, when the user changes the Student, automatically prefill the Rate (per hour) with that student’s most recent rate from prior sessions — but never overwrite if the user has manually typed in the rate during this edit.
+
+Constraints (SAFE):
+
+Do not change Supabase schema, RLS policies, or server code.
+
+Only modify the modal component code (likely client/src/components/modals/edit-session-modal.tsx) and any related hooks/utilities.
+
+Keep existing behavior for time/duration/color; only add the student→rate prefill logic.
+
+Keep TypeScript types intact; no any unless unavoidable.
+
+Implementation Tasks:
+
+State:
+
+Ensure the modal keeps:
+
+rate: number
+
+rateDirty: boolean (whether the user has manually typed in the rate)
+
+selectedStudentId: string | null
+
+initialStudentId: string | null (from the session being edited)
+
+prefillNote: string | null (optional helper text)
+
+Use a useRef to freeze initialStudentId for the lifetime of the open modal (avoid re-renders changing the guard).
+
+Reset dirty on open:
+
+When the modal opens (or initialRate changes because a new session is loaded), set:
+
+setRate(initialRate);
+setRateDirty(false);
+
+
+Don’t trigger prefill on open — prefill should only happen after a student change.
+
+Dirty only on typing:
+
+In the rate input onChange, set rateDirty(true):
+
+const handleRateChange = (e) => {
+  setRate(Number(e.target.value || 0));
+  setRateDirty(true);
+};
+
+
+Allow prefill after student change:
+
+In the student dropdown onChange:
+
+const handleStudentChange = (id: string) => {
+  setSelectedStudentId(id);
+  setRateDirty(false);      // allow one-time prefill for the new student
+  setPrefillNote(null);
+};
+
+
+Fetch last rate for selected student:
+
+useEffect that runs on selectedStudentId and rateDirty.
+
+Guards: skip if !selectedStudentId, if rateDirty === true, or if selectedStudentId === initialStudentIdRef.current.
+
+Query (rely on RLS; if you must filter, use tutor.id from context — not auth.uid() if your sessions.tutor_id is the tutor table id):
+
+const { data, error } = await supabase
+  .from('sessions')
+  .select('rate_per_hour, start_time')
+  .eq('student_id', selectedStudentId)
+  .not('rate_per_hour', 'is', null)
+  .order('start_time', { ascending: false })
+  .limit(1)
+  .maybeSingle();
+
+
+If your column name differs, swap start_time → created_at or your real column.
+
+If data?.rate_per_hour exists, set:
+
+setRate(data.rate_per_hour);
+setPrefillNote(`Prefilled from last session with this student`);
+
+
+Undo helper (optional but nice):
+
+Under the Rate input, render a small note when we prefill:
+
+Suggested: ¥{rate} from last session • Undo
+
+
+Clicking Undo should restore the previous value from when the modal opened (keep initialRate in a ref or variable) and set rateDirty(true) so we don’t auto-overwrite again.
+
+Reset on close / submit:
+
+On Cancel or after successful Update, reset transient state:
+
+setRateDirty(false);
+setPrefillNote(null);
+
+
+Acceptance Criteria:
+
+Open Edit Session for Student A (rate 120) → Rate shows 120.
+
+Change Student to B (last rate 220) → Rate auto-fills to 220 and shows a small “Prefilled…” helper.
+
+If the user types into Rate after changing student, auto-prefill is disabled for subsequent student changes in that session (rateDirty remains true).
+
+No Supabase/RLS changes; queries are read-only and respect existing policies.
+
+No regressions to saving/updating sessions, calendar refresh, or recurrence.
