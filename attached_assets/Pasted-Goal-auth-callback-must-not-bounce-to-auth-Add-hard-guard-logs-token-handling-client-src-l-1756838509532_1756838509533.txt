@@ -1,0 +1,132 @@
+Goal: /auth/callback must not bounce to /auth. Add hard guard + logs + token handling.
+
+client/src/lib/supabase.ts
+Ensure createClient uses these options (add if missing):
+
+createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+})
+
+
+client/src/pages/AuthCallback.tsx
+Make it ultra-robust & loud:
+
+import { useEffect } from 'react';
+import { useLocation, useRoute } from 'wouter';
+import { supabase } from '@/lib/supabase';
+
+export default function AuthCallback() {
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    (async () => {
+      console.log('[AuthCallback] landed on:', window.location.href);
+
+      // PKCE/code flow (no-op if none)
+      try { await supabase.auth.exchangeCodeForSession(window.location.href); } catch (e) {
+        console.warn('[AuthCallback] exchangeCodeForSession error:', e);
+      }
+
+      // Hash tokens
+      const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
+      const h = new URLSearchParams(hash);
+      const access_token = h.get('access_token');
+      const refresh_token = h.get('refresh_token');
+      const hashType = h.get('type');
+
+      console.log('[AuthCallback] hash params:', { access_token: !!access_token, refresh_token: !!refresh_token, hashType });
+
+      if (access_token && refresh_token) {
+        try {
+          await supabase.auth.setSession({ access_token, refresh_token });
+          console.log('[AuthCallback] session set from hash tokens');
+        } catch (e) {
+          console.error('[AuthCallback] setSession error:', e);
+        }
+      }
+
+      const searchType = new URLSearchParams(window.location.search).get('type');
+      const isRecovery = (hashType || searchType) === 'recovery';
+
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('[AuthCallback] isRecovery:', isRecovery, 'session?', !!session);
+
+      // If recovery, go to reset page regardless of session status
+      if (isRecovery) {
+        setLocation('/reset-password', { replace: true });
+        return;
+      }
+
+      // Fallback: if session present go home, else go auth
+      setLocation(session ? '/' : '/auth', { replace: true });
+    })();
+  }, [setLocation]);
+
+  return null;
+}
+
+
+client/src/App.tsx (Wouter)
+Put a hard-priority route at the very top, before any auth logic:
+
+import AuthCallback from '@/pages/AuthCallback';
+import ResetPassword from '@/pages/ResetPassword';
+import AuthPage from '@/pages/AuthPage';
+import { Route, Switch } from 'wouter';
+
+// VERY TOP: log first
+console.log('[App boot] at', window.location.href);
+
+<Switch>
+  {/* 1) Force-match callback FIRST */}
+  <Route path="/auth/callback">{() => <AuthCallback />}</Route>
+
+  {/* 2) Reset password stays public */}
+  <Route path="/reset-password">{() => <ResetPassword />}</Route>
+
+  {/* 3) Auth page (sign in) */}
+  <Route path="/auth">{() => <AuthPage />}</Route>
+
+  {/* ...the rest of your routes... */}
+</Switch>
+
+
+If you have any global redirect like:
+
+if (!session) setLocation('/auth', { replace: true });
+
+
+wrap it so it never triggers on callback or reset:
+
+const path = window.location.pathname;
+const PUBLIC = ['/auth', '/auth/callback', '/reset-password'];
+if (!session && !PUBLIC.includes(path)) {
+  setLocation('/auth', { replace: true });
+}
+
+
+server/index.(js|ts) (Express)
+Make sure there is no server-side redirect to /auth. Serve SPA fallback instead:
+
+app.use(express.static('dist'));
+app.get('*', (_req, res) => {
+  // Send index.html for all routes (let client router decide)
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+
+Redeploy (restart the app).
+Open DevTools Console. Trigger Forgot password again.
+You should see logs:
+
+[App boot] at https://tutor-tracker.replit.app/auth/callback...
+
+[AuthCallback] landed on: ...
+
+Later: session set from hash tokens or at least isRecovery: true
+
+Commit message: fix(auth): hard-protect /auth/callback + verbose logs + robust session setup
