@@ -73,6 +73,8 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [authMessage, setAuthMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [isPasswordResetMode, setIsPasswordResetMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -212,6 +214,8 @@ export default function AuthPage() {
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setAuthMessage(null);
+    setIsPasswordResetMode(false);
+    setResetEmail('');
     // Clear all form errors and reset form state completely
     form.clearErrors();
     form.reset({
@@ -223,16 +227,76 @@ export default function AuthPage() {
     });
   };
 
+  const handlePasswordReset = async () => {
+    if (!resetEmail || !resetEmail.includes('@')) {
+      setAuthMessage({
+        type: 'error',
+        message: 'Please enter a valid email address'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setAuthMessage(null);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+
+      if (error) {
+        setAuthMessage({
+          type: 'error',
+          message: error.message
+        });
+        toast({
+          variant: "destructive",
+          title: "Password Reset Failed",
+          description: error.message,
+        });
+      } else {
+        setAuthMessage({
+          type: 'success',
+          message: 'Password reset email sent! Check your inbox for further instructions.'
+        });
+        toast({
+          title: "Email Sent",
+          description: "Check your email for password reset instructions.",
+        });
+        setTimeout(() => {
+          setIsPasswordResetMode(false);
+          setResetEmail('');
+          setAuthMessage(null);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Password reset error:', error);
+      setAuthMessage({
+        type: 'error',
+        message: 'An unexpected error occurred. Please try again.'
+      });
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-xl">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl font-bold">
-              {isLogin ? 'Welcome Back' : 'Create Account'}
+              {isPasswordResetMode ? 'Reset Password' : isLogin ? 'Welcome Back' : 'Create Account'}
             </CardTitle>
             <CardDescription>
-              {isLogin 
+              {isPasswordResetMode 
+                ? 'Enter your email to receive password reset instructions'
+                : isLogin 
                 ? 'Sign in to access your TutorTrack dashboard' 
                 : 'Start managing your tutoring business today'
               }
@@ -252,8 +316,42 @@ export default function AuthPage() {
               </Alert>
             )}
 
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+            {isPasswordResetMode ? (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="reset-email" className="block text-sm font-medium mb-2">
+                    Email
+                  </label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    disabled={isLoading}
+                    autoComplete="email"
+                  />
+                </div>
+                
+                <Button
+                  type="button"
+                  className="w-full"
+                  onClick={handlePasswordReset}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending reset email...
+                    </>
+                  ) : (
+                    'Send Reset Email'
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
                 <FormField
                   control={form.control}
                   name="email"
@@ -492,32 +590,52 @@ export default function AuthPage() {
                 </Button>
               </form>
             </Form>
+            )}
 
-            <div className="text-center text-sm">
-              <span className="text-muted-foreground">
-                {isLogin ? "Don't have an account? " : "Already have an account? "}
-              </span>
-              <Button
-                variant="link"
-                className="p-0 h-auto font-normal"
-                onClick={toggleMode}
-                disabled={isLoading}
-              >
-                {isLogin ? 'Sign up' : 'Sign in'}
-              </Button>
-            </div>
+            {!isPasswordResetMode && (
+              <div className="text-center text-sm">
+                <span className="text-muted-foreground">
+                  {isLogin ? "Don't have an account? " : "Already have an account? "}
+                </span>
+                <Button
+                  variant="link"
+                  className="p-0 h-auto font-normal"
+                  onClick={toggleMode}
+                  disabled={isLoading}
+                >
+                  {isLogin ? 'Sign up' : 'Sign in'}
+                </Button>
+              </div>
+            )}
 
-            {isLogin && (
-              <div className="text-center">
+            <div className="text-center">
+              {isPasswordResetMode ? (
                 <Button
                   variant="link"
                   className="p-0 h-auto text-sm text-muted-foreground"
+                  onClick={() => {
+                    setIsPasswordResetMode(false);
+                    setResetEmail('');
+                    setAuthMessage(null);
+                  }}
+                  disabled={isLoading}
+                >
+                  Back to sign in
+                </Button>
+              ) : isLogin ? (
+                <Button
+                  variant="link"
+                  className="p-0 h-auto text-sm text-muted-foreground"
+                  onClick={() => {
+                    setIsPasswordResetMode(true);
+                    setAuthMessage(null);
+                  }}
                   disabled={isLoading}
                 >
                   Forgot your password?
                 </Button>
-              </div>
-            )}
+              ) : null}
+            </div>
           </CardContent>
         </Card>
 
