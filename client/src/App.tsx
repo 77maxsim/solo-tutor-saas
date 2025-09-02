@@ -54,39 +54,58 @@ if (checkForAuthTokensAndRedirect()) {
   // The page will reload with the new URL
 }
 
-// PUBLIC routes that should never redirect to /auth
-const PUBLIC_ROUTES = ['/auth', '/auth/callback', '/reset-password', '/booking'];
+// PUBLIC routes and recovery URL detection
+const PUBLIC_PATHS = ['/auth', '/auth/callback', '/reset-password', '/booking'];
 
-const shouldRedirectToAuth = () => {
-  const path = window.location.pathname;
-  return !PUBLIC_ROUTES.some(route => path.startsWith(route));
-};
+function isPublicPath() {
+  const { pathname, search, hash } = window.location;
+  // Explicit public pages
+  if (PUBLIC_PATHS.includes(pathname)) return true;
+
+  // Be tolerant: any /auth/callback subpath
+  if (pathname.startsWith('/auth/callback')) return true;
+
+  // If the URL indicates a recovery flow or has tokens, don't redirect
+  if (search.includes('type=recovery')) return true;
+  if (hash.includes('type=recovery')) return true;
+  if (hash.includes('access_token=')) return true;
+  if (hash.includes('refresh_token=')) return true;
+
+  return false;
+}
 
 // Create protected versions of each component
 const ProtectedDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        setAuthReady(true);
+      }
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [setLocation]);
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;           // wait until INITIAL_SESSION fires
+    if (isPublicPath()) return;       // never hijack callback/reset/recovery
+
+    if (!user) {
+      setLocation('/auth', { replace: true });
+    }
+  }, [user, authReady, setLocation]);
 
   if (loading) {
     return (
@@ -102,27 +121,33 @@ const ProtectedDashboard = () => {
 const ProtectedCalendar = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        setAuthReady(true);
+      }
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [setLocation]);
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (isPublicPath()) return;
+    if (!user) {
+      setLocation('/auth', { replace: true });
+    }
+  }, [user, authReady, setLocation]);
 
   if (loading) {
     return (
@@ -138,27 +163,33 @@ const ProtectedCalendar = () => {
 const ProtectedEarnings = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        setAuthReady(true);
+      }
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [setLocation]);
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (isPublicPath()) return;
+    if (!user) {
+      setLocation('/auth', { replace: true });
+    }
+  }, [user, authReady, setLocation]);
 
   if (loading) {
     return (
@@ -174,27 +205,33 @@ const ProtectedEarnings = () => {
 const ProtectedStudents = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        setAuthReady(true);
+      }
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [setLocation]);
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (isPublicPath()) return;
+    if (!user) {
+      setLocation('/auth', { replace: true });
+    }
+  }, [user, authReady, setLocation]);
 
   if (loading) {
     return (
@@ -210,27 +247,33 @@ const ProtectedStudents = () => {
 const ProtectedProfile = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        setAuthReady(true);
+      }
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [setLocation]);
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (isPublicPath()) return;
+    if (!user) {
+      setLocation('/auth', { replace: true });
+    }
+  }, [user, authReady, setLocation]);
 
   if (loading) {
     return (
@@ -246,27 +289,33 @@ const ProtectedProfile = () => {
 const ProtectedActivity = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        setAuthReady(true);
+      }
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [setLocation]);
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (isPublicPath()) return;
+    if (!user) {
+      setLocation('/auth', { replace: true });
+    }
+  }, [user, authReady, setLocation]);
 
   if (loading) {
     return (
@@ -282,27 +331,33 @@ const ProtectedActivity = () => {
 const ProtectedUpcomingSessions = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        setAuthReady(true);
+      }
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [setLocation]);
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (isPublicPath()) return;
+    if (!user) {
+      setLocation('/auth', { replace: true });
+    }
+  }, [user, authReady, setLocation]);
 
   if (loading) {
     return (
@@ -318,27 +373,33 @@ const ProtectedUpcomingSessions = () => {
 const ProtectedAvailability = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        setAuthReady(true);
+      }
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user && shouldRedirectToAuth()) {
-        setLocation('/auth');
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [setLocation]);
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (isPublicPath()) return;
+    if (!user) {
+      setLocation('/auth', { replace: true });
+    }
+  }, [user, authReady, setLocation]);
 
   if (loading) {
     return (

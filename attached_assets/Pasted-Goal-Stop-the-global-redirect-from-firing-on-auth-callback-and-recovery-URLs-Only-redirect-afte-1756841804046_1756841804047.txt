@@ -1,0 +1,81 @@
+Goal: Stop the global redirect from firing on /auth/callback (and recovery URLs). Only redirect after INITIAL_SESSION is known.
+
+Find the global auth redirect (likely in client/src/App.tsx or client/src/layouts/AppLayout.tsx – the one that prints “No session found on reload”).
+
+It probably does something like: if (!session) setLocation('/auth').
+
+Add a shared helper (top of the same file or a small util):
+
+const PUBLIC_PATHS = ['/auth', '/auth/callback', '/reset-password'];
+
+function isPublicPath() {
+  const { pathname, search, hash } = window.location;
+  // Explicit public pages
+  if (PUBLIC_PATHS.includes(pathname)) return true;
+
+  // Be tolerant: any /auth/callback subpath
+  if (pathname.startsWith('/auth/callback')) return true;
+
+  // If the URL indicates a recovery flow or has tokens, don't redirect
+  if (search.includes('type=recovery')) return true;
+  if (hash.includes('type=recovery')) return true;
+  if (hash.includes('access_token=')) return true;
+  if (hash.includes('refresh_token=')) return true;
+
+  return false;
+}
+
+
+Wait for INITIAL_SESSION before redirecting
+Locate where you subscribe to Supabase auth changes. Add a small “ready” flag:
+
+// somewhere near your app bootstrap / AppLayout
+const [authReady, setAuthReady] = useState(false);
+
+useEffect(() => {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    if (event === 'INITIAL_SESSION') {
+      setAuthReady(true);
+    }
+  });
+  // If you already subscribe elsewhere, keep one subscription;
+  // just ensure you setAuthReady(true) on INITIAL_SESSION.
+  return () => subscription.unsubscribe();
+}, []);
+
+
+Guard = only redirect when ready & not public
+Replace any unconditional redirect like:
+
+if (!session) setLocation('/auth', { replace: true });
+
+
+with:
+
+useEffect(() => {
+  const pathInfo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  // DEBUG: remove later
+  console.log('[Guard] session?', !!session, 'authReady?', authReady, 'url:', pathInfo);
+
+  if (!authReady) return;           // wait until INITIAL_SESSION fires (true or false)
+  if (isPublicPath()) return;       // never hijack callback/reset/recovery
+
+  if (!session) {
+    setLocation('/auth', { replace: true });
+  }
+}, [session, authReady, setLocation]);
+
+
+Keep AuthCallback robust (already done):
+
+Calls exchangeCodeForSession(window.location.href)
+
+Parses window.location.hash for access_token, refresh_token, type
+
+setSession({ access_token, refresh_token }) when present
+
+If recovery → setLocation('/reset-password', { replace: true })
+
+Rebuild/Restart the app.
+
+Commit message: fix(auth-guard): skip redirects on recovery/callback; wait for INITIAL_SESSION
