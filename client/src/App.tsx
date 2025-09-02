@@ -26,6 +26,8 @@ import UnpaidSessions from "./pages/unpaid-sessions";
 import Availability from "./pages/availability";
 import NotFound from "./pages/not-found";
 import AuthPage from "./pages/AuthPage.tsx";
+import AuthCallback from "./pages/AuthCallback.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 import PublicBookingPage from "./pages/public-booking/[tutorId].tsx";
 
 // Create protected versions of each component
@@ -359,6 +361,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      <Route path="/auth/callback" component={AuthCallback} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route path="/booking/:tutorId" component={PublicBookingPage} />
       <Route path="/" component={ProtectedDashboard} />
       <Route path="/dashboard" component={ProtectedDashboard} />
