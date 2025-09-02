@@ -68,16 +68,20 @@ export default function ResetPassword() {
       } else {
         setMessage({
           type: 'success',
-          text: 'Password updated successfully! Redirecting to dashboard...'
+          text: 'Password updated successfully! Please sign in with your new password.'
         });
         toast({
           title: "Password Updated",
-          description: "Your password has been successfully updated.",
+          description: "Your password has been successfully updated. Please sign in with your new password.",
         });
         
-        // Redirect to dashboard after successful password reset
-        setTimeout(() => {
-          setLocation('/dashboard');
+        // Clear the pending password reset flag
+        localStorage.removeItem('pendingPasswordReset');
+        
+        // Sign out to force login with new password
+        setTimeout(async () => {
+          await supabase.auth.signOut();
+          setLocation('/auth', { replace: true });
         }, 2000);
       }
     } catch (error) {

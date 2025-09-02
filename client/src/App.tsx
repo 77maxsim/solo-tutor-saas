@@ -86,7 +86,7 @@ const ProtectedDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -109,10 +109,18 @@ const ProtectedDashboard = () => {
     if (!authReady) return;           // wait until INITIAL_SESSION fires
     if (isPublicPath()) return;       // never hijack callback/reset/recovery
 
+    // Check if password reset is pending
+    const mustReset = localStorage.getItem('pendingPasswordReset') === '1';
+    if (mustReset && location !== '/reset-password') {
+      console.log("🔐 Pending password reset detected, redirecting to /reset-password");
+      setLocation('/reset-password', { replace: true });
+      return;
+    }
+
     if (!user) {
       setLocation('/auth', { replace: true });
     }
-  }, [user, authReady, setLocation]);
+  }, [user, authReady, location, setLocation]);
 
   if (loading) {
     return (
@@ -129,7 +137,7 @@ const ProtectedCalendar = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -151,10 +159,19 @@ const ProtectedCalendar = () => {
   useEffect(() => {
     if (!authReady) return;
     if (isPublicPath()) return;
+    
+    // Check if password reset is pending
+    const mustReset = localStorage.getItem('pendingPasswordReset') === '1';
+    if (mustReset && location !== '/reset-password') {
+      console.log("🔐 Pending password reset detected, redirecting to /reset-password");
+      setLocation('/reset-password', { replace: true });
+      return;
+    }
+    
     if (!user) {
       setLocation('/auth', { replace: true });
     }
-  }, [user, authReady, setLocation]);
+  }, [user, authReady, location, setLocation]);
 
   if (loading) {
     return (
@@ -171,7 +188,7 @@ const ProtectedEarnings = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -193,10 +210,19 @@ const ProtectedEarnings = () => {
   useEffect(() => {
     if (!authReady) return;
     if (isPublicPath()) return;
+    
+    // Check if password reset is pending
+    const mustReset = localStorage.getItem('pendingPasswordReset') === '1';
+    if (mustReset && location !== '/reset-password') {
+      console.log("🔐 Pending password reset detected, redirecting to /reset-password");
+      setLocation('/reset-password', { replace: true });
+      return;
+    }
+    
     if (!user) {
       setLocation('/auth', { replace: true });
     }
-  }, [user, authReady, setLocation]);
+  }, [user, authReady, location, setLocation]);
 
   if (loading) {
     return (
@@ -213,7 +239,7 @@ const ProtectedStudents = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -235,10 +261,19 @@ const ProtectedStudents = () => {
   useEffect(() => {
     if (!authReady) return;
     if (isPublicPath()) return;
+    
+    // Check if password reset is pending
+    const mustReset = localStorage.getItem('pendingPasswordReset') === '1';
+    if (mustReset && location !== '/reset-password') {
+      console.log("🔐 Pending password reset detected, redirecting to /reset-password");
+      setLocation('/reset-password', { replace: true });
+      return;
+    }
+    
     if (!user) {
       setLocation('/auth', { replace: true });
     }
-  }, [user, authReady, setLocation]);
+  }, [user, authReady, location, setLocation]);
 
   if (loading) {
     return (
@@ -255,7 +290,7 @@ const ProtectedProfile = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -277,10 +312,19 @@ const ProtectedProfile = () => {
   useEffect(() => {
     if (!authReady) return;
     if (isPublicPath()) return;
+    
+    // Check if password reset is pending
+    const mustReset = localStorage.getItem('pendingPasswordReset') === '1';
+    if (mustReset && location !== '/reset-password') {
+      console.log("🔐 Pending password reset detected, redirecting to /reset-password");
+      setLocation('/reset-password', { replace: true });
+      return;
+    }
+    
     if (!user) {
       setLocation('/auth', { replace: true });
     }
-  }, [user, authReady, setLocation]);
+  }, [user, authReady, location, setLocation]);
 
   if (loading) {
     return (
@@ -297,7 +341,7 @@ const ProtectedActivity = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -319,10 +363,19 @@ const ProtectedActivity = () => {
   useEffect(() => {
     if (!authReady) return;
     if (isPublicPath()) return;
+    
+    // Check if password reset is pending
+    const mustReset = localStorage.getItem('pendingPasswordReset') === '1';
+    if (mustReset && location !== '/reset-password') {
+      console.log("🔐 Pending password reset detected, redirecting to /reset-password");
+      setLocation('/reset-password', { replace: true });
+      return;
+    }
+    
     if (!user) {
       setLocation('/auth', { replace: true });
     }
-  }, [user, authReady, setLocation]);
+  }, [user, authReady, location, setLocation]);
 
   if (loading) {
     return (
@@ -339,7 +392,7 @@ const ProtectedUpcomingSessions = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -361,10 +414,19 @@ const ProtectedUpcomingSessions = () => {
   useEffect(() => {
     if (!authReady) return;
     if (isPublicPath()) return;
+    
+    // Check if password reset is pending
+    const mustReset = localStorage.getItem('pendingPasswordReset') === '1';
+    if (mustReset && location !== '/reset-password') {
+      console.log("🔐 Pending password reset detected, redirecting to /reset-password");
+      setLocation('/reset-password', { replace: true });
+      return;
+    }
+    
     if (!user) {
       setLocation('/auth', { replace: true });
     }
-  }, [user, authReady, setLocation]);
+  }, [user, authReady, location, setLocation]);
 
   if (loading) {
     return (
@@ -381,7 +443,7 @@ const ProtectedAvailability = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -403,10 +465,19 @@ const ProtectedAvailability = () => {
   useEffect(() => {
     if (!authReady) return;
     if (isPublicPath()) return;
+    
+    // Check if password reset is pending
+    const mustReset = localStorage.getItem('pendingPasswordReset') === '1';
+    if (mustReset && location !== '/reset-password') {
+      console.log("🔐 Pending password reset detected, redirecting to /reset-password");
+      setLocation('/reset-password', { replace: true });
+      return;
+    }
+    
     if (!user) {
       setLocation('/auth', { replace: true });
     }
-  }, [user, authReady, setLocation]);
+  }, [user, authReady, location, setLocation]);
 
   if (loading) {
     return (
@@ -493,7 +564,7 @@ function AppLayout() {
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
 
   // Track authentication state with session persistence
   useEffect(() => {
@@ -508,17 +579,25 @@ function AppLayout() {
       setLoading(false);
     });
 
-    // Keep session synced with storage
+    // Keep session synced with storage and handle PASSWORD_RECOVERY event
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log("🔄 AppLayout: Auth state changed:", _event, session?.user?.email);
+      
+      // Force password reset for recovery sessions
+      if (_event === 'PASSWORD_RECOVERY') {
+        console.log("🔐 PASSWORD_RECOVERY event detected, forcing password reset");
+        localStorage.setItem('pendingPasswordReset', '1');
+        setLocation('/reset-password', { replace: true });
+      }
+      
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [setLocation]);
 
   const getPageTitle = (pathname: string) => {
     switch (pathname) {

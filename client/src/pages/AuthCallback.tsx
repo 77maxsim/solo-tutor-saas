@@ -68,6 +68,13 @@ export default function AuthCallback() {
         return;
       }
 
+      // Check if password reset is pending (from PASSWORD_RECOVERY event)
+      if (localStorage.getItem('pendingPasswordReset') === '1') {
+        console.log('[AuthCallback] pendingPasswordReset detected, redirecting to /reset-password');
+        setLocation('/reset-password', { replace: true });
+        return;
+      }
+
       // Fallback: if session present go home, else go auth
       console.log('[AuthCallback] redirecting to:', session ? '/' : '/auth');
       setLocation(session ? '/' : '/auth', { replace: true });
