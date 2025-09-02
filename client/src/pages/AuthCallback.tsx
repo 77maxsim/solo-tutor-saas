@@ -1,101 +1,59 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
-import { supabase } from "@/lib/supabaseClient";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { useEffect } from 'react';
+import { useLocation } from 'wouter';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function AuthCallback() {
   const [, setLocation] = useLocation();
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      try {
-        // Parse both hash and search parameters for robustness
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const searchParams = new URLSearchParams(window.location.search);
-        
-        // Get tokens and type from hash (Supabase recovery flow)
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        const hashType = hashParams.get('type');
-        
-        // Also check search params for type (backup)
-        const searchType = searchParams.get('type');
-        const type = hashType || searchType;
+    (async () => {
+      console.log('[AuthCallback] landed on:', window.location.href);
 
-        // Try to exchange code for session (no-op if not needed)
-        try {
-          await supabase.auth.exchangeCodeForSession(window.location.href);
-        } catch (exchangeError) {
-          // Silently ignore exchange errors as this is a fallback
-          console.log('Code exchange not needed or failed:', exchangeError);
-        }
-
-        // Handle recovery flow - set session if tokens are present
-        if (accessToken && refreshToken) {
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (error) {
-            console.error('Error setting session:', error);
-            toast({
-              variant: "destructive",
-              title: "Authentication Error",
-              description: "Failed to process recovery link. Please try again.",
-            });
-            setLocation('/auth', { replace: true });
-            return;
-          }
-        }
-
-        // Navigate based on type
-        if (type === 'recovery') {
-          toast({
-            title: "Recovery Link Verified",
-            description: "Please set your new password.",
-          });
-          setLocation('/reset-password', { replace: true });
-        } else if (type === 'signup') {
-          toast({
-            title: "Email Verified",
-            description: "Your email has been verified successfully.",
-          });
-          setLocation('/auth', { replace: true });
-        } else {
-          // Invalid or missing callback type
-          console.error('Invalid callback type or missing tokens');
-          setLocation('/auth', { replace: true });
-        }
-      } catch (error) {
-        console.error('Callback handling error:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "An error occurred processing the authentication link.",
-        });
-        setLocation('/auth', { replace: true });
-      } finally {
-        setLoading(false);
+      // PKCE/code flow (no-op if none)
+      try { 
+        await supabase.auth.exchangeCodeForSession(window.location.href); 
+      } catch (e) {
+        console.warn('[AuthCallback] exchangeCodeForSession error:', e);
       }
-    };
 
-    handleAuthCallback();
-  }, [setLocation, toast]);
+      // Hash tokens
+      const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
+      const h = new URLSearchParams(hash);
+      const access_token = h.get('access_token');
+      const refresh_token = h.get('refresh_token');
+      const hashType = h.get('type');
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-sm text-gray-600">Processing authentication link...</p>
-        </div>
-      </div>
-    );
-  }
+      console.log('[AuthCallback] hash params:', { 
+        access_token: !!access_token, 
+        refresh_token: !!refresh_token, 
+        hashType 
+      });
+
+      if (access_token && refresh_token) {
+        try {
+          await supabase.auth.setSession({ access_token, refresh_token });
+          console.log('[AuthCallback] session set from hash tokens');
+        } catch (e) {
+          console.error('[AuthCallback] setSession error:', e);
+        }
+      }
+
+      const searchType = new URLSearchParams(window.location.search).get('type');
+      const isRecovery = (hashType || searchType) === 'recovery';
+
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('[AuthCallback] isRecovery:', isRecovery, 'session?', !!session);
+
+      // If recovery, go to reset page regardless of session status
+      if (isRecovery) {
+        setLocation('/reset-password', { replace: true });
+        return;
+      }
+
+      // Fallback: if session present go home, else go auth
+      setLocation(session ? '/' : '/auth', { replace: true });
+    })();
+  }, [setLocation]);
 
   return null;
 }

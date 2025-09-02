@@ -30,6 +30,17 @@ import AuthCallback from "./pages/AuthCallback.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import PublicBookingPage from "./pages/public-booking/[tutorId].tsx";
 
+// VERY TOP: log first
+console.log('[App boot] at', window.location.href);
+
+// PUBLIC routes that should never redirect to /auth
+const PUBLIC_ROUTES = ['/auth', '/auth/callback', '/reset-password', '/booking'];
+
+const shouldRedirectToAuth = () => {
+  const path = window.location.pathname;
+  return !PUBLIC_ROUTES.some(route => path.startsWith(route));
+};
+
 // Create protected versions of each component
 const ProtectedDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -40,7 +51,7 @@ const ProtectedDashboard = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -48,7 +59,7 @@ const ProtectedDashboard = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -76,7 +87,7 @@ const ProtectedCalendar = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -84,7 +95,7 @@ const ProtectedCalendar = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -112,7 +123,7 @@ const ProtectedEarnings = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -120,7 +131,7 @@ const ProtectedEarnings = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -148,7 +159,7 @@ const ProtectedStudents = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -156,7 +167,7 @@ const ProtectedStudents = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -184,7 +195,7 @@ const ProtectedProfile = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -192,7 +203,7 @@ const ProtectedProfile = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -220,7 +231,7 @@ const ProtectedActivity = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -228,7 +239,7 @@ const ProtectedActivity = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -256,7 +267,7 @@ const ProtectedUpcomingSessions = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -264,7 +275,7 @@ const ProtectedUpcomingSessions = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -292,7 +303,7 @@ const ProtectedAvailability = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -300,7 +311,7 @@ const ProtectedAvailability = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
+      if (!session?.user && shouldRedirectToAuth()) {
         setLocation('/auth');
       }
     });
@@ -360,10 +371,19 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/auth/callback" component={AuthCallback} />
-      <Route path="/reset-password" component={ResetPassword} />
-      <Route path="/auth" component={AuthPage} />
+      {/* 1) Force-match callback FIRST */}
+      <Route path="/auth/callback">{() => <AuthCallback />}</Route>
+
+      {/* 2) Reset password stays public */}
+      <Route path="/reset-password">{() => <ResetPassword />}</Route>
+
+      {/* 3) Auth page (sign in) */}
+      <Route path="/auth">{() => <AuthPage />}</Route>
+
+      {/* 4) Public booking */}
       <Route path="/booking/:tutorId" component={PublicBookingPage} />
+
+      {/* 5) Protected routes */}
       <Route path="/" component={ProtectedDashboard} />
       <Route path="/dashboard" component={ProtectedDashboard} />
       <Route path="/calendar" component={ProtectedCalendar} />
