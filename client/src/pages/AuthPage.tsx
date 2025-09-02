@@ -240,9 +240,9 @@ export default function AuthPage() {
     setAuthMessage(null);
 
     try {
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      const SITE_URL = import.meta.env.VITE_PUBLIC_SITE_URL || window.location.origin;
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo,
+        redirectTo: `${SITE_URL}/auth/callback`,
       });
 
       if (error) {
