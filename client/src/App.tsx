@@ -37,12 +37,19 @@ console.log('[App boot] at', window.location.href);
 // This handles when Supabase redirects to the root domain with auth tokens
 const checkForAuthTokensAndRedirect = () => {
   const hash = window.location.hash;
-  const hasAuthTokens = hash.includes('access_token') || hash.includes('recovery');
+  const search = window.location.search;
+  const pathname = window.location.pathname;
   
-  if (hasAuthTokens && window.location.pathname === '/') {
-    console.log('[App] Auth tokens detected on root, redirecting to /auth/callback');
-    // Preserve the hash when redirecting
-    window.location.href = '/auth/callback' + hash;
+  const hasAuthTokens = hash.includes('access_token') || 
+                        hash.includes('refresh_token') ||
+                        hash.includes('type=recovery') ||
+                        search.includes('type=recovery');
+  
+  // Redirect to /auth/callback if we have tokens but not on callback page
+  if (hasAuthTokens && pathname !== '/auth/callback') {
+    console.log('[App] Auth tokens detected, redirecting to /auth/callback');
+    // Preserve the search and hash when redirecting
+    window.location.href = '/auth/callback' + search + hash;
     return true;
   }
   return false;
@@ -553,11 +560,14 @@ function AppLayout() {
     };
   }, []);
 
-  // Check if we're on the auth page
-  const isAuthPage = location === '/auth';
+  // Check if we're on a public page that should always be accessible
+  const isPublicPage = location === '/auth' || 
+                       location === '/auth/callback' || 
+                       location === '/reset-password' ||
+                       location.startsWith('/booking');
 
-  // Show navigation only if user is authenticated and not on auth page
-  const showNavigation = user && !isAuthPage && !loading;
+  // Show navigation only if user is authenticated and not on a public page
+  const showNavigation = user && !isPublicPage && !loading;
 
   if (loading) {
     return (
@@ -610,7 +620,7 @@ function AppLayout() {
           />
         </div>
       ) : (
-        // Unauthenticated layout (auth page)
+        // Unauthenticated layout (public pages including auth/callback)
         <div className="flex flex-col h-full">
           <Router />
         </div>
