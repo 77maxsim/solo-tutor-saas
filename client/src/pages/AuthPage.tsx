@@ -97,6 +97,18 @@ export default function AuthPage() {
     form.clearErrors();
   }, [isLogin, form]);
 
+  // Redirect recovery tokens from /auth to /auth/callback
+  useEffect(() => {
+    const { pathname, search, hash } = window.location;
+    if (pathname.startsWith('/auth') && 
+        (hash.includes('type=recovery') || 
+         hash.includes('access_token') || 
+         hash.includes('refresh_token') || 
+         search.includes('type=recovery'))) {
+      setLocation(`/auth/callback${search}${hash}`, { replace: true });
+    }
+  }, [setLocation]);
+
   const onSubmit = async (data: AuthForm) => {
     console.log('Form submitted with data:', data);
     setIsLoading(true);
