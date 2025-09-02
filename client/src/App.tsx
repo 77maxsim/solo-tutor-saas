@@ -360,9 +360,9 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/auth" component={AuthPage} />
       <Route path="/auth/callback" component={AuthCallback} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/auth" component={AuthPage} />
       <Route path="/booking/:tutorId" component={PublicBookingPage} />
       <Route path="/" component={ProtectedDashboard} />
       <Route path="/dashboard" component={ProtectedDashboard} />
