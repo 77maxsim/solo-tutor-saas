@@ -242,6 +242,8 @@ export default function AuthPage() {
     try {
       const redirectTo = `${window.location.origin}/auth/callback`;
       console.log('Password reset redirectTo:', redirectTo);
+      console.log('Current origin:', window.location.origin);
+      console.log('Current href:', window.location.href);
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
         redirectTo,
       });
