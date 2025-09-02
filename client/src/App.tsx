@@ -33,6 +33,27 @@ import PublicBookingPage from "./pages/public-booking/[tutorId].tsx";
 // VERY TOP: log first
 console.log('[App boot] at', window.location.href);
 
+// Check if we have Supabase auth tokens in the URL (from password reset email)
+// This handles when Supabase redirects to the root domain with auth tokens
+const checkForAuthTokensAndRedirect = () => {
+  const hash = window.location.hash;
+  const hasAuthTokens = hash.includes('access_token') || hash.includes('recovery');
+  
+  if (hasAuthTokens && window.location.pathname === '/') {
+    console.log('[App] Auth tokens detected on root, redirecting to /auth/callback');
+    // Preserve the hash when redirecting
+    window.location.href = '/auth/callback' + hash;
+    return true;
+  }
+  return false;
+};
+
+// Check immediately on app load
+if (checkForAuthTokensAndRedirect()) {
+  // Stop further execution if we're redirecting
+  // The page will reload with the new URL
+}
+
 // PUBLIC routes that should never redirect to /auth
 const PUBLIC_ROUTES = ['/auth', '/auth/callback', '/reset-password', '/booking'];
 
