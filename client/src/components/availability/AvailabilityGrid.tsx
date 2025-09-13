@@ -143,6 +143,18 @@ export default function AvailabilityGrid({
     }
   }, [onProposedRange]);
 
+  // Handle single click to create 30-minute default slot (fallback)
+  const handleDateClick = useCallback((dateClickInfo: any) => {
+    const clickedDate = dateClickInfo.date;
+    const endDate = new Date(clickedDate);
+    endDate.setMinutes(endDate.getMinutes() + 30); // Default 30-minute slot
+
+    onProposedRange({
+      startLocal: clickedDate,
+      endLocal: endDate
+    });
+  }, [onProposedRange]);
+
   return (
     <div className="availability-grid h-full">
       <style>
@@ -191,6 +203,7 @@ export default function AvailabilityGrid({
         editable={false}
         droppable={false}
         select={handleSelect}
+        dateClick={handleDateClick}
         slotMinTime="06:00:00"
         slotMaxTime="23:00:00"
         allDaySlot={false}
