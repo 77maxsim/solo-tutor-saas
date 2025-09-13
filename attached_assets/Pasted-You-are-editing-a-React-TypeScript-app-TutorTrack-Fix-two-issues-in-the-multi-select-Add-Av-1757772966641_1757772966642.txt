@@ -1,0 +1,86 @@
+You are editing a React + TypeScript app (TutorTrack).
+
+Fix two issues in the multi-select “Add Availability Slot” modal without changing any time-zone conversion helpers or server payloads.
+
+Files (adjust names if slightly different, but keep the logic):
+- client/src/components/availability/AvailabilityGrid.tsx
+- client/src/components/availability/AddAvailabilityModal.tsx
+- client/src/components/availability/add-availability.css (create if needed) OR inline Tailwind classes
+
+=== Issue 1: Drag selection only creates 30-min slots ===
+Goal: when the user drags across multiple cells, the proposed range should span the entire drag:
+- start = min(dragStartCellStart, dragEndCellStart)
+- end   = max(dragStartCellStart, dragEndCellStart) + step (30 min)
+- If the user clicks a single cell (no drag), keep a 30 min range.
+- Keep EVERYTHING in LOCAL time in the grid; do not add or modify any time-zone code.
+
+Edits in AvailabilityGrid.tsx:
+1) Ensure we track:
+   const [dragStart, setDragStart] = useState<Date | null>(null);
+   const [hoverCellStart, setHoverCellStart] = useState<Date | null>(null);
+
+2) On mousedown of a cell:
+   setDragStart(cellStartLocal);
+   setHoverCellStart(cellStartLocal);
+
+3) On mouseenter of a cell (while dragging):
+   if (dragStart) setHoverCellStart(cellStartLocal);
+
+4) On global mouseup, compute the range:
+   if (!dragStart) return;
+   const stepMs = 30 * 60 * 1000;
+   const a = dragStart;
+   const b = hoverCellStart || dragStart;
+   const start = a < b ? a : b;
+   const endBase = a < b ? b : a;
+   const end = new Date(endBase.getTime() + stepMs); // include last hovered cell
+   if (end <= start) { reset drag state and return; }
+   props.onProposedRange({ startLocal: start, endLocal: end });
+
+5) Reset dragStart/hoverCellStart to null on mouseup.
+
+6) Visual feedback:
+   - While dragging, draw a transient overlay between start and end (optional; if you already have it, keep it).
+   - Continue rendering `props.selectedRangesLocal` as before.
+
+7) DO NOT call any tz helpers from this file.
+
+=== Issue 2: “Add Slot” button scrolls out of view ===
+Goal: Keep actions visible and make the “Selected Time Slots” list scroll inside a capped area.
+
+Edits in AddAvailabilityModal.tsx:
+1) Wrap the “Selected Time Slots” list in a container with a max height and its own scroll:
+   <div className="mt-3 border rounded-md max-h-48 overflow-auto p-2">
+     … list items …
+   </div>
+
+2) Make the action area a sticky footer INSIDE the modal content (not the page):
+   <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t mt-3 pt-3 flex justify-end gap-2">
+     <Button variant="secondary" onClick={clearSelection}>Clear Selection</Button>
+     <Button onClick={onSubmit} disabled={selectedSlots.length === 0}>
+       {`Add ${selectedSlots.length || 0} Slot${selectedSlots.length === 1 ? '' : 's'}`}
+     </Button>
+     <Button variant="outline" onClick={props.onClose}>Close</Button>
+   </div>
+
+   Notes:
+   - If you don’t use Tailwind, add equivalent CSS in add-availability.css:
+     .aa-footer{position:sticky;bottom:0;background:rgba(255,255,255,.95);backdrop-filter:saturate(180%) blur(6px);border-top:1px solid var(--border);padding-top:12px;}
+     .aa-list{max-height:12rem;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:8px;}
+
+3) Ensure the modal body itself scrolls, not the whole page:
+   - The scrollable container around the grid + list should have: max-height: calc(100vh - 240px); overflow:auto;
+   - If your Modal component accepts a “bodyClassName”, pass something like "max-h-[70vh] overflow-auto".
+
+=== Keep time-zone logic unchanged ===
+- Do NOT edit localToUtc / utcToLocal / any tz pipeline.
+- The modal still passes LOCAL ranges to the existing submit handler which converts to UTC using the current helpers.
+
+=== Sanity checks ===
+- Drag from 12:00 down to 13:00 → proposed range is 12:00–13:00.
+- Drag upward (13:00 back to 12:00) → still 12:00–13:00.
+- Single click on a cell → 30-min slot.
+- Add several slots → the list grows inside its scroll box; the sticky footer stays visible; the “Add N Slots” button is always accessible.
+- Overlap validation remains in the modal as implemented previously.
+
+Make only the above changes. Don’t modify database calls or time-zone helpers.

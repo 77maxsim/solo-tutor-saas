@@ -840,9 +840,9 @@ export default function AddSlotCalendarModal({
               <div className="mb-3">
                 <h4 className="font-medium mb-2">Selected Time Slots ({selectedSlots.length})</h4>
                 {selectedSlots.length > 0 ? (
-                  <div className="max-h-24 overflow-y-auto space-y-1">
+                  <div className="mt-3 border rounded-md max-h-48 overflow-auto p-2 space-y-1 bg-white dark:bg-gray-800">
                     {selectedSlots.map((range, i) => (
-                      <div key={i} className="flex items-center justify-between text-sm bg-white dark:bg-gray-800 rounded px-3 py-2">
+                      <div key={i} className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-700 rounded px-3 py-2">
                         <span>
                           {range.startLocal.toLocaleString([], { 
                             weekday: 'short',
@@ -871,7 +871,8 @@ export default function AddSlotCalendarModal({
                 )}
               </div>
               
-              <div className="flex justify-between items-center">
+              {/* Sticky action footer */}
+              <div className="sticky bottom-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-t mt-3 pt-3 flex justify-between items-center">
                 <Button variant="outline" onClick={clearSelection} disabled={selectedSlots.length === 0}>
                   Clear Selection
                 </Button>
