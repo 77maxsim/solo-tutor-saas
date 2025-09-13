@@ -51,9 +51,6 @@ export default function AvailabilityGrid({
   const [calendarView, setCalendarView] = useState<'timeGridWeek' | 'timeGridDay'>('timeGridWeek');
   const calendarRef = useRef<FullCalendar>(null);
   
-  // Custom drag selection state
-  const [dragStart, setDragStart] = useState<Date | null>(null);
-  const [hoverCellStart, setHoverCellStart] = useState<Date | null>(null);
 
   // Convert ranges to calendar events
   const bookedEvents: FullCalendarEvent[] = useMemo(() => {
@@ -115,71 +112,36 @@ export default function AvailabilityGrid({
   // Combine all events
   const allEvents = [...bookedEvents, ...pendingEvents, ...existingAvailabilityEvents, ...selectedEvents];
 
-  // Handle custom drag selection with proper range calculation
-  const handleMouseDown = useCallback((info: any) => {
-    const cellStartLocal = new Date(info.date);
-    setDragStart(cellStartLocal);
-    setHoverCellStart(cellStartLocal);
-  }, []);
-
-  const handleMouseEnter = useCallback((info: any) => {
-    if (dragStart) {
-      const cellStartLocal = new Date(info.date);
-      setHoverCellStart(cellStartLocal);
+  // Handle calendar time selection for drag/click
+  const handleSelect = useCallback((selectInfo: any) => {
+    const start = selectInfo.start;
+    const end = selectInfo.end;
+    
+    // Calculate duration in milliseconds
+    const durationMs = end.getTime() - start.getTime();
+    const thirtyMinMs = 30 * 60 * 1000;
+    
+    // If the selection is exactly 30 minutes (a single click), keep it as is
+    // Otherwise, it's a drag selection spanning multiple cells
+    if (durationMs === thirtyMinMs) {
+      // Single click - create 30-minute slot
+      onProposedRange({
+        startLocal: start,
+        endLocal: end
+      });
+    } else {
+      // Drag selection - use the full range
+      onProposedRange({
+        startLocal: start,
+        endLocal: end
+      });
     }
-  }, [dragStart]);
 
-  const handleMouseUp = useCallback(() => {
-    if (!dragStart) return;
-    
-    const stepMs = 30 * 60 * 1000; // 30 minutes in milliseconds
-    const a = dragStart;
-    const b = hoverCellStart || dragStart;
-    
-    // Calculate proper start and end
-    const start = a < b ? a : b;
-    const endBase = a < b ? b : a;
-    const end = new Date(endBase.getTime() + stepMs); // include last hovered cell
-    
-    // Validate range
-    if (end <= start) {
-      setDragStart(null);
-      setHoverCellStart(null);
-      return;
+    // Clear the calendar selection
+    if (calendarRef.current) {
+      calendarRef.current.getApi().unselect();
     }
-    
-    // Emit the proposed range
-    onProposedRange({
-      startLocal: start,
-      endLocal: end
-    });
-    
-    // Reset drag state
-    setDragStart(null);
-    setHoverCellStart(null);
-  }, [dragStart, hoverCellStart, onProposedRange]);
-
-  // Handle single click to create 30-minute default slot
-  const handleDateClick = useCallback((dateClickInfo: any) => {
-    // Only handle single clicks (not part of drag)
-    if (dragStart) return;
-    
-    const clickedDate = dateClickInfo.date;
-    const endDate = new Date(clickedDate);
-    endDate.setMinutes(endDate.getMinutes() + 30); // Default 30-minute slot
-
-    onProposedRange({
-      startLocal: clickedDate,
-      endLocal: endDate
-    });
-  }, [onProposedRange, dragStart]);
-
-  // Global mouseup event listener to handle drag completion
-  useEffect(() => {
-    const handleGlobalMouseUp = () => handleMouseUp();
-    document.addEventListener('mouseup', handleGlobalMouseUp);
-    return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
-  }, [handleMouseUp]);
+  }, [onProposedRange]);
 
   return (
     <div className="availability-grid h-full">
@@ -222,13 +184,13 @@ export default function AvailabilityGrid({
         }}
         height="100%"
         events={allEvents}
-        selectable={false}
-        selectMirror={false}
+        selectable={true}
+        selectMirror={true}
         dayMaxEvents={true}
         weekends={true}
         editable={false}
         droppable={false}
-        dateClick={handleDateClick}
+        select={handleSelect}
         slotMinTime="06:00:00"
         slotMaxTime="23:00:00"
         allDaySlot={false}
@@ -255,35 +217,6 @@ export default function AvailabilityGrid({
           if (weekStartLocal && calendarRef.current) {
             calendarRef.current.getApi().gotoDate(weekStartLocal);
           }
-        }}
-        datesSet={() => {
-          // Add event handlers to time slots after calendar renders
-          setTimeout(() => {
-            const timeSlots = document.querySelectorAll('.fc-timegrid-slot');
-            timeSlots.forEach(slot => {
-              const handleMouseDownSlot = (e: Event) => {
-                e.preventDefault();
-                const slotEl = e.target as HTMLElement;
-                const timeAttr = slotEl.getAttribute('data-time');
-                if (timeAttr) {
-                  const date = new Date(timeAttr);
-                  handleMouseDown({ date });
-                }
-              };
-              
-              const handleMouseEnterSlot = (e: Event) => {
-                const slotEl = e.target as HTMLElement;
-                const timeAttr = slotEl.getAttribute('data-time');
-                if (timeAttr) {
-                  const date = new Date(timeAttr);
-                  handleMouseEnter({ date });
-                }
-              };
-              
-              slot.addEventListener('mousedown', handleMouseDownSlot);
-              slot.addEventListener('mouseenter', handleMouseEnterSlot);
-            });
-          }, 100);
         }}
       />
     </div>

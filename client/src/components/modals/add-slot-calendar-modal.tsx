@@ -797,9 +797,9 @@ export default function AddSlotCalendarModal({
           </div>
         ) : (
           // Desktop Calendar View with Multi-Select
-          <div className="flex-1 overflow-hidden">
+          <div className="flex flex-col h-full overflow-hidden">
             {/* Legend and View Controls */}
-            <div className="px-6 py-4 border-b bg-gray-50 dark:bg-gray-900">
+            <div className="px-6 py-4 border-b bg-gray-50 dark:bg-gray-900 flex-shrink-0">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2">
@@ -822,22 +822,23 @@ export default function AddSlotCalendarModal({
               </div>
             </div>
 
-            {/* Calendar Grid */}
-            <div className={`flex-1 p-6 ${isFullScreen ? 'h-[calc(100vh-300px)]' : 'h-[50vh]'}`}>
-              <AvailabilityGrid
-                weekStartLocal={new Date()}
-                bookedRangesLocal={bookedRangesLocal}
-                pendingRangesLocal={pendingRangesLocal}
-                existingAvailabilityLocal={existingAvailabilityLocal}
-                selectedRangesLocal={selectedSlots}
-                onProposedRange={onProposedRange}
-                tutorTimezone={tutorTimezone || 'UTC'}
-              />
-            </div>
+            {/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Calendar Grid */}
+              <div className={`p-6 ${isFullScreen ? 'h-[calc(100vh-400px)]' : 'h-[50vh]'}`}>
+                <AvailabilityGrid
+                  weekStartLocal={new Date()}
+                  bookedRangesLocal={bookedRangesLocal}
+                  pendingRangesLocal={pendingRangesLocal}
+                  existingAvailabilityLocal={existingAvailabilityLocal}
+                  selectedRangesLocal={selectedSlots}
+                  onProposedRange={onProposedRange}
+                  tutorTimezone={tutorTimezone || 'UTC'}
+                />
+              </div>
 
-            {/* Selection Summary */}
-            <div className="px-6 py-4 border-t bg-gray-50 dark:bg-gray-900">
-              <div className="mb-3">
+              {/* Selection Summary */}
+              <div className="px-6 py-4 border-t bg-gray-50 dark:bg-gray-900">
                 <h4 className="font-medium mb-2">Selected Time Slots ({selectedSlots.length})</h4>
                 {selectedSlots.length > 0 ? (
                   <div className="mt-3 border rounded-md max-h-48 overflow-auto p-2 space-y-1 bg-white dark:bg-gray-800">
@@ -870,23 +871,23 @@ export default function AddSlotCalendarModal({
                   <p className="text-sm text-muted-foreground">No ranges selected yet. Click and drag or click on time slots to select them.</p>
                 )}
               </div>
-              
-              {/* Sticky action footer */}
-              <div className="sticky bottom-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-t mt-3 pt-3 flex justify-between items-center">
-                <Button variant="outline" onClick={clearSelection} disabled={selectedSlots.length === 0}>
-                  Clear Selection
+            </div>
+            
+            {/* Fixed action footer - outside scrollable area */}
+            <div className="px-6 py-4 bg-white dark:bg-gray-900 border-t flex-shrink-0 flex justify-between items-center">
+              <Button variant="outline" onClick={clearSelection} disabled={selectedSlots.length === 0}>
+                Clear Selection
+              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  Close
                 </Button>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => onOpenChange(false)}>
-                    Close
-                  </Button>
-                  <Button 
-                    onClick={handleAddMultipleSlots} 
-                    disabled={selectedSlots.length === 0 || isSubmitting}
-                  >
-                    {isSubmitting ? "Adding..." : `Add ${selectedSlots.length > 0 ? `${selectedSlots.length} Slot${selectedSlots.length > 1 ? 's' : ''}` : 'Slot'}`}
-                  </Button>
-                </div>
+                <Button 
+                  onClick={handleAddMultipleSlots} 
+                  disabled={selectedSlots.length === 0 || isSubmitting}
+                >
+                  {isSubmitting ? "Adding..." : `Add ${selectedSlots.length > 0 ? `${selectedSlots.length} Slot${selectedSlots.length > 1 ? 's' : ''}` : 'Slot'}`}
+                </Button>
               </div>
             </div>
           </div>
