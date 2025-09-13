@@ -1,0 +1,225 @@
+You are editing a React + TypeScript app (TutorTrack). Implement multi-select in the “Add Availability Slot” flow.
+
+Goal:
+- Allow the user to select multiple time ranges in the “Add Availability Slot” modal.
+- Keep the modal open after adding, unless the user clicks Close.
+- Convert times exactly the same way the app already does (re-use the existing time-zone helpers; do NOT change their implementation).
+- Prevent overlaps with booked/pending sessions AND between newly selected ranges.
+- Show “Add N Slots” enabled only if at least one new slot is selected.
+- Provide “Clear Selection” to reset in-modal choices without closing the modal.
+
+Assumptions (adjust file names if different, but keep logic):
+- Modal component: client/src/components/availability/AddAvailabilityModal.tsx
+  (If file name differs (e.g., AddAvailabilitySlotModal.tsx), target that file instead.)
+- Calendar grid component used inside the modal: client/src/components/availability/AvailabilityGrid.tsx
+- Supabase insert function currently supports single-slot insert; we will refactor to accept an array as well (without breaking single-slot callers).
+- Time-zone helpers already exist (e.g., localToUtc(date: Date): string | utcToLocal(…))
+  DO NOT modify their implementation — only call them as-is.
+
+Plan:
+1) Introduce a `selectedSlots` state (array of { startLocal: Date; endLocal: Date }) in the modal.
+2) In the grid, allow click & drag or single click to create a range; when the range is finalized, call `onProposedRange(range)` back to the modal. The modal will:
+   - normalize the range (round to your slot granularity),
+   - validate (no overlap with booked/pending; no overlap with already-selected),
+   - then push into `selectedSlots`.
+3) Highlight selected ranges in the grid (e.g., green overlay).
+4) Change the primary button to “Add X Slots” and keep the modal open after successful insert. After success, clear `selectedSlots` but keep existing availability/booked visuals intact.
+5) Refactor the insert to accept an array of payloads and call Supabase in a single insert where possible (or Promise.all), reusing the SAME TZ conversion pipeline as single-slot code.
+
+Edits:
+
+--- Edit: client/src/components/availability/AddAvailabilityModal.tsx
+1) Add state & handlers:
+   - const [selectedSlots, setSelectedSlots] = useState<Array<{startLocal: Date; endLocal: Date}>>([]);
+   - function addProposedRange(range) { runs validations then setSelectedSlots([...]) }
+   - function removeSelectedRange(index) { … }
+   - function clearSelection() { setSelectedSlots([]) }
+
+2) Validation helpers:
+   - uses existing arrays: bookedSessions (blue), pendingRequests (yellow), existingAvailability (green).
+   - function overlaps(aStart, aEnd, bStart, bEnd): boolean
+   - Check a new proposed range against:
+       a) all booked/pending ranges (in LOCAL display space)
+       b) each item in selectedSlots (no internal overlap)
+   - If overlap => show toast.warning and do not add.
+   - Also de-duplicate exact matches.
+
+3) Preserve timezone conversion EXACTLY as today:
+   - On submit: map each {startLocal, endLocal} through the current helpers you already call for single-slot add, e.g.:
+       const startUtc = localToUtc(startLocal);
+       const endUtc = localToUtc(endLocal);
+     Build the same payload shape you currently pass for one slot.
+
+4) New submit function addMultipleSlots():
+   - If your data layer has `createAvailabilitySlot(payload)` for one record, add a new `createAvailabilitySlots(payloads: Array<…>)` that:
+       * If your RPC/table supports bulk insert: call a single `supabase.from('availability').insert(payloads)` and check errors.
+       * Else: `await Promise.all(payloads.map(createAvailabilitySlot))`.
+     On success: toast.success(`Added ${selectedSlots.length} slots`); clearSelection(); KEEP modal open.
+
+5) UI polish:
+   - Primary button label: `Add ${selectedSlots.length || ''} Slot${selectedSlots.length > 1 ? 's' : ''}`
+     Disabled when selectedSlots.length === 0.
+   - Add a small list under the calendar showing queued ranges (read-only labels) with a `×` to remove each.
+   - Keep the “Clear Selection” button.
+   - Remove any auto-close call from the submit handler; keep the modal’s Close button behavior unchanged.
+
+Code patch (insert or adapt as needed):
+
+```tsx
+// AddAvailabilityModal.tsx (core parts only)
+import React, { useMemo, useState, useCallback } from 'react';
+// import your existing helpers/hooks:
+import { localToUtc } from '@/utils/time'; // ← keep using exactly as implemented
+import { useToast } from '@/hooks/useToast';
+import AvailabilityGrid from './AvailabilityGrid';
+import { createAvailabilitySlots } from '@/services/availability'; // new bulk function
+
+type LocalRange = { startLocal: Date; endLocal: Date };
+
+export default function AddAvailabilityModal(props: {
+  isOpen: boolean;
+  onClose: () => void;
+  weekStartLocal: Date; // you already pass this
+  bookedRangesLocal: Array<LocalRange>;
+  pendingRangesLocal: Array<LocalRange>;
+  existingAvailabilityLocal: Array<LocalRange>;
+}) {
+  const { toast } = useToast();
+  const [selectedSlots, setSelectedSlots] = useState<LocalRange[]>([]);
+
+  const overlaps = (a: LocalRange, b: LocalRange) =>
+    a.startLocal < b.endLocal && b.startLocal < a.endLocal;
+
+  const collidesWithSystemRanges = (r: LocalRange) => {
+    const lists = [
+      ...props.bookedRangesLocal,
+      ...props.pendingRangesLocal,
+      ...props.existingAvailabilityLocal,
+    ];
+    return lists.some((x) => overlaps(r, x));
+  };
+
+  const collidesWithSelected = (r: LocalRange) =>
+    selectedSlots.some((x) => overlaps(r, x));
+
+  const normalizeToStep = useCallback((r: LocalRange): LocalRange => {
+    // keep your current slot granularity (e.g., 30 min). Reuse existing rounding if you have it.
+    // If not, implement floor/ceil to nearest 30 min without changing timezone logic.
+    const stepMin = 30;
+    const floorToStep = (d: Date) => {
+      const t = new Date(d);
+      t.setSeconds(0, 0);
+      const m = t.getMinutes();
+      t.setMinutes(m - (m % stepMin));
+      return t;
+    };
+    const ceilToStep = (d: Date) => {
+      const t = new Date(d);
+      t.setSeconds(0, 0);
+      const m = t.getMinutes();
+      const next = m % stepMin === 0 ? m : m + (stepMin - (m % stepMin));
+      t.setMinutes(next);
+      return t;
+    };
+    return { startLocal: floorToStep(r.startLocal), endLocal: ceilToStep(r.endLocal) };
+  }, []);
+
+  const onProposedRange = (r: LocalRange) => {
+    const norm = normalizeToStep(r);
+    if (norm.endLocal <= norm.startLocal) {
+      toast.warning('Please select a valid time range.');
+      return;
+    }
+    if (collidesWithSystemRanges(norm)) {
+      toast.warning('That range overlaps an existing or booked slot.');
+      return;
+    }
+    if (collidesWithSelected(norm)) {
+      toast.warning('That range overlaps one you already selected.');
+      return;
+    }
+    // de-dup exact match
+    if (
+      selectedSlots.some(
+        (x) =>
+          x.startLocal.getTime() === norm.startLocal.getTime() &&
+          x.endLocal.getTime() === norm.endLocal.getTime()
+      )
+    ) {
+      toast.info('This range is already in your selection.');
+      return;
+    }
+    setSelectedSlots((prev) => [...prev, norm].sort((a, b) => +a.startLocal - +b.startLocal));
+  };
+
+  const removeSelected = (idx: number) =>
+    setSelectedSlots((prev) => prev.filter((_, i) => i !== idx));
+
+  const clearSelection = () => setSelectedSlots([]);
+
+  const onSubmit = async () => {
+    if (selectedSlots.length === 0) return;
+
+    // IMPORTANT: preserve existing time-zone conversion pipeline
+    const payloads = selectedSlots.map((r) => ({
+      start_utc: localToUtc(r.startLocal), // EXACTLY as your single-slot code
+      end_utc: localToUtc(r.endLocal),
+      // include any additional fields you add today for a single slot:
+      // tutor_id, created_by, notes, etc.
+    }));
+
+    const { error } = await createAvailabilitySlots(payloads);
+    if (error) {
+      toast.error('Failed to add some slots. Please try again.');
+      return;
+    }
+    toast.success(`Added ${selectedSlots.length} slot${selectedSlots.length > 1 ? 's' : ''}.`);
+    clearSelection(); // keep modal open for more selection
+  };
+
+  return (
+    <Modal isOpen={props.isOpen} onClose={props.onClose} title="Add Availability Slot">
+      <AvailabilityGrid
+        weekStartLocal={props.weekStartLocal}
+        bookedRangesLocal={props.bookedRangesLocal}
+        pendingRangesLocal={props.pendingRangesLocal}
+        existingAvailabilityLocal={props.existingAvailabilityLocal}
+        selectedRangesLocal={selectedSlots} // highlight in grid
+        onProposedRange={onProposedRange}
+      />
+
+      {/* Selection summary + controls */}
+      <div className="mt-3">
+        {selectedSlots.length > 0 ? (
+          <ul className="text-sm">
+            {selectedSlots.map((r, i) => (
+              <li key={i} className="flex items-center gap-2">
+                <span>
+                  {r.startLocal.toLocaleString([], { hour: '2-digit', minute: '2-digit' })} –{' '}
+                  {r.endLocal.toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+                <button className="text-red-500 hover:underline" onClick={() => removeSelected(i)}>
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">No ranges selected yet.</p>
+        )}
+      </div>
+
+      <div className="mt-4 flex gap-2 justify-end">
+        <Button variant="secondary" onClick={clearSelection}>
+          Clear Selection
+        </Button>
+        <Button onClick={onSubmit} disabled={selectedSlots.length === 0}>
+          Add {selectedSlots.length > 0 ? `${selectedSlots.length} Slot${selectedSlots.length > 1 ? 's' : ''}` : 'Slot'}
+        </Button>
+        <Button variant="outline" onClick={props.onClose}>
+          Close
+        </Button>
+      </div>
+    </Modal>
+  );
+}
