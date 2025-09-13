@@ -797,7 +797,7 @@ export default function AddSlotCalendarModal({
           </div>
         ) : (
           // Desktop Calendar View with Multi-Select
-          <div className="flex flex-col h-full overflow-hidden">
+          <div className="flex flex-col h-[80vh] max-h-[800px]">
             {/* Legend and View Controls */}
             <div className="px-6 py-4 border-b bg-gray-50 dark:bg-gray-900 flex-shrink-0">
               <div className="flex items-center justify-between flex-wrap gap-4">
@@ -822,28 +822,27 @@ export default function AddSlotCalendarModal({
               </div>
             </div>
 
-            {/* Scrollable content area */}
-            <div className="flex-1 overflow-y-auto">
-              {/* Calendar Grid */}
-              <div className={`p-6 ${isFullScreen ? 'h-[calc(100vh-400px)]' : 'h-[50vh]'}`}>
-                <AvailabilityGrid
-                  weekStartLocal={new Date()}
-                  bookedRangesLocal={bookedRangesLocal}
-                  pendingRangesLocal={pendingRangesLocal}
-                  existingAvailabilityLocal={existingAvailabilityLocal}
-                  selectedRangesLocal={selectedSlots}
-                  onProposedRange={onProposedRange}
-                  tutorTimezone={tutorTimezone || 'UTC'}
-                />
-              </div>
+            {/* Calendar Grid - Fixed Height */}
+            <div className="p-6 h-96 flex-shrink-0">
+              <AvailabilityGrid
+                weekStartLocal={new Date()}
+                bookedRangesLocal={bookedRangesLocal}
+                pendingRangesLocal={pendingRangesLocal}
+                existingAvailabilityLocal={existingAvailabilityLocal}
+                selectedRangesLocal={selectedSlots}
+                onProposedRange={onProposedRange}
+                tutorTimezone={tutorTimezone || 'UTC'}
+              />
+            </div>
 
-              {/* Selection Summary */}
-              <div className="px-6 py-4 border-t bg-gray-50 dark:bg-gray-900">
-                <h4 className="font-medium mb-2">Selected Time Slots ({selectedSlots.length})</h4>
+            {/* Selection Summary - Scrollable with fixed max height */}
+            <div className="px-6 py-2 border-t bg-gray-50 dark:bg-gray-900 flex-1 overflow-hidden flex flex-col">
+              <h4 className="font-medium mb-2 flex-shrink-0">Selected Time Slots ({selectedSlots.length})</h4>
+              <div className="flex-1 overflow-y-auto min-h-0">
                 {selectedSlots.length > 0 ? (
-                  <div className="mt-3 border rounded-md max-h-48 overflow-auto p-2 space-y-1 bg-white dark:bg-gray-800">
+                  <div className="space-y-1 pr-2">
                     {selectedSlots.map((range, i) => (
-                      <div key={i} className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-700 rounded px-3 py-2">
+                      <div key={i} className="flex items-center justify-between text-sm bg-white dark:bg-gray-800 rounded px-3 py-2 border">
                         <span>
                           {range.startLocal.toLocaleString([], { 
                             weekday: 'short',
@@ -859,7 +858,7 @@ export default function AddSlotCalendarModal({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700 ml-2 flex-shrink-0"
                           onClick={() => removeSelected(i)}
                         >
                           ×
@@ -873,7 +872,7 @@ export default function AddSlotCalendarModal({
               </div>
             </div>
             
-            {/* Fixed action footer - outside scrollable area */}
+            {/* Fixed action footer - Always visible at bottom */}
             <div className="px-6 py-4 bg-white dark:bg-gray-900 border-t flex-shrink-0 flex justify-between items-center">
               <Button variant="outline" onClick={clearSelection} disabled={selectedSlots.length === 0}>
                 Clear Selection

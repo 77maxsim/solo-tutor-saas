@@ -117,42 +117,18 @@ export default function AvailabilityGrid({
     const start = selectInfo.start;
     const end = selectInfo.end;
     
-    // Calculate duration in milliseconds
-    const durationMs = end.getTime() - start.getTime();
-    const thirtyMinMs = 30 * 60 * 1000;
+    console.log('Selection made:', { start, end, duration: (end.getTime() - start.getTime()) / (1000 * 60), unit: 'minutes' });
     
-    // If the selection is exactly 30 minutes (a single click), keep it as is
-    // Otherwise, it's a drag selection spanning multiple cells
-    if (durationMs === thirtyMinMs) {
-      // Single click - create 30-minute slot
-      onProposedRange({
-        startLocal: start,
-        endLocal: end
-      });
-    } else {
-      // Drag selection - use the full range
-      onProposedRange({
-        startLocal: start,
-        endLocal: end
-      });
-    }
+    // Always use the full selected range (works for both single clicks and drag selections)
+    onProposedRange({
+      startLocal: start,
+      endLocal: end
+    });
 
     // Clear the calendar selection
     if (calendarRef.current) {
       calendarRef.current.getApi().unselect();
     }
-  }, [onProposedRange]);
-
-  // Handle single click to create 30-minute default slot (fallback)
-  const handleDateClick = useCallback((dateClickInfo: any) => {
-    const clickedDate = dateClickInfo.date;
-    const endDate = new Date(clickedDate);
-    endDate.setMinutes(endDate.getMinutes() + 30); // Default 30-minute slot
-
-    onProposedRange({
-      startLocal: clickedDate,
-      endLocal: endDate
-    });
   }, [onProposedRange]);
 
   return (
@@ -203,7 +179,6 @@ export default function AvailabilityGrid({
         editable={false}
         droppable={false}
         select={handleSelect}
-        dateClick={handleDateClick}
         slotMinTime="06:00:00"
         slotMaxTime="23:00:00"
         allDaySlot={false}
