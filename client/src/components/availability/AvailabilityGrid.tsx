@@ -117,7 +117,12 @@ export default function AvailabilityGrid({
     const start = selectInfo.start;
     const end = selectInfo.end;
     
-    console.log('Selection made:', { start, end, duration: (end.getTime() - start.getTime()) / (1000 * 60), unit: 'minutes' });
+    console.log('🎯 FullCalendar Selection Event Triggered!', { 
+      start: start.toString(), 
+      end: end.toString(), 
+      duration: (end.getTime() - start.getTime()) / (1000 * 60), 
+      unit: 'minutes' 
+    });
     
     // Always use the full selected range (works for both single clicks and drag selections)
     onProposedRange({
@@ -174,6 +179,7 @@ export default function AvailabilityGrid({
         events={allEvents}
         selectable={true}
         selectMirror={true}
+        selectOverlap={false}
         dayMaxEvents={true}
         weekends={true}
         editable={false}
@@ -190,10 +196,7 @@ export default function AvailabilityGrid({
           omitZeroMinute: false,
           meridiem: 'short'
         }}
-        selectConstraint={{
-          start: new Date().toISOString().split('T')[0] + 'T06:00:00',
-          end: new Date().toISOString().split('T')[0] + 'T23:00:00'
-        }}
+        selectConstraint="businessHours"
         businessHours={{
           daysOfWeek: [0, 1, 2, 3, 4, 5, 6], // All days
           startTime: '06:00',
