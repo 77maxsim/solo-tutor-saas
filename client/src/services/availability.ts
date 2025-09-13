@@ -17,7 +17,7 @@ export interface AvailabilitySlotPayload {
 
 // Convert local Date to UTC ISO string (reusing existing conversion pattern)
 export function localToUtc(localDate: Date, tutorTimezone: string): string {
-  return dayjs(localDate).utc().toISOString();
+  return dayjs.tz(localDate, tutorTimezone).utc().toISOString();
 }
 
 // Convert UTC ISO string to local Date (reusing existing conversion pattern)
@@ -34,8 +34,8 @@ export async function createAvailabilitySlot(startLocal: Date, endLocal: Date, t
     }
 
     // Convert to UTC for storage (using same pattern as existing code)
-    const startUtc = dayjs(startLocal).utc().toISOString();
-    const endUtc = dayjs(endLocal).utc().toISOString();
+    const startUtc = dayjs.tz(startLocal, tutorTimezone).utc().toISOString();
+    const endUtc = dayjs.tz(endLocal, tutorTimezone).utc().toISOString();
 
     const { data, error } = await supabase
       .from("booking_slots")
@@ -66,8 +66,8 @@ export async function createAvailabilitySlots(ranges: Array<{startLocal: Date, e
     // Convert all ranges to UTC payloads using the same conversion pipeline
     const payloads: AvailabilitySlotPayload[] = ranges.map(range => ({
       tutor_id: tutorId,
-      start_time: dayjs(range.startLocal).utc().toISOString(),
-      end_time: dayjs(range.endLocal).utc().toISOString(),
+      start_time: dayjs.tz(range.startLocal, tutorTimezone).utc().toISOString(),
+      end_time: dayjs.tz(range.endLocal, tutorTimezone).utc().toISOString(),
       is_active: true
     }));
 

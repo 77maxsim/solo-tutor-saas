@@ -24,6 +24,7 @@ interface AvailabilityGridProps {
   existingAvailabilityLocal: LocalRange[];
   selectedRangesLocal: LocalRange[];
   onProposedRange: (range: LocalRange) => void;
+  tutorTimezone: string;
 }
 
 interface FullCalendarEvent {
@@ -44,7 +45,8 @@ export default function AvailabilityGrid({
   pendingRangesLocal,
   existingAvailabilityLocal,
   selectedRangesLocal,
-  onProposedRange
+  onProposedRange,
+  tutorTimezone
 }: AvailabilityGridProps) {
   const [calendarView, setCalendarView] = useState<'timeGridWeek' | 'timeGridDay'>('timeGridWeek');
   const calendarRef = useRef<FullCalendar>(null);
@@ -207,6 +209,7 @@ export default function AvailabilityGrid({
           startTime: '06:00',
           endTime: '23:00'
         }}
+        timeZone={tutorTimezone}
         viewDidMount={() => {
           // Set initial week if provided
           if (weekStartLocal && calendarRef.current) {

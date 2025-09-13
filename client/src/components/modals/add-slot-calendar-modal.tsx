@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,6 +8,8 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import luxonPlugin from '@fullcalendar/luxon3';
+import AvailabilityGrid, { LocalRange } from '@/components/availability/AvailabilityGrid';
+import { createAvailabilitySlots, normalizeToSlotGranularity, validateRangesNoOverlap } from '@/services/availability';
 import {
   Dialog,
   DialogContent,
@@ -126,6 +128,7 @@ export default function AddSlotCalendarModal({
 }: AddSlotCalendarModalProps) {
   const [calendarView, setCalendarView] = useState<'timeGridWeek' | 'timeGridDay'>('timeGridWeek');
   const [selectedSlot, setSelectedSlot] = useState<SelectedTimeSlot | null>(null);
+  const [selectedSlots, setSelectedSlots] = useState<LocalRange[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [editingSlot, setEditingSlot] = useState<BookingSlot | null>(null);
@@ -276,6 +279,98 @@ export default function AddSlotCalendarModal({
 
   // Combine all events
   const allEvents = [...availabilityEvents, ...sessionEvents];
+
+  // Convert data to LocalRange format for AvailabilityGrid
+  const bookedRangesLocal: LocalRange[] = useMemo(() => {
+    if (!existingSessions.length || !tutorTimezone) return [];
+    return existingSessions
+      .filter(session => session.status === 'confirmed')
+      .map(session => ({
+        startLocal: dayjs.utc(session.session_start).tz(tutorTimezone).toDate(),
+        endLocal: dayjs.utc(session.session_end).tz(tutorTimezone).toDate()
+      }));
+  }, [existingSessions, tutorTimezone]);
+
+  const pendingRangesLocal: LocalRange[] = useMemo(() => {
+    if (!existingSessions.length || !tutorTimezone) return [];
+    return existingSessions
+      .filter(session => session.status === 'pending')
+      .map(session => ({
+        startLocal: dayjs.utc(session.session_start).tz(tutorTimezone).toDate(),
+        endLocal: dayjs.utc(session.session_end).tz(tutorTimezone).toDate()
+      }));
+  }, [existingSessions, tutorTimezone]);
+
+  const existingAvailabilityLocal: LocalRange[] = useMemo(() => {
+    if (!bookingSlots.length || !tutorTimezone) return [];
+    return bookingSlots
+      .filter(slot => slot.is_active)
+      .map(slot => ({
+        startLocal: dayjs.utc(slot.start_time).tz(tutorTimezone).toDate(),
+        endLocal: dayjs.utc(slot.end_time).tz(tutorTimezone).toDate()
+      }));
+  }, [bookingSlots, tutorTimezone]);
+
+  // Multi-select handlers
+  const overlaps = useCallback((a: LocalRange, b: LocalRange) => 
+    a.startLocal < b.endLocal && b.startLocal < a.endLocal, []);
+
+  const collidesWithSystemRanges = useCallback((r: LocalRange) => {
+    const allSystemRanges = [
+      ...bookedRangesLocal,
+      ...pendingRangesLocal,
+      ...existingAvailabilityLocal,
+    ];
+    return allSystemRanges.some((x) => overlaps(r, x));
+  }, [bookedRangesLocal, pendingRangesLocal, existingAvailabilityLocal, overlaps]);
+
+  const collidesWithSelected = useCallback((r: LocalRange) =>
+    selectedSlots.some((x) => overlaps(r, x)), [selectedSlots, overlaps]);
+
+  const onProposedRange = useCallback((r: LocalRange) => {
+    const norm = normalizeToSlotGranularity(r);
+    if (norm.endLocal <= norm.startLocal) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Range",
+        description: "Please select a valid time range."
+      });
+      return;
+    }
+    if (collidesWithSystemRanges(norm)) {
+      toast({
+        variant: "destructive",
+        title: "Time Conflict",
+        description: "That range overlaps an existing or booked slot."
+      });
+      return;
+    }
+    if (collidesWithSelected(norm)) {
+      toast({
+        variant: "destructive",
+        title: "Selection Conflict",
+        description: "That range overlaps one you already selected."
+      });
+      return;
+    }
+    // Check for exact duplicate
+    if (selectedSlots.some(x => 
+      x.startLocal.getTime() === norm.startLocal.getTime() &&
+      x.endLocal.getTime() === norm.endLocal.getTime()
+    )) {
+      toast({
+        title: "Already Selected",
+        description: "This range is already in your selection."
+      });
+      return;
+    }
+    setSelectedSlots(prev => [...prev, norm].sort((a, b) => +a.startLocal - +b.startLocal));
+  }, [selectedSlots, collidesWithSystemRanges, collidesWithSelected, toast]);
+
+  const removeSelected = useCallback((idx: number) =>
+    setSelectedSlots(prev => prev.filter((_, i) => i !== idx)), []);
+
+  const clearSelection = useCallback(() => setSelectedSlots([]), []);
 
   // Check for overlaps with existing sessions
   const checkForOverlap = (start: Date, end: Date): boolean => {
@@ -429,7 +524,40 @@ export default function AddSlotCalendarModal({
     setIsSubmitting(false);
   };
 
-  // Handle calendar slot submission
+  // Handle multiple slots submission
+  const handleAddMultipleSlots = async () => {
+    if (selectedSlots.length === 0) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await createAvailabilitySlots(selectedSlots, tutorTimezone || 'UTC');
+
+      if (error) throw error;
+
+      toast({
+        title: "Availability slots added!",
+        description: `Added ${selectedSlots.length} slot${selectedSlots.length > 1 ? 's' : ''} successfully.`,
+      });
+
+      // Refresh data and clear selection (keep modal open)
+      queryClient.invalidateQueries({ queryKey: ["booking-slots"] });
+      queryClient.invalidateQueries({ queryKey: ["sessions-for-availability"] });
+      onSlotAdded();
+      clearSelection();
+
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add some slots. Please try again.",
+      });
+    }
+    
+    setIsSubmitting(false);
+  };
+
+  // Handle calendar slot submission (legacy for mobile)
   const handleAddSlot = async () => {
     if (!selectedSlot) return;
     
@@ -461,9 +589,10 @@ export default function AddSlotCalendarModal({
         description: "Your new time slot is now available for booking.",
       });
 
-      // Refresh data and close modal
+      // Refresh data and close modal for mobile
       queryClient.invalidateQueries({ queryKey: ["booking-slots"] });
       onSlotAdded();
+      onOpenChange(false); // Close modal for mobile
 
     } catch (error) {
       toast({
@@ -566,6 +695,7 @@ export default function AddSlotCalendarModal({
 
   const handleClearSelection = () => {
     setSelectedSlot(null);
+    setSelectedSlots([]);
     setIsFullScreen(false);
   };
 
@@ -592,7 +722,7 @@ export default function AddSlotCalendarModal({
                 <p className="text-sm text-muted-foreground mt-1">
                   {isMobile 
                     ? "Set your start and end times for student bookings."
-                    : "Click and drag to select an available time slot. Green blocks show existing availability, colored blocks show booked sessions."
+                    : "Click and drag to select multiple time slots. Select several ranges, then add them all at once. The modal stays open until you close it."
                   }
                 </p>
               </div>
@@ -666,7 +796,7 @@ export default function AddSlotCalendarModal({
             </Form>
           </div>
         ) : (
-          // Desktop Calendar View
+          // Desktop Calendar View with Multi-Select
           <div className="flex-1 overflow-hidden">
             {/* Legend and View Controls */}
             <div className="px-6 py-4 border-b bg-gray-50 dark:bg-gray-900">
@@ -684,116 +814,78 @@ export default function AddSlotCalendarModal({
                     <div className="w-3 h-3 bg-yellow-500 rounded"></div>
                     <span className="text-sm">Pending Requests</span>
                   </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Select value={calendarView} onValueChange={(value: 'timeGridWeek' | 'timeGridDay') => setCalendarView(value)}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="timeGridWeek">Week</SelectItem>
-                      <SelectItem value="timeGridDay">Day</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (calendarRef.current) {
-                        calendarRef.current.getApi().today();
-                      }
-                    }}
-                  >
-                    Today
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-400 rounded animate-pulse"></div>
+                    <span className="text-sm">Selected</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Calendar */}
-            <div className={`${isFullScreen ? 'h-[calc(95vh-200px)]' : 'h-[500px]'} p-4`}>
-              <FullCalendar
-                ref={calendarRef}
-                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, luxonPlugin]}
-                initialView={calendarView}
-                headerToolbar={{
-                  left: 'prev,next',
-                  center: 'title',
-                  right: ''
-                }}
-                height="100%"
-                selectable={true}
-                selectMirror={true}
-                editable={true}
-                eventStartEditable={true}
-                eventDurationEditable={true}
-                select={handleSelect}
-                eventClick={handleSlotClick}
-                eventChange={handleEventChange}
-                events={allEvents}
-                slotMinTime="06:00:00"
-                slotMaxTime="23:00:00"
-                slotDuration="00:15:00"
-                snapDuration="00:15:00"
-                allDaySlot={false}
-                selectAllow={(selectInfo) => {
-                  const now = new Date();
-                  return selectInfo.start >= now;
-                }}
-                timeZone={tutorTimezone as string || 'UTC'}
-                eventDisplay="block"
-                eventOverlap={false}
-                selectOverlap={false}
-                unselectAuto={false}
+            {/* Calendar Grid */}
+            <div className={`flex-1 p-6 ${isFullScreen ? 'h-[calc(100vh-300px)]' : 'h-[50vh]'}`}>
+              <AvailabilityGrid
+                weekStartLocal={new Date()}
+                bookedRangesLocal={bookedRangesLocal}
+                pendingRangesLocal={pendingRangesLocal}
+                existingAvailabilityLocal={existingAvailabilityLocal}
+                selectedRangesLocal={selectedSlots}
+                onProposedRange={onProposedRange}
+                tutorTimezone={tutorTimezone || 'UTC'}
               />
             </div>
 
-            {/* Selected Slot Confirmation */}
-            {selectedSlot && (
-              <div className="px-6 py-4 border-t bg-blue-50 dark:bg-blue-900/20">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium">Selected Time:</span>
-                    </div>
-                    <Badge variant="secondary" className="text-sm px-3 py-1">
-                      {selectedSlot.startLocal} - {selectedSlot.endLocal}
-                    </Badge>
+            {/* Selection Summary */}
+            <div className="px-6 py-4 border-t bg-gray-50 dark:bg-gray-900">
+              <div className="mb-3">
+                <h4 className="font-medium mb-2">Selected Time Slots ({selectedSlots.length})</h4>
+                {selectedSlots.length > 0 ? (
+                  <div className="max-h-24 overflow-y-auto space-y-1">
+                    {selectedSlots.map((range, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm bg-white dark:bg-gray-800 rounded px-3 py-2">
+                        <span>
+                          {range.startLocal.toLocaleString([], { 
+                            weekday: 'short',
+                            month: 'short', 
+                            day: 'numeric',
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })} – {range.endLocal.toLocaleString([], { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                          onClick={() => removeSelected(i)}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={handleCancel}>
-                      <X className="h-4 w-4 mr-1" />
-                      Cancel
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      onClick={handleAddSlot}
-                      disabled={isSubmitting}
-                    >
-                      <Check className="h-4 w-4 mr-1" />
-                      {isSubmitting ? "Adding..." : "Add Slot"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="px-6 py-4 border-t">
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={handleClose}>
-                  Close
-                </Button>
-                {selectedSlot && (
-                  <Button onClick={handleClearSelection} variant="outline">
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Clear Selection
-                  </Button>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No ranges selected yet. Click and drag or click on time slots to select them.</p>
                 )}
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <Button variant="outline" onClick={clearSelection} disabled={selectedSlots.length === 0}>
+                  Clear Selection
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    Close
+                  </Button>
+                  <Button 
+                    onClick={handleAddMultipleSlots} 
+                    disabled={selectedSlots.length === 0 || isSubmitting}
+                  >
+                    {isSubmitting ? "Adding..." : `Add ${selectedSlots.length > 0 ? `${selectedSlots.length} Slot${selectedSlots.length > 1 ? 's' : ''}` : 'Slot'}`}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
