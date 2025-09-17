@@ -671,7 +671,7 @@ export default function Students() {
                 <TableBody>
                   {filteredAndSorted.map((student, index) => (
                     <TableRow 
-                      key={student.name} 
+                      key={student.id} 
                       className="group hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 hover:shadow-md hover-lift animate-fade-in"
                       style={{animationDelay: `${index * 0.1}s`}}
                     >
@@ -720,6 +720,7 @@ export default function Students() {
                               type="button"
                               onClick={() => toggleFavorite.mutate({ id: student.id, next: !student.__norm.isFavorite })}
                               title={student.__norm.isFavorite ? "Unstar" : "Star"}
+                              aria-label={student.__norm.isFavorite ? "Unstar student" : "Star student"}
                               className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                               aria-pressed={student.__norm.isFavorite}
                               data-testid={`button-star-${student.id}`}
