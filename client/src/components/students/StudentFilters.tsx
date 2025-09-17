@@ -14,15 +14,12 @@ export interface StudentFiltersProps {
   onSortKeyChange: (v: SortKey) => void;
   query: string;
   onQueryChange: (v: string) => void;
-  minEarnings?: number;
-  onMinEarningsChange: (v?: number) => void;
   onReset: () => void;
 }
 
 export default function StudentFilters({
   sortKey, onSortKeyChange,
   query, onQueryChange,
-  minEarnings, onMinEarningsChange,
   onReset,
 }: StudentFiltersProps) {
   return (
@@ -52,22 +49,6 @@ export default function StudentFilters({
             onChange={(e) => onQueryChange(e.target.value)}
             placeholder="Type to filter…"
             className="border rounded-md px-3 py-2 w-56"
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label className="text-sm text-gray-500 mb-1">Min earnings</label>
-          <input
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            placeholder="e.g. 1000"
-            value={minEarnings ?? ""}
-            onChange={(e) => {
-              const v = e.target.value;
-              onMinEarningsChange(v === "" ? undefined : Number(v));
-            }}
-            className="border rounded-md px-3 py-2 w-40"
           />
         </div>
       </div>

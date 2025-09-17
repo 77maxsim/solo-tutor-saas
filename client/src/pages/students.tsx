@@ -444,7 +444,6 @@ export default function Students() {
   // Filter state
   const [sortKey, setSortKey] = useState<SortKey>("top_earners");
   const [query, setQuery] = useState("");
-  const [minEarnings, setMinEarnings] = useState<number | undefined>(undefined);
 
   // Build the derived array
   const normalized = useMemo(() => (studentSummaries ?? []).map(normalizeStudent), [studentSummaries]);
@@ -453,10 +452,9 @@ export default function Students() {
     const q = query.trim().toLowerCase();
 
     let arr = normalized.filter(s => {
-      const { name, totalEarningsNum } = s.__norm;
+      const { name } = s.__norm;
       const passesName = q === "" || name.toLowerCase().includes(q);
-      const passesMin = minEarnings === undefined || totalEarningsNum >= minEarnings;
-      return passesName && passesMin;
+      return passesName;
     });
 
     const cmp = {
@@ -479,7 +477,7 @@ export default function Students() {
 
     arr.sort(cmp);
     return arr;
-  }, [normalized, sortKey, query, minEarnings]);
+  }, [normalized, sortKey, query]);
 
   // Update count to reflect filtered results
   const count = filteredAndSorted.length;
@@ -601,12 +599,9 @@ export default function Students() {
                   onSortKeyChange={setSortKey}
                   query={query}
                   onQueryChange={setQuery}
-                  minEarnings={minEarnings}
-                  onMinEarningsChange={setMinEarnings}
                   onReset={() => {
                     setSortKey("top_earners");
                     setQuery("");
-                    setMinEarnings(undefined);
                   }}
                 />
                 <Table>
