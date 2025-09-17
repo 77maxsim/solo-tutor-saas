@@ -1,0 +1,107 @@
+Add "star/favorite" support on the Students page so favorites stick to the top.
+We already added a DB column students.is_favorite (boolean default false) in Supabase.
+
+1) Locate the Students page that renders the "Student Overview" list/table.
+   - Run: rg -n "Student Overview" client/src
+
+2) In that component:
+   - Import React Query utilities, our supabase client, and a star icon:
+     -----PATCH-----
+     import { useMutation, useQueryClient } from "@tanstack/react-query";
+     import { supabase } from "@/lib/supabaseClient"; // adjust path if different
+     import { Star } from "lucide-react"; // if missing, install lucide-react or use any star icon/svg
+     -----END PATCH-----
+
+3) Normalize each row to surface an isFavorite flag (works with snake_case or camelCase):
+   -----PATCH-----
+   function normalizeStudent(row: any) {
+     const name = row.name ?? row.student_name ?? "";
+     const totalSessions = row.totalSessions ?? row.total_sessions ?? 0;
+     const upcomingCount = row.upcomingCount ?? row.upcoming ?? 0;
+     const createdAtRaw = row.created_at ?? row.createdAt ?? undefined;
+     const createdAt = createdAtRaw ? new Date(createdAtRaw) : undefined;
+     const totalEarningsNum = (() => {
+       const v = row.totalEarnings ?? row.total_earnings ?? 0;
+       if (typeof v === "number") return v;
+       if (typeof v === "string") return Number(v.replace(/[^0-9.,-]/g, "").replace(/,/g, "")) || 0;
+       return 0;
+     })();
+     const isFavorite = !!(row.is_favorite ?? row.isFavorite ?? false);
+     return { ...row, __norm: { name, totalSessions, upcomingCount, createdAt, totalEarningsNum, isFavorite } };
+   }
+   -----END PATCH-----
+
+4) Add a mutation for toggling the favorite flag with optimistic update:
+   -----PATCH-----
+   const queryClient = useQueryClient();
+
+   const toggleFavorite = useMutation({
+     mutationFn: async ({ id, next }: { id: string; next: boolean }) => {
+       const { error } = await supabase.from("students").update({ is_favorite: next }).eq("id", id);
+       if (error) throw error;
+     },
+     onMutate: async ({ id, next }) => {
+       await queryClient.cancelQueries({ queryKey: ["students"] });
+       const prev = queryClient.getQueryData<any>(["students"]);
+       if (prev) {
+         const copy = Array.isArray(prev) ? [...prev] : { ...prev };
+         const list = Array.isArray(copy) ? copy : (copy?.data ?? []);
+         const idx = list.findIndex((s: any) => s.id === id);
+         if (idx >= 0) {
+           const row = { ...(list[idx]) };
+           row.is_favorite = next; row.isFavorite = next;
+           list[idx] = row;
+         }
+         queryClient.setQueryData(["students"], copy);
+       }
+       return { prev };
+     },
+     onError: (_err, _vars, context) => {
+       if (context?.prev) queryClient.setQueryData(["students"], context.prev);
+     },
+     onSettled: () => {
+       queryClient.invalidateQueries({ queryKey: ["students"] });
+     },
+   });
+   -----END PATCH-----
+
+5) In the table row UI, add a star button near the student name (or in Actions):
+   - When clicked, call: toggleFavorite.mutate({ id: row.id, next: !row.__norm.isFavorite })
+   - Use a filled style when true, outline when false.
+
+   Example (inside the row render near the name cell):
+   -----PATCH-----
+   <div className="flex items-center gap-2">
+     <button
+       type="button"
+       onClick={() => toggleFavorite.mutate({ id: row.id, next: !row.__norm.isFavorite })}
+       title={row.__norm.isFavorite ? "Unstar" : "Star"}
+       className={"p-1 rounded hover:bg-gray-100"}
+       aria-pressed={row.__norm.isFavorite}
+     >
+       <Star className={row.__norm.isFavorite ? "fill-yellow-400 stroke-yellow-500" : "stroke-gray-400"} size={18} />
+     </button>
+     <span>{row.__norm.name}</span>
+   </div>
+   -----END PATCH-----
+
+6) Make favorites “stick on top” without losing the chosen sort:
+   - Wherever we sort, wrap the comparator to prioritize favorites first.
+   For example, if you already build `filteredAndSorted`, update it like this:
+   -----PATCH-----
+   const sorter = (a: any, b: any) => {
+     // primary: favorites first
+     const favCmp = Number(b.__norm.isFavorite) - Number(a.__norm.isFavorite);
+     if (favCmp !== 0) return favCmp;
+
+     // secondary: your existing sort comparator (e.g., by earnings, sessions, name, etc.)
+     return existingComparator(a, b);
+   };
+   const result = [...sourceArray].sort(sorter);
+   -----END PATCH-----
+
+7) If your header shows a count, keep using the same filtered list so the number doesn't change.
+
+8) Build & test:
+   - Star a few students → they should jump to the top and persist after reload.
+   - Unstar → they return to normal ordering.
