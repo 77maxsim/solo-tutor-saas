@@ -1,0 +1,237 @@
+You're going to add client-side filters & sorting to the Students page. 
+Do NOT change any Supabase schema or queries. Assume the current Students list already contains:
+- name (string)
+- totalSessions (number)  // or "total_sessions"
+- upcomingCount (number)  // or "upcoming"
+- lastSessionAt (string|Date)  // optional, not used for sort
+- created_at (string|Date)  // time added (if missing, treat as undefined)
+- totalEarnings (number|string) // may be a currency-formatted string like "¥1,200.00" or a number
+
+If your data uses different keys (e.g., snake_case), normalize inside the adapter below.
+
+1) Locate the Students table component:
+- Run: rg -n "Student Overview" client/src
+- Open the file that renders the "Student Overview" header and the list/table (likely a Students page or table component).
+
+2) Create a small filter bar component.
+
+Create file: client/src/components/students/StudentFilters.tsx
+-----BEGIN FILE-----
+import React from "react";
+
+export type SortKey =
+  | "top_earners"
+  | "time_newest"
+  | "time_oldest"
+  | "name_asc"
+  | "name_desc"
+  | "most_sessions"
+  | "most_upcoming";
+
+export interface StudentFiltersProps {
+  sortKey: SortKey;
+  onSortKeyChange: (v: SortKey) => void;
+  query: string;
+  onQueryChange: (v: string) => void;
+  minEarnings?: number;
+  onMinEarningsChange: (v?: number) => void;
+  onReset: () => void;
+}
+
+export default function StudentFilters({
+  sortKey, onSortKeyChange,
+  query, onQueryChange,
+  minEarnings, onMinEarningsChange,
+  onReset,
+}: StudentFiltersProps) {
+  return (
+    <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-4">
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-500 mb-1">Sort by</label>
+          <select
+            value={sortKey}
+            onChange={(e) => onSortKeyChange(e.target.value as any)}
+            className="border rounded-md px-3 py-2"
+          >
+            <option value="top_earners">Top earners (desc)</option>
+            <option value="time_newest">Time added (newest)</option>
+            <option value="time_oldest">Time added (oldest)</option>
+            <option value="most_sessions">Most sessions</option>
+            <option value="most_upcoming">Most upcoming</option>
+            <option value="name_asc">Name A→Z</option>
+            <option value="name_desc">Name Z→A</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-500 mb-1">Search name</label>
+          <input
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder="Type to filter…"
+            className="border rounded-md px-3 py-2 w-56"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-500 mb-1">Min earnings</label>
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            placeholder="e.g. 1000"
+            value={minEarnings ?? ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              onMinEarningsChange(v === "" ? undefined : Number(v));
+            }}
+            className="border rounded-md px-3 py-2 w-40"
+          />
+        </div>
+      </div>
+
+      <button
+        onClick={onReset}
+        className="self-start md:self-auto border px-3 py-2 rounded-md hover:bg-gray-50"
+        type="button"
+      >
+        Reset
+      </button>
+    </div>
+  );
+}
+-----END FILE-----
+
+3) Wire it into the Students page.
+
+Open the Students page component you found in step 1. 
+- Import the filter component.
+- Normalize/adapter your row shape to ensure we have: name, totalSessions, upcomingCount, createdAt (Date|undefined), totalEarningsNum (number).
+- Add useState for filter values.
+- Use useMemo to build filtered+sorted list.
+- Use the derived list for rendering (instead of the raw array).
+
+Make the following edits in the Students page file:
+
+(A) Add imports at the top:
+-----PATCH-----
+import { useMemo, useState } from "react";
+import StudentFilters, { SortKey } from "@/components/students/StudentFilters";
+-----END PATCH-----
+
+(B) Just before you render the table/list, add a small adapter & helpers:
+
+-----PATCH-----
+type RawStudent = any; // existing type
+
+function parseMoneyToNumber(v: unknown): number {
+  // Accept number or strings like "¥1,200.00" "$1,275.00" "₴540.00"
+  if (typeof v === "number") return v;
+  if (typeof v === "string") {
+    const cleaned = v.replace(/[^0-9.,-]/g, "").replace(/,/g, "");
+    const num = Number(cleaned);
+    return isNaN(num) ? 0 : num;
+  }
+  return 0;
+}
+
+function normalizeStudent(row: RawStudent) {
+  // Map YOUR real keys to these canonical keys:
+  const name = row.name ?? row.student_name ?? row.full_name ?? "";
+  const totalSessions = row.totalSessions ?? row.total_sessions ?? 0;
+  const upcomingCount = row.upcomingCount ?? row.upcoming ?? 0;
+  const createdAtRaw = row.created_at ?? row.createdAt ?? undefined;
+  const createdAt = createdAtRaw ? new Date(createdAtRaw) : undefined;
+  const totalEarningsNum = parseMoneyToNumber(row.totalEarnings ?? row.total_earnings ?? row.earnings);
+  return { ...row, __norm: { name, totalSessions, upcomingCount, createdAt, totalEarningsNum } };
+}
+-----END PATCH-----
+
+(C) Add filter state:
+
+-----PATCH-----
+const [sortKey, setSortKey] = useState<SortKey>("top_earners");
+const [query, setQuery] = useState("");
+const [minEarnings, setMinEarnings] = useState<number | undefined>(undefined);
+-----END PATCH-----
+
+(D) Build the derived array:
+
+Assume your original array is `students` (rename if needed).
+
+-----PATCH-----
+const normalized = useMemo(() => (students ?? []).map(normalizeStudent), [students]);
+
+const filteredAndSorted = useMemo(() => {
+  const q = query.trim().toLowerCase();
+
+  let arr = normalized.filter(s => {
+    const { name, totalEarningsNum } = s.__norm;
+    const passesName = q === "" || name.toLowerCase().includes(q);
+    const passesMin = minEarnings === undefined || totalEarningsNum >= minEarnings;
+    return passesName && passesMin;
+  });
+
+  const cmp = {
+    top_earners: (a: any, b: any) => b.__norm.totalEarningsNum - a.__norm.totalEarningsNum,
+    time_newest: (a: any, b: any) => {
+      const ad = a.__norm.createdAt?.getTime() ?? -Infinity;
+      const bd = b.__norm.createdAt?.getTime() ?? -Infinity;
+      return bd - ad; // newest first
+    },
+    time_oldest: (a: any, b: any) => {
+      const ad = a.__norm.createdAt?.getTime() ?? Infinity;
+      const bd = b.__norm.createdAt?.getTime() ?? Infinity;
+      return ad - bd; // oldest first
+    },
+    most_sessions: (a: any, b: any) => b.__norm.totalSessions - a.__norm.totalSessions,
+    most_upcoming: (a: any, b: any) => b.__norm.upcomingCount - a.__norm.upcomingCount,
+    name_asc: (a: any, b: any) => a.__norm.name.localeCompare(b.__norm.name),
+    name_desc: (a: any, b: any) => b.__norm.name.localeCompare(a.__norm.name),
+  }[sortKey];
+
+  arr.sort(cmp);
+  return arr;
+}, [normalized, sortKey, query, minEarnings]);
+-----END PATCH-----
+
+(E) Render the filter bar above the table and use `filteredAndSorted` for rows:
+
+-----PATCH-----
+// Above your table/list:
+<StudentFilters
+  sortKey={sortKey}
+  onSortKeyChange={setSortKey}
+  query={query}
+  onQueryChange={setQuery}
+  minEarnings={minEarnings}
+  onMinEarningsChange={setMinEarnings}
+  onReset={() => {
+    setSortKey("top_earners");
+    setQuery("");
+    setMinEarnings(undefined);
+  }}
+/>
+
+// When mapping rows, replace the original source with `filteredAndSorted`:
+{filteredAndSorted.map((row) => {
+  // If your row renderer expects the raw shape, pass `row` as-is.
+  // It now contains `row.__norm` for derived values if needed.
+  return (
+    // existing row render
+  );
+})}
+-----END PATCH-----
+
+4) Optional polish:
+- Keep the current count showing "Student Overview (N students)" reflecting the filtered set:
+-----PATCH-----
+const count = filteredAndSorted.length;
+// Replace your header count with `count` if applicable.
+-----END PATCH-----
+
+5) Build and test:
+- Ensure search, min earnings, and each sort option work.
+- If created_at is missing in your student payload, sorts "time_newest/oldest" will still work but push unknown dates to the bottom/top as coded. 
+No backend changes are required; if you later want server-side sorting for very large lists, you can add Supabase `.order(...)` per sort key.
