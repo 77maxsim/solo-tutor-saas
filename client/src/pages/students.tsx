@@ -209,6 +209,41 @@ export default function Students() {
     },
   });
 
+  // Mutation for toggling favorite status
+  const toggleFavorite = useMutation({
+    mutationFn: async ({ id, next }: { id: string; next: boolean }) => {
+      const { error } = await supabase.from("students").update({ is_favorite: next }).eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: async ({ id, next }) => {
+      await queryClient.cancelQueries({ queryKey: ["students"] });
+      const prev = queryClient.getQueryData<any>(["students"]);
+      if (prev) {
+        const copy = Array.isArray(prev) ? [...prev] : { ...prev };
+        const list = Array.isArray(copy) ? copy : (copy?.data ?? []);
+        const idx = list.findIndex((s: any) => s.id === id);
+        if (idx >= 0) {
+          const row = { ...(list[idx]) };
+          row.is_favorite = next; row.isFavorite = next;
+          list[idx] = row;
+        }
+        queryClient.setQueryData(["students"], copy);
+      }
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(["students"], context.prev);
+      toast({
+        title: "Error",
+        description: "Failed to update favorite status. Please try again.",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+    },
+  });
+
   // Handle functions
   const handleAddStudent = () => {
     if (!newStudentName.trim()) {
@@ -444,7 +479,8 @@ export default function Students() {
     const createdAtRaw = undefined; // No created_at in StudentSummary
     const createdAt = createdAtRaw ? new Date(createdAtRaw) : undefined;
     const totalEarningsNum = parseMoneyToNumber(row.totalEarnings);
-    return { ...row, __norm: { name, pastSessions, upcomingCount, createdAt, totalEarningsNum } };
+    const isFavorite = !!(row.isFavorite ?? false);
+    return { ...row, __norm: { name, pastSessions, upcomingCount, createdAt, totalEarningsNum, isFavorite } };
   }
 
   // Filter state
@@ -463,7 +499,7 @@ export default function Students() {
       return passesName;
     });
 
-    const cmp = {
+    const baseCmp = {
       top_earners: (a: any, b: any) => b.__norm.totalEarningsNum - a.__norm.totalEarningsNum,
       time_newest: (a: any, b: any) => {
         const ad = a.__norm.createdAt?.getTime() ?? -Infinity;
@@ -481,7 +517,17 @@ export default function Students() {
       name_desc: (a: any, b: any) => b.__norm.name.localeCompare(a.__norm.name),
     }[sortKey];
 
-    arr.sort(cmp);
+    // Wrapper to prioritize favorites first
+    const sorter = (a: any, b: any) => {
+      // Primary: favorites first
+      const favCmp = Number(b.__norm.isFavorite) - Number(a.__norm.isFavorite);
+      if (favCmp !== 0) return favCmp;
+
+      // Secondary: existing sort comparator
+      return baseCmp(a, b);
+    };
+
+    arr.sort(sorter);
     return arr;
   }, [normalized, sortKey, query]);
 
@@ -669,6 +715,22 @@ export default function Students() {
                                   );
                                 }
                               })()}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleFavorite.mutate({ id: student.id, next: !student.__norm.isFavorite })}
+                              title={student.__norm.isFavorite ? "Unstar" : "Star"}
+                              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                              aria-pressed={student.__norm.isFavorite}
+                              data-testid={`button-star-${student.id}`}
+                            >
+                              <Star 
+                                className={student.__norm.isFavorite 
+                                  ? "fill-yellow-400 stroke-yellow-500" 
+                                  : "stroke-gray-400"
+                                } 
+                                size={18} 
+                              />
                             </button>
                             <div>
                               <p className="font-medium">{student.name}</p>
