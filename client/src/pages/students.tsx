@@ -74,7 +74,7 @@ interface StudentSummary {
   email?: string;
   tags?: string[];
   avatarUrl?: string;
-  totalSessions: number;
+  pastSessions: number;
   totalEarnings: number;
   lastSessionDate: string;
   avgSessionDuration: number;
@@ -394,6 +394,9 @@ export default function Students() {
         }
       });
 
+      // Calculate past sessions (sessions that occurred before current date/time)
+      const pastSessions = studentSessions.filter(session => new Date(session.session_start) < now).length;
+
       const sortedSessions = studentSessions.sort((a, b) => 
         new Date(b.session_start).getTime() - new Date(a.session_start).getTime()
       );
@@ -405,7 +408,7 @@ export default function Students() {
         email: student.email,
         tags: student.tags || [],
         avatarUrl: student.avatar_url,
-        totalSessions: studentSessions.length,
+        pastSessions,
         totalEarnings,
         lastSessionDate: sortedSessions[0]?.session_start || '',
         avgSessionDuration: studentSessions.length > 0 ? totalDuration / studentSessions.length : 0,
@@ -433,12 +436,12 @@ export default function Students() {
   function normalizeStudent(row: RawStudent) {
     // Map YOUR real keys to these canonical keys:
     const name = row.name ?? "";
-    const totalSessions = row.totalSessions ?? 0;
+    const pastSessions = row.pastSessions ?? 0;
     const upcomingCount = row.upcomingSessions ?? 0;
     const createdAtRaw = undefined; // No created_at in StudentSummary
     const createdAt = createdAtRaw ? new Date(createdAtRaw) : undefined;
     const totalEarningsNum = parseMoneyToNumber(row.totalEarnings);
-    return { ...row, __norm: { name, totalSessions, upcomingCount, createdAt, totalEarningsNum } };
+    return { ...row, __norm: { name, pastSessions, upcomingCount, createdAt, totalEarningsNum } };
   }
 
   // Filter state
@@ -469,7 +472,7 @@ export default function Students() {
         const bd = b.__norm.createdAt?.getTime() ?? Infinity;
         return ad - bd; // oldest first
       },
-      most_sessions: (a: any, b: any) => b.__norm.totalSessions - a.__norm.totalSessions,
+      most_sessions: (a: any, b: any) => b.__norm.pastSessions - a.__norm.pastSessions,
       most_upcoming: (a: any, b: any) => b.__norm.upcomingCount - a.__norm.upcomingCount,
       name_asc: (a: any, b: any) => a.__norm.name.localeCompare(b.__norm.name),
       name_desc: (a: any, b: any) => b.__norm.name.localeCompare(a.__norm.name),
@@ -608,7 +611,7 @@ export default function Students() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Student Name</TableHead>
-                    <TableHead className="text-center">Total Sessions</TableHead>
+                    <TableHead className="text-center">Past Sessions</TableHead>
                     <TableHead className="text-center">Upcoming</TableHead>
                     <TableHead className="text-center">Avg Duration</TableHead>
                     <TableHead className="text-center">Last Session</TableHead>
@@ -697,7 +700,7 @@ export default function Students() {
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {student.totalSessions}
+                          {student.pastSessions}
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
