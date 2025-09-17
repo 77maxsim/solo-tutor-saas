@@ -81,6 +81,16 @@ TutorTrack is a comprehensive tutoring management platform built with React and 
 
 ## Changelog
 
+### September 17, 2025: Student Star/Favorite System Implementation - COMPLETED
+- **Star/Favorite Functionality**: Added clickable star buttons next to each student name allowing tutors to mark favorite students
+- **Favorites-First Sorting**: Starred students automatically appear at the top of the student list while preserving chosen sort order (earnings, name, sessions, etc.)
+- **Visual Feedback**: Stars display as filled yellow when favorited, gray outline when not favorited, with hover states and transitions
+- **Database Integration**: Added `is_favorite` boolean field to students table with proper Supabase integration and real-time updates
+- **Optimistic Updates**: Star clicks respond immediately with optimistic UI updates, reverting on database errors
+- **Accessibility Enhancement**: Added proper ARIA labels, button states, and screen reader support for star functionality
+- **Error Handling**: Comprehensive error handling with user feedback and automatic cache invalidation on failures
+- **React Performance**: Fixed React key issues to prevent DOM reuse problems during list reordering
+
 ### August 27, 2025: Rate Auto-Prefill in Edit Session Modal - COMPLETED
 - **Smart Rate Prefill**: Successfully implemented rate auto-prefill functionality in Edit Session modal matching Schedule Session modal behavior
 - **Database Integration**: Fixed query to use correct `rate` column name and `getCurrentTutorId()` helper function for proper tutor filtering
