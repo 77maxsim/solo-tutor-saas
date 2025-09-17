@@ -47,7 +47,8 @@ import {
   Clock,
   Plus,
   Trash2,
-  Edit
+  Edit,
+  Star
 } from "lucide-react";
 import { EditStudentModal } from "@/components/modals/edit-student-modal";
 import { AvatarEditorModal } from "@/components/modals/avatar-editor-modal";
@@ -74,6 +75,7 @@ interface StudentSummary {
   email?: string;
   tags?: string[];
   avatarUrl?: string;
+  isFavorite?: boolean;
   pastSessions: number;
   totalEarnings: number;
   lastSessionDate: string;
@@ -279,7 +281,7 @@ export default function Students() {
 
       const { data, error } = await supabase
         .from('students')
-        .select('id, name, phone, email, tags, avatar_url')
+        .select('id, name, phone, email, tags, avatar_url, is_favorite')
         .eq('tutor_id', tutorId)
         .order('name');
 
@@ -408,6 +410,7 @@ export default function Students() {
         email: student.email,
         tags: student.tags || [],
         avatarUrl: student.avatar_url,
+        isFavorite: student.is_favorite || false,
         pastSessions,
         totalEarnings,
         lastSessionDate: sortedSessions[0]?.session_start || '',
