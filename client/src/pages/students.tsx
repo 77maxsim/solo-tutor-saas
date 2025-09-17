@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +53,7 @@ import { EditStudentModal } from "@/components/modals/edit-student-modal";
 import { AvatarEditorModal } from "@/components/modals/avatar-editor-modal";
 import { StudentSessionHistoryModal } from "@/components/modals/student-session-history-modal";
 import { getAvatarDisplay } from "@/lib/avatarUtils";
+import StudentFilters, { SortKey } from "@/components/students/StudentFilters";
 
 interface Session {
   id: string;
@@ -415,6 +416,74 @@ export default function Students() {
 
   const studentSummaries = students ? calculateStudentSummaries(students, sessions || []) : [];
 
+  // Adapter and helpers for filtering
+  type RawStudent = StudentSummary; // existing type
+
+  function parseMoneyToNumber(v: unknown): number {
+    // Accept number or strings like "¥1,200.00" "$1,275.00" "₴540.00"
+    if (typeof v === "number") return v;
+    if (typeof v === "string") {
+      const cleaned = v.replace(/[^0-9.,-]/g, "").replace(/,/g, "");
+      const num = Number(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+    return 0;
+  }
+
+  function normalizeStudent(row: RawStudent) {
+    // Map YOUR real keys to these canonical keys:
+    const name = row.name ?? "";
+    const totalSessions = row.totalSessions ?? 0;
+    const upcomingCount = row.upcomingSessions ?? 0;
+    const createdAtRaw = undefined; // No created_at in StudentSummary
+    const createdAt = createdAtRaw ? new Date(createdAtRaw) : undefined;
+    const totalEarningsNum = parseMoneyToNumber(row.totalEarnings);
+    return { ...row, __norm: { name, totalSessions, upcomingCount, createdAt, totalEarningsNum } };
+  }
+
+  // Filter state
+  const [sortKey, setSortKey] = useState<SortKey>("top_earners");
+  const [query, setQuery] = useState("");
+  const [minEarnings, setMinEarnings] = useState<number | undefined>(undefined);
+
+  // Build the derived array
+  const normalized = useMemo(() => (studentSummaries ?? []).map(normalizeStudent), [studentSummaries]);
+
+  const filteredAndSorted = useMemo(() => {
+    const q = query.trim().toLowerCase();
+
+    let arr = normalized.filter(s => {
+      const { name, totalEarningsNum } = s.__norm;
+      const passesName = q === "" || name.toLowerCase().includes(q);
+      const passesMin = minEarnings === undefined || totalEarningsNum >= minEarnings;
+      return passesName && passesMin;
+    });
+
+    const cmp = {
+      top_earners: (a: any, b: any) => b.__norm.totalEarningsNum - a.__norm.totalEarningsNum,
+      time_newest: (a: any, b: any) => {
+        const ad = a.__norm.createdAt?.getTime() ?? -Infinity;
+        const bd = b.__norm.createdAt?.getTime() ?? -Infinity;
+        return bd - ad; // newest first
+      },
+      time_oldest: (a: any, b: any) => {
+        const ad = a.__norm.createdAt?.getTime() ?? Infinity;
+        const bd = b.__norm.createdAt?.getTime() ?? Infinity;
+        return ad - bd; // oldest first
+      },
+      most_sessions: (a: any, b: any) => b.__norm.totalSessions - a.__norm.totalSessions,
+      most_upcoming: (a: any, b: any) => b.__norm.upcomingCount - a.__norm.upcomingCount,
+      name_asc: (a: any, b: any) => a.__norm.name.localeCompare(b.__norm.name),
+      name_desc: (a: any, b: any) => b.__norm.name.localeCompare(a.__norm.name),
+    }[sortKey];
+
+    arr.sort(cmp);
+    return arr;
+  }, [normalized, sortKey, query, minEarnings]);
+
+  // Update count to reflect filtered results
+  const count = filteredAndSorted.length;
+
 
 
   if (isLoading) {
@@ -515,7 +584,7 @@ export default function Students() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 dark:text-gray-100">
               <User className="h-5 w-5 dark:text-gray-300" />
-              Student Overview ({studentSummaries.length} students)
+              Student Overview ({count} students)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -526,7 +595,21 @@ export default function Students() {
                 </p>
               </div>
             ) : (
-              <Table>
+              <>
+                <StudentFilters
+                  sortKey={sortKey}
+                  onSortKeyChange={setSortKey}
+                  query={query}
+                  onQueryChange={setQuery}
+                  minEarnings={minEarnings}
+                  onMinEarningsChange={setMinEarnings}
+                  onReset={() => {
+                    setSortKey("top_earners");
+                    setQuery("");
+                    setMinEarnings(undefined);
+                  }}
+                />
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Student Name</TableHead>
@@ -539,7 +622,7 @@ export default function Students() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {studentSummaries.map((student, index) => (
+                  {filteredAndSorted.map((student, index) => (
                     <TableRow 
                       key={student.name} 
                       className="group hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 hover:shadow-md hover-lift animate-fade-in"
@@ -689,6 +772,7 @@ export default function Students() {
                   ))}
                 </TableBody>
               </Table>
+              </>
             )}
           </CardContent>
         </Card>
