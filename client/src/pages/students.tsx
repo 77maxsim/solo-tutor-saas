@@ -49,7 +49,6 @@ import {
   Clock,
   Plus,
   Trash2,
-  Edit,
   Star,
   Tag,
   X
@@ -975,15 +974,30 @@ export default function Students() {
                   {filteredAndSorted.map((student, index) => (
                     <TableRow 
                       key={student.id} 
-                      className={`group hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 hover:shadow-md hover-lift animate-fade-in ${
+                      className={`group hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 hover:shadow-md hover-lift animate-fade-in cursor-pointer ${
                         selectedIds.has(student.id) ? "bg-blue-50/50 dark:bg-blue-900/20" : ""
                       }`}
                       style={{animationDelay: `${index * 0.1}s`}}
+                      onClick={() => handleEditStudent(student)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        // Only handle keyboard events when the row itself is focused
+                        if (e.currentTarget !== e.target) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleEditStudent(student);
+                        }
+                      }}
+                      aria-label={`Edit student ${student.name}`}
+                      data-testid={`row-student-${student.id}`}
                     >
                       <TableCell>
                         <Checkbox
                           checked={selectedIds.has(student.id)}
                           onCheckedChange={(checked) => handleSelectRow(student.id, checked as boolean)}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
                           aria-label={`Select ${student.name}`}
                           data-testid={`checkbox-student-${student.id}`}
                         />
@@ -992,7 +1006,11 @@ export default function Students() {
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-3">
                             <button
-                              onClick={() => handleEditAvatar(student)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditAvatar(student);
+                              }}
+                              onKeyDown={(e) => e.stopPropagation()}
                               className="h-10 w-10 rounded-full hover-scale transition-all duration-300 cursor-pointer group-hover:shadow-lg hover:ring-2 hover:ring-blue-200"
                               title="Click to edit avatar"
                             >
@@ -1031,7 +1049,11 @@ export default function Students() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => toggleFavorite.mutate({ id: student.id, next: !student.__norm.isFavorite })}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavorite.mutate({ id: student.id, next: !student.__norm.isFavorite });
+                              }}
+                              onKeyDown={(e) => e.stopPropagation()}
                               title={student.__norm.isFavorite ? "Unstar" : "Star"}
                               aria-label={student.__norm.isFavorite ? "Unstar student" : "Star student"}
                               className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -1119,16 +1141,11 @@ export default function Students() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEditStudent(student)}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 hover-scale click-scale transition-all duration-200 hover:shadow-md"
-                            title="Edit student details"
-                          >
-                            <Edit className="h-4 w-4 hover:rotate-12 transition-transform duration-200" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewHistory(student)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewHistory(student);
+                            }}
+                            onKeyDown={(e) => e.stopPropagation()}
                             className="text-green-600 hover:text-green-700 hover:bg-green-50 hover-scale click-scale transition-all duration-200 hover:shadow-md"
                             title="View session history"
                           >
@@ -1137,7 +1154,11 @@ export default function Students() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteStudent(student.name)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteStudent(student.name);
+                            }}
+                            onKeyDown={(e) => e.stopPropagation()}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50 hover-scale click-scale transition-all duration-200 hover:shadow-md"
                             title="Delete student"
                           >
