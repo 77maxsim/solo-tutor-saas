@@ -1,0 +1,68 @@
+Goal: Add multi-select + bulk actions to the Students page.
+Do NOT change schema. Use existing columns: students.is_favorite (bool) and students.tags (text[]).
+
+Scope
+
+Row selection
+
+Add a checkbox column (row checkbox + header “Select all on page”).
+
+Maintain selectedIds in state; selection survives filtering/sorting until “Clear selection”.
+
+Show a compact Bulk actions bar when selectedIds.length > 0 with:
+
+Count of selected
+
+“Add tag(s)”
+
+“Delete”
+
+“Clear selection”
+
+Bulk Add tag(s) (uses students.tags text[])
+
+Reuse the same tag source UI you already use in the Edit-Student modal (list of tag names).
+
+Implementation detail:
+
+Fetch id, tags for selectedIds.
+
+For each student, compute nextTags = unique([...(tags || []), ...pickedTagNames]).
+
+update students set tags = nextTags where id = ....
+
+Disable buttons while processing; on success, invalidate the students query and clear selection.
+
+Handle NULL tags as empty arrays.
+
+Bulk Delete
+
+Confirm dialog: “Delete N students? This can’t be undone.”
+
+Call supabase.from('students').delete().in('id', selectedIds).
+
+If the API returns a FK/constraint error (e.g., session references), show a toast like:
+“Some students couldn’t be deleted because they have sessions.”
+Continue to invalidate and refresh so removed rows disappear.
+
+Favorites still pin to top
+
+Keep the existing star/unstar button (it updates students.is_favorite).
+
+Ensure the client sort always puts favorites first, then applies the chosen secondary sort (Top earners, Sessions, Name, etc.).
+
+UX polish
+
+Header “Select all on page” only toggles the currently visible (post-filter) rows.
+
+Buttons disabled when a bulk mutation is pending.
+
+Use the app’s existing toast/alert system for success/errors.
+
+Acceptance
+
+Select multiple rows → Add tag(s) → tags appear and persist after reload.
+
+Select multiple rows → Delete → rows disappear; if some fail due to constraints, I see a clear message.
+
+Star/unstar still persists (is_favorite) and favorites remain pinned above others, regardless of secondary sort.
