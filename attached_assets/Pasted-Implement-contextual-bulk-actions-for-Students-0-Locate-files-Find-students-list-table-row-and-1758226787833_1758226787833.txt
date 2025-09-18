@@ -1,0 +1,258 @@
+Implement contextual bulk actions for Students:
+
+0) Locate files
+
+Find students list/table, row, and actions:
+
+rg -n "Student Overview|StudentsTable|StudentRow|Actions" client/src
+
+rg -n "deleteStudent|archive|archived_at" client/src
+
+rg -n "Edit Student|EditStudentModal" client/src
+
+rg -n "Calendar|Trash|MoreHorizontal|Ellipsis|Dot|lucide-react" client/src
+
+1) DB: add soft-archive
+
+Create/execute a Supabase SQL migration (safe: additive only):
+
+-- 1) Add archived_at; keep null = active
+alter table public.students
+  add column if not exists archived_at timestamptz;
+
+-- 2) Helpful index for default queries
+create index if not exists idx_students_tutor_archived
+  on public.students (tutor_id, archived_at);
+
+-- (Optional) view later: show active by default; not required now.
+
+
+RLS stays the same (tutor_id). No policy changes needed.
+
+2) Client types & data access
+
+2.1 Update Student type
+
+Open the shared types (e.g., client/src/types.ts or similar) and add:
+
+export type Student = {
+  id: string;
+  tutor_id: string;
+  name: string;
+  // ...existing fields
+  archived_at: string | null; // NEW
+}
+
+
+2.2 Students query hides archived by default
+
+In the students fetcher (e.g., client/src/data/students.ts), add filter:
+
+export async function listStudents(supabase, { search, sort } = {}) {
+  let q = supabase.from('students').select('*')
+    .is('archived_at', null); // hide archived by default
+
+  // existing search/sort logic...
+  return (await q).data ?? [];
+}
+
+
+2.3 Archiving helpers
+
+In the same data file, add:
+
+export async function archiveStudents(supabase, ids: string[]) {
+  if (!ids?.length) return { data: [], error: null };
+  return await supabase.from('students')
+    .update({ archived_at: new Date().toISOString() })
+    .in('id', ids);
+}
+
+export async function unarchiveStudents(supabase, ids: string[]) {
+  if (!ids?.length) return { data: [], error: null };
+  return await supabase.from('students')
+    .update({ archived_at: null })
+    .in('id', ids);
+}
+
+/** Hard delete only if student has zero sessions (server validated via RPC) */
+
+
+2.4 Safe hard-delete (only if zero sessions) via RPC
+
+Create SQL function (one-shot):
+
+create or replace function public.delete_students_if_no_sessions(p_tutor uuid, p_ids uuid[])
+returns table (deleted_id uuid)
+language sql
+security definer
+as $$
+  delete from public.students s
+  where s.tutor_id = p_tutor
+    and s.id = any(p_ids)
+    and not exists (select 1 from public.sessions se where se.student_id = s.id)
+  returning s.id;
+$$;
+
+
+Client wrapper (e.g., in students.ts):
+
+export async function hardDeleteIfNoSessions(supabase, tutorId: string, ids: string[]) {
+  if (!ids?.length) return { data: [], error: null };
+  return await supabase.rpc('delete_students_if_no_sessions', {
+    p_tutor: tutorId, p_ids: ids
+  });
+}
+
+3) UI: remove row trash; add kebab and BulkActionBar
+
+3.1 Remove red trash icon everywhere in the Students table
+
+In the row/actions cell (e.g., StudentRow.tsx), delete the Trash button import & JSX.
+
+- import { Trash, Calendar, MoreHorizontal } from "lucide-react";
++ import { Calendar, MoreHorizontal } from "lucide-react";
+
+- <Button ... onClick={(e)=>{ e.stopPropagation(); confirmDelete(student.id); }} ...>
+-   <Trash className="h-4 w-4 text-destructive" />
+- </Button>
+
+
+3.2 Add per-row kebab (⋮) menu (neutral)
+
+If not present, add a shadcn DropdownMenu:
+
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button variant="ghost" size="icon" onClick={(e)=>e.stopPropagation()} aria-label="More">
+      <MoreHorizontal className="h-4 w-4" />
+    </Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent align="end" onClick={(e)=>e.stopPropagation()}>
+    <DropdownMenuItem onClick={()=> openEditStudent(student)}>Edit</DropdownMenuItem>
+    <DropdownMenuItem onClick={()=> openScheduleModal(student)}>Schedule session</DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem onClick={()=> archiveConfirm([student.id])}>Archive…</DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem className="text-destructive"
+      onClick={()=> deleteConfirm([student.id])}>
+      Delete…
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+
+
+3.3 Selection state & BulkActionBar
+
+In the table page (e.g., students-table.tsx or students-page.tsx), ensure you track selected IDs from the checkboxes. If you already have selectedIds, reuse it; else:
+
+const [selectedIds, setSelectedIds] = useState<string[]>([]);
+const selectedCount = selectedIds.length;
+
+
+Add a sticky bulk bar shown when selectedCount > 0:
+
+{selectedCount > 0 && (
+  <div className="sticky top-0 z-20 mb-2 flex items-center gap-2 rounded-lg border bg-card p-2 shadow">
+    <span className="text-sm font-medium">{selectedCount} selected</span>
+    <Button variant="secondary" onClick={()=> addTagFlow(selectedIds)}>Add tag</Button>
+    <Button variant="secondary" onClick={()=> favoriteFlow(selectedIds)}>Favorite</Button>
+    <Button variant="outline" onClick={()=> archiveConfirm(selectedIds)}>Archive…</Button>
+    <div className="ml-auto" />
+    <Button variant="destructive" onClick={()=> deleteConfirm(selectedIds)}>Delete…</Button>
+  </div>
+)}
+
+
+Ensure each row checkbox does e.stopPropagation() so row-click (to open Edit) isn’t triggered.
+
+3.4 Confirm modals (Archive/Delete) + Undo toast
+
+Add two tiny utilities (can be in this page or a hooks/util file):
+
+import { useToast } from "@/components/ui/use-toast"; // adjust path
+const { toast } = useToast();
+
+async function archiveConfirm(ids: string[]) {
+  if (!ids.length) return;
+  const ok = window.confirm(`Archive ${ids.length} student(s)? They will be hidden from lists but remain in reports.`);
+  if (!ok) return;
+  const { error } = await archiveStudents(supabase, ids);
+  if (error) return toast({ title: "Archive failed", description: error.message, variant: "destructive" });
+  toast({
+    title: "Archived",
+    description: `${ids.length} student(s) archived.`,
+    action: {
+      label: "Undo",
+      onClick: async () => { await unarchiveStudents(supabase, ids); refetch(); }
+    } as any
+  });
+  setSelectedIds([]); refetch();
+}
+
+async function deleteConfirm(ids: string[]) {
+  if (!ids.length) return;
+  const ok = window.confirm(`Delete ${ids.length} student(s)? This cannot be undone. Only students with zero sessions will be deleted.`);
+  if (!ok) return;
+  const { data, error } = await hardDeleteIfNoSessions(supabase, currentTutorId, ids);
+  if (error) return toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+
+  const deleted = data?.length ?? 0;
+  const blocked = ids.length - deleted;
+  if (deleted) toast({ title: "Deleted", description: `${deleted} student(s) removed.` });
+  if (blocked) toast({
+    title: "Some not deleted",
+    description: `${blocked} had sessions and were kept. Use Archive instead.`,
+  });
+  setSelectedIds([]); refetch();
+}
+
+
+refetch() refers to your students query reloader (React Query/SWR/custom). Use whatever your page already uses.
+
+3.5 Checkbox & other interactive cells must not trigger row click
+
+Ensure these handlers stop propagation:
+
+// Checkbox
+<Checkbox onClick={(e)=> e.stopPropagation()} ... />
+
+// Favorite/star
+<button onClick={(e)=>{ e.stopPropagation(); toggleFavorite(student.id); }} ... />
+
+// Avatar
+<Avatar onClick={(e)=>{ e.stopPropagation(); openAvatarModal(student); }} ... />
+
+// Calendar button
+<Button onClick={(e)=>{ e.stopPropagation(); openScheduleModal(student); }} ... />
+
+
+3.6 Keyboard + hover polish
+
+Add role="row" to the container and cursor-pointer hover:bg-muted to improve affordance.
+
+4) Optional: filter to show archived
+
+Add a small toggle in the header (future work):
+
+const [showArchived, setShowArchived] = useState(false);
+...
+q = showArchived ? q : q.is('archived_at', null);
+
+5) QA checklist
+
+No red trash in rows.
+
+Selecting rows shows sticky Bulk Action Bar with Archive (neutral) and Delete (destructive).
+
+Archive hides students, keeps analytics intact; Undo works.
+
+Delete removes only students with zero sessions; others stay with info toast.
+
+Row click opens Edit Student; avatar/checkbox/favorite/calendar do not open edit.
+
+Keyboard: Space/Enter on focused row opens Edit.
+
+No unused imports or console errors.
+
+Make only these changes; do not alter unrelated components or styles.

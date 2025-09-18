@@ -26,6 +26,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Table,
   TableBody,
   TableCell,
@@ -51,7 +58,8 @@ import {
   Trash2,
   Star,
   Tag,
-  X
+  X,
+  MoreHorizontal
 } from "lucide-react";
 import { EditStudentModal } from "@/components/modals/edit-student-modal";
 import { AvatarEditorModal } from "@/components/modals/avatar-editor-modal";
@@ -95,7 +103,6 @@ export default function Students() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkAddTagsOpen, setIsBulkAddTagsOpen] = useState(false);
   const [bulkSelectedTags, setBulkSelectedTags] = useState<{value: string, label: string}[]>([]);
-  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
 
   // Get tutor ID for queries
   const { data: tutorId } = useQuery({
@@ -193,113 +200,58 @@ export default function Students() {
     },
   });
 
-  // Mutation for deleting a student
-  const deleteStudentMutation = useMutation({
-    mutationFn: async (studentName: string) => {
+  // Safe delete mutation for individual students
+  const safeDeleteStudentMutation = useMutation({
+    mutationFn: async (studentIds: string[]) => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
-        throw new Error('User not authenticated or tutor record not found');
+        throw new Error('User not authenticated');
       }
 
-      // First, get the student ID
-      const { data: student, error: studentError } = await supabase
-        .from('students')
-        .select('id')
-        .eq('name', studentName)
-        .eq('tutor_id', tutorId)
-        .single();
-
-      if (studentError) {
-        console.error('Error finding student:', studentError);
-        throw studentError;
-      }
-
-      // Delete all sessions for this student first (if any exist)
-      const { error: sessionsError } = await supabase
-        .from('sessions')
-        .delete()
-        .eq('student_id', student.id);
-
-      if (sessionsError) {
-        console.error('Error deleting student sessions:', sessionsError);
-        throw sessionsError;
-      }
-
-      // Then delete the student
-      const { error: deleteError } = await supabase
-        .from('students')
-        .delete()
-        .eq('id', student.id);
-
-      if (deleteError) {
-        console.error('Error deleting student:', deleteError);
-        throw deleteError;
-      }
-
-      return { studentName };
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Student Deleted",
-        description: `${data.studentName} and all their sessions have been deleted.`,
-      });
-      setIsDeleteDialogOpen(false);
-      setStudentToDelete('');
-      queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete student. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Bulk delete mutation
-  const bulkDeleteMutation = useMutation({
-    mutationFn: async () => {
-      const selectedStudentIds = Array.from(selectedIds);
-      if (selectedStudentIds.length === 0) {
+      if (!studentIds || studentIds.length === 0) {
         throw new Error('No students selected');
       }
 
-      // Try to delete students one by one to handle FK constraints gracefully
-      const results = {
-        deleted: [] as string[],
-        blocked: [] as string[]
-      };
+      // Check which students have sessions (scoped to current tutor)
+      const { data: studentsWithSessions, error: sessionCheckError } = await supabase
+        .from('sessions')
+        .select('student_id')
+        .in('student_id', studentIds)
+        .eq('tutor_id', tutorId);
 
-      for (const studentId of selectedStudentIds) {
-        const { error } = await supabase
+      if (sessionCheckError) {
+        throw sessionCheckError;
+      }
+
+      const studentIdsWithSessions = new Set(studentsWithSessions.map(s => s.student_id));
+      const studentIdsWithoutSessions = studentIds.filter(id => !studentIdsWithSessions.has(id));
+
+      // Delete only students without sessions
+      let deletedCount = 0;
+      if (studentIdsWithoutSessions.length > 0) {
+        const { data, error } = await supabase
           .from('students')
           .delete()
-          .eq('id', studentId);
+          .in('id', studentIdsWithoutSessions)
+          .eq('tutor_id', tutorId)
+          .select('id');
 
         if (error) {
-          console.error(`Error deleting student ${studentId}:`, error);
-          // Check if it's a foreign key constraint error using error code
-          if (error.code === '23503' || error.message.includes('foreign key') || error.message.includes('constraint')) {
-            results.blocked.push(studentId);
-          } else {
-            // For other errors, still throw to stop the process
-            throw error;
-          }
-        } else {
-          results.deleted.push(studentId);
+          throw error;
         }
+        deletedCount = data?.length || 0;
       }
 
       return { 
-        deletedCount: results.deleted.length, 
-        blockedCount: results.blocked.length,
-        totalAttempted: selectedStudentIds.length
+        deletedCount,
+        blockedCount: studentIdsWithSessions.size,
+        totalAttempted: studentIds.length
       };
     },
     onSuccess: (data) => {
-      setIsBulkDeleteDialogOpen(false);
-      clearSelection();
+      setIsDeleteDialogOpen(false);
+      setStudentToDelete('');
+      clearSelection(); // Clear selection after successful delete
       
       // Show appropriate success message based on results
       if (data.blockedCount === 0) {
@@ -310,44 +262,173 @@ export default function Students() {
       } else if (data.deletedCount === 0) {
         toast({
           title: "No students deleted",
-          description: `${data.blockedCount} student${data.blockedCount !== 1 ? 's' : ''} couldn't be deleted because they have sessions.`,
+          description: `${data.blockedCount} student${data.blockedCount !== 1 ? 's have' : ' has'} sessions and were kept. Use Archive instead.`,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Partial deletion completed",
-          description: `Deleted ${data.deletedCount} student${data.deletedCount !== 1 ? 's' : ''}. ${data.blockedCount} couldn't be deleted because they have sessions.`,
+          title: "Some not deleted",
+          description: `${data.deletedCount} deleted. ${data.blockedCount} had sessions and were kept. Use Archive instead.`,
         });
       }
+      
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
+    },
+    onError: (error: any) => {
+      setIsDeleteDialogOpen(false);
+      setStudentToDelete('');
+      
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete student. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Archive mutations
+  const archiveStudentsMutation = useMutation({
+    mutationFn: async (studentIds: string[]) => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated');
+      }
+      
+      if (!studentIds || studentIds.length === 0) {
+        throw new Error('No students selected');
+      }
+
+      const { data, error } = await supabase
+        .from('students')
+        .update({ archived_at: new Date().toISOString() })
+        .in('id', studentIds)
+        .eq('tutor_id', tutorId)
+        .select('id, name');
+
+      if (error) {
+        console.error('Error archiving students:', error);
+        throw error;
+      }
+
+      return { archivedStudents: data || [], archivedCount: data?.length || 0 };
+    },
+    onSuccess: (data) => {
+      clearSelection();
+      
+      const archivedIds = data.archivedStudents.map(s => s.id);
+      
+      toast({
+        title: "Archived", 
+        description: `${data.archivedCount} student${data.archivedCount !== 1 ? 's' : ''} archived.`,
+        action: (
+          <button
+            onClick={() => unarchiveStudentsMutation.mutate(archivedIds)}
+            disabled={unarchiveStudentsMutation.isPending}
+            className="underline hover:no-underline"
+            data-testid="button-undo-archive"
+          >
+            Undo
+          </button>
+        ),
+        duration: 8000, // Give user 8 seconds to undo
+      });
       
       // Invalidate relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['students'] });
       queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
     },
     onError: (error: any) => {
-      setIsBulkDeleteDialogOpen(false);
-      
       toast({
         title: "Error",
-        description: error.message || "Failed to delete students. Please try again.",
+        description: error.message || "Failed to archive students. Please try again.",
         variant: "destructive",
       });
     },
   });
 
+  const unarchiveStudentsMutation = useMutation({
+    mutationFn: async (studentIds: string[]) => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated');
+      }
+      
+      if (!studentIds || studentIds.length === 0) return { data: [], error: null };
+      
+      const { data, error } = await supabase
+        .from('students')
+        .update({ archived_at: null })
+        .in('id', studentIds)
+        .eq('tutor_id', tutorId)
+        .select('id, name');
+
+      if (error) {
+        console.error('Error unarchiving students:', error);
+        throw error;
+      }
+
+      return { unarchivedStudents: data || [], unarchivedCount: data?.length || 0 };
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Unarchived", 
+        description: `${data.unarchivedCount} student${data.unarchivedCount !== 1 ? 's' : ''} restored.`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to unarchive students. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+
+  // Helper functions for confirmation dialogs
+  const archiveConfirm = async (studentIds: string[]) => {
+    if (!studentIds.length) return;
+    const confirmed = window.confirm(
+      `Archive ${studentIds.length} student${studentIds.length !== 1 ? 's' : ''}? They will be hidden from lists but remain in reports.`
+    );
+    if (confirmed) {
+      await archiveStudentsMutation.mutateAsync(studentIds);
+    }
+  };
+
+  const deleteConfirm = async (studentIds: string[]) => {
+    if (!studentIds.length) return;
+    const confirmed = window.confirm(
+      `Delete ${studentIds.length} student${studentIds.length !== 1 ? 's' : ''}? This cannot be undone. Only students with zero sessions will be deleted.`
+    );
+    if (confirmed) {
+      await safeDeleteStudentMutation.mutateAsync(studentIds);
+    }
+  };
+
   // Bulk add tags mutation
   const bulkAddTagsMutation = useMutation({
     mutationFn: async (tagNames: string[]) => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) {
+        throw new Error('User not authenticated');
+      }
+
       const selectedStudentIds = Array.from(selectedIds);
       if (selectedStudentIds.length === 0) {
         throw new Error('No students selected');
       }
 
-      // Fetch current tags for selected students
+      // Fetch current tags for selected students (scoped to current tutor)
       const { data: studentsData, error: fetchError } = await supabase
         .from('students')
         .select('id, tags')
-        .in('id', selectedStudentIds);
+        .in('id', selectedStudentIds)
+        .eq('tutor_id', tutorId);
 
       if (fetchError) {
         console.error('Error fetching student tags:', fetchError);
@@ -367,7 +448,8 @@ export default function Students() {
         const { error } = await supabase
           .from('students')
           .update({ tags: nextTags })
-          .eq('id', student.id);
+          .eq('id', student.id)
+          .eq('tutor_id', tutorId);
 
         if (error) {
           console.error(`Error updating tags for student ${student.id}:`, error);
@@ -490,7 +572,11 @@ export default function Students() {
 
   const confirmDeleteStudent = () => {
     if (studentToDelete) {
-      deleteStudentMutation.mutate(studentToDelete);
+      // Convert student name to ID for safe delete
+      const student = students?.find(s => s.name === studentToDelete);
+      if (student) {
+        safeDeleteStudentMutation.mutate([student.id]);
+      }
     }
   };
 
@@ -516,7 +602,7 @@ export default function Students() {
     },
   });
 
-  // Fetch students data
+  // Fetch students data (hide archived by default)
   const { data: students, isLoading: isLoadingStudents } = useQuery({
     queryKey: ['students', tutorId],
     queryFn: async () => {
@@ -527,8 +613,9 @@ export default function Students() {
       console.log('Fetching students for tutor:', tutorId);
       const { data, error } = await supabase
         .from('students')
-        .select('id, name, phone, email, tags, avatar_url, is_favorite')
+        .select('id, name, phone, email, tags, avatar_url, is_favorite, archived_at')
         .eq('tutor_id', tutorId)
+        .is('archived_at', null) // Hide archived students by default
         .order('name');
 
       if (error) {
@@ -914,37 +1001,53 @@ export default function Students() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           onClick={() => setIsBulkAddTagsOpen(true)}
-                          disabled={bulkAddTagsMutation.isPending || bulkDeleteMutation.isPending}
-                          className="text-blue-700 border-blue-200 hover:bg-blue-100 dark:text-blue-300 dark:border-blue-600 dark:hover:bg-blue-800"
+                          disabled={bulkAddTagsMutation.isPending || safeDeleteStudentMutation.isPending || archiveStudentsMutation.isPending}
                           data-testid="button-bulk-add-tags"
                         >
                           <Tag className="h-4 w-4 mr-1" />
-                          Add tag(s)
+                          Add tags
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            const studentIds = Array.from(selectedIds);
+                            // TODO: Add favorite functionality
+                            console.log('Favorite students:', studentIds);
+                          }}
+                          disabled={bulkAddTagsMutation.isPending || safeDeleteStudentMutation.isPending || archiveStudentsMutation.isPending}
+                          data-testid="button-bulk-favorite"
+                        >
+                          <Star className="h-4 w-4 mr-1" />
+                          Favorite
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setIsBulkDeleteDialogOpen(true)}
-                          disabled={bulkAddTagsMutation.isPending || bulkDeleteMutation.isPending}
-                          className="text-red-700 border-red-200 hover:bg-red-100 dark:text-red-300 dark:border-red-600 dark:hover:bg-red-800"
+                          onClick={() => {
+                            const studentIds = Array.from(selectedIds);
+                            archiveConfirm(studentIds);
+                          }}
+                          disabled={bulkAddTagsMutation.isPending || safeDeleteStudentMutation.isPending || archiveStudentsMutation.isPending}
+                          data-testid="button-bulk-archive"
+                        >
+                          Archive…
+                        </Button>
+                        <div className="ml-auto" />
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            const studentIds = Array.from(selectedIds);
+                            deleteConfirm(studentIds);
+                          }}
+                          disabled={bulkAddTagsMutation.isPending || safeDeleteStudentMutation.isPending || archiveStudentsMutation.isPending}
                           data-testid="button-bulk-delete"
                         >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={clearSelection}
-                          disabled={bulkAddTagsMutation.isPending || bulkDeleteMutation.isPending}
-                          className="text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-                          data-testid="button-clear-selection"
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Clear selection
+                          Delete…
                         </Button>
                       </div>
                     </div>
@@ -1151,19 +1254,54 @@ export default function Students() {
                           >
                             <Calendar className="h-4 w-4 hover:animate-bounce-subtle transition-transform duration-200" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteStudent(student.name);
-                            }}
-                            onKeyDown={(e) => e.stopPropagation()}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 hover-scale click-scale transition-all duration-200 hover:shadow-md"
-                            title="Delete student"
-                          >
-                            <Trash2 className="h-4 w-4 hover:animate-wiggle transition-transform duration-200" />
-                          </Button>
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => e.stopPropagation()}
+                                className="text-gray-600 hover:text-gray-700 hover:bg-gray-50 hover-scale click-scale transition-all duration-200 hover:shadow-md"
+                                title="More actions"
+                                data-testid={`button-more-${student.id}`}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditStudent(student);
+                              }}>
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                // TODO: Add schedule session functionality
+                                console.log('Schedule session for:', student.name);
+                              }}>
+                                Schedule session
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                archiveConfirm([student.id]);
+                              }}>
+                                Archive…
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteConfirm([student.id]);
+                                }}
+                              >
+                                Delete…
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1389,37 +1527,6 @@ export default function Students() {
         </DialogContent>
       </Dialog>
 
-      {/* Bulk Delete Confirmation */}
-      <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedIds.size} Student{selectedIds.size !== 1 ? 's' : ''}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete the selected {selectedIds.size} student{selectedIds.size !== 1 ? 's' : ''} and all their sessions?
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => {
-                setIsBulkDeleteDialogOpen(false);
-              }}
-              disabled={bulkDeleteMutation.isPending}
-              data-testid="button-cancel-bulk-delete"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => bulkDeleteMutation.mutate()}
-              disabled={bulkDeleteMutation.isPending}
-              className="bg-red-600 hover:bg-red-700"
-              data-testid="button-confirm-bulk-delete"
-            >
-              {bulkDeleteMutation.isPending ? "Deleting..." : `Delete ${selectedIds.size} Student${selectedIds.size !== 1 ? 's' : ''}`}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Delete Student Confirmation */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -1442,10 +1549,10 @@ export default function Students() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteStudent}
-              disabled={deleteStudentMutation.isPending}
+              disabled={safeDeleteStudentMutation.isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleteStudentMutation.isPending ? "Deleting..." : "Delete Student"}
+              {safeDeleteStudentMutation.isPending ? "Deleting..." : "Delete Student"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
