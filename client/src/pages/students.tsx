@@ -98,6 +98,45 @@ export default function Students() {
   const [bulkSelectedTags, setBulkSelectedTags] = useState<{value: string, label: string}[]>([]);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
 
+  // Get tutor ID for queries
+  const { data: tutorId } = useQuery({
+    queryKey: ['current-tutor-id'],
+    queryFn: getCurrentTutorId,
+  });
+
+  // Query to fetch all existing tags for the dropdown
+  const { data: existingTagsData } = useQuery({
+    queryKey: ['existing-tags', tutorId],
+    queryFn: async () => {
+      if (!tutorId) return [];
+      
+      const { data, error } = await supabase
+        .from('students')
+        .select('tags')
+        .eq('tutor_id', tutorId)
+        .not('tags', 'is', null);
+
+      if (error) {
+        console.error('Error fetching existing tags:', error);
+        throw error;
+      }
+
+      // Extract unique tags from all students
+      const allTags = new Set<string>();
+      data.forEach(student => {
+        if (student.tags && Array.isArray(student.tags)) {
+          student.tags.forEach(tag => allTags.add(tag));
+        }
+      });
+
+      console.log('Fetched existing tags:', Array.from(allTags));
+      return Array.from(allTags).map(tag => ({ value: tag, label: tag }));
+    },
+    enabled: !!tutorId,
+  });
+
+  const existingTagOptions = existingTagsData || [];
+
   // Modal states
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isEditStudentOpen, setIsEditStudentOpen] = useState(false);
@@ -480,13 +519,13 @@ export default function Students() {
 
   // Fetch students data
   const { data: students, isLoading: isLoadingStudents } = useQuery({
-    queryKey: ['students'],
+    queryKey: ['students', tutorId],
     queryFn: async () => {
-      const tutorId = await getCurrentTutorId();
       if (!tutorId) {
-        throw new Error('User not authenticated or tutor record not found');
+        throw new Error('Tutor ID not available');
       }
 
+      console.log('Fetching students for tutor:', tutorId);
       const { data, error } = await supabase
         .from('students')
         .select('id, name, phone, email, tags, avatar_url, is_favorite')
@@ -498,8 +537,12 @@ export default function Students() {
         throw error;
       }
 
+      console.log('Students data fetched:', data);
       return data || [];
     },
+    enabled: !!tutorId,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch sessions data using query optimizer
@@ -1207,6 +1250,7 @@ export default function Students() {
                 isMulti
                 value={bulkSelectedTags}
                 onChange={(newValue) => setBulkSelectedTags(Array.from(newValue || []))}
+                options={existingTagOptions}
                 placeholder="Select or create tags..."
                 noOptionsMessage={() => "Type to create a new tag"}
                 formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
