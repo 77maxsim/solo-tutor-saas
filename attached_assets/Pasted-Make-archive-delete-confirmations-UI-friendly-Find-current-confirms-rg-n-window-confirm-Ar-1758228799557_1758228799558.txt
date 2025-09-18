@@ -1,0 +1,137 @@
+Make archive/delete confirmations UI-friendly.
+
+Find current confirms
+
+rg -n "window\\.confirm\\(|Archive\\…\\)|Delete\\…\\)" client/src
+
+
+Add reusable dialog
+Create client/src/components/confirm-dialog.tsx:
+
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+type Props = {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  variant?: "default" | "destructive";
+  onConfirm: () => void | Promise<void>;
+  loading?: boolean;
+};
+
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  confirmLabel = "Confirm",
+  variant = "default",
+  onConfirm,
+  loading,
+}: Props) {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <Button
+            asChild
+            variant={variant === "destructive" ? "destructive" : "default"}
+            disabled={loading}
+          >
+            <AlertDialogAction onClick={onConfirm}>
+              {confirmLabel}
+            </AlertDialogAction>
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+
+Use it on Students page
+In the students list/page component, add state and replace old window.confirm calls:
+
+import { ConfirmDialog } from "@/components/confirm-dialog";
+
+const [confirm, setConfirm] = useState<null | {
+  kind: "archive" | "delete";
+  ids: string[];
+}> (null);
+const [confirmLoading, setConfirmLoading] = useState(false);
+
+// openers
+function openArchive(ids: string[]) {
+  setConfirm({ kind: "archive", ids });
+}
+function openDelete(ids: string[]) {
+  setConfirm({ kind: "delete", ids });
+}
+
+// replace previous calls:
+// archiveConfirm(selectedIds) -> openArchive(selectedIds)
+// deleteConfirm(selectedIds)  -> openDelete(selectedIds)
+
+// renderer (once, near root)
+{confirm && (
+  <ConfirmDialog
+    open={!!confirm}
+    onOpenChange={(v) => !v && setConfirm(null)}
+    title={
+      confirm.kind === "archive"
+        ? `Archive ${confirm.ids.length} student${confirm.ids.length > 1 ? "s" : ""}?`
+        : `Delete ${confirm.ids.length} student${confirm.ids.length > 1 ? "s" : ""}?`
+    }
+    description={
+      confirm.kind === "archive"
+        ? "They will be hidden from lists but remain in reports."
+        : "Only students with zero sessions will be deleted. Others will remain. Consider archiving."
+    }
+    confirmLabel={confirm.kind === "archive" ? "Archive" : "Delete"}
+    variant={confirm.kind === "archive" ? "default" : "destructive"}
+    loading={confirmLoading}
+    onConfirm={async () => {
+      try {
+        setConfirmLoading(true);
+        if (confirm.kind === "archive") {
+          await archiveStudents(supabase, confirm.ids);
+          toast({ title: "Archived", description: `${confirm.ids.length} student(s) archived.` });
+        } else {
+          const { data } = await hardDeleteIfNoSessions(supabase, currentTutorId, confirm.ids);
+          const deleted = data?.length ?? 0;
+          const blocked = confirm.ids.length - deleted;
+          if (deleted) toast({ title: "Deleted", description: `${deleted} removed.` });
+          if (blocked) toast({ title: "Some not deleted", description: `${blocked} had sessions. Use Archive.` });
+        }
+        setConfirm(null);
+        refetch();
+      } finally {
+        setConfirmLoading(false);
+      }
+    }}
+  />
+)}
+
+
+Wire buttons to new openers
+
+Bulk bar: onClick={() => openArchive(selectedIds)} / onClick={() => openDelete(selectedIds)}
+
+Row kebab menu: onClick={() => openArchive([student.id])} / onClick={() => openDelete([student.id])}
+
+QA
+
+Dialog shows nice title, message, Cancel + primary button.
+
+Delete button is red; Archive is neutral.
+
+ESC/Outside click cancels; Enter confirms.

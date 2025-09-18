@@ -66,6 +66,7 @@ import { AvatarEditorModal } from "@/components/modals/avatar-editor-modal";
 import { StudentSessionHistoryModal } from "@/components/modals/student-session-history-modal";
 import { getAvatarDisplay } from "@/lib/avatarUtils";
 import StudentFilters, { SortKey } from "@/components/students/StudentFilters";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface Session {
   id: string;
@@ -154,6 +155,13 @@ export default function Students() {
   const [studentForHistory, setStudentForHistory] = useState<StudentSummary | null>(null);
   const [newStudentName, setNewStudentName] = useState('');
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  
+  // Confirmation dialog state
+  const [confirm, setConfirm] = useState<null | {
+    kind: "archive" | "delete";
+    ids: string[];
+  }>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   // Mutation for adding a new student
   const addStudentMutation = useMutation({
@@ -390,24 +398,14 @@ export default function Students() {
 
 
   // Helper functions for confirmation dialogs
-  const archiveConfirm = async (studentIds: string[]) => {
+  const openArchive = (studentIds: string[]) => {
     if (!studentIds.length) return;
-    const confirmed = window.confirm(
-      `Archive ${studentIds.length} student${studentIds.length !== 1 ? 's' : ''}? They will be hidden from lists but remain in reports.`
-    );
-    if (confirmed) {
-      await archiveStudentsMutation.mutateAsync(studentIds);
-    }
+    setConfirm({ kind: "archive", ids: studentIds });
   };
 
-  const deleteConfirm = async (studentIds: string[]) => {
+  const openDelete = (studentIds: string[]) => {
     if (!studentIds.length) return;
-    const confirmed = window.confirm(
-      `Delete ${studentIds.length} student${studentIds.length !== 1 ? 's' : ''}? This cannot be undone. Only students with zero sessions will be deleted.`
-    );
-    if (confirmed) {
-      await safeDeleteStudentMutation.mutateAsync(studentIds);
-    }
+    setConfirm({ kind: "delete", ids: studentIds });
   };
 
   // Bulk add tags mutation
@@ -1029,7 +1027,7 @@ export default function Students() {
                           size="sm"
                           onClick={() => {
                             const studentIds = Array.from(selectedIds);
-                            archiveConfirm(studentIds);
+                            openArchive(studentIds);
                           }}
                           disabled={bulkAddTagsMutation.isPending || safeDeleteStudentMutation.isPending || archiveStudentsMutation.isPending}
                           data-testid="button-bulk-archive"
@@ -1042,7 +1040,7 @@ export default function Students() {
                           size="sm"
                           onClick={() => {
                             const studentIds = Array.from(selectedIds);
-                            deleteConfirm(studentIds);
+                            openDelete(studentIds);
                           }}
                           disabled={bulkAddTagsMutation.isPending || safeDeleteStudentMutation.isPending || archiveStudentsMutation.isPending}
                           data-testid="button-bulk-delete"
@@ -1286,7 +1284,7 @@ export default function Students() {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={(e) => {
                                 e.stopPropagation();
-                                archiveConfirm([student.id]);
+                                openArchive([student.id]);
                               }}>
                                 Archive…
                               </DropdownMenuItem>
@@ -1295,7 +1293,7 @@ export default function Students() {
                                 className="text-destructive"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  deleteConfirm([student.id]);
+                                  openDelete([student.id]);
                                 }}
                               >
                                 Delete…
@@ -1557,6 +1555,43 @@ export default function Students() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* New UI-friendly Confirmation Dialog */}
+      {confirm && (
+        <ConfirmDialog
+          open={!!confirm}
+          onOpenChange={(v) => !v && setConfirm(null)}
+          title={
+            confirm.kind === "archive"
+              ? `Archive ${confirm.ids.length} student${confirm.ids.length > 1 ? "s" : ""}?`
+              : `Delete ${confirm.ids.length} student${confirm.ids.length > 1 ? "s" : ""}?`
+          }
+          description={
+            confirm.kind === "archive"
+              ? "They will be hidden from lists but remain in reports."
+              : "Only students with zero sessions will be deleted. Others will remain. Consider archiving instead."
+          }
+          confirmLabel={confirm.kind === "archive" ? "Archive" : "Delete"}
+          variant={confirm.kind === "archive" ? "default" : "destructive"}
+          loading={confirmLoading}
+          onConfirm={async () => {
+            try {
+              setConfirmLoading(true);
+              if (confirm.kind === "archive") {
+                await archiveStudentsMutation.mutateAsync(confirm.ids);
+              } else {
+                await safeDeleteStudentMutation.mutateAsync(confirm.ids);
+              }
+              setConfirm(null);
+            } catch (error) {
+              // Error handling is already in the mutations
+              console.error('Confirmation action failed:', error);
+            } finally {
+              setConfirmLoading(false);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
