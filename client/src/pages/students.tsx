@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ import { formatCurrency } from "@/lib/utils";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
 import { useToast } from "@/hooks/use-toast";
+import CreatableSelect from "react-select/creatable";
 import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from "@/lib/queryOptimizer";
 import { 
   User, 
@@ -48,7 +50,9 @@ import {
   Plus,
   Trash2,
   Edit,
-  Star
+  Star,
+  Tag,
+  X
 } from "lucide-react";
 import { EditStudentModal } from "@/components/modals/edit-student-modal";
 import { AvatarEditorModal } from "@/components/modals/avatar-editor-modal";
@@ -87,6 +91,12 @@ export default function Students() {
   const queryClient = useQueryClient();
   const { tutorTimezone } = useTimezone();
   const { toast } = useToast();
+
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkAddTagsOpen, setIsBulkAddTagsOpen] = useState(false);
+  const [bulkSelectedTags, setBulkSelectedTags] = useState<{value: string, label: string}[]>([]);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
 
   // Modal states
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
@@ -204,6 +214,169 @@ export default function Students() {
       toast({
         title: "Error",
         description: error.message || "Failed to delete student. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Bulk delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async () => {
+      const selectedStudentIds = Array.from(selectedIds);
+      if (selectedStudentIds.length === 0) {
+        throw new Error('No students selected');
+      }
+
+      // Try to delete students one by one to handle FK constraints gracefully
+      const results = {
+        deleted: [] as string[],
+        blocked: [] as string[]
+      };
+
+      for (const studentId of selectedStudentIds) {
+        const { error } = await supabase
+          .from('students')
+          .delete()
+          .eq('id', studentId);
+
+        if (error) {
+          console.error(`Error deleting student ${studentId}:`, error);
+          // Check if it's a foreign key constraint error using error code
+          if (error.code === '23503' || error.message.includes('foreign key') || error.message.includes('constraint')) {
+            results.blocked.push(studentId);
+          } else {
+            // For other errors, still throw to stop the process
+            throw error;
+          }
+        } else {
+          results.deleted.push(studentId);
+        }
+      }
+
+      return { 
+        deletedCount: results.deleted.length, 
+        blockedCount: results.blocked.length,
+        totalAttempted: selectedStudentIds.length
+      };
+    },
+    onSuccess: (data) => {
+      setIsBulkDeleteDialogOpen(false);
+      clearSelection();
+      
+      // Show appropriate success message based on results
+      if (data.blockedCount === 0) {
+        toast({
+          title: "Students Deleted",
+          description: `Successfully deleted ${data.deletedCount} student${data.deletedCount !== 1 ? 's' : ''}.`,
+        });
+      } else if (data.deletedCount === 0) {
+        toast({
+          title: "No students deleted",
+          description: `${data.blockedCount} student${data.blockedCount !== 1 ? 's' : ''} couldn't be deleted because they have sessions.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Partial deletion completed",
+          description: `Deleted ${data.deletedCount} student${data.deletedCount !== 1 ? 's' : ''}. ${data.blockedCount} couldn't be deleted because they have sessions.`,
+        });
+      }
+      
+      // Invalidate relevant queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
+    },
+    onError: (error: any) => {
+      setIsBulkDeleteDialogOpen(false);
+      
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete students. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Bulk add tags mutation
+  const bulkAddTagsMutation = useMutation({
+    mutationFn: async (tagNames: string[]) => {
+      const selectedStudentIds = Array.from(selectedIds);
+      if (selectedStudentIds.length === 0) {
+        throw new Error('No students selected');
+      }
+
+      // Fetch current tags for selected students
+      const { data: studentsData, error: fetchError } = await supabase
+        .from('students')
+        .select('id, tags')
+        .in('id', selectedStudentIds);
+
+      if (fetchError) {
+        console.error('Error fetching student tags:', fetchError);
+        throw fetchError;
+      }
+
+      // Update each student with merged tags and track results
+      const results = {
+        successful: [] as string[],
+        failed: [] as string[]
+      };
+
+      for (const student of studentsData) {
+        const currentTags = student.tags || [];
+        const nextTags = Array.from(new Set([...currentTags, ...tagNames]));
+        
+        const { error } = await supabase
+          .from('students')
+          .update({ tags: nextTags })
+          .eq('id', student.id);
+
+        if (error) {
+          console.error(`Error updating tags for student ${student.id}:`, error);
+          results.failed.push(student.id);
+        } else {
+          results.successful.push(student.id);
+        }
+      }
+
+      return { 
+        successCount: results.successful.length,
+        failedCount: results.failed.length,
+        totalAttempted: selectedStudentIds.length,
+        tags: tagNames 
+      };
+    },
+    onSuccess: (data) => {
+      setIsBulkAddTagsOpen(false);
+      setBulkSelectedTags([]);
+      clearSelection();
+      
+      // Show appropriate success message based on results
+      if (data.failedCount === 0) {
+        toast({
+          title: "Tags Added",
+          description: `Added ${data.tags.join(', ')} to ${data.successCount} student${data.successCount !== 1 ? 's' : ''}.`,
+        });
+      } else if (data.successCount === 0) {
+        toast({
+          title: "Failed to add tags",
+          description: `Failed to add tags to ${data.failedCount} student${data.failedCount !== 1 ? 's' : ''}. Please try again.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Tags partially added",
+          description: `Added tags to ${data.successCount}/${data.totalAttempted} students. ${data.failedCount} failed.`,
+        });
+      }
+      
+      // Invalidate relevant queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add tags. Please try again.",
         variant: "destructive",
       });
     },
@@ -534,6 +707,37 @@ export default function Students() {
   // Update count to reflect filtered results
   const count = filteredAndSorted.length;
 
+  // Selection handlers (moved after filteredAndSorted definition)
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const newSelected = new Set(filteredAndSorted.map(s => s.id));
+      setSelectedIds(newSelected);
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectRow = (studentId: string, checked: boolean) => {
+    const newSelected = new Set(selectedIds);
+    if (checked) {
+      newSelected.add(studentId);
+    } else {
+      newSelected.delete(studentId);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  // Check if all visible rows are selected
+  const allVisibleSelected = filteredAndSorted.length > 0 && 
+    filteredAndSorted.every(student => selectedIds.has(student.id));
+    
+  // Check if some visible rows are selected (for indeterminate state)
+  const someVisibleSelected = filteredAndSorted.some(student => selectedIds.has(student.id));
+
 
 
   if (isLoading) {
@@ -656,9 +860,65 @@ export default function Students() {
                     setQuery("");
                   }}
                 />
+                
+                {/* Bulk Actions Bar */}
+                {selectedIds.size > 0 && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mb-4 animate-slide-down">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                          {selectedIds.size} student{selectedIds.size !== 1 ? 's' : ''} selected
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsBulkAddTagsOpen(true)}
+                          disabled={bulkAddTagsMutation.isPending || bulkDeleteMutation.isPending}
+                          className="text-blue-700 border-blue-200 hover:bg-blue-100 dark:text-blue-300 dark:border-blue-600 dark:hover:bg-blue-800"
+                          data-testid="button-bulk-add-tags"
+                        >
+                          <Tag className="h-4 w-4 mr-1" />
+                          Add tag(s)
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsBulkDeleteDialogOpen(true)}
+                          disabled={bulkAddTagsMutation.isPending || bulkDeleteMutation.isPending}
+                          className="text-red-700 border-red-200 hover:bg-red-100 dark:text-red-300 dark:border-red-600 dark:hover:bg-red-800"
+                          data-testid="button-bulk-delete"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearSelection}
+                          disabled={bulkAddTagsMutation.isPending || bulkDeleteMutation.isPending}
+                          className="text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                          data-testid="button-clear-selection"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Clear selection
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={allVisibleSelected ? true : someVisibleSelected ? "indeterminate" : false}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Select all students on page"
+                        data-testid="checkbox-select-all"
+                      />
+                    </TableHead>
                     <TableHead>Student Name</TableHead>
                     <TableHead className="text-center">Past Sessions</TableHead>
                     <TableHead className="text-center">Upcoming</TableHead>
@@ -672,9 +932,19 @@ export default function Students() {
                   {filteredAndSorted.map((student, index) => (
                     <TableRow 
                       key={student.id} 
-                      className="group hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 hover:shadow-md hover-lift animate-fade-in"
+                      className={`group hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300 hover:shadow-md hover-lift animate-fade-in ${
+                        selectedIds.has(student.id) ? "bg-blue-50/50 dark:bg-blue-900/20" : ""
+                      }`}
                       style={{animationDelay: `${index * 0.1}s`}}
                     >
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(student.id)}
+                          onCheckedChange={(checked) => handleSelectRow(student.id, checked as boolean)}
+                          aria-label={`Select ${student.name}`}
+                          data-testid={`checkbox-student-${student.id}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-3">
@@ -916,6 +1186,175 @@ export default function Students() {
         }}
         student={studentForHistory}
       />
+
+      {/* Bulk Add Tags Dialog */}
+      <Dialog open={isBulkAddTagsOpen} onOpenChange={setIsBulkAddTagsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Tag className="h-4 w-4" />
+              Add Tags to {selectedIds.size} Student{selectedIds.size !== 1 ? 's' : ''}
+            </DialogTitle>
+            <DialogDescription>
+              Select or create tags to add to the selected students. Existing tags will be preserved.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Tags</Label>
+              <CreatableSelect
+                isMulti
+                value={bulkSelectedTags}
+                onChange={(newValue) => setBulkSelectedTags(Array.from(newValue || []))}
+                placeholder="Select or create tags..."
+                noOptionsMessage={() => "Type to create a new tag"}
+                formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
+                styles={{
+                  control: (provided: any, state: any) => ({
+                    ...provided,
+                    minHeight: '40px',
+                    borderColor: state.isFocused ? 'hsl(var(--ring))' : 'hsl(var(--border))',
+                    borderRadius: '6px',
+                    boxShadow: state.isFocused ? '0 0 0 2px hsl(var(--ring))' : 'none',
+                    '&:hover': {
+                      borderColor: 'hsl(var(--border))',
+                    },
+                  }),
+                  valueContainer: (provided: any) => ({
+                    ...provided,
+                    padding: '2px 8px',
+                  }),
+                  input: (provided: any) => ({
+                    ...provided,
+                    margin: '0px',
+                  }),
+                  indicatorSeparator: () => ({
+                    display: 'none',
+                  }),
+                  indicatorsContainer: (provided: any) => ({
+                    ...provided,
+                    height: '40px',
+                  }),
+                  menu: (provided: any) => ({
+                    ...provided,
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                  }),
+                  option: (provided: any, state: any) => ({
+                    ...provided,
+                    backgroundColor: state.isSelected 
+                      ? 'hsl(var(--accent))' 
+                      : state.isFocused 
+                      ? 'hsl(var(--accent))' 
+                      : 'transparent',
+                    color: 'hsl(var(--foreground))',
+                    '&:hover': {
+                      backgroundColor: 'hsl(var(--accent))',
+                    },
+                  }),
+                  multiValue: (provided: any) => ({
+                    ...provided,
+                    backgroundColor: 'hsl(var(--accent))',
+                    borderRadius: '4px',
+                  }),
+                  multiValueLabel: (provided: any) => ({
+                    ...provided,
+                    color: 'hsl(var(--accent-foreground))',
+                    fontSize: '14px',
+                  }),
+                  multiValueRemove: (provided: any) => ({
+                    ...provided,
+                    color: 'hsl(var(--accent-foreground))',
+                    '&:hover': {
+                      backgroundColor: 'hsl(var(--destructive))',
+                      color: 'white',
+                    },
+                  }),
+                }}
+                isDisabled={bulkAddTagsMutation.isPending}
+                className="react-select-container"
+                classNamePrefix="react-select"
+                data-testid="select-bulk-tags"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Create custom tags to organize and categorize students.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsBulkAddTagsOpen(false);
+                setBulkSelectedTags([]);
+              }}
+              disabled={bulkAddTagsMutation.isPending}
+              data-testid="button-cancel-bulk-tags"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (bulkSelectedTags.length > 0) {
+                  bulkAddTagsMutation.mutate(bulkSelectedTags.map(tag => tag.value));
+                }
+              }}
+              disabled={bulkAddTagsMutation.isPending || bulkSelectedTags.length === 0}
+              className="flex items-center gap-2"
+              data-testid="button-confirm-bulk-tags"
+            >
+              {bulkAddTagsMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Tag className="h-4 w-4" />
+                  Add Tags
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} Student{selectedIds.size !== 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the selected {selectedIds.size} student{selectedIds.size !== 1 ? 's' : ''} and all their sessions?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setIsBulkDeleteDialogOpen(false);
+              }}
+              disabled={bulkDeleteMutation.isPending}
+              data-testid="button-cancel-bulk-delete"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => bulkDeleteMutation.mutate()}
+              disabled={bulkDeleteMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+              data-testid="button-confirm-bulk-delete"
+            >
+              {bulkDeleteMutation.isPending ? "Deleting..." : `Delete ${selectedIds.size} Student${selectedIds.size !== 1 ? 's' : ''}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Student Confirmation */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
