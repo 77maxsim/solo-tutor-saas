@@ -1,0 +1,173 @@
+Implement “row-click to edit student” on Students list and remove the Edit button.
+
+Locate files
+
+Search for the Students table/row and edit modal:
+
+rg -n "Edit Student|EditStudentModal|<EditStudent" client/src
+
+rg -n "Pencil|Edit2|lucide-react.*Pencil" client/src
+
+rg -n "StudentsTable|StudentRow|StudentList" client/src
+
+Parent list state (open modal on row click)
+
+In the students list component (e.g., client/src/pages/students/students-table.tsx or similar), add state and renderer:
+
+// imports
+import { useState } from "react";
+import { EditStudentModal } from "@/components/modals/edit-student-modal"; // adjust path if different
+import type { Student } from "@/types"; // adjust path if needed
+
+// inside component
+const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+
+// near return(), render modal once
+{editingStudent && (
+  <EditStudentModal
+    open={!!editingStudent}           // or isOpen / onOpenChange depending on your API
+    student={editingStudent}
+    onClose={() => setEditingStudent(null)}
+  />
+)}
+
+
+If the modal uses isOpen / onOpenChange, adapt prop names accordingly (no other logic changes).
+
+Make the entire row clickable
+
+In the row component (e.g., StudentRow.tsx or within map of rows), wrap the row container (<tr> for table rows or <div> for cards) with an onClick that opens the modal:
+
+// row container
+<tr
+  onClick={() => setEditingStudent(student)}
+  role="button"
+  tabIndex={0}
+  onKeyDown={(e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setEditingStudent(student);
+    }
+  }}
+  className="hover:bg-muted cursor-pointer"
+>
+  {/* cells... */}
+</tr>
+
+
+If your list uses <div> instead of <tr>, apply the same handlers to that element.
+
+Preserve clicks on interactive children (stop propagation)
+Add e.stopPropagation() to elements that should NOT open the edit modal:
+
+Avatar (keeps opening Edit Avatar modal)
+
+Row checkbox (bulk select)
+
+Favorite/star toggle
+
+Calendar button
+
+Delete button
+
+Any tag chips/links if present
+
+Example patches (adjust to your actual component names):
+
+// Avatar cell
+<Avatar
+  onClick={(e) => {
+    e.stopPropagation();
+    openAvatarModal(student); // existing handler
+  }}
+/>
+
+// Checkbox cell
+<Checkbox
+  checked={selected}
+  onCheckedChange={toggle}
+  onClick={(e) => e.stopPropagation()}
+/>
+
+// Favorite star
+<button
+  onClick={(e) => {
+    e.stopPropagation();
+    toggleFavorite(student.id);
+  }}
+  aria-label="Favorite"
+>
+  <Star /* ... */ />
+</button>
+
+// Calendar action
+<Button
+  variant="ghost"
+  size="icon"
+  onClick={(e) => {
+    e.stopPropagation();
+    openScheduleModal(student);
+  }}
+>
+  <Calendar className="h-4 w-4" />
+</Button>
+
+// Delete action
+<Button
+  variant="ghost"
+  size="icon"
+  onClick={(e) => {
+    e.stopPropagation();
+    confirmDelete(student.id);
+  }}
+>
+  <Trash className="h-4 w-4 text-destructive" />
+</Button>
+
+
+Remove the Edit button from the Actions column
+
+Delete the Edit (pencil) button block and its import.
+
+- import { Pencil } from "lucide-react";
+
+- <Tooltip>
+-   <Button
+-     variant="ghost"
+-     size="icon"
+-     onClick={(e) => {
+-       e.stopPropagation();
+-       setEditingStudent(student);
+-     }}
+-     aria-label="Edit student"
+-   >
+-     <Pencil className="h-4 w-4" />
+-   </Button>
+- </Tooltip>
+
+
+Styling touch
+
+Ensure the row has a hover style and pointer cursor (already added above). If your table rows already have these classes, keep only one instance.
+
+Type fixes & imports
+
+If Student type is not available in this file, import it from your existing types.
+
+If EditStudentModal is a default export or has different props, adjust import/props accordingly (do not change modal internals).
+
+QA checklist
+
+Clicking anywhere on a student row opens Edit Student.
+
+Clicking the avatar still opens Edit Avatar.
+
+Checkbox, star, calendar, and delete work as before and do not open Edit Student.
+
+Keyboard: row focused → Enter/Space opens Edit Student.
+
+No unused imports (remove Pencil and any dead code).
+
+No console errors.
+
+Make only the changes above; do not modify unrelated components or styles.
