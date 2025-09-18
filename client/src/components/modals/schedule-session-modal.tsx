@@ -167,6 +167,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         .from('students')
         .select('id, name')
         .eq('tutor_id', tutorId)
+        .is('archived_at', null)
         .order('name', { ascending: true });
 
       if (error) {
