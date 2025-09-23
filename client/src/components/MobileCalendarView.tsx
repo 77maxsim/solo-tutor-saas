@@ -51,11 +51,13 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
     return 60; // Default fallback
   };
 
-  // Get week start (Sunday)
+  // Get week start (Monday)
   const getWeekStart = (date: Date) => {
     const d = new Date(date);
     const day = d.getDay();
-    const diff = d.getDate() - day;
+    // Convert Sunday (0) to 7 to make Monday (1) the start of the week
+    const mondayIndex = day === 0 ? 6 : day - 1;
+    const diff = d.getDate() - mondayIndex;
     return new Date(d.setDate(diff));
   };
 
