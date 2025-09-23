@@ -1,0 +1,72 @@
+Replit, refactor the “Sessions This Month” card into a compact, dense KPI card:
+
+1) Create client/src/components/stats/SessionStatCompact.tsx
+   - Uses shadcn/ui Card.
+   - Layout:
+     • Header (one line): left = title; right = two tiny segmented controls (icons only).
+     • Body: big value (completed) on one line with a small “of N” chip.
+     • Footer: 2px progress bar.
+   - Icons:
+     • Timeframe control: [Week | Month] using lucide-react icons: CalendarDays (week), CalendarRange (month).
+     • Metric control: [Sessions | Hours] using Hash (sessions count) and Clock (hours).
+   - Each icon button has a tooltip (“Week”, “Month”, “Sessions”, “Hours”).
+   - On hover/focus, buttons show a faint label via aria/tooltip; otherwise icon-only.
+   - On screens < md, hide the second control row and show a 3-dot button that opens a small menu to pick Timeframe and Metric.
+
+   - Props: { tutorId?: string }
+   - State:
+     timeframe: "week" | "month"  (persist in localStorage: 'stat_tf')
+     metric: "sessions" | "hours"  (persist in localStorage: 'stat_metric')
+
+   - Data:
+     Use existing hook path from previous prompt name, but create a slim one if missing:
+     import { useSessionStats } from "@/hooks/useSessionStats";
+     The hook returns: { value, completed, upcoming, total, label } for the selected timeframe/metric.
+
+   - Render rules:
+     title = `${metric === 'hours' ? 'Hours' : 'Sessions'} ${timeframe === 'week' ? 'This Week' : 'This Month'}`
+     main value = value (append " h" if metric === "hours")
+     small chip to the right of value = `of ${total}${metric === 'hours' ? ' h' : ''}`
+     progress = completed/total * 100 (clamped 0–100), height 2px.
+
+   - Visual density:
+     Card padding p-3 (md:p-3 lg:p-4)
+     Header text-sm text-muted-foreground
+     Value text-2xl font-semibold (md:text-3xl)
+     Chip style: rounded-full bg-muted text-[10px] px-2 py-[2px]
+     Icon buttons: size-7, rounded-full, border, hover:bg-accent, aria-pressed styles.
+     Progress: h-[2px]
+
+2) Update hook if not present:
+   Create client/src/hooks/useSessionStats.ts exactly as below (pure frontend, no DB changes):
+
+   - Query supabase.from("sessions")
+     .select("id, session_start, session_end, tutor_id")
+     .gte("session_start", startISO)
+     .lte("session_start", endISO)
+     .eq("tutor_id", tutorId) when tutorId provided
+   - now = new Date().toISOString()
+   - completed = rows where session_start < now
+   - upcoming  = rows where session_start >= now
+   - For hours, sum (session_end - session_start) / 3600000 and round to 1 decimal.
+   - Return { value: completedCountOrHours, completed, upcoming, total: completed+upcoming, label }
+
+3) Add a tiny Progress component if missing:
+   client/src/components/ui/progress.tsx
+   - same API: <Progress value={number} className="h-[2px]" />
+
+4) Replace the big card usage:
+   In the dashboard page (client/src/pages/dashboard.tsx or equivalent),
+   import SessionStatCompact and render it where the old Sessions card was.
+
+5) Accessibility & mobile:
+   - Icon buttons must have aria-label and aria-pressed.
+   - Tooltips on desktop; on mobile, use a small dropdown (Radix/shadcn DropdownMenu) opened by a 3-dot IconButton to set timeframe/metric.
+   - Preserve keyboard navigation (Tab to buttons, Enter toggles).
+
+6) Styling polish:
+   - Keep card width equal to other stats; ensure no vertical stretch.
+   - Use subtle divider only if needed (no heavy borders).
+   - Keep everything on 2–3 lines max; no extra blank rows.
+
+Please implement the component and wire it into the dashboard. Keep all logic frontend-only; do not modify the DB schema.
