@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { StatsCard } from "@/components/dashboard/stats-card";
+import { StatsCardSessions } from "@/components/dashboard/StatsCardSessions";
 import { UpcomingSessions } from "@/components/dashboard/upcoming-sessions";
 import { PaymentOverview } from "@/components/dashboard/unpaid-past-sessions";
 import { ExpectedEarnings } from "@/components/dashboard/expected-earnings";
@@ -332,25 +333,7 @@ export default function Dashboard() {
   const renderCard = (card: DashboardCard, index: number) => {
     switch (card.id) {
       case 'sessions_this_week':
-        const weeklyDelta = dashboardStats?.weeklySessionsDelta || 0;
-        const deltaText = weeklyDelta === 0 
-          ? "no change from last week" 
-          : weeklyDelta > 0 
-            ? `+${weeklyDelta} from last week`
-            : `${weeklyDelta} from last week`;
-        const deltaType = weeklyDelta >= 0 ? "positive" : "negative";
-        
-        return (
-          <StatsCard
-            title="Sessions This Week"
-            value={isLoading ? "..." : (dashboardStats?.sessionsThisWeek.toString() || "0")}
-            change={deltaText}
-            changeType={deltaType}
-            icon={BookOpen}
-            iconColor="text-blue-600"
-            iconBgColor="bg-blue-100"
-          />
-        );
+        return <StatsCardSessions />;
       case 'active_students':
         return (
           <StatsCard
