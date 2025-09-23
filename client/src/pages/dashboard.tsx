@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { StatsCard } from "@/components/dashboard/stats-card";
-import { StatsCardSessions } from "@/components/dashboard/StatsCardSessions";
+import { SessionStatCompact } from "@/components/stats/SessionStatCompact";
 import { UpcomingSessions } from "@/components/dashboard/upcoming-sessions";
 import { PaymentOverview } from "@/components/dashboard/unpaid-past-sessions";
 import { ExpectedEarnings } from "@/components/dashboard/expected-earnings";
@@ -333,7 +333,7 @@ export default function Dashboard() {
   const renderCard = (card: DashboardCard, index: number) => {
     switch (card.id) {
       case 'sessions_this_week':
-        return <StatsCardSessions />;
+        return <SessionStatCompact />;
       case 'active_students':
         return (
           <StatsCard
