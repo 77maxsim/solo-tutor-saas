@@ -1,0 +1,108 @@
+Goal: Make the app use Monday→Sunday everywhere: Calendar UI, “Sessions This Week”, and “Earnings (Today/Week/Month)” cards—without breaking existing logic or timezones.
+
+Do this:
+
+Create a single source of truth for week boundaries
+
+Add src/lib/dateRange.ts (or update if it exists):
+
+// src/lib/dateRange.ts
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
+
+// The app-wide setting for week start
+export const WEEK_STARTS_ON: 0 | 1 = 1; // 1 = Monday, 0 = Sunday
+
+// Helper to get a user's timezone (fallback to app default)
+export const APP_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Kyiv";
+
+export function weekRange(date = new Date(), tz = APP_TIMEZONE) {
+  const local = utcToZonedTime(date, tz);
+  const startLocal = startOfWeek(local, { weekStartsOn: WEEK_STARTS_ON });
+  const endLocal = endOfWeek(local, { weekStartsOn: WEEK_STARTS_ON });
+  // Convert to UTC for querying the DB (assuming DB stores UTC)
+  return {
+    startUtc: zonedTimeToUtc(startLocal, tz),
+    endUtc: zonedTimeToUtc(endLocal, tz),
+  };
+}
+
+export function monthRange(date = new Date(), tz = APP_TIMEZONE) {
+  const local = utcToZonedTime(date, tz);
+  const startLocal = startOfMonth(local);
+  const endLocal = endOfMonth(local);
+  return {
+    startUtc: zonedTimeToUtc(startLocal, tz),
+    endUtc: zonedTimeToUtc(endLocal, tz),
+  };
+}
+
+
+Calendar view: show Monday first
+
+Open your Calendar component where FullCalendar is initialized (e.g., src/components/Calendar/Calendar.tsx).
+
+Set:
+
+<FullCalendar
+  // ...
+  firstDay={1}               // Monday
+  locale="en-gb"             // also makes Monday the first day in many locales
+  // no change needed to events; this is visual
+/>
+
+
+Replace any hard-coded “this week” ranges with the helper
+
+Wherever you compute Sessions This Week or Earnings This Week, replace existing date math with:
+
+import { weekRange, monthRange } from "@/lib/dateRange";
+
+const { startUtc, endUtc } = weekRange(new Date(), APP_TIMEZONE);
+// Use startUtc and endUtc in your Supabase queries for "this week".
+
+const { startUtc: mStart, endUtc: mEnd } = monthRange(new Date(), APP_TIMEZONE);
+// Use these for "this month".
+
+
+Supabase queries: filter by the provided UTC boundaries
+
+Update your data loaders for sessions/earnings to always accept startUtc and endUtc and filter like:
+
+// Example: earnings this week
+const { data, error } = await supabase
+  .from("sessions")
+  .select("id, amount, start_time")
+  .gte("start_time", startUtc.toISOString())
+  .lt("start_time", endUtc.toISOString());
+
+
+Important: Do not compute “week” in SQL with date_part('dow')=0 etc. If you must do SQL-side grouping, use ISO semantics: extract(isodow from ...) (1–7, Mon–Sun) or, simpler, pass explicit startUtc/endUtc from the helper above and group by day using the timestamp range.
+
+Fix any places that relied on Sunday=0
+
+Grep the codebase for: dow, getDay() === 0, weekStartsOn: 0, startOfWeek( without options, and any custom week logic.
+
+Replace with:
+
+JS side: startOfWeek(date, { weekStartsOn: 1 })
+
+SQL side (only if used): prefer the passed range; if needed use extract(isodow from ts) instead of extract(dow from ts).
+
+Dashboard cards toggles don’t need UX changes
+
+The toggles (Today/Week/Month) reuse the same loaders. Ensure the “Week” branch calls weekRange() now.
+
+Regression checks (quick manual QA)
+
+Calendar: Week view shows Mon→Sun, and “Today” still lands on the correct column.
+
+Sessions/Earnings “This Week”: verify totals match the Mon→Sun range (compare with a manual list of sessions).
+
+Month totals unchanged (month logic wasn’t affected except centralized).
+
+Timezone sanity: create a session near midnight local time and confirm it falls into the expected week.
+
+(Optional) Feature flag
+
+If you want an easy rollback, keep WEEK_STARTS_ON exported and change only that constant to 0 (Sunday) if needed.
