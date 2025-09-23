@@ -89,18 +89,18 @@ export function SessionStatCompact({ tutorId, className }: SessionStatCompactPro
             </h3>
 
             {/* Desktop Controls */}
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden md:flex items-center gap-2">
               {/* Timeframe Control */}
-              <div className="flex">
+              <div className="flex gap-1">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "h-7 w-7 p-0 rounded-full border",
+                        "h-7 w-7 p-0 rounded-md border text-xs font-semibold",
                         timeframe === 'week'
-                          ? "bg-accent border-accent-foreground/20"
+                          ? "bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300"
                           : "hover:bg-accent"
                       )}
                       onClick={() => toggleTimeframe('week')}
@@ -108,7 +108,7 @@ export function SessionStatCompact({ tutorId, className }: SessionStatCompactPro
                       aria-pressed={timeframe === 'week'}
                       data-testid="toggle-week"
                     >
-                      <CalendarDays className="h-3.5 w-3.5" />
+                      W
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -122,9 +122,9 @@ export function SessionStatCompact({ tutorId, className }: SessionStatCompactPro
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "h-7 w-7 p-0 rounded-full border ml-1",
+                        "h-7 w-7 p-0 rounded-md border text-xs font-semibold",
                         timeframe === 'month'
-                          ? "bg-accent border-accent-foreground/20"
+                          ? "bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300"
                           : "hover:bg-accent"
                       )}
                       onClick={() => toggleTimeframe('month')}
@@ -132,7 +132,7 @@ export function SessionStatCompact({ tutorId, className }: SessionStatCompactPro
                       aria-pressed={timeframe === 'month'}
                       data-testid="toggle-month"
                     >
-                      <CalendarRange className="h-3.5 w-3.5" />
+                      M
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -141,17 +141,20 @@ export function SessionStatCompact({ tutorId, className }: SessionStatCompactPro
                 </Tooltip>
               </div>
 
+              {/* Subtle Divider */}
+              <div className="w-px h-4 bg-border/50" />
+
               {/* Metric Control */}
-              <div className="flex ml-2">
+              <div className="flex gap-1">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "h-7 w-7 p-0 rounded-full border",
+                        "h-7 w-7 p-0 rounded-md border",
                         metric === 'sessions'
-                          ? "bg-accent border-accent-foreground/20"
+                          ? "bg-green-100 border-green-300 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300"
                           : "hover:bg-accent"
                       )}
                       onClick={() => toggleMetric('sessions')}
@@ -173,9 +176,9 @@ export function SessionStatCompact({ tutorId, className }: SessionStatCompactPro
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "h-7 w-7 p-0 rounded-full border ml-1",
+                        "h-7 w-7 p-0 rounded-md border",
                         metric === 'hours'
-                          ? "bg-accent border-accent-foreground/20"
+                          ? "bg-green-100 border-green-300 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300"
                           : "hover:bg-accent"
                       )}
                       onClick={() => toggleMetric('hours')}
@@ -211,24 +214,24 @@ export function SessionStatCompact({ tutorId, className }: SessionStatCompactPro
                   <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Timeframe</div>
                   <DropdownMenuItem
                     onClick={() => toggleTimeframe('week')}
-                    className={timeframe === 'week' ? 'bg-accent' : ''}
+                    className={timeframe === 'week' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''}
                     data-testid="mobile-week"
                   >
-                    <CalendarDays className="mr-2 h-4 w-4" />
+                    <div className="mr-2 h-4 w-4 flex items-center justify-center text-xs font-semibold">W</div>
                     Week
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => toggleTimeframe('month')}
-                    className={timeframe === 'month' ? 'bg-accent' : ''}
+                    className={timeframe === 'month' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : ''}
                     data-testid="mobile-month"
                   >
-                    <CalendarRange className="mr-2 h-4 w-4" />
+                    <div className="mr-2 h-4 w-4 flex items-center justify-center text-xs font-semibold">M</div>
                     Month
                   </DropdownMenuItem>
                   <div className="px-2 py-1 text-xs font-semibold text-muted-foreground border-t mt-1 pt-2">Metric</div>
                   <DropdownMenuItem
                     onClick={() => toggleMetric('sessions')}
-                    className={metric === 'sessions' ? 'bg-accent' : ''}
+                    className={metric === 'sessions' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : ''}
                     data-testid="mobile-sessions"
                   >
                     <Hash className="mr-2 h-4 w-4" />
@@ -236,7 +239,7 @@ export function SessionStatCompact({ tutorId, className }: SessionStatCompactPro
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => toggleMetric('hours')}
-                    className={metric === 'hours' ? 'bg-accent' : ''}
+                    className={metric === 'hours' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : ''}
                     data-testid="mobile-hours"
                   >
                     <Clock className="mr-2 h-4 w-4" />
