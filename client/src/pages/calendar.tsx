@@ -1078,7 +1078,8 @@ export default function Calendar() {
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, luxonPlugin]}
             initialView={view}
-            locale="en"
+            locale="en-gb"
+            firstDay={1}
             timeZone={tutorTimezone || 'UTC'}
             initialDate={new Date()}
             validRange={{
