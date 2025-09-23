@@ -17,6 +17,7 @@ import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } fr
 import { formatCurrency } from "@/lib/utils";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import { weekRange, monthRange, APP_TIMEZONE } from "@/lib/dateRange";
 import { 
   Coins, 
   TrendingUp, 
@@ -459,19 +460,13 @@ export default function Earnings() {
     // Use the corrected session data (Oliver account corrections already applied in query)
 
     const now = new Date();
+    const timezone = tutorTimezone || APP_TIMEZONE;
     
-    // Current week boundaries (Sunday to Saturday)
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-    
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
+    // Current week boundaries (Monday to Sunday)
+    const { startUtc: startOfWeek, endUtc: endOfWeek } = weekRange(now, timezone);
     
     // Current month boundaries
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const { startUtc: firstDayOfMonth, endUtc: lastDayOfMonth } = monthRange(now, timezone);
     
     // 30 days ago for active students
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
