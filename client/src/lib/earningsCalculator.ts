@@ -5,78 +5,49 @@ import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+// Import the new Monday-Sunday date range helpers
+import { weekRange, monthRange, APP_TIMEZONE } from './dateRange';
+
 // Shared earnings calculation logic for Dashboard and Earnings page
 export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
   console.log('📦 EarningsCalculator: Starting with', sessions.length, 'sessions', tutorTimezone ? `in timezone ${tutorTimezone}` : '');
   
-  // Use tutor's timezone if provided, otherwise use local time
+  // Use tutor's timezone if provided, otherwise use local time with Monday-Sunday weeks
   const getTimezoneBoundaries = () => {
-    if (!tutorTimezone) {
-      // Fallback to local time (for backwards compatibility)
-      const now = new Date();
-      return {
-        startOfWeek: (() => {
-          const date = new Date(now);
-          date.setDate(now.getDate() - now.getDay());
-          date.setHours(0, 0, 0, 0);
-          return date;
-        })(),
-        endOfWeek: (() => {
-          const date = new Date(now);
-          date.setDate(now.getDate() - now.getDay() + 6);
-          date.setHours(23, 59, 59, 999);
-          return date;
-        })(),
-        firstDayOfMonth: new Date(now.getFullYear(), now.getMonth(), 1),
-        lastDayOfMonth: new Date(now.getFullYear(), now.getMonth() + 1, 0),
-        startOfToday: (() => {
-          const date = new Date(now);
-          date.setHours(0, 0, 0, 0);
-          return date;
-        })(),
-        endOfToday: (() => {
-          const date = new Date(now);
-          date.setHours(23, 59, 59, 999);
-          return date;
-        })(),
-        thirtyDaysAgo: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-      };
-    }
+    const timezone = tutorTimezone || APP_TIMEZONE;
+    const now = new Date();
     
-    // Use timezone-aware boundaries - convert to UTC for comparison with UTC session_start
-    const nowInTimezone = dayjs().tz(tutorTimezone);
+    // Use the new Monday-Sunday aware date range helpers
+    const { startUtc: startOfWeek, endUtc: endOfWeek } = weekRange(now, timezone);
+    const { startUtc: firstDayOfMonth, endUtc: lastDayOfMonth } = monthRange(now, timezone);
+    
+    // Calculate today's boundaries in the specified timezone
+    const nowInTimezone = dayjs().tz(timezone);
+    const startOfToday = nowInTimezone.startOf('day').utc().toDate();
+    const endOfToday = nowInTimezone.endOf('day').utc().toDate();
+    const thirtyDaysAgo = nowInTimezone.subtract(30, 'day').utc().toDate();
     
     return {
-      startOfWeek: nowInTimezone.startOf('week').utc().toDate(),
-      endOfWeek: nowInTimezone.endOf('week').utc().toDate(), 
-      firstDayOfMonth: nowInTimezone.startOf('month').utc().toDate(),
-      lastDayOfMonth: nowInTimezone.endOf('month').utc().toDate(),
-      startOfToday: nowInTimezone.startOf('day').utc().toDate(),
-      endOfToday: nowInTimezone.endOf('day').utc().toDate(),
-      thirtyDaysAgo: nowInTimezone.subtract(30, 'day').utc().toDate()
+      startOfWeek,
+      endOfWeek, 
+      firstDayOfMonth,
+      lastDayOfMonth,
+      startOfToday,
+      endOfToday,
+      thirtyDaysAgo
     };
   };
   
-  // Calculate previous week boundaries for delta comparison
+  // Calculate previous week boundaries for delta comparison using Monday-Sunday weeks
   const getPreviousWeekBoundaries = () => {
-    if (!tutorTimezone) {
-      // Fallback to local time (for backwards compatibility)
-      const now = new Date();
-      const lastWeekStart = new Date(now);
-      lastWeekStart.setDate(now.getDate() - now.getDay() - 7);
-      lastWeekStart.setHours(0, 0, 0, 0);
-      
-      const lastWeekEnd = new Date(now);
-      lastWeekEnd.setDate(now.getDate() - now.getDay() - 1);
-      lastWeekEnd.setHours(23, 59, 59, 999);
-      
-      return { lastWeekStart, lastWeekEnd };
-    }
+    const timezone = tutorTimezone || APP_TIMEZONE;
     
-    // Use timezone-aware boundaries
-    const nowInTimezone = dayjs().tz(tutorTimezone);
-    const lastWeekStart = nowInTimezone.subtract(1, 'week').startOf('week').utc().toDate();
-    const lastWeekEnd = nowInTimezone.subtract(1, 'week').endOf('week').utc().toDate();
+    // Get previous week's date (7 days ago)
+    const lastWeekDate = new Date();
+    lastWeekDate.setDate(lastWeekDate.getDate() - 7);
+    
+    // Use the new Monday-Sunday aware date range helpers for previous week
+    const { startUtc: lastWeekStart, endUtc: lastWeekEnd } = weekRange(lastWeekDate, timezone);
     
     return { lastWeekStart, lastWeekEnd };
   };
