@@ -7,8 +7,8 @@ type Row = {
   id: string;
   session_start: string; // UTC ISO
   session_end: string;   // UTC ISO
-  amount?: number | null;
-  rate?: number | null;  // hourly
+  duration: number;      // in minutes
+  rate: number;          // hourly rate
   paid?: boolean;
 };
 
@@ -20,10 +20,10 @@ function hoursBetween(startISO: string, endISO: string) {
   return ms / (1000 * 60 * 60);
 }
 
-function computeEarnings(row: Row, hours: number) {
-  if (typeof row?.amount === "number") return row.amount;
-  if (typeof row?.rate === "number") return Number((row.rate * hours).toFixed(2));
-  return 0;
+function computeEarnings(row: Row) {
+  // Calculate earnings using duration (in minutes) and hourly rate
+  const earnings = (row.duration / 60) * row.rate;
+  return Number(earnings.toFixed(2));
 }
 
 export function useEarningsBuckets(mode: BucketMode, tutorId?: string) {
@@ -35,7 +35,7 @@ export function useEarningsBuckets(mode: BucketMode, tutorId?: string) {
     queryFn: async () => {
       let q = supabase
         .from("sessions")
-        .select("id, session_start, session_end, amount, rate, tutor_id, paid")
+        .select("id, session_start, session_end, duration, rate, tutor_id, paid")
         .gte("session_start", startUtcISO)
         .lte("session_start", endUtcISO);
       if (tutorId) q = q.eq("tutor_id", tutorId);
@@ -54,7 +54,7 @@ export function useEarningsBuckets(mode: BucketMode, tutorId?: string) {
         if (idx === undefined) return;
 
         const h = hoursBetween(row.session_start, row.session_end);
-        const earn = computeEarnings(row, h);
+        const earn = computeEarnings(row);
 
         // Only count earnings if session is paid
         if (row.paid === true) {
