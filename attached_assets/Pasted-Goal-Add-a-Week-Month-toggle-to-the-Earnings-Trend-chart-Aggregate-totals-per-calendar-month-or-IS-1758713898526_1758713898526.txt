@@ -1,0 +1,306 @@
+Goal: Add a Week/Month toggle to the Earnings Trend chart. Aggregate totals per calendar month or ISO calendar week (Mon–Sun) in the user’s local timezone, and render a single-axis earnings bar chart. Tooltip should show Earnings, Hours, Sessions, Avg hourly for the hovered bucket. Do not modify DB schema.
+
+0) Assumptions (safe fallbacks)
+
+sessions table has: session_start (ISO UTC), session_end (ISO UTC), optionally amount (number, currency units) OR rate (per hour).
+
+If amount is missing, compute earnings as rate * hours. If both missing, earnings = 0 for that row.
+
+Duration calculation uses UTC diff (timezone-agnostic), while bucketing uses local timezone.
+
+Timezone default: Intl.DateTimeFormat().resolvedOptions().timeZone (e.g., Europe/Kyiv). If your app has a stored user/tutor timezone, prefer that.
+
+1) Install/ensure Day.js plugins
+
+Make sure these are installed and imported somewhere once (we’ll also import inside our utils):
+
+dayjs, utc, timezone, isoWeek, localizedFormat.
+
+package.json should already have dayjs. If not, add it.
+
+2) Create a timezone + bucketing utility
+
+Create: client/src/lib/timeBuckets.ts
+
+// client/src/lib/timeBuckets.ts
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import tz from "dayjs/plugin/timezone";
+import isoWeek from "dayjs/plugin/isoWeek";
+import localizedFormat from "dayjs/plugin/localizedFormat";
+dayjs.extend(utc);
+dayjs.extend(tz);
+dayjs.extend(isoWeek);
+dayjs.extend(localizedFormat);
+
+export type BucketMode = "month" | "week";
+
+export function getUserTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
+// Range helpers (returned as UTC ISO for Supabase filtering)
+// We add a small buffer to be safe around boundaries.
+export function getRangeFor(mode: BucketMode, tzName = getUserTimeZone()) {
+  const nowTz = dayjs().tz(tzName);
+
+  if (mode === "week") {
+    const start = nowTz.startOf("isoWeek").subtract(12, "week"); // last ~12 weeks incl current
+    const end = nowTz.endOf("isoWeek").add(1, "day");
+    return { startUtcISO: start.utc().toISOString(), endUtcISO: end.utc().toISOString() };
+  }
+
+  // month
+  const start = nowTz.startOf("month").subtract(6, "month"); // last ~6 months incl current
+  const end = nowTz.endOf("month").add(1, "day");
+  return { startUtcISO: start.utc().toISOString(), endUtcISO: end.utc().toISOString() };
+}
+
+// Create ordered bucket keys in local TZ
+export function makeEmptyBuckets(mode: BucketMode, tzName = getUserTimeZone()) {
+  const labels: string[] = [];
+  const nowTz = dayjs().tz(tzName);
+
+  if (mode === "week") {
+    // last 12 weeks, oldest → newest
+    for (let i = 11; i >= 0; i--) {
+      const wStart = nowTz.startOf("isoWeek").subtract(i, "week");
+      const key = wStart.format("[W]WW YYYY"); // e.g., W39 2025
+      labels.push(key);
+    }
+  } else {
+    // last 6 months, oldest → newest
+    for (let i = 5; i >= 0; i--) {
+      const mStart = nowTz.startOf("month").subtract(i, "month");
+      const key = mStart.format("MMM YYYY"); // e.g., Sep 2025
+      labels.push(key);
+    }
+  }
+
+  return labels.map((label) => ({
+    label,        // display label
+    earnings: 0,  // currency total
+    hours: 0,     // total hours
+    sessions: 0,  // count
+    partial: false, // mark current period to style differently
+  }));
+}
+
+// Decide the bucket label for a given UTC start time, in local TZ
+export function labelFor(mode: BucketMode, utcISO: string, tzName = getUserTimeZone()) {
+  const t = dayjs(utcISO).tz(tzName);
+  return mode === "week" ? t.startOf("isoWeek").format("[W]WW YYYY") : t.startOf("month").format("MMM YYYY");
+}
+
+// Is this the current active bucket? Used to mark partial period
+export function isCurrentBucket(mode: BucketMode, label: string, tzName = getUserTimeZone()) {
+  const nowTz = dayjs().tz(tzName);
+  const currentLabel =
+    mode === "week"
+      ? nowTz.startOf("isoWeek").format("[W]WW YYYY")
+      : nowTz.startOf("month").format("MMM YYYY");
+  return label === currentLabel;
+}
+
+3) Data hook: fetch + aggregate per bucket (client-side only)
+
+Create: client/src/hooks/useEarningsBuckets.ts
+
+// client/src/hooks/useEarningsBuckets.ts
+import { useQuery } from "@tanstack/react-query";
+import { createClient } from "@supabase/supabase-js";
+import { BucketMode, getRangeFor, getUserTimeZone, makeEmptyBuckets, labelFor, isCurrentBucket } from "@/lib/timeBuckets";
+
+type Row = {
+  id: string;
+  session_start: string; // UTC ISO
+  session_end: string;   // UTC ISO
+  amount?: number | null;
+  rate?: number | null;  // hourly
+};
+
+const supabase = new createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_ANON_KEY!
+);
+
+// Hours from two ISO strings (timezone agnostic)
+function hoursBetween(startISO: string, endISO: string) {
+  const start = new Date(startISO).getTime();
+  const end = new Date(endISO).getTime();
+  const ms = Math.max(0, end - start);
+  return ms / (1000 * 60 * 60);
+}
+
+function computeEarnings(row: Row, hours: number) {
+  if (typeof row?.amount === "number") return row.amount;
+  if (typeof row?.rate === "number") return Number((row.rate * hours).toFixed(2));
+  return 0;
+}
+
+export function useEarningsBuckets(mode: BucketMode, tutorId?: string) {
+  const tzName = getUserTimeZone();
+  const { startUtcISO, endUtcISO } = getRangeFor(mode, tzName);
+
+  return useQuery({
+    queryKey: ["earnings-buckets", mode, tutorId, startUtcISO, endUtcISO, tzName],
+    queryFn: async () => {
+      let q = supabase
+        .from("sessions")
+        .select("id, session_start, session_end, amount, rate, tutor_id")
+        .gte("session_start", startUtcISO)
+        .lte("session_start", endUtcISO);
+      if (tutorId) q = q.eq("tutor_id", tutorId);
+
+      const { data, error } = await q;
+      if (error) throw error;
+
+      const buckets = makeEmptyBuckets(mode, tzName);
+      const index = new Map(buckets.map((b, i) => [b.label, i]));
+
+      (data ?? []).forEach((row: Row) => {
+        if (!row.session_start || !row.session_end) return;
+
+        const bucketLabel = labelFor(mode, row.session_start, tzName);
+        const idx = index.get(bucketLabel);
+        if (idx === undefined) return;
+
+        const h = hoursBetween(row.session_start, row.session_end);
+        const earn = computeEarnings(row, h);
+
+        buckets[idx].hours += h;
+        buckets[idx].earnings += earn;
+        buckets[idx].sessions += 1;
+      });
+
+      // round for display and mark current period as partial (style)
+      buckets.forEach((b) => {
+        b.hours = Number(b.hours.toFixed(1));
+        b.earnings = Number(b.earnings.toFixed(2));
+        b.partial = isCurrentBucket(mode, b.label, tzName);
+      });
+
+      return buckets;
+    },
+  });
+}
+
+4) Chart component with Week/Month toggle and rich tooltip
+
+Create: client/src/components/charts/EarningsTrendBuckets.tsx
+
+// client/src/components/charts/EarningsTrendBuckets.tsx
+import { useState } from "react";
+import { useEarningsBuckets } from "@/hooks/useEarningsBuckets";
+import type { BucketMode } from "@/lib/timeBuckets";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from "recharts";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
+export default function EarningsTrendBuckets({ tutorId }: { tutorId?: string }) {
+  const [mode, setMode] = useState<BucketMode>("month"); // default Month
+  const { data = [], isLoading, isError } = useEarningsBuckets(mode, tutorId);
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-lg font-semibold">Earnings Trend ({mode === "week" ? "Weekly" : "Monthly"})</div>
+        <div className="inline-flex rounded-md border">
+          <button
+            className={cn("px-2 py-1 text-sm", mode === "week" ? "bg-primary text-primary-foreground" : "bg-background")}
+            onClick={() => setMode("week")}
+            aria-pressed={mode === "week"}
+            aria-label="Show weekly totals"
+          >
+            Week
+          </button>
+          <button
+            className={cn("px-2 py-1 text-sm border-l", mode === "month" ? "bg-primary text-primary-foreground" : "bg-background")}
+            onClick={() => setMode("month")}
+            aria-pressed={mode === "month"}
+            aria-label="Show monthly totals"
+          >
+            Month
+          </button>
+        </div>
+      </div>
+
+      <div className="h-[320px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+            <YAxis
+              tick={{ fontSize: 12 }}
+              tickFormatter={(v) => `${v}`}
+            />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (!active || !payload || !payload.length) return null;
+                const b = payload[0]?.payload as any;
+                const hours = b?.hours ?? 0;
+                const earnings = b?.earnings ?? 0;
+                const sessions = b?.sessions ?? 0;
+                const avg = hours > 0 ? (earnings / hours) : 0;
+                return (
+                  <div className="rounded border bg-popover px-3 py-2 text-sm shadow">
+                    <div className="font-medium">{label}</div>
+                    <div>Earnings: <strong>{earnings}</strong></div>
+                    <div>Hours: <strong>{hours}</strong></div>
+                    <div>Sessions: <strong>{sessions}</strong></div>
+                    <div>Avg hourly: <strong>{avg.toFixed(2)}</strong></div>
+                    {b?.partial ? <div className="mt-1 text-xs text-muted-foreground">(current period, partial)</div> : null}
+                  </div>
+                );
+              }}
+            />
+            <Bar
+              dataKey="earnings"
+              radius={[6, 6, 0, 0]}
+              // lighter bar for current (partial) period:
+              fillOpacity={1}
+              shape={(props: any) => {
+                const { x, y, width, height, payload } = props;
+                const partial = payload?.partial;
+                return (
+                  <g>
+                    <rect
+                      x={x}
+                      y={y}
+                      width={width}
+                      height={height}
+                      rx={6}
+                      ry={6}
+                      className={partial ? "fill-primary/60" : "fill-primary"}
+                    />
+                  </g>
+                );
+              }}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {(isLoading || isError) && (
+        <div className="mt-2 text-xs text-muted-foreground">
+          {isLoading ? "Loading…" : "Could not load data."}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+5) Use the component on your Earnings page
+
+Find your earnings page (e.g., client/src/pages/earnings.tsx) and replace the old trend component with:
+
+import EarningsTrendBuckets from "@/components/charts/EarningsTrendBuckets";
+
+// inside layout:
+<EarningsTrendBuckets tutorId={profile?.id} />
