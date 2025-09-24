@@ -644,7 +644,7 @@ export default function Earnings() {
         </DragDropContext>
 
         {/* Earnings Trend Chart with Week/Month Toggle */}
-        <EarningsTrendBuckets tutorId={currentTutorId} />
+        <EarningsTrendBuckets tutorId={currentTutorId || undefined} />
       </div>
     </div>
   );
