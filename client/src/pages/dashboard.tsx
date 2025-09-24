@@ -21,7 +21,8 @@ import {
   BookOpen, 
   Coins, 
   Users,
-  Plus 
+  Plus,
+  TrendingUp 
 } from "lucide-react";
 
 interface SessionWithStudent {
@@ -100,10 +101,16 @@ export default function Dashboard() {
     },
   });
 
-  // Update cards state when data is fetched
+  // Update cards state when data is fetched with type guard
   useEffect(() => {
     if (cardOrder) {
-      setCards(cardOrder);
+      // Type guard to ensure cardOrder is DashboardCard[]
+      const validatedCards = Array.isArray(cardOrder) 
+        ? cardOrder.filter((card): card is DashboardCard => 
+            card && typeof card === 'object' && 'id' in card && 'title' in card
+          )
+        : defaultCardOrder;
+      setCards(validatedCards);
     }
   }, [cardOrder]);
 
@@ -200,7 +207,7 @@ export default function Dashboard() {
         todayEarnings: earningsData.todayEarnings,
         currentWeekEarnings: earningsData.thisWeekEarnings,
         currentMonthEarnings: earningsData.thisMonthEarnings,
-        lastMonthEarnings: 0,
+        lastMonthEarnings: earningsData.lastMonthEarnings || 0,
         pendingPayments: 0,
         unpaidStudentsCount: 0,
         activeStudents: earningsData.activeStudentsCount
@@ -250,8 +257,8 @@ export default function Dashboard() {
             table: 'sessions',
             filter: `tutor_id=eq.${tutorId}`
           }, 
-          (payload) => {
-            console.log('📡 Dashboard: Session change detected', payload.eventType, payload.new?.id);
+          (payload: any) => {
+            console.log('📡 Dashboard: Session change detected', payload.eventType, payload.new?.id || 'no-id');
             refetchStats();
           }
         )
@@ -272,8 +279,8 @@ export default function Dashboard() {
             table: 'students',
             filter: `tutor_id=eq.${tutorId}`
           }, 
-          (payload) => {
-            console.log('📡 Dashboard: Student change detected', payload.eventType, payload.new?.id);
+          (payload: any) => {
+            console.log('📡 Dashboard: Student change detected', payload.eventType, payload.new?.id || 'no-id');
             refetchStats();
           }
         )
@@ -395,19 +402,45 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400 group-hover:scale-105 transition-transform duration-200">
-                {isLoading ? "..." : formatCurrency(
-                  earningsView === 'today' 
-                    ? dashboardStats?.todayEarnings || 0
-                    : earningsView === 'week' 
-                    ? dashboardStats?.currentWeekEarnings || 0
-                    : dashboardStats?.currentMonthEarnings || 0, 
-                  tutorInfo?.currency || 'USD'
-                )}
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400 group-hover:scale-105 transition-transform duration-200">
+                      {isLoading ? "..." : formatCurrency(
+                        earningsView === 'today' 
+                          ? dashboardStats?.todayEarnings || 0
+                          : earningsView === 'week' 
+                          ? dashboardStats?.currentWeekEarnings || 0
+                          : dashboardStats?.currentMonthEarnings || 0, 
+                        tutorInfo?.currency || 'USD'
+                      )}
+                    </div>
+                    {earningsView === 'month' && dashboardStats?.lastMonthEarnings !== undefined && !isLoading && (() => {
+                      const currentMonthEarnings = dashboardStats?.currentMonthEarnings || 0;
+                      const previousMonthEarnings = dashboardStats?.lastMonthEarnings || 0;
+                      const monthlyPercentageChange = previousMonthEarnings > 0 
+                        ? ((currentMonthEarnings - previousMonthEarnings) / previousMonthEarnings) * 100 
+                        : currentMonthEarnings > 0 ? 100 : 0;
+
+                      return (
+                        <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                          monthlyPercentageChange > 0 
+                            ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' 
+                            : monthlyPercentageChange < 0
+                            ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}>
+                          <TrendingUp className={`h-3 w-3 ${monthlyPercentageChange < 0 ? 'rotate-180' : ''}`} />
+                          {Math.abs(monthlyPercentageChange).toFixed(1)}%
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  <p className="text-xs text-muted-foreground dark:text-gray-400 group-hover:text-green-600/70 dark:group-hover:text-green-400/70 transition-colors duration-200">
+                    {earningsView === 'today' ? 'Earned Today' : earningsView === 'week' ? 'Earned This Week' : 'Earned This Month'}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground dark:text-gray-400 group-hover:text-green-600/70 dark:group-hover:text-green-400/70 transition-colors duration-200">
-                {earningsView === 'today' ? 'Earned Today' : earningsView === 'week' ? 'Earned This Week' : 'Earned This Month'}
-              </p>
             </CardContent>
           </Card>
         );

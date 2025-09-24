@@ -52,8 +52,23 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     return { lastWeekStart, lastWeekEnd };
   };
 
+  // Calculate previous month boundaries for month-over-month percentage
+  const getPreviousMonthBoundaries = () => {
+    const timezone = tutorTimezone || APP_TIMEZONE;
+    
+    // Get previous month's date (subtract 1 month)
+    const lastMonthDate = new Date();
+    lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+    
+    // Use the month range helper for previous month
+    const { startUtc: lastMonthStart, endUtc: lastMonthEnd } = monthRange(lastMonthDate, timezone);
+    
+    return { lastMonthStart, lastMonthEnd };
+  };
+
   const boundaries = getTimezoneBoundaries();
   const previousWeekBoundaries = getPreviousWeekBoundaries();
+  const previousMonthBoundaries = getPreviousMonthBoundaries();
   
   console.log('📦 EarningsCalculator: Using boundaries', {
     timezone: tutorTimezone || 'local',
@@ -71,6 +86,7 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
   let todayEarnings = 0;
   let thisWeekEarnings = 0;
   let thisMonthEarnings = 0;
+  let lastMonthEarnings = 0;
   let thisMonthSessions = 0;
   let thisWeekSessions = 0;
   let lastWeekSessions = 0;
@@ -106,6 +122,11 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     if (isPaid && sessionDate >= boundaries.firstDayOfMonth && sessionDate <= boundaries.lastDayOfMonth) {
       thisMonthEarnings += earnings;
       // console.log('[Debug] Added to month earnings:', earnings, 'total now:', thisMonthEarnings, 'for student:', session.student_name);
+    }
+    
+    // Last month earnings (only from paid sessions in previous month)
+    if (isPaid && sessionDate >= previousMonthBoundaries.lastMonthStart && sessionDate <= previousMonthBoundaries.lastMonthEnd) {
+      lastMonthEarnings += earnings;
     }
     
     // This month sessions count (all sessions in current month regardless of payment)
@@ -153,6 +174,7 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     todayEarnings,
     thisWeekEarnings,
     thisMonthEarnings,
+    lastMonthEarnings,
     thisMonthSessions,
     thisWeekSessions,
     lastWeekSessions,
