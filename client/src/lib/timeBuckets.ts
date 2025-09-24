@@ -45,7 +45,7 @@ export function makeEmptyBuckets(mode: BucketMode, tzName = getUserTimeZone()) {
     // last 12 weeks, oldest → newest
     for (let i = 11; i >= 0; i--) {
       const wStart = nowTz.startOf("isoWeek").subtract(i, "week");
-      const key = wStart.format("[W]WW YYYY"); // e.g., W39 2025
+      const key = wStart.format("\\WW YYYY"); // e.g., W39 2025
       labels.push(key);
     }
   } else {
@@ -69,7 +69,7 @@ export function makeEmptyBuckets(mode: BucketMode, tzName = getUserTimeZone()) {
 // Decide the bucket label for a given UTC start time, in local TZ
 export function labelFor(mode: BucketMode, utcISO: string, tzName = getUserTimeZone()) {
   const t = dayjs(utcISO).tz(tzName);
-  return mode === "week" ? t.startOf("isoWeek").format("[W]WW YYYY") : t.startOf("month").format("MMM YYYY");
+  return mode === "week" ? t.startOf("isoWeek").format("\\WW YYYY") : t.startOf("month").format("MMM YYYY");
 }
 
 // Is this the current active bucket? Used to mark partial period
@@ -77,7 +77,7 @@ export function isCurrentBucket(mode: BucketMode, label: string, tzName = getUse
   const nowTz = dayjs().tz(tzName);
   const currentLabel =
     mode === "week"
-      ? nowTz.startOf("isoWeek").format("[W]WW YYYY")
+      ? nowTz.startOf("isoWeek").format("\\WW YYYY")
       : nowTz.startOf("month").format("MMM YYYY");
   return label === currentLabel;
 }

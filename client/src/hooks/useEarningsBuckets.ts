@@ -33,6 +33,9 @@ export function useEarningsBuckets(mode: BucketMode, tutorId?: string) {
   return useQuery({
     queryKey: ["earnings-buckets", mode, tutorId, startUtcISO, endUtcISO, tzName],
     queryFn: async () => {
+      console.log('🔍 EarningsBuckets: Fetching', mode, 'data for tutor:', tutorId);
+      console.log('🔍 EarningsBuckets: Date range:', startUtcISO, 'to', endUtcISO);
+      
       let q = supabase
         .from("sessions")
         .select("id, session_start, session_end, duration, rate, tutor_id, paid")
@@ -41,9 +44,15 @@ export function useEarningsBuckets(mode: BucketMode, tutorId?: string) {
       if (tutorId) q = q.eq("tutor_id", tutorId);
 
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) {
+        console.error('🔍 EarningsBuckets: Query error:', error);
+        throw error;
+      }
 
+      console.log('🔍 EarningsBuckets: Found', data?.length || 0, 'sessions');
+      
       const buckets = makeEmptyBuckets(mode, tzName);
+      console.log('🔍 EarningsBuckets: Empty buckets:', buckets.map(b => b.label));
       const index = new Map(buckets.map((b, i) => [b.label, i]));
 
       (data ?? []).forEach((row: Row) => {
@@ -51,7 +60,10 @@ export function useEarningsBuckets(mode: BucketMode, tutorId?: string) {
 
         const bucketLabel = labelFor(mode, row.session_start, tzName);
         const idx = index.get(bucketLabel);
-        if (idx === undefined) return;
+        if (idx === undefined) {
+          console.log('🔍 EarningsBuckets: Session', row.id, 'bucket label', bucketLabel, 'not found in index');
+          return;
+        }
 
         const h = hoursBetween(row.session_start, row.session_end);
         const earn = computeEarnings(row);
@@ -72,6 +84,7 @@ export function useEarningsBuckets(mode: BucketMode, tutorId?: string) {
         b.partial = isCurrentBucket(mode, b.label, tzName);
       });
 
+      console.log('🔍 EarningsBuckets: Final buckets:', buckets);
       return buckets;
     },
   });
