@@ -1,0 +1,111 @@
+Goal: On screens ≤768px, show the calendar in Agenda view by default and hide other view options. On larger screens, keep existing Week/Month/Agenda.
+Scope: Frontend only (React + react-big-calendar). No DB or timezone changes.
+
+Create a tiny hook for responsive checks:
+
+Add src/hooks/useMediaQuery.ts:
+
+import { useEffect, useState } from "react";
+
+export function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const onChange = (e: MediaQueryListEvent) => setMatches(e.matches);
+    // set initial
+    setMatches(mql.matches);
+    // listen
+    if (mql.addEventListener) mql.addEventListener("change", onChange);
+    else mql.addListener(onChange);
+    return () => {
+      if (mql.removeEventListener) mql.removeEventListener("change", onChange);
+      else mql.removeListener(onChange);
+    };
+  }, [query]);
+  return matches;
+}
+
+
+Update the calendar page/component (likely src/pages/CalendarPage.tsx or src/components/calendar/Calendar.tsx using react-big-calendar):
+
+Import the hook and compute isMobile.
+
+Drive views and defaultView from isMobile.
+
+Keep agenda length to 7 days.
+
+Optionally hide the custom view toggle UI on mobile if we render our own chips.
+
+import { Calendar, Views } from "react-big-calendar";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+// ...existing imports (localizer, events, components, etc.)
+
+export default function CalendarPage() {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
+  // Desktop: keep Week/Month/Agenda. Mobile: Agenda-only.
+  const availableViews = isMobile
+    ? { agenda: true }
+    : { week: true, month: true, agenda: true };
+
+  const defaultView = isMobile ? Views.AGENDA : Views.WEEK;
+
+  return (
+    <div className="h-full w-full">
+      {/* If you have custom view toggle buttons, hide them on mobile */}
+      {!isMobile && (
+        <div className="mb-3 flex gap-2">
+          {/* existing buttons/tabs for Week / Month / Agenda stay as-is */}
+        </div>
+      )}
+
+      <Calendar
+        // ✅ unchanged timezone/localizer props stay exactly as they are now
+        localizer={localizer}
+        events={events}
+        startAccessor="start"
+        endAccessor="end"
+
+        // 🔽 responsive behavior
+        views={availableViews}
+        defaultView={defaultView}
+
+        // make agenda show a full week list
+        length={7}
+
+        // keep your existing props (min/max, step, components, messages, etc.)
+        {...otherCalendarProps}
+      />
+    </div>
+  );
+}
+
+
+(Optional, if you customize labels) ensure messages include “Agenda” label:
+
+const messages = {
+  agenda: "Agenda",
+  week: "Week",
+  month: "Month",
+  // ...keep your other i18n strings
+};
+// pass messages={messages} to <Calendar />
+
+
+QA checklist
+
+On desktop (>768px): toolbar shows Week/Month/Agenda; default is Week (unchanged).
+
+On mobile (≤768px): calendar mounts in Agenda view, only agenda list is available; no toolbar/view chips if they were custom.
+
+No changes to event times or timezone conversion.
+
+No DB calls or schema edits.
+
+Resizing the window switches views live (matchMedia listener).
+
+Notes:
+
+If your app uses a custom Toolbar for react-big-calendar, ensure it’s not rendered when isMobile is true (so users don’t see disabled view buttons).
+
+If you’re actually using FullCalendar somewhere else, the equivalent would be initialView: 'listWeek' on mobile and standard views on desktop, but this prompt targets the react-big-calendar instance shown in screenshots.
