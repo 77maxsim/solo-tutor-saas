@@ -79,6 +79,7 @@ interface FullCalendarEvent {
 }
 
 export default function Calendar() {
+  const [view, setView] = useState<string>('timeGridWeek');
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<string>('all');
   const [sessionForDetails, setSessionForDetails] = useState<SessionWithStudent | null>(null);
@@ -122,23 +123,6 @@ export default function Calendar() {
   const { tutorTimezone } = useTimezone();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Responsive view logic: mobile uses agenda, desktop allows all views
-  const availableViews = isMobile ? ['agenda'] : ['week', 'month', 'agenda'];
-  const defaultCalendarView = isMobile ? 'agenda' : 'week';
-  
-  // Update calendar view if mobile state changes
-  React.useEffect(() => {
-    if (isMobile && calendarView !== 'agenda') {
-      setCalendarView('agenda');
-      // Sync FullCalendar view
-      calendarRef.current?.getApi().changeView('listWeek');
-    } else if (!isMobile && calendarView === 'agenda' && defaultCalendarView !== 'agenda') {
-      setCalendarView(defaultCalendarView);
-      // Sync FullCalendar view
-      calendarRef.current?.getApi().changeView(defaultCalendarView === 'week' ? 'timeGridWeek' : 'dayGridMonth');
-    }
-  }, [isMobile, calendarView, defaultCalendarView]);
 
   // Add event listeners for session edit actions (works for both mobile and desktop)
   useEffect(() => {
@@ -824,13 +808,8 @@ export default function Calendar() {
     }
   };
 
-  // View toggle handlers - responsive: mobile stays in agenda view
+  // View toggle handlers
   const handleViewChange = (newView: 'week' | 'month' | 'agenda') => {
-    // Prevent view changes on mobile (mobile is locked to agenda view)
-    if (isMobile) {
-      return;
-    }
-    
     setCalendarView(newView);
     if (calendarRef.current) {
       let fullCalendarView = '';
@@ -845,26 +824,8 @@ export default function Calendar() {
           fullCalendarView = 'listWeek';
           break;
       }
+      setView(fullCalendarView);
       calendarRef.current.getApi().changeView(fullCalendarView);
-    }
-  };
-
-  // Get the current FullCalendar view based on responsive state
-  const getCurrentFullCalendarView = () => {
-    // Force agenda view on mobile
-    if (isMobile) {
-      return 'listWeek';
-    }
-    
-    switch (calendarView) {
-      case 'week':
-        return 'timeGridWeek';
-      case 'month':
-        return 'dayGridMonth';
-      case 'agenda':
-        return 'listWeek';
-      default:
-        return 'timeGridWeek';
     }
   };
 
@@ -1001,35 +962,33 @@ export default function Calendar() {
               Calendar
             </h1>
             
-            {/* View Toggle - hidden on mobile (mobile only shows agenda view) */}
-            {!isMobile && (
-              <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-                <Button
-                  variant={calendarView === 'week' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => handleViewChange('week')}
-                  className="text-xs"
-                >
-                  Week
-                </Button>
-                <Button
-                  variant={calendarView === 'month' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => handleViewChange('month')}
-                  className="text-xs"
-                >
-                  Month
-                </Button>
-                <Button
-                  variant={calendarView === 'agenda' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => handleViewChange('agenda')}
-                  className="text-xs"
-                >
-                  Agenda
-                </Button>
-              </div>
-            )}
+            {/* View Toggle */}
+            <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+              <Button
+                variant={calendarView === 'week' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => handleViewChange('week')}
+                className="text-xs"
+              >
+                Week
+              </Button>
+              <Button
+                variant={calendarView === 'month' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => handleViewChange('month')}
+                className="text-xs"
+              >
+                Month
+              </Button>
+              <Button
+                variant={calendarView === 'agenda' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => handleViewChange('agenda')}
+                className="text-xs"
+              >
+                Agenda
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -1118,7 +1077,7 @@ export default function Calendar() {
           <FullCalendar
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, luxonPlugin]}
-            initialView={getCurrentFullCalendarView()}
+            initialView={view}
             locale="en-gb"
             firstDay={1}
             timeZone={tutorTimezone || 'UTC'}
