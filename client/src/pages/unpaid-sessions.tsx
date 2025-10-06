@@ -23,6 +23,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { triggerEarningsConfetti } from "@/lib/confetti";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 
@@ -215,10 +216,8 @@ export default function UnpaidSessions() {
     },
   });
 
-  const handleMarkAsPaid = (sessionId: string, studentName: string) => {
-    if (window.confirm(`Mark overdue session with ${studentName} as paid?`)) {
-      markAsPaidMutation.mutate(sessionId);
-    }
+  const handleMarkAsPaid = (sessionId: string) => {
+    markAsPaidMutation.mutate(sessionId);
   };
 
   const handleMarkAllAsPaid = () => {
@@ -238,12 +237,9 @@ export default function UnpaidSessions() {
       return;
     }
 
-    const confirmMessage = `Mark all ${pastUnpaidSessions.length} past unpaid sessions as paid?`;
-    if (window.confirm(confirmMessage)) {
-      const sessionIds = pastUnpaidSessions.map(session => session.id);
-      console.log("Marking sessions as paid:", sessionIds);
-      markAllAsPaidMutation.mutate();
-    }
+    const sessionIds = pastUnpaidSessions.map(session => session.id);
+    console.log("Marking sessions as paid:", sessionIds);
+    markAllAsPaidMutation.mutate();
   };
 
   const toggleDateGroup = (date: string) => {
@@ -434,14 +430,27 @@ export default function UnpaidSessions() {
                 </p>
               </div>
               {totalSessions > 0 && (
-                <Button
-                  onClick={handleMarkAllAsPaid}
+                <ConfirmActionModal
+                  trigger={
+                    <Button
+                      disabled={markAllAsPaidMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      data-testid="button-mark-all-paid"
+                    >
+                      <Coins className="h-4 w-4 mr-2" />
+                      {markAllAsPaidMutation.isPending ? 'Processing...' : 'Mark All as Paid'}
+                    </Button>
+                  }
+                  title={`Mark all ${sessions.filter(s => {
+                    const now = dayjs.utc();
+                    return !s.paid && now.isAfter(s.session_end);
+                  }).length} past unpaid sessions as paid?`}
+                  description="This will mark all overdue sessions as paid and update your earnings dashboard."
+                  confirmText="Yes, mark as paid"
+                  cancelText="Cancel"
+                  onConfirm={handleMarkAllAsPaid}
                   disabled={markAllAsPaidMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Coins className="h-4 w-4 mr-2" />
-                  {markAllAsPaidMutation.isPending ? 'Processing...' : 'Mark All as Paid'}
-                </Button>
+                />
               )}
             </div>
           </CardHeader>
@@ -531,16 +540,26 @@ export default function UnpaidSessions() {
                               </div>
 
                               <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-green-600 border-green-200 hover:bg-green-50"
-                                  onClick={() => handleMarkAsPaid(session.id, session.student_name)}
+                                <ConfirmActionModal
+                                  trigger={
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-green-600 border-green-200 hover:bg-green-50"
+                                      disabled={markAsPaidMutation.isPending}
+                                      data-testid={`button-mark-paid-${session.id}`}
+                                    >
+                                      <Coins className="h-3 w-3 mr-1" />
+                                      Mark Paid
+                                    </Button>
+                                  }
+                                  title={`Mark overdue session with ${session.student_name} as paid?`}
+                                  description={`This will mark the session on ${formatDateGroup(new Date(session.session_start).toISOString().split('T')[0])} as paid.`}
+                                  confirmText="Yes, mark as paid"
+                                  cancelText="Cancel"
+                                  onConfirm={() => handleMarkAsPaid(session.id)}
                                   disabled={markAsPaidMutation.isPending}
-                                >
-                                  <Coins className="h-3 w-3 mr-1" />
-                                  Mark Paid
-                                </Button>
+                                />
                               </div>
                             </div>
                           </div>
