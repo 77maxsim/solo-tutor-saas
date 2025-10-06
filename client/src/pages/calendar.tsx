@@ -64,13 +64,26 @@ interface SessionWithStudent {
   recurrence_id?: string;
   status?: string;
   unassigned_name?: string;
+  isPastSession?: boolean;
+}
+
+// Extend Window interface for session prefill data
+declare global {
+  interface Window {
+    sessionPrefillData?: {
+      studentId?: string;
+      date?: string;
+      time?: string;
+      duration?: number;
+    };
+  }
 }
 
 interface FullCalendarEvent {
   id: string;
   title: string;
-  start: string;
-  end: string;
+  start: Date;
+  end: Date;
   backgroundColor?: string;
   borderColor?: string;
   textColor?: string;
@@ -311,8 +324,8 @@ export default function Calendar() {
       });
     });
     
-    const validEvents = [];
-    const skippedSessions = [];
+    const validEvents: FullCalendarEvent[] = [];
+    const skippedSessions: SessionWithStudent[] = [];
     const tutorTz = tutorTimezone || 'UTC';
     
     filteredSessions.forEach(session => {
@@ -362,7 +375,7 @@ export default function Calendar() {
         .filter(e => e.start.toISOString().includes('2025-06-23'))
         .map(e => ({
           title: e.title,
-          start: e.start.toLocaleString('en-US', { timeZone: tutorTz })
+          start: e.start.toLocaleString()
         })),
       skippedReasons: skippedSessions.map(s => ({
         id: s.id?.substring(0, 8) + '...',
@@ -380,7 +393,7 @@ export default function Calendar() {
           title: e.title,
           start: e.start,
           start_iso: e.start.toISOString(),
-          start_local: e.start.toLocaleString('en-US', { timeZone: tutorTz })
+          start_local: e.start.toLocaleString()
         }))
     });
     
@@ -407,7 +420,7 @@ export default function Calendar() {
     const durationMinutes = session.duration || 60;
     const earning = (durationMinutes / 60) * session.rate;
 
-    const { displayTime } = getSessionDisplayInfo(session, tutorTimezone || undefined);
+    const { displayTime } = getSessionDisplayInfo(session, tutorTimezone || 'UTC');
     const tooltipContent = `${session.student_name || 'Unassigned'}\n${displayTime}\n${durationMinutes} minutes\n${formatCurrency(earning, tutorCurrency)}`;
 
     // Apply faded styling for past sessions
@@ -564,7 +577,7 @@ export default function Calendar() {
       
       // Prevent any scroll-related events
       if (selectInfo.jsEvent.type === 'mousedown' || selectInfo.jsEvent.type === 'click') {
-        selectInfo.jsEvent.target?.addEventListener('scroll', (e) => e.preventDefault(), { once: true });
+        selectInfo.jsEvent.target?.addEventListener('scroll', (e: Event) => e.preventDefault(), { once: true });
       }
     }
     
@@ -1267,50 +1280,50 @@ export default function Calendar() {
         <SessionDetailsModal
           session={sessionForDetails}
           isOpen={showSessionDetailsModal}
-          onClose={() => setShowSessionDetailsModal(false)}
-          onUpdate={() => {
-            queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
-          }}
-          onDelete={() => {
+          onClose={() => {
+            setShowSessionDetailsModal(false);
+            setSessionForDetails(null);
             queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
           }}
         />
       )}
 
       {/* Schedule Session Modal */}
-      <ScheduleSessionModal
-        open={showScheduleModal}
-        onOpenChange={(open) => {
-          setShowScheduleModal(open);
-          if (!open) {
-            setEditSession(null);
-            setLoadingSlot(null); // Clear loading indicator when modal closes
-            // Force calendar to clear any selection state
-            if (calendarRef.current) {
-              calendarRef.current.getApi().unselect();
+      {showScheduleModal && (
+        <ScheduleSessionModal
+          open={showScheduleModal}
+          onOpenChange={(open) => {
+            setShowScheduleModal(open);
+            if (!open) {
+              setEditSession(null);
+              setLoadingSlot(null);
+              if (calendarRef.current) {
+                calendarRef.current.getApi().unselect();
+              }
             }
-          }
-        }}
-        editSession={null}
-        editMode={false}
-      />
+          }}
+          editSession={null}
+          editMode={false}
+        />
+      )}
 
       {/* Edit Session Modal */}
-      <EditSessionModal
-        open={showEditModal}
-        onOpenChange={(open) => {
-          setShowEditModal(open);
-          if (!open) {
-            setEditSession(null);
-            setIsEditingRecurring(false);
-          }
-        }}
-        session={editSession}
-        isRecurring={isEditingRecurring}
-      />
+      {showEditModal && (
+        <EditSessionModal
+          open={showEditModal}
+          onOpenChange={(open) => {
+            setShowEditModal(open);
+            if (!open) {
+              setEditSession(null);
+              setIsEditingRecurring(false);
+            }
+          }}
+          session={editSession}
+          isRecurring={isEditingRecurring}
+        />
+      )}
 
       {/* Session Details Modal */}
-      {console.log('🔍 Modal render check:', { sessionForDetails: !!sessionForDetails, showSessionDetailsModal, sessionData: sessionForDetails })}
       {sessionForDetails && (
         <SessionDetailsModal
           session={sessionForDetails as any}
@@ -1324,7 +1337,6 @@ export default function Calendar() {
       )}
 
       {/* Pending Requests Modal */}
-      {console.log('🎭 About to render PendingRequestsModal with open:', showPendingRequestsModal, 'highlightSessionId:', highlightedSessionId)}
       <PendingRequestsModal
         open={showPendingRequestsModal}
         onOpenChange={(open) => {
