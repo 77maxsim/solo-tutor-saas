@@ -171,6 +171,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/telegram/status", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+
+      const { data, error } = await supabase
+        .from('tutors')
+        .select('telegram_chat_id')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching telegram status:', error);
+        return res.status(500).json({ error: "Failed to fetch subscription status" });
+      }
+
+      res.json({ 
+        subscribed: !!data?.telegram_chat_id,
+        telegram_chat_id: data?.telegram_chat_id 
+      });
+    } catch (error) {
+      console.error('Telegram status error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
