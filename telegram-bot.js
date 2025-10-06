@@ -13,7 +13,13 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const bot = new TelegramBot(botToken, { polling: true });
 
-console.log("🤖 TutorTrack Telegram bot is running...");
+bot.getMe().then((botInfo) => {
+  console.log("🤖 TutorTrack Telegram bot is running...");
+  console.log(`📱 Bot username: @${botInfo.username}`);
+  console.log(`🔗 Bot link: https://t.me/${botInfo.username}`);
+}).catch((error) => {
+  console.error("Error getting bot info:", error);
+});
 
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
