@@ -15,10 +15,6 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 36583
-externalPort = 3001
-
-[[ports]]
 localPort = 39143
 externalPort = 3002
 
@@ -46,3 +42,12 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Telegram Bot"
+mode = "sequential"
+author = 43356685
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node telegram-bot.js"
