@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
-import { Loader2, Save, User } from "lucide-react";
+import { Loader2, Save, User, Send, CheckCircle2, ExternalLink } from "lucide-react";
 import { ALL_TIMEZONES, TIMEZONE_GROUPS, getBrowserTimezone } from "@/lib/timezones";
 
 const profileSchema = z.object({
@@ -44,6 +44,20 @@ export default function Profile() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const { data: telegramStatus, isLoading: isTelegramLoading } = useQuery({
+    queryKey: ['telegram-status'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const response = await fetch(`/api/telegram/status?userId=${user.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch telegram status');
+      }
+      return response.json();
+    },
+  });
 
   // Fetch current tutor profile
   const { data: tutorProfile, isLoading: isProfileLoading, error } = useQuery({
@@ -520,6 +534,81 @@ export default function Profile() {
                   </div>
                 </form>
               </Form>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Telegram Notifications</CardTitle>
+              <CardDescription>
+                Get daily summaries of your earnings and upcoming sessions via Telegram.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isTelegramLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : telegramStatus?.subscribed ? (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-medium text-green-900 dark:text-green-100">
+                        You're subscribed to daily updates!
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                        You'll receive a notification every day at 9 PM (your local time) with:
+                      </p>
+                      <ul className="text-sm text-green-700 dark:text-green-300 mt-2 space-y-1 list-disc list-inside">
+                        <li>Today's earnings summary</li>
+                        <li>Tomorrow's scheduled sessions</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <Send className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-medium text-blue-900 dark:text-blue-100">
+                        Subscribe to daily updates
+                      </p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                        Get notified at 9 PM every day with your earnings summary and tomorrow's schedule.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">
+                      To subscribe:
+                    </p>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                      <li>Open Telegram and search for our bot</li>
+                      <li>Start a chat with the bot</li>
+                      <li>Send your email address ({tutorProfile?.email})</li>
+                      <li>You'll receive a confirmation message</li>
+                    </ol>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      data-testid="button-telegram-bot"
+                      onClick={() => {
+                        window.open('https://t.me/YOUR_BOT_USERNAME', '_blank');
+                      }}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Open Telegram Bot
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Note: Replace YOUR_BOT_USERNAME with your actual bot username
+                    </p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
