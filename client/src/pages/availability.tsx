@@ -45,7 +45,31 @@ export default function AvailabilityPage() {
   const [tutorId, setTutorId] = useState<string | null>(null);
   const { tutorTimezone } = useTimezone();
 
-  // Fetch current tutor ID
+  // Cleanup past booking slots
+  const cleanupPastSlots = async () => {
+    try {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) return;
+
+      const now = new Date().toISOString();
+      
+      const { error } = await supabase
+        .from('booking_slots')
+        .delete()
+        .eq('tutor_id', tutorId)
+        .lt('end_time', now);
+
+      if (error) {
+        console.error('Error cleaning up past slots:', error);
+      } else {
+        console.log('Past booking slots cleaned up successfully');
+      }
+    } catch (error) {
+      console.error('Error in cleanup:', error);
+    }
+  };
+
+  // Fetch current tutor ID and cleanup past slots
   useEffect(() => {
     const fetchTutorId = async () => {
       try {
@@ -64,6 +88,9 @@ export default function AvailabilityPage() {
         }
 
         setTutorId(tutor.id);
+        
+        // Clean up past slots after getting tutor ID
+        await cleanupPastSlots();
       } catch (error) {
         console.error('Error:', error);
       }
@@ -74,7 +101,7 @@ export default function AvailabilityPage() {
 
 
 
-  // Fetch booking slots for the current tutor
+  // Fetch booking slots for the current tutor (only future slots)
   const { data: bookingSlots, isLoading, error } = useQuery({
     queryKey: ["booking-slots"],
     queryFn: async () => {
@@ -83,10 +110,13 @@ export default function AvailabilityPage() {
         throw new Error("User not authenticated or tutor record not found");
       }
 
+      const now = new Date().toISOString();
+
       const { data, error } = await supabase
         .from("booking_slots")
         .select("*")
         .eq("tutor_id", tutorId)
+        .gte("end_time", now)
         .order("start_time", { ascending: true });
 
       if (error) {
