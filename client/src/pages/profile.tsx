@@ -597,15 +597,12 @@ export default function Profile() {
                       className="mt-3"
                       data-testid="button-telegram-bot"
                       onClick={() => {
-                        window.open('https://t.me/YOUR_BOT_USERNAME', '_blank');
+                        window.open('https://t.me/classter_daily_bot', '_blank');
                       }}
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Open Telegram Bot
                     </Button>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Note: Replace YOUR_BOT_USERNAME with your actual bot username
-                    </p>
                   </div>
                 </div>
               )}
