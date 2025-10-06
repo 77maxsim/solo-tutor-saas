@@ -81,6 +81,18 @@ TutorTrack is a comprehensive tutoring management platform built with React and 
 
 ## Changelog
 
+### October 6, 2025: Telegram Bot Integration - COMPLETED
+- **Daily Notifications**: Created telegram-notifications.js scheduler that sends 9 PM notifications with today's earnings and tomorrow's schedule
+- **Real-time Booking Alerts**: Extended telegram-bot.js to send instant notifications when students book sessions through availability feature
+- **Telegram Subscription**: Added subscription bot (telegram-bot.js) allowing tutors to subscribe via email through @classter_daily_bot
+- **Profile Integration**: Added Telegram subscription section to Profile page with status display and bot link
+- **Supabase Real-time Integration**: Added real-time listener for new sessions with status='pending' using Supabase subscriptions
+- **Timezone-Aware Notifications**: All notifications (daily & booking) display date/time in tutor's local timezone using existing timezone logic
+- **Rich Notification Format**: Messages include student name, session date/time, duration, expected earnings, and relevant context
+- **Subscriber-Only**: All notifications sent only to tutors who have subscribed to the Telegram bot
+- **API Endpoint**: Created /api/telegram/status endpoint to check tutor's subscription status
+- **Unified Bot Script**: All Telegram functionality consolidated in single telegram-bot.js file for easier management
+
 ### September 17, 2025: Student Star/Favorite System Implementation - COMPLETED
 - **Star/Favorite Functionality**: Added clickable star buttons next to each student name allowing tutors to mark favorite students
 - **Favorites-First Sorting**: Starred students automatically appear at the top of the student list while preserving chosen sort order (earnings, name, sessions, etc.)
