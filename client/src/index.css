@@ -881,6 +881,64 @@
       @apply text-xs;
     }
   }
+
+  /* Mobile-specific styles for agenda/list view */
+  @media (max-width: 768px) {
+    .fc-list {
+      @apply bg-white dark:bg-gray-800;
+    }
+
+    .fc-list-table {
+      @apply w-full;
+    }
+
+    .fc-list-day-cushion {
+      @apply bg-gray-100 dark:bg-gray-800 p-3 border-b border-gray-200 dark:border-gray-700;
+    }
+
+    .fc-list-day-text {
+      @apply text-sm font-semibold text-gray-900 dark:text-white;
+    }
+
+    .fc-list-day-side-text {
+      @apply text-xs text-gray-500 dark:text-gray-400;
+    }
+
+    .fc-list-event {
+      @apply hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors;
+    }
+
+    .fc-list-event:hover td {
+      @apply bg-gray-50 dark:bg-gray-700;
+    }
+
+    .fc-list-event-dot {
+      @apply w-2 h-2 rounded-full mr-2;
+    }
+
+    .fc-list-event-time {
+      @apply text-xs font-medium text-gray-600 dark:text-gray-300 px-3 py-3;
+      min-width: 70px;
+    }
+
+    .fc-list-event-title {
+      @apply text-sm text-gray-900 dark:text-white px-3 py-3;
+    }
+
+    /* Make list events more touch-friendly on mobile */
+    .fc-list-event td {
+      @apply py-3 border-b border-gray-100 dark:border-gray-700;
+    }
+
+    /* Improve spacing and readability */
+    .fc-list-empty {
+      @apply p-8 text-center text-gray-500 dark:text-gray-400 text-sm;
+    }
+
+    .fc-list-empty-cushion {
+      @apply py-8;
+    }
+  }
 }
 
 /* Custom scrollbar styles */

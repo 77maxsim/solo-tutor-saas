@@ -36,7 +36,6 @@ import timezone from 'dayjs/plugin/timezone';
 // Configure dayjs plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
-import MobileCalendarView from '@/components/MobileCalendarView';
 import { SessionDetailsModal } from '@/components/modals/session-details-modal';
 import { ScheduleSessionModal } from '@/components/modals/schedule-session-modal';
 import { EditSessionModal } from '@/components/modals/edit-session-modal';
@@ -123,6 +122,14 @@ export default function Calendar() {
   const { tutorTimezone } = useTimezone();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Set initial view to listWeek for mobile
+  useEffect(() => {
+    if (isMobile && view !== 'listWeek') {
+      setView('listWeek');
+      setCalendarView('agenda');
+    }
+  }, [isMobile]);
 
   // Add event listeners for session edit actions (works for both mobile and desktop)
   useEffect(() => {
@@ -867,45 +874,143 @@ export default function Calendar() {
   }
 
   if (isMobile) {
-
     return (
-      <>
-        <MobileCalendarView
-          sessions={filteredSessions}
-          onSelectSession={(session) => {
-            console.log('📱 Mobile session selected:', session);
-            console.log('📱 Session status:', session.status);
-            console.log('📱 Current modal states before:', {
-              showSessionDetailsModal,
-              showPendingRequestsModal,
-              sessionForDetails: !!sessionForDetails
-            });
-            
-            // For pending sessions, open pending modal instead
-            if (session.status === 'pending') {
-              console.log('🟠 Detected pending session, opening pending modal with ID:', session.id);
-              setHighlightedSessionId(session.id);
-              setShowPendingRequestsModal(true);
-              return;
+      <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+        <div className="p-4 h-full flex flex-col">
+          {/* Mobile Header */}
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5" />
+              Calendar
+            </h1>
+            <div className="flex items-center gap-2">
+              {/* Pending Requests Button */}
+              {pendingCount > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPendingRequestsModal(true)}
+                  className="relative"
+                  data-testid="button-pending-requests"
+                >
+                  <Clock className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Pending</span>
+                  <Badge className="ml-1 bg-orange-500 text-white" data-testid="badge-pending-count">{pendingCount}</Badge>
+                </Button>
+              )}
+
+              {/* Schedule Session Button */}
+              <Button 
+                size="sm" 
+                onClick={handleScheduleSession}
+                data-testid="button-schedule-session"
+              >
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Schedule</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Student Filter */}
+          <div className="mb-4">
+            <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+              <SelectTrigger className="w-full" data-testid="select-student-filter">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter by student" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Students</SelectItem>
+                {uniqueStudents.map((student) => (
+                  <SelectItem key={student.id} value={student.id}>
+                    {student.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrevious}
+              data-testid="button-previous"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleToday}
+              data-testid="button-today"
+            >
+              Today
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNext}
+              data-testid="button-next"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Calendar - Agenda View */}
+          <div className="flex-1 calendar-container bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, luxonPlugin]}
+              initialView="listWeek"
+              locale="en-gb"
+              firstDay={1}
+              timeZone={tutorTimezone || 'UTC'}
+              initialDate={new Date()}
+              validRange={{
+                start: '2020-01-01',
+                end: '2030-12-31'
+              }}
+              events={events}
+              eventDidMount={(info) => {
+                const session = info.event.extendedProps;
+                
+                // Apply faded styling to past sessions
+                if (session.isPastSession) {
+                  info.el.style.opacity = '0.5';
+                  info.el.style.filter = 'grayscale(50%)';
+                }
+              }}
+              editable={false}
+              selectable={false}
+              eventClick={handleEventClick}
+              eventContent={renderEventContent}
+              height="100%"
+              headerToolbar={false}
+              nowIndicator={true}
+              listDayFormat={{ weekday: 'long', day: 'numeric', month: 'long' }}
+              listDaySideFormat={false}
+              noEventsContent="No sessions scheduled"
+              datesSet={handleDatesSet}
+            />
+          </div>
+        </div>
+
+        {/* Schedule Session Modal */}
+        <ScheduleSessionModal
+          open={showScheduleModal}
+          onOpenChange={(open) => {
+            setShowScheduleModal(open);
+            if (!open) {
+              setEditSession(null);
+              setLoadingSlot(null);
             }
-            
-            // For regular sessions, open session details modal
-            console.log('📱 Opening session details modal for regular session');
-            setSessionForDetails(session);
-            setShowSessionDetailsModal(true);
-            
-            // Log state after setting
-            setTimeout(() => {
-              console.log('📱 Modal states after update:', {
-                showSessionDetailsModal: true,
-                sessionForDetails: session
-              });
-            }, 10);
           }}
-          tutorCurrency={tutorCurrency}
+          editSession={null}
+          editMode={false}
         />
 
-        {/* Mobile Edit Session Modal */}
+        {/* Edit Session Modal */}
         <EditSessionModal
           open={showEditModal}
           onOpenChange={(open) => {
@@ -919,25 +1024,22 @@ export default function Calendar() {
           isRecurring={isEditingRecurring}
         />
 
-        {/* Mobile Session Details Modal */}
-        {console.log('📱 Mobile modal render check:', { sessionForDetails: !!sessionForDetails, showSessionDetailsModal, sessionData: sessionForDetails })}
+        {/* Session Details Modal */}
         {sessionForDetails && (
           <SessionDetailsModal
             session={sessionForDetails as any}
             isOpen={showSessionDetailsModal}
             onClose={() => {
-              console.log('📱 Closing mobile session details modal');
               setShowSessionDetailsModal(false);
               setSessionForDetails(null);
             }}
           />
         )}
 
-        {/* Mobile Pending Requests Modal */}
+        {/* Pending Requests Modal */}
         <PendingRequestsModal
           open={showPendingRequestsModal}
           onOpenChange={(open) => {
-            console.log('📱 Mobile pending modal state changing to:', open);
             setShowPendingRequestsModal(open);
             if (!open) {
               setHighlightedSessionId(undefined);
@@ -945,7 +1047,7 @@ export default function Calendar() {
           }}
           highlightSessionId={highlightedSessionId}
         />
-      </>
+      </div>
     );
   }
 
