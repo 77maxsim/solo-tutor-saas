@@ -474,9 +474,9 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
                     </FormControl>
                     <SelectContent>
                       {isStudentsLoading ? (
-                        <SelectItem value="" disabled>Loading students...</SelectItem>
+                        <SelectItem value="loading" disabled>Loading students...</SelectItem>
                       ) : students.length === 0 ? (
-                        <SelectItem value="" disabled>No students found</SelectItem>
+                        <SelectItem value="no-students" disabled>No students found</SelectItem>
                       ) : (
                         students.map((student) => (
                           <SelectItem key={student.id} value={student.id}>
