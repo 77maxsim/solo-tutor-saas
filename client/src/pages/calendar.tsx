@@ -1024,18 +1024,20 @@ export default function Calendar() {
         />
 
         {/* Edit Session Modal */}
-        <EditSessionModal
-          open={showEditModal}
-          onOpenChange={(open) => {
-            setShowEditModal(open);
-            if (!open) {
-              setEditSession(null);
-              setIsEditingRecurring(false);
-            }
-          }}
-          session={editSession}
-          isRecurring={isEditingRecurring}
-        />
+        {showEditModal && (
+          <EditSessionModal
+            open={showEditModal}
+            onOpenChange={(open) => {
+              setShowEditModal(open);
+              if (!open) {
+                setEditSession(null);
+                setIsEditingRecurring(false);
+              }
+            }}
+            session={editSession}
+            isRecurring={isEditingRecurring}
+          />
+        )}
 
         {/* Session Details Modal */}
         {sessionForDetails && (
