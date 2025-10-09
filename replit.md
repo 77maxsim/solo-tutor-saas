@@ -28,8 +28,9 @@ Preferred communication style: Simple, everyday language.
     - **Real-time Updates**: Supabase subscriptions combined with polling for robust real-time data synchronization across components.
     - **Earnings Calculation**: Shared logic for calculating earnings and generating financial statistics.
     - **File Storage**: Supabase Storage for avatar uploads with RLS.
+    - **Multi-Currency Support**: Currency conversion service using ExchangeRate-API with 24-hour caching for admin dashboard metrics.
 - **Notifications**: Telegram bot integration for daily summaries, booking alerts, and broadcast messages to subscribed tutors.
-- **Admin Dashboard**: Comprehensive dashboard with KPIs, analytics charts (e.g., weekly earnings trend), and top tutors performance metrics.
+- **Admin Dashboard**: Comprehensive dashboard with KPIs, analytics charts (e.g., weekly earnings trend), top tutors performance metrics, and multi-currency earnings conversion to USD.
 - **Student Management**: Features like favoriting students and an optimized student list display.
 - **Session Management**: Smart rate prefill in session modals and bulk actions for marking sessions as paid.
 
@@ -54,3 +55,24 @@ Preferred communication style: Simple, everyday language.
 - **Recharts**: For charting and data visualization (e.g., monthly earnings trend).
 - **Day.js**: Lightweight date manipulation library.
 - **Telegram Bot API**: For sending notifications and broadcast messages.
+- **ExchangeRate-API**: Currency conversion service for admin dashboard (free tier: 1,500 requests/month).
+
+## Recent Changes
+
+### October 9, 2025: Admin Dashboard with Enhanced Security & Multi-Currency Support - COMPLETED
+- **Admin Dashboard**: Created comprehensive admin dashboard with KPI cards (total tutors, active students, sessions this week, total earnings, unpaid sessions)
+- **Analytics Charts**: Added weekly earnings trend chart and top tutors table showing performance metrics
+- **Multi-Currency Conversion**: Implemented automatic currency conversion to USD for all admin dashboard metrics
+  - Created currency conversion service using ExchangeRate-API with 24-hour caching
+  - All tutor earnings (UAH, RMB, CNY, etc.) automatically converted to USD in admin views
+  - Individual tutors continue to see earnings in their own currency
+  - Admin metrics, earnings trends, and top tutors rankings all display in normalized USD
+  - UI clearly indicates conversion with "(USD)" labels and "All currencies converted" notes
+- **Telegram Broadcast**: Implemented broadcast messaging feature to send messages to all subscribed users via Telegram bot
+- **JWT Authentication**: Implemented secure JWT-based authentication middleware that validates Supabase access tokens
+- **Authorization Layer**: Added admin authorization middleware checking is_admin status before allowing admin operations
+- **Security Enhancement**: Replaced insecure client-supplied userId parameters with server-side JWT validation to prevent privilege escalation
+- **Protected Endpoints**: All admin API routes (metrics, earnings-trend, top-tutors, broadcast) now require both valid JWT and admin role
+- **Frontend Security**: Updated queryClient to automatically include Authorization: Bearer header in all admin API requests
+- **Dual Access**: Admin account (77maxsim@gmail.com) has access to both admin dashboard and regular tutor functionality
+- **Bot Lifecycle**: Integrated Telegram bot into main server with graceful error handling for 409 polling conflicts during development
