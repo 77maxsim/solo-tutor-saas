@@ -1,48 +1,33 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Users, DollarSign, Calendar, AlertCircle, TrendingUp, Send } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function AdminDashboard() {
   const { toast } = useToast();
-  const [userId, setUserId] = useState<string | null>(null);
   const [broadcastMessage, setBroadcastMessage] = useState("");
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserId(user?.id || null);
-    });
-  }, []);
-
   const { data: metrics, isLoading: metricsLoading } = useQuery<any>({
-    queryKey: ['/api/admin/metrics', userId],
-    enabled: !!userId,
+    queryKey: ['/api/admin/metrics'],
     refetchInterval: 30000,
   });
 
   const { data: earningsTrend } = useQuery<any[]>({
-    queryKey: ['/api/admin/earnings-trend', userId, 'week'],
-    enabled: !!userId,
+    queryKey: ['/api/admin/earnings-trend?period=week'],
   });
 
   const { data: topTutors } = useQuery<any[]>({
-    queryKey: ['/api/admin/top-tutors', userId],
-    enabled: !!userId,
+    queryKey: ['/api/admin/top-tutors'],
   });
 
   const broadcastMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await fetch('/api/admin/broadcast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, message }),
-      });
+      const response = await apiRequest('POST', '/api/admin/broadcast', { message });
       return response.json();
     },
     onSuccess: (data: any) => {
@@ -60,14 +45,6 @@ export default function AdminDashboard() {
       });
     },
   });
-
-  if (!userId) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
 
   if (metricsLoading) {
     return (

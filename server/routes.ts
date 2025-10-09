@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { createClient } from "@supabase/supabase-js";
 import multer from "multer";
@@ -9,6 +9,64 @@ const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+// Authentication middleware to validate Supabase JWT token
+async function authenticateUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const authHeader = req.headers.authorization;
+    console.log(`🔐 Auth attempt for ${req.path}, header present: ${!!authHeader}`);
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log(`❌ No valid Authorization header for ${req.path}`);
+      return res.status(401).json({ error: "No authentication token provided" });
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    
+    // Validate the JWT token with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.log(`❌ Invalid token for ${req.path}:`, error);
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    console.log(`✅ Authenticated user ${user.email} for ${req.path}`);
+    
+    // Attach user to request for use in route handlers
+    (req as any).user = user;
+    next();
+  } catch (error) {
+    console.error("Authentication error:", error);
+    return res.status(401).json({ error: "Authentication failed" });
+  }
+}
+
+// Admin authorization middleware - must be used after authenticateUser
+async function authorizeAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = (req as any).user;
+    if (!user) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    // Check if user has admin privileges
+    const { data: tutor, error } = await supabase
+      .from('tutors')
+      .select('is_admin')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error || !tutor?.is_admin) {
+      return res.status(403).json({ error: "Forbidden - Admin access required" });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Authorization error:", error);
+    return res.status(403).json({ error: "Authorization failed" });
+  }
+}
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -200,24 +258,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin endpoints - check if user is admin first
-  app.get("/api/admin/metrics", async (req, res) => {
+  app.get("/api/admin/metrics", authenticateUser, authorizeAdmin, async (req, res) => {
     try {
-      const userId = req.query.userId as string;
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-
-      // Verify admin status
-      const { data: tutor } = await supabase
-        .from('tutors')
-        .select('is_admin')
-        .eq('user_id', userId)
-        .single();
-
-      if (!tutor?.is_admin) {
-        return res.status(403).json({ error: "Forbidden - Admin access required" });
-      }
-
       // Get metrics
       const now = new Date();
       const startOfWeek = new Date(now);
@@ -301,25 +343,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Get earnings trend data
-  app.get("/api/admin/earnings-trend", async (req, res) => {
+  app.get("/api/admin/earnings-trend", authenticateUser, authorizeAdmin, async (req, res) => {
     try {
-      const userId = req.query.userId as string;
       const period = (req.query.period as string) || 'week'; // week or month
-
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-
-      const { data: tutor } = await supabase
-        .from('tutors')
-        .select('is_admin')
-        .eq('user_id', userId)
-        .single();
-
-      if (!tutor?.is_admin) {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-
       const now = new Date();
       let startDate: Date;
       
@@ -363,23 +389,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Get top tutors
-  app.get("/api/admin/top-tutors", async (req, res) => {
+  app.get("/api/admin/top-tutors", authenticateUser, authorizeAdmin, async (req, res) => {
     try {
-      const userId = req.query.userId as string;
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-
-      const { data: tutor } = await supabase
-        .from('tutors')
-        .select('is_admin')
-        .eq('user_id', userId)
-        .single();
-
-      if (!tutor?.is_admin) {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-
       // Get all sessions with tutor info
       const { data: sessions } = await supabase
         .from('sessions')
@@ -427,22 +438,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Telegram broadcast
-  app.post("/api/admin/broadcast", async (req, res) => {
+  app.post("/api/admin/broadcast", authenticateUser, authorizeAdmin, async (req, res) => {
     try {
-      const { userId, message } = req.body;
+      const { message } = req.body;
       
-      if (!userId || !message) {
-        return res.status(400).json({ error: "User ID and message are required" });
-      }
-
-      const { data: tutor } = await supabase
-        .from('tutors')
-        .select('is_admin')
-        .eq('user_id', userId)
-        .single();
-
-      if (!tutor?.is_admin) {
-        return res.status(403).json({ error: "Forbidden" });
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
       }
 
       // Get all tutors with telegram subscriptions

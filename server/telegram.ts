@@ -16,9 +16,22 @@ if (!botToken || !supabaseUrl || !supabaseKey) {
 }
 
 const supabase = createClient(supabaseUrl!, supabaseKey!);
-const bot = new TelegramBot(botToken!, { polling: true });
 
+// Create bot without polling initially
+let bot: TelegramBot | null = null;
 const sentNotifications = new Set<string>();
+
+// Cleanup function to stop bot polling
+export function cleanupTelegram() {
+  if (bot) {
+    try {
+      bot.stopPolling();
+      console.log("🛑 Telegram bot polling stopped");
+    } catch (error) {
+      console.error("Error stopping bot:", error);
+    }
+  }
+}
 
 function formatCurrency(amount: number, currency: string = 'USD'): string {
   return new Intl.NumberFormat('en-US', {
@@ -102,6 +115,11 @@ async function getTomorrowSessions(tutorId: number, timezone: string) {
 }
 
 async function sendDailyNotification(tutor: any) {
+  if (!bot) {
+    console.warn('⚠️ Cannot send daily notification - bot not initialized');
+    return;
+  }
+
   try {
     const { id, telegram_chat_id, timezone, currency, time_format, full_name } = tutor;
     
@@ -180,6 +198,11 @@ function resetDailyCache() {
 }
 
 async function sendBookingNotification(session: any) {
+  if (!bot) {
+    console.warn('⚠️ Cannot send booking notification - bot not initialized');
+    return;
+  }
+
   try {
     const { data: tutor, error: tutorError } = await supabase
       .from('tutors')
@@ -216,6 +239,11 @@ async function sendBookingNotification(session: any) {
 }
 
 export async function sendBroadcast(message: string, tutors: any[]) {
+  if (!bot) {
+    console.warn('⚠️ Cannot send broadcast - bot not initialized');
+    return { success: false, sent: 0, failed: tutors.length };
+  }
+
   let sent = 0;
   let failed = 0;
 
@@ -242,6 +270,19 @@ export function initializeTelegram() {
     console.warn("⚠️ Telegram bot not initialized - missing environment variables");
     return;
   }
+
+  // Stop existing bot instance if any
+  if (bot) {
+    try {
+      bot.stopPolling();
+      console.log("🛑 Stopped existing Telegram bot instance");
+    } catch (error) {
+      console.error("Error stopping existing bot:", error);
+    }
+  }
+
+  // Create new bot instance with polling
+  bot = new TelegramBot(botToken!, { polling: true });
 
   bot.getMe().then((botInfo) => {
     console.log("🤖 TutorTrack Telegram bot is running...");
@@ -283,7 +324,12 @@ export function initializeTelegram() {
     }
   });
 
-  bot.on('polling_error', (error) => {
+  bot.on('polling_error', (error: any) => {
+    // Ignore 409 conflicts during development (happens when server restarts)
+    if (error.response?.statusCode === 409) {
+      console.warn('⚠️ Telegram polling conflict (another instance running) - this is normal during development restarts');
+      return;
+    }
     console.error('Polling error:', error);
   });
 
