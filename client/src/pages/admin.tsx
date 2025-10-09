@@ -108,7 +108,7 @@ export default function AdminDashboard() {
 
         <Card data-testid="card-total-earnings">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Earnings (USD)</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -116,7 +116,7 @@ export default function AdminDashboard() {
               {formatCurrency(metrics?.totalEarnings || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {metrics?.unpaidSessions || 0} unpaid sessions
+              {metrics?.unpaidSessions || 0} unpaid sessions • All currencies converted
             </p>
           </CardContent>
         </Card>
@@ -153,8 +153,8 @@ export default function AdminDashboard() {
 
         <Card data-testid="card-earnings-trend">
           <CardHeader>
-            <CardTitle>Earnings Trend</CardTitle>
-            <CardDescription>Last 7 days</CardDescription>
+            <CardTitle>Earnings Trend (USD)</CardTitle>
+            <CardDescription>Last 7 days • All currencies converted to USD</CardDescription>
           </CardHeader>
           <CardContent>
             {earningsTrend && earningsTrend.length > 0 ? (
@@ -185,8 +185,8 @@ export default function AdminDashboard() {
       {/* Top Tutors */}
       <Card data-testid="card-top-tutors">
         <CardHeader>
-          <CardTitle>Top Tutors by Earnings</CardTitle>
-          <CardDescription>Based on paid sessions</CardDescription>
+          <CardTitle>Top Tutors by Earnings (USD)</CardTitle>
+          <CardDescription>Based on paid sessions • All currencies converted to USD</CardDescription>
         </CardHeader>
         <CardContent>
           {topTutors && topTutors.length > 0 ? (
