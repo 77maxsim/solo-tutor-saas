@@ -50,12 +50,3 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Telegram Bot"
-mode = "sequential"
-author = 43356685
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "node telegram-bot.js"
