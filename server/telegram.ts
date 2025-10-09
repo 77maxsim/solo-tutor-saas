@@ -215,6 +215,28 @@ async function sendBookingNotification(session: any) {
   }
 }
 
+export async function sendBroadcast(message: string, tutors: any[]) {
+  let sent = 0;
+  let failed = 0;
+
+  for (const tutor of tutors) {
+    try {
+      await bot.sendMessage(
+        tutor.telegram_chat_id, 
+        `📢 *Announcement from TutorTrack*\n\n${message}`,
+        { parse_mode: 'Markdown' }
+      );
+      console.log(`✅ Broadcast sent to ${tutor.full_name}`);
+      sent++;
+    } catch (error) {
+      console.error(`❌ Failed to send broadcast to ${tutor.full_name}:`, error);
+      failed++;
+    }
+  }
+
+  return { success: true, sent, failed };
+}
+
 export function initializeTelegram() {
   if (!botToken || !supabaseUrl || !supabaseKey) {
     console.warn("⚠️ Telegram bot not initialized - missing environment variables");

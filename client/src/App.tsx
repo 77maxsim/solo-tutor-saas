@@ -24,6 +24,7 @@ import Activity from "@/pages/activity";
 import UpcomingSessions from "./pages/upcoming-sessions";
 import UnpaidSessions from "./pages/unpaid-sessions";
 import Availability from "./pages/availability";
+import Admin from "./pages/admin";
 import NotFound from "./pages/not-found";
 import AuthPage from "./pages/AuthPage.tsx";
 import AuthCallback from "./pages/AuthCallback.tsx";
@@ -490,6 +491,55 @@ const ProtectedAvailability = () => {
   return user ? <Availability /> : null;
 };
 
+const ProtectedAdmin = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
+  const [location, setLocation] = useLocation();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        setAuthReady(true);
+      }
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (isPublicPath()) return;
+    
+    const mustReset = localStorage.getItem('pendingPasswordReset') === '1';
+    if (mustReset && location !== '/reset-password') {
+      setLocation('/reset-password', { replace: true });
+      return;
+    }
+    
+    if (!user) {
+      setLocation('/auth', { replace: true });
+    }
+  }, [user, authReady, location, setLocation]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+      </div>
+    );
+  }
+
+  return user ? <Admin /> : null;
+};
+
 function Router() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -554,6 +604,7 @@ function Router() {
       <Route path="/upcoming-sessions" component={ProtectedUpcomingSessions} />
       <Route path="/unpaid-sessions" component={UnpaidSessions} />
       <Route path="/availability" component={ProtectedAvailability} />
+      <Route path="/admin" component={ProtectedAdmin} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -617,6 +668,8 @@ function AppLayout() {
         return "Upcoming Sessions";
       case "/availability":
         return "Availability";
+      case "/admin":
+        return "Admin Dashboard";
       default:
         return "TutorTrack";
     }

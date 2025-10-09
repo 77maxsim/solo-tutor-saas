@@ -16,7 +16,8 @@ import {
   GraduationCap,
   Plus,
   LogOut,
-  Settings
+  Settings,
+  Shield
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -62,7 +63,7 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
     }
   };
 
-  // Fetch tutor profile data including avatar
+  // Fetch tutor profile data including avatar and admin status
   const { data: tutorProfile } = useQuery({
     queryKey: ['tutor-profile-sidebar'],
     queryFn: async () => {
@@ -71,7 +72,7 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
 
       const { data, error } = await supabase
         .from('tutors')
-        .select('id, full_name, email, avatar_url')
+        .select('id, full_name, email, avatar_url, is_admin')
         .eq('user_id', user.id)
         .single();
 
@@ -173,6 +174,33 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
             </Link>
           );
         })}
+
+        {/* Admin Dashboard Link - Only for Admin Users */}
+        {tutorProfile?.is_admin && (
+          <Link href="/admin">
+            <div
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 group hover-lift relative overflow-hidden mt-2",
+                location === "/admin"
+                  ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-md"
+              )}
+              onClick={handleNavClick}
+              data-testid="link-admin-dashboard"
+            >
+              <Shield className={cn(
+                "h-4 w-4 transition-all duration-300",
+                location === "/admin" ? "animate-bounce-subtle" : "group-hover:scale-110"
+              )} />
+              <span className="group-hover:translate-x-1 transition-transform duration-200">
+                Admin Dashboard
+              </span>
+              {location === "/admin" && (
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-pink-400/20 animate-pulse" />
+              )}
+            </div>
+          </Link>
+        )}
 
         <Separator className="my-6 animate-fade-in" style={{animationDelay: '0.5s'}} />
 

@@ -199,6 +199,273 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoints - check if user is admin first
+  app.get("/api/admin/metrics", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Verify admin status
+      const { data: tutor } = await supabase
+        .from('tutors')
+        .select('is_admin')
+        .eq('user_id', userId)
+        .single();
+
+      if (!tutor?.is_admin) {
+        return res.status(403).json({ error: "Forbidden - Admin access required" });
+      }
+
+      // Get metrics
+      const now = new Date();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Total tutors
+      const { count: totalTutors } = await supabase
+        .from('tutors')
+        .select('*', { count: 'exact', head: true });
+
+      // Active students (students with at least one session in last 30 days)
+      const thirtyDaysAgo = new Date(now);
+      thirtyDaysAgo.setDate(now.getDate() - 30);
+      
+      const { data: activeSessions } = await supabase
+        .from('sessions')
+        .select('student_id')
+        .gte('session_start', thirtyDaysAgo.toISOString())
+        .not('student_id', 'is', null);
+
+      const activeStudents = new Set(activeSessions?.map(s => s.student_id)).size;
+
+      // Sessions this week
+      const { count: sessionsThisWeek } = await supabase
+        .from('sessions')
+        .select('*', { count: 'exact', head: true })
+        .gte('session_start', startOfWeek.toISOString());
+
+      // Total earnings (paid sessions)
+      const { data: paidSessions } = await supabase
+        .from('sessions')
+        .select('duration, rate')
+        .eq('paid', true);
+
+      const totalEarnings = paidSessions?.reduce((sum, session) => {
+        return sum + (session.duration / 60) * parseFloat(session.rate);
+      }, 0) || 0;
+
+      // Unpaid sessions count
+      const { count: unpaidSessions } = await supabase
+        .from('sessions')
+        .select('*', { count: 'exact', head: true })
+        .eq('paid', false)
+        .lte('session_end', now.toISOString());
+
+      // Weekly Active Users (tutors with sessions in last 7 days)
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(now.getDate() - 7);
+
+      const { data: weeklyActiveTutors } = await supabase
+        .from('sessions')
+        .select('tutor_id')
+        .gte('session_start', sevenDaysAgo.toISOString());
+
+      const weeklyActiveUsers = new Set(weeklyActiveTutors?.map(s => s.tutor_id)).size;
+
+      // Monthly Active Users
+      const { data: monthlyActiveTutors } = await supabase
+        .from('sessions')
+        .select('tutor_id')
+        .gte('session_start', startOfMonth.toISOString());
+
+      const monthlyActiveUsers = new Set(monthlyActiveTutors?.map(s => s.tutor_id)).size;
+
+      res.json({
+        totalTutors,
+        activeStudents,
+        sessionsThisWeek,
+        totalEarnings,
+        unpaidSessions,
+        weeklyActiveUsers,
+        monthlyActiveUsers
+      });
+    } catch (error) {
+      console.error('Admin metrics error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Admin: Get earnings trend data
+  app.get("/api/admin/earnings-trend", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      const period = (req.query.period as string) || 'week'; // week or month
+
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { data: tutor } = await supabase
+        .from('tutors')
+        .select('is_admin')
+        .eq('user_id', userId)
+        .single();
+
+      if (!tutor?.is_admin) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const now = new Date();
+      let startDate: Date;
+      
+      if (period === 'month') {
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 30);
+      } else {
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 7);
+      }
+
+      const { data: sessions } = await supabase
+        .from('sessions')
+        .select('session_start, duration, rate, paid')
+        .gte('session_start', startDate.toISOString())
+        .eq('paid', true)
+        .order('session_start', { ascending: true });
+
+      // Group by date
+      const earningsByDate = sessions?.reduce((acc: any, session) => {
+        const date = new Date(session.session_start).toISOString().split('T')[0];
+        const earnings = (session.duration / 60) * parseFloat(session.rate);
+        
+        if (!acc[date]) {
+          acc[date] = 0;
+        }
+        acc[date] += earnings;
+        return acc;
+      }, {});
+
+      const trendData = Object.entries(earningsByDate || {}).map(([date, earnings]) => ({
+        date,
+        earnings
+      }));
+
+      res.json(trendData);
+    } catch (error) {
+      console.error('Earnings trend error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Admin: Get top tutors
+  app.get("/api/admin/top-tutors", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { data: tutor } = await supabase
+        .from('tutors')
+        .select('is_admin')
+        .eq('user_id', userId)
+        .single();
+
+      if (!tutor?.is_admin) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      // Get all sessions with tutor info
+      const { data: sessions } = await supabase
+        .from('sessions')
+        .select(`
+          tutor_id,
+          duration,
+          rate,
+          paid,
+          tutors (
+            full_name,
+            email
+          )
+        `)
+        .eq('paid', true);
+
+      // Aggregate by tutor
+      const tutorStats = sessions?.reduce((acc: any, session: any) => {
+        const tutorId = session.tutor_id;
+        const earnings = (session.duration / 60) * parseFloat(session.rate);
+        
+        if (!acc[tutorId]) {
+          acc[tutorId] = {
+            tutorId,
+            name: session.tutors?.full_name || 'Unknown',
+            email: session.tutors?.email || '',
+            totalEarnings: 0,
+            sessionCount: 0
+          };
+        }
+        
+        acc[tutorId].totalEarnings += earnings;
+        acc[tutorId].sessionCount += 1;
+        return acc;
+      }, {});
+
+      const topTutors = Object.values(tutorStats || {})
+        .sort((a: any, b: any) => b.totalEarnings - a.totalEarnings)
+        .slice(0, 10);
+
+      res.json(topTutors);
+    } catch (error) {
+      console.error('Top tutors error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Admin: Telegram broadcast
+  app.post("/api/admin/broadcast", async (req, res) => {
+    try {
+      const { userId, message } = req.body;
+      
+      if (!userId || !message) {
+        return res.status(400).json({ error: "User ID and message are required" });
+      }
+
+      const { data: tutor } = await supabase
+        .from('tutors')
+        .select('is_admin')
+        .eq('user_id', userId)
+        .single();
+
+      if (!tutor?.is_admin) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      // Get all tutors with telegram subscriptions
+      const { data: tutors } = await supabase
+        .from('tutors')
+        .select('telegram_chat_id, full_name')
+        .not('telegram_chat_id', 'is', null);
+
+      if (!tutors || tutors.length === 0) {
+        return res.json({ success: true, sent: 0, failed: 0 });
+      }
+
+      // Import bot from telegram module
+      const { sendBroadcast } = await import('./telegram.js');
+      const result = await sendBroadcast(message, tutors);
+
+      res.json(result);
+    } catch (error) {
+      console.error('Broadcast error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
