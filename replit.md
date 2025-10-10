@@ -59,6 +59,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 10, 2025: Enhanced Telegram Daily Notifications with Unpaid Sessions - COMPLETED
+- **Unpaid Session Tracking in Notifications**: Enhanced daily 9 PM Telegram notifications to include payment status information
+  - Added "Today's Unpaid Sessions" section showing individual unpaid sessions from the current day with student names, times, and amounts
+  - Added "Past Unpaid Sessions" summary displaying count and total amount of overdue sessions from previous days
+  - Conditional display: sections only appear when unpaid sessions exist, avoiding clutter
+  - All amounts formatted in tutor's preferred currency with timezone-aware time display
+  - Helps tutors track outstanding payments and follow up on overdue invoices
+
 ### October 9, 2025: Admin Dashboard with Enhanced Security & Multi-Currency Support - COMPLETED
 - **Admin Dashboard**: Created comprehensive admin dashboard with KPI cards (total tutors, active students, sessions this week, total earnings, unpaid sessions)
 - **Analytics Charts**: Added weekly earnings trend chart and top tutors table showing performance metrics
