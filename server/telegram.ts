@@ -188,12 +188,37 @@ async function sendDailyNotification(tutor: any) {
     console.log(`📊 Preparing notification for ${full_name} (${timezone})`);
 
     const todayData = await calculateTodayEarnings(id, timezone);
+    const todayUnpaidSessions = await getTodayUnpaidSessions(id, timezone);
+    const pastUnpaidData = await getPastUnpaidSessions(id, timezone);
     const tomorrowSessions = await getTomorrowSessions(id, timezone);
 
     let message = `📊 *Daily Summary for ${dayjs().tz(timezone).format('MMMM D, YYYY')}*\n\n`;
     
     message += `💰 *Today's Earnings*\n`;
     message += `${formatCurrency(todayData.earnings, currency)} from ${todayData.count} session${todayData.count !== 1 ? 's' : ''}\n\n`;
+
+    // Add today's unpaid sessions
+    if (todayUnpaidSessions.length > 0) {
+      message += `⚠️ *Today's Unpaid Sessions*\n`;
+      todayUnpaidSessions.forEach((session: any, index: number) => {
+        const startTime = formatTime(session.session_start, timezone, time_format);
+        const endTime = formatTime(session.session_end, timezone, time_format);
+        const amount = (session.duration / 60) * session.rate;
+        message += `${index + 1}. ${session.student_name} • ${startTime} - ${endTime} • ${formatCurrency(amount, currency)}\n`;
+      });
+      
+      const totalUnpaidToday = todayUnpaidSessions.reduce((total: number, session: any) => {
+        return total + (session.duration / 60) * session.rate;
+      }, 0);
+      message += `*Total unpaid today:* ${formatCurrency(totalUnpaidToday, currency)}\n\n`;
+    }
+
+    // Add past unpaid sessions summary
+    if (pastUnpaidData.count > 0) {
+      message += `📋 *Past Unpaid Sessions*\n`;
+      message += `${pastUnpaidData.count} overdue session${pastUnpaidData.count !== 1 ? 's' : ''} from previous days\n`;
+      message += `*Total overdue:* ${formatCurrency(pastUnpaidData.amount, currency)}\n\n`;
+    }
 
     message += `📅 *Tomorrow's Schedule*\n`;
     if (tomorrowSessions.length === 0) {
