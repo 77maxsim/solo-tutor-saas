@@ -114,6 +114,63 @@ async function getTomorrowSessions(tutorId: number, timezone: string) {
   }));
 }
 
+async function getTodayUnpaidSessions(tutorId: number, timezone: string) {
+  const now = dayjs().tz(timezone);
+  const startOfToday = now.startOf('day').utc().toISOString();
+  const endOfToday = now.endOf('day').utc().toISOString();
+
+  const { data: sessions, error } = await supabase
+    .from('sessions')
+    .select(`
+      session_start,
+      session_end,
+      duration,
+      rate,
+      paid,
+      students (
+        name
+      )
+    `)
+    .eq('tutor_id', tutorId)
+    .eq('paid', false)
+    .gte('session_start', startOfToday)
+    .lte('session_start', endOfToday)
+    .order('session_start', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching today unpaid sessions:', error);
+    return [];
+  }
+
+  return sessions.map((session: any) => ({
+    ...session,
+    student_name: session.students?.name || 'Unknown Student'
+  }));
+}
+
+async function getPastUnpaidSessions(tutorId: number, timezone: string) {
+  const now = dayjs().tz(timezone);
+  const startOfToday = now.startOf('day').utc().toISOString();
+
+  const { data: sessions, error } = await supabase
+    .from('sessions')
+    .select('duration, rate, paid')
+    .eq('tutor_id', tutorId)
+    .eq('paid', false)
+    .lt('session_start', startOfToday);
+
+  if (error) {
+    console.error('Error fetching past unpaid sessions:', error);
+    return { count: 0, amount: 0 };
+  }
+
+  const amount = sessions.reduce((total, session) => {
+    return total + (session.duration / 60) * session.rate;
+  }, 0);
+
+  return { count: sessions.length, amount };
+}
+
 async function sendDailyNotification(tutor: any) {
   if (!bot) {
     console.warn('⚠️ Cannot send daily notification - bot not initialized');
