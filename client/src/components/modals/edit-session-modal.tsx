@@ -275,36 +275,75 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
 
     try {
       if (isRecurring && session.recurrence_id) {
-        // For recurring sessions, update all future sessions in the series
+        // For recurring sessions, fetch all future sessions and update each with new time
         console.log('📅 Bulk updating future sessions in series:', {
           recurrence_id: session.recurrence_id,
           session_start_threshold: session.session_start,
           updates: {
+            time: data.time,
             duration: data.duration,
             rate: data.rate,
             color: data.color
           }
         });
 
-        const { error } = await supabase
+        // First, fetch all future sessions in the series
+        const { data: futureSessions, error: fetchError } = await supabase
           .from('sessions')
-          .update({
-            student_id: data.student_id,
-            duration: data.duration,
-            rate: data.rate,
-            color: data.color,
-          })
+          .select('id, session_start')
           .eq('recurrence_id', session.recurrence_id)
-          .gte('session_start', session.session_start);
+          .gte('session_start', session.session_start)
+          .order('session_start', { ascending: true });
 
-        if (error) {
-          console.error('Supabase error updating future sessions:', error);
+        if (fetchError) {
+          console.error('Error fetching future sessions:', fetchError);
           toast({
             variant: "destructive",
             title: "Error",
-            description: "Failed to update future sessions. Please try again.",
+            description: "Failed to fetch future sessions. Please try again.",
           });
           return;
+        }
+
+        // Update each session individually with the new time
+        for (const futureSession of futureSessions || []) {
+          // Extract the date from the existing session_start
+          const sessionDate = dayjs.utc(futureSession.session_start).tz(tutorTimezone).format('YYYY-MM-DD');
+          
+          // Create new start time by combining the date with the new time
+          const newStartUTC = dayjs.tz(`${sessionDate} ${data.time}`, tutorTimezone).utc();
+          const newEndUTC = newStartUTC.add(data.duration, 'minutes');
+
+          console.log('🕐 Updating session time:', {
+            session_id: futureSession.id,
+            original_start: futureSession.session_start,
+            session_date: sessionDate,
+            new_time: data.time,
+            new_start_utc: newStartUTC.toISOString(),
+            new_end_utc: newEndUTC.toISOString()
+          });
+
+          const { error: updateError } = await supabase
+            .from('sessions')
+            .update({
+              student_id: data.student_id,
+              session_start: newStartUTC.toISOString(),
+              session_end: newEndUTC.toISOString(),
+              duration: data.duration,
+              rate: data.rate,
+              color: data.color,
+            })
+            .eq('id', futureSession.id);
+
+          if (updateError) {
+            console.error('Error updating session:', updateError);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: `Failed to update session ${futureSession.id}. Please try again.`,
+            });
+            return;
+          }
         }
 
         toast({
@@ -438,26 +477,24 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Time - Hide for recurring sessions since we can't change time for bulk updates */}
-            {!isRecurring && (
-              <FormField
-                control={form.control}
-                name="time"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Time</FormLabel>
-                    <FormControl>
-                      <TimePicker 
-                        value={field.value} 
-                        onChange={field.onChange}
-                        timeFormat={tutorPreferences.time_format}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            {/* Time */}
+            <FormField
+              control={form.control}
+              name="time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Time</FormLabel>
+                  <FormControl>
+                    <TimePicker 
+                      value={field.value} 
+                      onChange={field.onChange}
+                      timeFormat={tutorPreferences.time_format}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Student Selector */}
             <FormField
