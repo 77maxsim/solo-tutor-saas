@@ -1,0 +1,89 @@
+You are an expert Express.js and security engineer.  
+Safely add rate-limiting and basic DDoS protection to this web app.
+
+✅ Tasks:
+1. Install the following npm packages if not already installed:
+   - express-rate-limit
+   - express-slow-down
+   - helmet
+   - cors
+
+2. In the main Express server file (commonly server/index.ts or server.js):
+   - Import the new libraries.
+   - Add the following middleware **before your routes** (after express.json and CORS).
+
+```ts
+import rateLimit from "express-rate-limit";
+import slowDown from "express-slow-down";
+import helmet from "helmet";
+import cors from "cors";
+
+app.set("trust proxy", 1); // if behind Replit/Proxy
+app.use(helmet());
+app.use(cors({ origin: ["https://your-app-url.repl.co"], credentials: true }));
+app.use(express.json({ limit: "200kb" })); // prevent large JSON attacks
+
+// Helper: use per-user if available, else IP
+const userOrIpKey = (req: any) => (req.user?.id ? `u:${req.user.id}` : `ip:${req.ip}`);
+
+// 1️⃣ Auth routes: very strict
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,                   // 5 login/signup tries
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many login attempts. Try again in 15 minutes." },
+});
+const authSlowdown = slowDown({
+  windowMs: 15 * 60 * 1000,
+  delayAfter: 3,
+  delayMs: 500,
+});
+app.use("/api/auth", authSlowdown, authLimiter);
+
+// 2️⃣ Core API routes (sessions)
+const sessionsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  keyGenerator: userOrIpKey,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use("/api/sessions", sessionsLimiter);
+
+// 3️⃣ Public booking or availability routes
+const publicLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use("/api/booking", publicLimiter);
+
+// 4️⃣ Global fallback limiter
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(globalLimiter);
+
+// Nice 429 handler
+app.use((err: any, _req: any, res: any, _next: any) => {
+  if (err?.status === 429) {
+    return res.status(429).json({ error: "Too many requests. Please slow down." });
+  }
+  return res.status(err?.status || 500).json({ error: err?.message || "Server error" });
+});
+Do not modify existing routes or Supabase logic.
+
+Run the app and verify it still responds normally to normal requests.
+
+🎯 Outcome:
+
+All routes gain baseline protection against brute force, flooding, and malformed requests.
+
+Legitimate users won’t notice.
+
+You can monitor blocked requests via 429 status codes in logs.
