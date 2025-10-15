@@ -5,6 +5,7 @@ import multer from "multer";
 import { storage } from "./storage";
 import { insertStudentSchema, insertSessionSchema, insertPaymentSchema } from "@shared/schema";
 import { convertToUSD } from "./services/currencyConverter";
+import { adminLimiter } from "./rateLimiters";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -258,8 +259,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin endpoints - check if user is admin first
-  app.get("/api/admin/metrics", authenticateUser, authorizeAdmin, async (req, res) => {
+  // Admin endpoints - check if user is admin first, then apply rate limiting
+  app.get("/api/admin/metrics", authenticateUser, authorizeAdmin, adminLimiter, async (req, res) => {
     try {
       // Get metrics
       const now = new Date();
@@ -356,7 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Get earnings trend data
-  app.get("/api/admin/earnings-trend", authenticateUser, authorizeAdmin, async (req, res) => {
+  app.get("/api/admin/earnings-trend", authenticateUser, authorizeAdmin, adminLimiter, async (req, res) => {
     try {
       const period = (req.query.period as string) || 'week'; // week or month
       const now = new Date();
@@ -415,7 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Get top tutors
-  app.get("/api/admin/top-tutors", authenticateUser, authorizeAdmin, async (req, res) => {
+  app.get("/api/admin/top-tutors", authenticateUser, authorizeAdmin, adminLimiter, async (req, res) => {
     try {
       // Get all sessions with tutor info
       const { data: sessions } = await supabase
@@ -470,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Telegram broadcast
-  app.post("/api/admin/broadcast", authenticateUser, authorizeAdmin, async (req, res) => {
+  app.post("/api/admin/broadcast", authenticateUser, authorizeAdmin, adminLimiter, async (req, res) => {
     try {
       const { message } = req.body;
       
