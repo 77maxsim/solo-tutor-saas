@@ -253,12 +253,18 @@ async function sendDailyNotification(tutor: any) {
     await bot.sendMessage(telegram_chat_id, message, { parse_mode: 'Markdown' });
     
     // Update database with today's date to prevent duplicates (persists across server restarts)
-    await supabase
+    const { error: updateError } = await supabase
       .from('tutors')
       .update({ last_daily_notification_date: today })
       .eq('id', id);
     
-    // Also update in-memory cache as fallback
+    if (updateError) {
+      // If column doesn't exist or update fails, fall back to in-memory cache only
+      console.log(`⚠️ Could not update last_daily_notification_date for ${full_name}:`, updateError.message);
+      console.log('   Using in-memory cache as fallback (duplicates possible on restart)');
+    }
+    
+    // Always update in-memory cache as fallback
     sentNotifications.add(notificationKey);
     console.log(`✅ Notification sent to ${full_name}`);
 
@@ -269,12 +275,26 @@ async function sendDailyNotification(tutor: any) {
 
 async function checkAndSendNotifications() {
   try {
-    const { data: tutors, error } = await supabase
+    // Try to fetch with last_daily_notification_date column (post-migration)
+    let { data: tutors, error } = await supabase
       .from('tutors')
       .select('id, telegram_chat_id, timezone, currency, time_format, full_name, last_daily_notification_date')
       .not('telegram_chat_id', 'is', null);
 
-    if (error) {
+    // If column doesn't exist (pre-migration), fetch without it
+    // PostgreSQL error 42703 = "column does not exist"
+    if (error && (error.code === '42703' || error.code === 'PGRST116')) {
+      console.log('⚠️ last_daily_notification_date column not found, using fallback mode');
+      const fallbackResult = await supabase
+        .from('tutors')
+        .select('id, telegram_chat_id, timezone, currency, time_format, full_name')
+        .not('telegram_chat_id', 'is', null);
+      
+      tutors = fallbackResult.data as any;
+      error = fallbackResult.error;
+    }
+
+    if (error || !tutors) {
       console.error('Error fetching tutors:', error);
       return;
     }
