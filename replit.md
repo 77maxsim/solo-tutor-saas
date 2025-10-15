@@ -38,7 +38,7 @@ Preferred communication style: Simple, everyday language.
 - **Component-based architecture** for modularity and reusability.
 - **RESTful API endpoints** for clear data operations.
 - **Performance monitoring** for query execution times.
-- **Security**: RLS, JWT validation, and admin authorization middleware to protect sensitive data and operations.
+- **Security**: RLS, JWT validation, admin authorization middleware, and comprehensive rate limiting to protect sensitive data and operations from abuse.
 
 ## External Dependencies
 
@@ -58,6 +58,23 @@ Preferred communication style: Simple, everyday language.
 - **ExchangeRate-API**: Currency conversion service for admin dashboard (free tier: 1,500 requests/month).
 
 ## Recent Changes
+
+### October 15, 2025: Rate Limiting & DDoS Protection Implementation - COMPLETED
+- **Comprehensive Rate Limiting**: Implemented express-rate-limit and express-slow-down middleware to protect all API endpoints from abuse and DDoS attacks
+  - **Auth/Sensitive Routes** (`/api/upload`, `/api/telegram`): 5 requests per 15 minutes with slowdown after 3 requests
+  - **Sessions Routes** (`/api/sessions`): 100 requests per 15 minutes (IP-based)
+  - **Admin Routes** (`/api/admin/*`): 50 requests per 15 minutes with per-user tracking (applied AFTER authentication for accurate user-based limits)
+  - **Public Routes** (`/api/students`, `/api/payments`, `/api/dashboard`): 20 requests per minute
+  - **Global Fallback**: 120 requests per minute for all other API routes
+- **Security Headers**: Added Helmet middleware for comprehensive security headers (HSTS, X-Frame-Options, Content-Security-Policy, etc.)
+- **CORS Configuration**: Properly configured CORS with credentials support and origin validation
+- **Request Size Limits**: Limited JSON body size to 200kb to prevent large payload attacks
+- **Trust Proxy**: Enabled trust proxy for proper IP detection behind Replit's infrastructure
+- **Error Handling**: Implemented proper 429 status responses with clear error messages for rate limit violations
+- **Architecture**: Centralized rate limiter configurations in `server/rateLimiters.ts` for maintainability
+- **Per-User Rate Limiting**: Admin routes correctly track limits per authenticated user ID, with automatic fallback to IP-based limiting for unauthenticated requests
+- **IPv6 Support**: Rate limiters properly handle IPv6 addresses with validation disabled where appropriate
+- **Tested & Verified**: All rate limiters validated with automated tests confirming proper limits, headers, and slowdown behavior
 
 ### October 15, 2025: Telegram Bot Reliability & Duplicate Prevention Fixes - COMPLETED
 - **Fixed TypeScript Null Safety Errors**: Added proper null checks in telegram message handler to prevent runtime crashes
