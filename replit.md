@@ -59,6 +59,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 15, 2025: Telegram Bot Reliability & Duplicate Prevention Fixes - COMPLETED
+- **Fixed TypeScript Null Safety Errors**: Added proper null checks in telegram message handler to prevent runtime crashes
+- **Duplicate Booking Notifications Fix**: Implemented duplicate prevention for booking notifications using a Set to track sent notifications by session ID
+- **Missing Daily Reports Fix**: 
+  - Changed from exact minute check (21:00) to 3-minute time window (21:00-21:02) to avoid missing notifications
+  - Smart cache reset that checks if any tutor is in notification window before clearing, delays by 5 minutes if needed
+- **Database Persistence for Notifications** (requires migration):
+  - Added `last_daily_notification_date` column to tutors table for persistent duplicate prevention
+  - Graceful fallback to in-memory cache if column doesn't exist (pre-migration)
+  - Detects PostgreSQL error 42703 (column not found) and falls back automatically
+  - Post-migration: Daily notifications survive server restarts without duplicates
+  - Pre-migration: Works with in-memory cache (slight duplicate risk on restart during window)
+- **Migration Required**: Run `add-notification-tracking-column.sql` in Supabase SQL Editor to enable full persistence
+- **Files**: See `TELEGRAM_FIX_README.md` for detailed migration instructions
+
 ### October 10, 2025: Enhanced Telegram Daily Notifications with Unpaid Sessions - COMPLETED
 - **Unpaid Session Tracking in Notifications**: Enhanced daily 9 PM Telegram notifications to include payment status information
   - Added "Today's Unpaid Sessions" section showing individual unpaid sessions from the current day with student names, times, and amounts
