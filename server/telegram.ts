@@ -287,6 +287,12 @@ async function sendBookingNotification(session: any) {
   }
 
   try {
+    const notificationKey = `booking-${session.id}`;
+    if (sentBookingNotifications.has(notificationKey)) {
+      console.log(`⏭️ Booking notification for session ${session.id} already sent, skipping duplicate`);
+      return;
+    }
+
     const { data: tutor, error: tutorError } = await supabase
       .from('tutors')
       .select('id, telegram_chat_id, timezone, currency, time_format, full_name')
@@ -315,6 +321,7 @@ async function sendBookingNotification(session: any) {
     message += `⚠️ _Pending your approval - check your dashboard_`;
 
     await bot.sendMessage(tutor.telegram_chat_id, message, { parse_mode: 'Markdown' });
+    sentBookingNotifications.add(notificationKey);
     console.log(`✅ Booking notification sent to ${tutor.full_name} for session with ${studentName}`);
   } catch (error) {
     console.error('Error sending booking notification:', error);
