@@ -19,6 +19,9 @@ const supabase = createClient(supabaseUrl!, supabaseKey!);
 
 // Create bot without polling initially
 let bot: TelegramBot | null = null;
+// In-memory cache for sent notifications (fallback if database column doesn't exist)
+// Primary duplicate prevention now uses database column: tutors.last_daily_notification_date
+// This persists across server restarts and prevents duplicates reliably
 const sentNotifications = new Set<string>();
 const sentBookingNotifications = new Set<string>();
 
@@ -179,9 +182,18 @@ async function sendDailyNotification(tutor: any) {
   }
 
   try {
-    const { id, telegram_chat_id, timezone, currency, time_format, full_name } = tutor;
+    const { id, telegram_chat_id, timezone, currency, time_format, full_name, last_daily_notification_date } = tutor;
     
-    const notificationKey = `${id}-${dayjs().tz(timezone).format('YYYY-MM-DD')}`;
+    const today = dayjs().tz(timezone).format('YYYY-MM-DD');
+    
+    // Check if we already sent a notification today (database-persisted check)
+    if (last_daily_notification_date === today) {
+      console.log(`⏭️ Notification for ${full_name} already sent today (${today}), skipping`);
+      return;
+    }
+    
+    // Fallback: Also check in-memory cache for backwards compatibility
+    const notificationKey = `${id}-${today}`;
     if (sentNotifications.has(notificationKey)) {
       return;
     }
@@ -240,6 +252,13 @@ async function sendDailyNotification(tutor: any) {
 
     await bot.sendMessage(telegram_chat_id, message, { parse_mode: 'Markdown' });
     
+    // Update database with today's date to prevent duplicates (persists across server restarts)
+    await supabase
+      .from('tutors')
+      .update({ last_daily_notification_date: today })
+      .eq('id', id);
+    
+    // Also update in-memory cache as fallback
     sentNotifications.add(notificationKey);
     console.log(`✅ Notification sent to ${full_name}`);
 
@@ -252,7 +271,7 @@ async function checkAndSendNotifications() {
   try {
     const { data: tutors, error } = await supabase
       .from('tutors')
-      .select('id, telegram_chat_id, timezone, currency, time_format, full_name')
+      .select('id, telegram_chat_id, timezone, currency, time_format, full_name, last_daily_notification_date')
       .not('telegram_chat_id', 'is', null);
 
     if (error) {
@@ -265,7 +284,9 @@ async function checkAndSendNotifications() {
       const hour = now.hour();
       const minute = now.minute();
 
-      if (hour === 21 && minute === 0) {
+      // Check if it's within 3 minutes of 9 PM (21:00-21:02)
+      // The sentNotifications Set with date-based keys prevents duplicates within the same day
+      if (hour === 21 && minute <= 2) {
         await sendDailyNotification(tutor);
       }
     }
@@ -274,10 +295,38 @@ async function checkAndSendNotifications() {
   }
 }
 
-function resetDailyCache() {
-  const cacheSize = sentNotifications.size;
+async function resetDailyCache() {
+  // Check if any tutor is currently in their notification window (21:00-21:02)
+  // to prevent clearing the cache and causing duplicate notifications
+  try {
+    const { data: tutors } = await supabase
+      .from('tutors')
+      .select('timezone')
+      .not('telegram_chat_id', 'is', null);
+
+    if (tutors) {
+      for (const tutor of tutors) {
+        const now = dayjs().tz(tutor.timezone);
+        const hour = now.hour();
+        const minute = now.minute();
+        
+        if (hour === 21 && minute <= 2) {
+          console.log(`⏳ Delaying cache reset - tutor in timezone ${tutor.timezone} is in notification window`);
+          // Retry in 5 minutes
+          setTimeout(resetDailyCache, 5 * 60 * 1000);
+          return;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error checking notification windows:', error);
+  }
+
+  const dailyCacheSize = sentNotifications.size;
+  const bookingCacheSize = sentBookingNotifications.size;
   sentNotifications.clear();
-  console.log(`🔄 Daily cache reset. Cleared ${cacheSize} entries.`);
+  sentBookingNotifications.clear();
+  console.log(`🔄 Daily cache reset. Cleared ${dailyCacheSize} daily notification entries and ${bookingCacheSize} booking notification entries.`);
 }
 
 async function sendBookingNotification(session: any) {
