@@ -20,6 +20,7 @@ const supabase = createClient(supabaseUrl!, supabaseKey!);
 // Create bot without polling initially
 let bot: TelegramBot | null = null;
 const sentNotifications = new Set<string>();
+const sentBookingNotifications = new Set<string>();
 
 // Cleanup function to stop bot polling
 export function cleanupTelegram() {
@@ -378,6 +379,11 @@ export function initializeTelegram() {
     const chatId = msg.chat.id;
     const userInput = msg.text?.trim();
     const name = msg.from?.first_name || "there";
+
+    if (!bot) {
+      console.warn('⚠️ Bot is null in message handler');
+      return;
+    }
 
     if (!userInput || !userInput.includes('@')) {
       await bot.sendMessage(chatId, `👋 Hi ${name}! Please reply with your email (the one you used to sign up in TutorTrack).`);
