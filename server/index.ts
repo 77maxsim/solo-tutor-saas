@@ -104,7 +104,7 @@ app.use("/api", globalLimiter);
   }
 
   // Initialize Telegram bot and notification scheduler
-  initializeTelegram();
+  await initializeTelegram();
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.

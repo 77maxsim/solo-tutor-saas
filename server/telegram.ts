@@ -19,6 +19,7 @@ const supabase = createClient(supabaseUrl!, supabaseKey!);
 
 // Create bot without polling initially
 let bot: TelegramBot | null = null;
+let isInitializing = false;
 // In-memory cache for sent notifications (fallback if database column doesn't exist)
 // Primary duplicate prevention now uses database column: tutors.last_daily_notification_date
 // This persists across server restarts and prevents duplicates reliably
@@ -26,13 +27,15 @@ const sentNotifications = new Set<string>();
 const sentBookingNotifications = new Set<string>();
 
 // Cleanup function to stop bot polling
-export function cleanupTelegram() {
+export async function cleanupTelegram() {
   if (bot) {
     try {
-      bot.stopPolling();
+      await bot.stopPolling({ cancel: true, reason: 'Server restart' });
       console.log("🛑 Telegram bot polling stopped");
+      bot = null;
     } catch (error) {
       console.error("Error stopping bot:", error);
+      bot = null;
     }
   }
 }
@@ -295,23 +298,33 @@ async function checkAndSendNotifications() {
     }
 
     if (error || !tutors) {
-      console.error('Error fetching tutors:', error);
+      console.error('❌ Error fetching tutors for notifications:', error);
       return;
     }
+
+    if (tutors.length === 0) {
+      console.log('ℹ️ No tutors with Telegram connected');
+      return;
+    }
+
+    console.log(`🔍 Checking ${tutors.length} tutor(s) for 9 PM notifications...`);
 
     for (const tutor of tutors) {
       const now = dayjs().tz(tutor.timezone);
       const hour = now.hour();
       const minute = now.minute();
 
+      console.log(`  - ${tutor.full_name}: ${now.format('HH:mm')} (${tutor.timezone})`);
+
       // Check if it's within 3 minutes of 9 PM (21:00-21:02)
       // The sentNotifications Set with date-based keys prevents duplicates within the same day
       if (hour === 21 && minute <= 2) {
+        console.log(`  ✅ Triggering notification for ${tutor.full_name}!`);
         await sendDailyNotification(tutor);
       }
     }
   } catch (error) {
-    console.error('Error in checkAndSendNotifications:', error);
+    console.error('❌ Error in checkAndSendNotifications:', error);
   }
 }
 
@@ -424,104 +437,136 @@ export async function sendBroadcast(message: string, tutors: any[]) {
   return { success: true, sent, failed };
 }
 
-export function initializeTelegram() {
+export async function initializeTelegram() {
   if (!botToken || !supabaseUrl || !supabaseKey) {
     console.warn("⚠️ Telegram bot not initialized - missing environment variables");
     return;
   }
 
-  // Stop existing bot instance if any
-  if (bot) {
-    try {
-      bot.stopPolling();
-      console.log("🛑 Stopped existing Telegram bot instance");
-    } catch (error) {
-      console.error("Error stopping existing bot:", error);
-    }
+  // Prevent multiple initializations at once
+  if (isInitializing) {
+    console.log("⏳ Bot initialization already in progress, skipping...");
+    return;
   }
 
-  // Create new bot instance with polling
-  bot = new TelegramBot(botToken!, { polling: true });
+  isInitializing = true;
 
-  bot.getMe().then((botInfo) => {
-    console.log("🤖 TutorTrack Telegram bot is running...");
-    console.log(`📱 Bot username: @${botInfo.username}`);
-    console.log(`🔗 Bot link: https://t.me/${botInfo.username}`);
-  }).catch((error) => {
-    console.error("Error getting bot info:", error);
-  });
-
-  bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const userInput = msg.text?.trim();
-    const name = msg.from?.first_name || "there";
-
-    if (!bot) {
-      console.warn('⚠️ Bot is null in message handler');
-      return;
+  try {
+    // Stop existing bot instance if any
+    if (bot) {
+      console.log("🛑 Stopping existing Telegram bot instance...");
+      await cleanupTelegram();
+      // Wait for cleanup to complete and Telegram to release the webhook
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
-    if (!userInput || !userInput.includes('@')) {
-      await bot.sendMessage(chatId, `👋 Hi ${name}! Please reply with your email (the one you used to sign up in TutorTrack).`);
-      return;
-    }
-
+    console.log("🚀 Starting Telegram bot...");
+    
+    // First, create a temporary bot to delete any webhook
+    const tempBot = new TelegramBot(botToken!, { polling: false });
     try {
-      const { data, error } = await supabase
-        .from('tutors')
-        .update({ telegram_chat_id: chatId.toString() })
-        .eq('email', userInput.toLowerCase())
-        .select();
-
-      if (error) {
-        console.error("❌ Supabase update error:", error);
-        await bot.sendMessage(chatId, `❌ Something went wrong while saving your Telegram subscription. Please try again later.`);
-      } else if (!data || data.length === 0) {
-        await bot.sendMessage(chatId, `⚠️ Couldn't find a tutor with that email. Please double-check and try again.`);
-      } else {
-        await bot.sendMessage(chatId, `✅ You're now subscribed to daily updates from TutorTrack!`);
-        console.log(`✅ chat_id saved for: ${userInput}`);
-      }
-    } catch (err) {
-      console.error("❌ Unexpected error:", err);
-      await bot.sendMessage(chatId, `❌ Something went wrong. Please try again later.`);
+      await tempBot.deleteWebHook();
+      console.log("🧹 Cleared any existing webhooks");
+    } catch (error) {
+      console.log("ℹ️ No webhook to clear");
     }
-  });
-
-  bot.on('polling_error', (error: any) => {
-    // Ignore 409 conflicts during development (happens when server restarts)
-    if (error.response?.statusCode === 409) {
-      console.warn('⚠️ Telegram polling conflict (another instance running) - this is normal during development restarts');
-      return;
-    }
-    console.error('Polling error:', error);
-  });
-
-  const sessionChannel = supabase
-    .channel('sessions-pending')
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'sessions',
-        filter: 'status=eq.pending'
-      },
-      (payload) => {
-        console.log('📬 New booking request received:', payload.new);
-        sendBookingNotification(payload.new);
-      }
-    )
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        console.log('📡 Real-time booking notifications active');
+    
+    // Create new bot instance with polling
+    bot = new TelegramBot(botToken!, { 
+      polling: {
+        interval: 1000,
+        autoStart: true,
+        params: {
+          timeout: 10
+        }
       }
     });
 
-  console.log("📱 TutorTrack notification scheduler is running...");
-  console.log("⏰ Checking for 9 PM notifications every minute");
+    bot.getMe().then((botInfo) => {
+      console.log("✅ TutorTrack Telegram bot is running!");
+      console.log(`📱 Bot username: @${botInfo.username}`);
+      console.log(`🔗 Bot link: https://t.me/${botInfo.username}`);
+    }).catch((error) => {
+      console.error("❌ Error getting bot info:", error);
+    });
 
-  checkAndSendNotifications();
-  setInterval(checkAndSendNotifications, 60 * 1000);
-  setInterval(resetDailyCache, 24 * 60 * 60 * 1000);
+    bot.on('message', async (msg) => {
+      const chatId = msg.chat.id;
+      const userInput = msg.text?.trim();
+      const name = msg.from?.first_name || "there";
+
+      if (!bot) {
+        console.warn('⚠️ Bot is null in message handler');
+        return;
+      }
+
+      if (!userInput || !userInput.includes('@')) {
+        await bot.sendMessage(chatId, `👋 Hi ${name}! Please reply with your email (the one you used to sign up in TutorTrack).`);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('tutors')
+          .update({ telegram_chat_id: chatId.toString() })
+          .eq('email', userInput.toLowerCase())
+          .select();
+
+        if (error) {
+          console.error("❌ Supabase update error:", error);
+          await bot.sendMessage(chatId, `❌ Something went wrong while saving your Telegram subscription. Please try again later.`);
+        } else if (!data || data.length === 0) {
+          await bot.sendMessage(chatId, `⚠️ Couldn't find a tutor with that email. Please double-check and try again.`);
+        } else {
+          await bot.sendMessage(chatId, `✅ You're now subscribed to daily updates from TutorTrack!`);
+          console.log(`✅ chat_id saved for: ${userInput}`);
+        }
+      } catch (err) {
+        console.error("❌ Unexpected error:", err);
+        await bot.sendMessage(chatId, `❌ Something went wrong. Please try again later.`);
+      }
+    });
+
+    bot.on('polling_error', (error: any) => {
+      // 409 conflicts can happen during development when the server restarts quickly
+      // The old instance hasn't fully released yet - this resolves itself
+      if (error.response?.statusCode === 409) {
+        console.log('ℹ️ Polling conflict detected (resolving automatically)');
+        return;
+      }
+      console.error('❌ Telegram polling error:', error);
+    });
+
+    const sessionChannel = supabase
+      .channel('sessions-pending')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'sessions',
+          filter: 'status=eq.pending'
+        },
+        (payload) => {
+          console.log('📬 New booking request received:', payload.new);
+          sendBookingNotification(payload.new);
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('📡 Real-time booking notifications active');
+        }
+      });
+
+    console.log("📱 TutorTrack notification scheduler is running...");
+    console.log("⏰ Checking for 9 PM notifications every minute");
+
+    checkAndSendNotifications();
+    setInterval(checkAndSendNotifications, 60 * 1000);
+    setInterval(resetDailyCache, 24 * 60 * 60 * 1000);
+  } catch (error) {
+    console.error('❌ Failed to initialize Telegram bot:', error);
+  } finally {
+    isInitializing = false;
+  }
 }
