@@ -27,7 +27,7 @@ import {
   Check,
   X
 } from 'lucide-react';
-import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from '@/lib/queryOptimizer';
+import { fetchCalendarSessions } from '@/lib/calendarOptimizer';
 import { convertSessionToCalendarEvent, debugSessionConversion } from '@/lib/sessionUtils';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -49,7 +49,7 @@ import { DateTime } from "luxon";
 
 interface SessionWithStudent {
   id: string;
-  student_id: string;
+  student_id: string | null;
   student_name: string;
   session_start: string;
   session_end: string;
@@ -214,29 +214,21 @@ export default function Calendar() {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) return [];
 
-      console.log('🔍 Fetching calendar sessions for tutor:', tutorId);
+      const tz = tutorTimezone || 'UTC';
+      console.log('🔍 Fetching calendar sessions for tutor:', tutorId, 'timezone:', tz);
       
-      const useOptimized = await shouldUseOptimizedQuery(tutorId);
-      if (useOptimized) {
-        const results = await getOptimizedSessions(tutorId);
-        console.log('📊 Optimized query returned:', results.length, 'sessions');
-        return results;
-      } else {
-        const results = await getStandardSessions(tutorId);
-        console.log('📊 Standard query returned:', results.length, 'sessions');
-        return results;
-      }
+      return await fetchCalendarSessions(tutorId, tz);
     },
-    refetchInterval: 30000,
-    staleTime: 0, // Always fresh data for newly accepted requests
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Get unique students for filter
   const uniqueStudents = useMemo(() => {
     const students = sessions
-      .filter(session => session.student_name && session.student_id)
+      .filter(session => session.student_name && session.student_id !== null)
       .reduce((acc: Array<{id: string, name: string}>, session) => {
-        if (!acc.find(s => s.id === session.student_id)) {
+        if (session.student_id && !acc.find(s => s.id === session.student_id)) {
           acc.push({
             id: session.student_id,
             name: session.student_name

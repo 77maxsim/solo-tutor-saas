@@ -55,7 +55,7 @@ type EditSessionForm = z.infer<typeof editSessionSchema>;
 
 interface SessionData {
   id: string;
-  student_id: string;
+  student_id: string | null;
   student_name?: string;
   session_start: string;
   session_end: string;

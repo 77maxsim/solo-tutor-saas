@@ -28,7 +28,7 @@ dayjs.extend(timezone);
 
 interface SessionDetails {
   id: string;
-  student_id: string;
+  student_id: string | null;
   student_name: string;
   date?: string; // Legacy field
   time?: string; // Legacy field
