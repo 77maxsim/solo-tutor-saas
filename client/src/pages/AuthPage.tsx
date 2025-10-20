@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { TIMEZONE_GROUPS, getBrowserTimezone } from "@/lib/timezones";
+import tutorStudentImg from "@assets/8_1760971654460.png";
 
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -301,6 +302,13 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="w-full max-w-md">
+        <div className="flex justify-center mb-6">
+          <img 
+            src={tutorStudentImg} 
+            alt="Classter - Tutoring Management" 
+            className="w-64 h-64 object-contain"
+          />
+        </div>
         <Card className="shadow-xl">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl font-bold">

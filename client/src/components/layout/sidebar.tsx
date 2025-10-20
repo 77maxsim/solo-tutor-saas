@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
-import classterLogo from "@assets/4_1760971030398.png";
+import classterLogo from "@assets/5_1760971654459.png";
 
 import { usePendingSessions } from "@/hooks/use-pending-sessions";
 
@@ -123,11 +123,11 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
     <div className="flex h-full w-64 flex-col bg-card border-r border-border animate-slide-up">
       {/* Logo/Brand Header with Hover Effect */}
       <Link href="/dashboard">
-        <div className="flex items-center justify-center px-6 py-6 border-b border-border hover-lift cursor-pointer group" onClick={handleNavClick}>
+        <div className="flex items-center justify-center px-4 py-6 border-b border-border hover-lift cursor-pointer group" onClick={handleNavClick}>
           <img 
             src={classterLogo} 
             alt="Classter" 
-            className="h-10 w-auto transition-all duration-300 group-hover:scale-105"
+            className="w-full max-w-[180px] h-auto transition-all duration-300 group-hover:scale-105"
           />
         </div>
       </Link>
