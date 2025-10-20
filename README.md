@@ -1,6 +1,6 @@
-# TutorTrack - Tutoring Management System
+# Classter - Tutoring Management System
 
-A comprehensive, timezone-friendly tutoring management platform built with React and Supabase. Features an advanced scheduling tool with FullCalendar integration, intelligent dataset optimization for scalability, and complete timezone awareness for global tutoring operations.
+A comprehensive, timezone-friendly tutoring management platform built with React and Supabase. Features an advanced scheduling tool with FullCalendar integration, intelligent dataset optimization for scalability, complete timezone awareness for global tutoring operations, and enterprise-grade security features.
 
 ## 🚀 Features
 
@@ -8,12 +8,63 @@ A comprehensive, timezone-friendly tutoring management platform built with React
 - **Advanced Scheduling Tool**: Full-featured calendar with FullCalendar integration, drag-and-drop functionality, and multi-view support (month, week, day, agenda)
 - **Timezone-Friendly Architecture**: Complete timezone awareness with automatic detection, manual override, and proper UTC storage with local display
 - **Intelligent Dataset Optimization**: Automatic query optimization that switches strategies based on dataset size for optimal performance
-- **Student Management**: Add, edit, and organize students with tags, contact information, and profile pictures
-- **Earnings Tracking**: Real-time earnings calculations with detailed breakdowns by time periods
+- **Student Management**: Add, edit, and organize students with tags, contact information, profile pictures, favoriting, and bulk operations
+- **Earnings Tracking**: Real-time earnings calculations with detailed breakdowns by time periods and multi-currency support
 - **Public Booking**: Student-facing booking page with timezone-aware slot selection
 - **Pending Requests**: Manage booking requests from students with approval workflow
+- **Admin Dashboard**: Comprehensive system monitoring with KPIs, analytics charts, top tutors metrics, and broadcast capabilities
+- **Telegram Notifications**: Daily summaries, booking alerts, and broadcast messages for subscribed tutors
 
-### Recent Updates (June 2025)
+### Student Management Features
+- **Tagging System**: Organize students with custom tags for easy filtering and categorization
+- **Bulk Operations**: Archive multiple students at once with undo functionality
+- **Favoriting**: Mark important students as favorites for quick access
+- **Advanced Filtering**: Filter students by tags, status, and favorites
+- **Profile Pictures**: Upload and manage student avatars with secure storage
+
+### Security & Monitoring
+- **Error Tracking**: Sentry integration for comprehensive frontend and backend error tracking, performance monitoring, and session replay
+- **Rate Limiting**: Multi-tier rate limiting with `express-rate-limit` and `express-slow-down` to prevent DDoS attacks and API abuse
+- **XSS Protection**: Comprehensive input sanitization using DOMPurify across all user-generated content
+- **Security Headers**: Helmet middleware for security-related HTTP headers
+- **CORS Configuration**: Properly configured CORS with credentials support
+- **Request Size Limits**: JSON body size limited to 200kb
+- **Row Level Security**: Database-level access control with Supabase RLS
+- **Health Monitoring**: Health check endpoint (`/api/health`) for uptime monitoring
+
+### Telegram Bot Integration
+- **Daily Summaries**: Automated daily reports at 9 PM (tutor's timezone) with earnings, unpaid sessions, and tomorrow's schedule
+- **Booking Notifications**: Real-time alerts for new booking requests
+- **Broadcast Messages**: Admin capability to send announcements to all subscribed tutors
+- **Database Persistence**: Duplicate prevention that survives server restarts
+- **Subscription Management**: Easy opt-in via email verification
+
+### Admin Dashboard Features
+- **Platform Metrics**: Total tutors, active students, sessions this week, total earnings (USD), unpaid sessions
+- **User Engagement**: Weekly Active Users (WAU), Monthly Active Users (MAU), and engagement ratios
+- **Earnings Analytics**: Trend charts showing earnings over time with month-over-month comparisons
+- **Top Tutors**: Leaderboard showing top 10 tutors by earnings with session counts
+- **Multi-Currency Support**: Automatic currency conversion to USD for unified reporting
+- **Broadcast Messaging**: Send Markdown-formatted announcements to all tutors via Telegram
+
+### Recent Updates (October 2025)
+
+#### Branding Update ✅
+- **Application rebranded to Classter** with new logo and visual identity
+- **Updated favicon and platform imagery** for consistent branding
+- **Improved visual presentation** across all pages
+
+#### Security Enhancements ✅
+- **Comprehensive XSS protection** with DOMPurify sanitization on all user-generated content
+- **Multi-tier rate limiting** for auth, sessions, admin, and public API routes
+- **Security headers** via Helmet middleware
+- **Request size limits** to prevent DoS attacks
+
+#### Student Management Improvements ✅
+- **Tag management system** for organizing students
+- **Bulk archiving** with undo functionality
+- **Student favoriting** for quick access
+- **Improved accessibility** with screen reader support
 
 #### UTC Timestamp Migration ✅
 - **Complete migration** from legacy date/time fields to UTC timestamp-based session management
@@ -33,24 +84,10 @@ A comprehensive, timezone-friendly tutoring management platform built with React
 - **Added session card hover animations** for better user experience
 - **Enhanced timezone handling** with fallback mechanisms for Asia/Shanghai timezone
 
-#### Advanced Scheduling Tool ✅
-- **FullCalendar integration** with multiple view modes (month, week, day, agenda)
-- **Drag-and-drop scheduling** for intuitive session management
-- **Mobile-responsive** calendar views optimized for all devices
-- **Real-time session updates** with live synchronization across components
-
-#### Timezone-Friendly System ✅
-- **Complete timezone awareness** throughout the entire application
-- **Automatic timezone detection** with manual override capabilities
-- **UTC storage with local display** ensuring data consistency across timezones
-- **DST handling** via Luxon for accurate time calculations
-- **Multi-timezone support** for tutors and students in different regions
-
 #### Dataset Optimization ✅
 - **Intelligent query optimization** that automatically switches strategies based on dataset size (500+ sessions threshold)
 - **Performance monitoring** with query execution time tracking and alerts
 - **Scalable architecture** supporting both small and large tutoring operations
-- **Row Level Security (RLS)** policies for secure data access
 - **Real-time subscriptions** for live data updates across components
 
 ## 🛠 Technology Stack
@@ -63,25 +100,32 @@ A comprehensive, timezone-friendly tutoring management platform built with React
 - TanStack Query for server state management
 - FullCalendar for scheduling interface
 - Luxon for timezone handling
+- DOMPurify for XSS protection
+- Sentry for error tracking and performance monitoring
 
 **Backend**
 - Express.js server
 - Supabase (PostgreSQL) for database
 - Supabase Auth for authentication
 - Supabase Storage for file uploads
+- Node Telegram Bot API for notifications
+- Sentry for backend error tracking
+- Helmet for security headers
+- express-rate-limit & express-slow-down for rate limiting
 
 **Key Libraries**
 - React Hook Form with Zod validation
 - Wouter for client-side routing
 - Canvas Confetti for success animations
 - React Beautiful DnD for dashboard customization
+- ExchangeRate-API for currency conversion
 
 ## 📦 Installation
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd tutortrack
+   cd classter
    ```
 
 2. **Install dependencies**
@@ -90,14 +134,29 @@ A comprehensive, timezone-friendly tutoring management platform built with React
    ```
 
 3. **Set up environment variables**
-   Create a `.env` file with your Supabase credentials:
+   Create a `.env` file with the required credentials:
    ```
+   # Supabase Configuration
    SUPABASE_URL=your_supabase_project_url
    SUPABASE_ANON_KEY=your_supabase_anon_key
    SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+   
+   # Telegram Bot (Optional)
+   TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+   
+   # Sentry (Optional - for error tracking)
+   SENTRY_DSN_FRONTEND=your_frontend_sentry_dsn
+   SENTRY_DSN_BACKEND=your_backend_sentry_dsn
    ```
 
-4. **Start the development server**
+4. **Database Setup**
+   - Run the SQL migrations in your Supabase SQL Editor
+   - Required migration for Telegram notifications:
+     ```sql
+     ALTER TABLE tutors ADD COLUMN IF NOT EXISTS last_daily_notification_date DATE;
+     ```
+
+5. **Start the development server**
    ```bash
    npm run dev
    ```
@@ -105,102 +164,227 @@ A comprehensive, timezone-friendly tutoring management platform built with React
 ## 🗄 Database Schema
 
 ### Core Tables
-- **tutors**: User profiles linked to Supabase Auth
-- **students**: Student records with contact info and metadata
-- **sessions**: Tutoring sessions with UTC timestamps (`session_start`, `session_end`)
+- **tutors**: User profiles linked to Supabase Auth, includes timezone, currency, admin status, and Telegram chat ID
+- **students**: Student records with contact info, tags, favorite status, and metadata
+- **sessions**: Tutoring sessions with UTC timestamps (`session_start`, `session_end`), notes, and payment status
 - **booking_slots**: Available time slots for public booking
 - **payments**: Payment tracking for completed sessions
 
-### Recent Schema Updates
-- **Deprecated fields**: `date` and `time` columns removed in favor of UTC timestamps
-- **New fields**: `session_start` and `session_end` for precise timezone handling
-- **Enhanced validation**: Proper decimal handling for rates and improved status enums
+### Key Schema Features
+- **UTC Timestamps**: All session times stored as `session_start` and `session_end` in UTC
+- **Row Level Security**: RLS policies ensure data isolation between tutors
+- **Proper Indexing**: Optimized indexes for performance with large datasets
+- **Enum Types**: Status enums for sessions (scheduled, completed, cancelled, pending)
 
 ## 🌍 Timezone Handling
 
 The application implements comprehensive timezone support:
 
-1. **Storage**: All session times stored as UTC timestamps
-2. **Display**: Times converted to user's timezone for display
-3. **Booking**: Students see times in their local timezone
-4. **Conversion**: Automatic timezone detection with manual override options
+1. **Storage**: All session times stored as UTC timestamps in the database
+2. **Display**: Times automatically converted to user's timezone for display
+3. **Booking**: Students see available slots in their local timezone
+4. **Detection**: Automatic timezone detection with manual override options
+5. **DST Support**: Proper daylight saving time handling via Luxon
 
 ### Timezone Features
 - Browser-based timezone detection
-- Manual timezone selection with search
+- Manual timezone selection with searchable dropdown
 - Proper DST handling via Luxon
 - Fallback mechanisms for timezone resolution
+- Multi-timezone support for global operations
 
 ## 🔧 Performance Features
 
 ### Dataset Optimization
 - **Automatic detection**: Switches to optimized queries for datasets over 500 sessions
-- **Query strategies**: JOINs for small datasets, separate fetches for large datasets
+- **Query strategies**: 
+  - Small datasets (< 500 sessions): Single JOIN query
+  - Large datasets (500+ sessions): Separate queries with client-side combination
 - **Monitoring**: Execution time tracking with performance alerts
+- **Caching**: 5-minute cache for session counts to reduce database load
 
 ### Caching Strategy
 - React Query for intelligent server state caching
 - Optimistic updates for better user experience
-- Cache invalidation on mutations
+- Strategic cache invalidation on mutations
+- Real-time subscriptions for live updates
+
+## 🔐 Security Features
+
+### Authentication & Authorization
+- Supabase Auth with JWT token validation
+- Admin authorization middleware
+- Row Level Security (RLS) policies
+- Secure session management
+
+### Input Validation & Sanitization
+- **Client-side**: Zod schema validation on all forms
+- **Server-side**: Request body validation before database operations
+- **XSS Protection**: DOMPurify sanitization on all user-generated content
+  - Sanitize-on-display pattern preserves data integrity
+  - Centralized sanitization utilities
+  - Applied to names, tags, emails, notes, and all displayed content
+
+### Network Security
+- **Rate Limiting**:
+  - Auth routes: 5 requests per 15 minutes
+  - Public API: 20 requests per minute
+  - Admin routes: 50 requests per 15 minutes
+  - Global fallback: 120 requests per minute
+- **Slow-down**: Progressive delays for suspicious activity
+- **CORS**: Properly configured with credentials support
+- **Security Headers**: Helmet middleware with CSP, HSTS, etc.
+- **Request Limits**: 200kb JSON body size limit
+
+### Error Tracking
+- **Sentry Integration**:
+  - Frontend error tracking with session replay
+  - Backend error tracking with request context
+  - Performance monitoring (100% transaction sampling)
+  - User context attribution
+  - Environment-based configuration
+  - Browser extension error filtering
+
+## 📱 Telegram Bot Features
+
+### Daily Notifications (9 PM Tutor Timezone)
+- Today's earnings summary
+- List of today's unpaid sessions
+- Summary of past unpaid sessions
+- Tomorrow's schedule
+
+### Real-time Booking Alerts
+- Instant notifications for new booking requests
+- Session details with date, time, and expected earnings
+- Prompts to review and approve via dashboard
+
+### Admin Broadcast
+- Send announcements to all subscribed tutors
+- Markdown formatting support (bold, italic)
+- Delivery tracking with success/failure counts
+
+### Setup Instructions
+1. Create a Telegram bot via [@BotFather](https://t.me/BotFather)
+2. Add `TELEGRAM_BOT_TOKEN` to environment variables
+3. Tutors subscribe by messaging the bot with their registered email
+4. Bot verifies email and saves chat ID for notifications
+
+## 🎛 Admin Dashboard
+
+Access the admin dashboard at `/admin` (requires admin privileges).
+
+### Available Features
+- **Platform Metrics**: Total tutors, active students, weekly sessions, total earnings (USD)
+- **User Engagement**: WAU, MAU, and engagement ratios
+- **Earnings Trends**: Visual charts showing daily/weekly/monthly earnings
+- **Top Tutors**: Leaderboard with top 10 tutors by total earnings
+- **Broadcast Messaging**: Send Telegram announcements to all tutors
+- **Multi-Currency**: Automatic conversion to USD for unified reporting
+
+### Granting Admin Access
+Run this SQL in your Supabase SQL Editor:
+```sql
+UPDATE tutors SET is_admin = true WHERE email = 'admin@example.com';
+```
 
 ## 🚀 Deployment
 
-The application is configured for Replit deployment:
+The application is optimized for Replit deployment:
 
 1. **Development**: Vite dev server with Express middleware
 2. **Production**: Static build served by Express with client-side routing
-3. **Environment**: Node.js 20 with PostgreSQL integration
+3. **Environment**: Node.js 20+ with PostgreSQL integration
+4. **Health Check**: `/api/health` endpoint for uptime monitoring
+
+### Environment Variables for Production
+Ensure all required environment variables are set:
+- Supabase credentials (URL, anon key, service role key)
+- Telegram bot token (if using notifications)
+- Sentry DSNs (if using error tracking)
 
 ## 📱 Public Booking Flow
 
 Students can book sessions through a public booking page:
 
 1. **Access**: Visit `/booking/[tutorId]` for tutor-specific booking
-2. **Timezone**: Automatic detection with manual override
-3. **Slots**: View available time slots in local timezone
-4. **Submission**: Book sessions with proper UTC conversion
-5. **Confirmation**: Booking requests appear in tutor's pending requests
-
-## 🔐 Security
-
-- **Row Level Security**: Database-level access control
-- **Authentication**: Supabase Auth integration
-- **File uploads**: Secure avatar storage with access policies
-- **Validation**: Client and server-side data validation
-
-## 🐛 Recent Bug Fixes
-
-### June 2025 Fixes
-- ✅ **Booking submission errors**: Fixed field validation and decimal formatting
-- ✅ **Pending requests display**: Updated to work with UTC timestamp schema
-- ✅ **Calendar slot selection**: Restored functionality with loading animations
-- ✅ **Timezone conversion**: Enhanced student booking with proper time display
-- ✅ **Session card rendering**: Fixed ghost cards and added hover effects
+2. **Timezone**: Automatic detection with manual override option
+3. **Slots**: View available time slots in student's local timezone
+4. **Duration**: Select custom session duration
+5. **Submission**: Book sessions with automatic UTC conversion
+6. **Confirmation**: Booking requests appear in tutor's pending requests
+7. **Notification**: Tutor receives Telegram alert (if subscribed)
 
 ## 📝 Usage
 
 ### For Tutors
-1. **Sign up/Login**: Create account and complete profile setup
-2. **Add Students**: Manage student roster with contact information
-3. **Create Availability**: Set up available time slots for booking
-4. **Schedule Sessions**: Use calendar to schedule and manage sessions
-5. **Handle Requests**: Review and approve student booking requests
-6. **Track Earnings**: Monitor income with detailed analytics
+1. **Sign up/Login**: Create account with email, timezone, and currency preferences
+2. **Profile Setup**: Upload avatar, configure notification preferences
+3. **Add Students**: Create student profiles with tags and contact information
+4. **Create Availability**: Set up available time slots for public booking
+5. **Schedule Sessions**: Use calendar to schedule and manage sessions
+6. **Handle Requests**: Review and approve student booking requests
+7. **Track Earnings**: Monitor income with detailed analytics
+8. **Telegram Alerts**: Subscribe for daily summaries and booking notifications
 
 ### For Students
 1. **Access Booking Page**: Visit tutor's public booking URL
 2. **Select Timezone**: Confirm or change timezone preference
-3. **Choose Slot**: Pick from available time slots
-4. **Submit Request**: Provide name and submit booking request
-5. **Wait for Confirmation**: Tutor will review and confirm booking
+3. **Choose Slot**: Pick from available time slots in your timezone
+4. **Select Duration**: Choose session length (e.g., 30, 60, 90 minutes)
+5. **Submit Request**: Provide name and submit booking request
+6. **Wait for Confirmation**: Tutor will review and confirm booking
+
+### For Admins
+1. **Access Dashboard**: Navigate to `/admin` route
+2. **Monitor Metrics**: View platform-wide KPIs and engagement
+3. **Review Analytics**: Analyze earnings trends and tutor performance
+4. **Send Broadcasts**: Announce updates via Telegram to all tutors
+5. **Track Health**: Monitor application health and error rates
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Telegram Notifications Not Working**
+- Ensure `TELEGRAM_BOT_TOKEN` is set in environment variables
+- Verify tutor has subscribed by messaging the bot with their email
+- Check Supabase logs for error messages
+- Run the required SQL migration for `last_daily_notification_date`
+
+**Timezone Issues**
+- Clear browser cache and reload
+- Verify timezone is correctly set in tutor profile
+- Check that session times are stored as UTC in database
+- Ensure Luxon is properly handling DST transitions
+
+**Performance Issues**
+- Check dataset size (optimize queries for 500+ sessions)
+- Monitor query execution times in console logs
+- Review Sentry for slow transaction alerts
+- Check database indexes are properly configured
+
+**Rate Limiting Errors**
+- Wait for the rate limit window to expire
+- For development, adjust limits in `server/rateLimiters.ts`
+- Check IP address isn't being rate-limited globally
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make changes following existing patterns
-4. Test thoroughly
-5. Submit pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Follow existing code patterns and conventions
+4. Test thoroughly, especially timezone-related features
+5. Ensure security best practices are maintained
+6. Update documentation for new features
+7. Submit pull request with detailed description
+
+### Code Standards
+- TypeScript for type safety
+- React Hook Form with Zod validation for forms
+- TanStack Query for all data fetching
+- Sanitize all user-generated content before display
+- Follow existing component patterns
+- Add `data-testid` attributes for testing
 
 ## 📄 License
 
@@ -209,7 +393,21 @@ This project is licensed under the MIT License.
 ## 🆘 Support
 
 For issues or questions:
-1. Check existing documentation
-2. Review recent updates in changelog
-3. Submit detailed bug reports with timezone information
-4. Include browser and device details for booking issues
+1. Check existing documentation and troubleshooting guide
+2. Review recent updates in this README
+3. Check Sentry error logs for detailed stack traces
+4. Submit detailed bug reports including:
+   - Browser and device information
+   - Timezone information
+   - Steps to reproduce
+   - Expected vs actual behavior
+   - Console error messages
+
+## 🙏 Acknowledgments
+
+- Built with [Replit](https://replit.com) platform
+- UI components from [shadcn/ui](https://ui.shadcn.com/)
+- Calendar powered by [FullCalendar](https://fullcalendar.io/)
+- Database and auth by [Supabase](https://supabase.com/)
+- Error tracking by [Sentry](https://sentry.io/)
+- Notifications via [Telegram Bot API](https://core.telegram.org/bots/api)

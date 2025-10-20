@@ -2,7 +2,7 @@
 
 ## Overview
 
-The TutorTrack application now includes an intelligent dataset optimization system that automatically adapts to any account size, preventing performance issues for users with large datasets (500+ sessions).
+The Classter application includes an intelligent dataset optimization system that automatically adapts to any account size, preventing performance issues for users with large datasets (500+ sessions).
 
 ## How It Works
 
