@@ -519,12 +519,15 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
 
         if (data.repeatWeekly && data.repeatWeeks) {
           for (let week = 1; week < data.repeatWeeks; week++) {
-            // Calculate recurring session times by adding weeks to the original sessionStart
-            const weeklyStartUTC = startUTC.add(week * 7, 'days');
+            // Calculate recurring session times by adding weeks in local timezone (DST-aware)
+            // This ensures that "13:00 Kyiv" remains "13:00 Kyiv" even when DST changes
+            const weeklyStartLocal = startUTC.tz(tutorTimezone).add(week, 'weeks');
+            const weeklyStartUTC = weeklyStartLocal.utc();
             const weeklyEndUTC = weeklyStartUTC.add(data.duration, 'minutes');
             
-            console.log(`Recurring session ${week} UTC:`, {
+            console.log(`Recurring session ${week} UTC (DST-aware):`, {
               week_offset: week,
+              local_time: weeklyStartLocal.format('YYYY-MM-DD HH:mm'),
               start_utc: weeklyStartUTC.toISOString(),
               end_utc: weeklyEndUTC.toISOString()
             });
