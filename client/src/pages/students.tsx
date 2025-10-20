@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { sanitizeText } from "@/lib/sanitize";
 import {
   Dialog,
   DialogContent,
@@ -1170,20 +1171,20 @@ export default function Students() {
                               />
                             </button>
                             <div>
-                              <p className="font-medium">{student.name}</p>
+                              <p className="font-medium">{sanitizeText(student.name)}</p>
                               <div className="flex items-center gap-2 mt-1">
                                 {student.phone && (
-                                  <span className="text-xs text-muted-foreground">📞 {student.phone}</span>
+                                  <span className="text-xs text-muted-foreground">📞 {sanitizeText(student.phone)}</span>
                                 )}
                                 {student.email && (
-                                  <span className="text-xs text-muted-foreground">✉️ {student.email}</span>
+                                  <span className="text-xs text-muted-foreground">✉️ {sanitizeText(student.email)}</span>
                                 )}
                               </div>
                               {student.tags && student.tags.length > 0 && (
                                 <div className="flex gap-1 mt-1">
                                   {student.tags.slice(0, 2).map((tag) => (
                                     <Badge key={tag} variant="outline" className="text-xs">
-                                      {tag}
+                                      {sanitizeText(tag)}
                                     </Badge>
                                   ))}
                                   {student.tags.length > 2 && (
