@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import { sanitizeText } from './sanitize';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -27,7 +28,7 @@ export function convertSessionToCalendarEvent(
   const endDate = sessionEndUTC.tz(tutorTimezone).toDate();
 
   // Determine display styling
-  let title = session.student_name || session.unassigned_name || 'Unknown Student';
+  let title = sanitizeText(session.student_name || session.unassigned_name) || 'Unknown Student';
   let backgroundColor = session.color || '#3b82f6'; // Use user's selected color or default blue
   let textColor = '#ffffff';
   
@@ -44,10 +45,10 @@ export function convertSessionToCalendarEvent(
   // Only override user's color choice for critical status indicators
   if (session.status === 'pending') {
     backgroundColor = '#f59e0b'; // Amber for pending requests (critical status)
-    title = `⏳ ${session.unassigned_name || 'Pending Request'}`;
+    title = `⏳ ${sanitizeText(session.unassigned_name) || 'Pending Request'}`;
   } else if (session.status === 'confirmed' && !session.student_id) {
     backgroundColor = '#10b981'; // Green for unassigned confirmed sessions (critical status)
-    title = `📝 ${session.unassigned_name || 'Unassigned Session'}`;
+    title = `📝 ${sanitizeText(session.unassigned_name) || 'Unassigned Session'}`;
   } 
   // For regular sessions, respect user's color choice and only add visual indicators in title
   else if (!session.paid) {
