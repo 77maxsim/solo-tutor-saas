@@ -188,20 +188,28 @@ async function sendDailyNotification(tutor: any) {
     const { id, telegram_chat_id, timezone, currency, time_format, full_name, last_daily_notification_date } = tutor;
     
     const today = dayjs().tz(timezone).format('YYYY-MM-DD');
+    const now = dayjs().tz(timezone);
+    
+    console.log(`📋 [${full_name}] Evaluating for notification:
+      - Current time: ${now.format('YYYY-MM-DD HH:mm:ss')} (${timezone})
+      - Today's date: ${today}
+      - Last notification date: ${last_daily_notification_date || 'NULL (never sent)'}
+      - Telegram chat ID: ${telegram_chat_id}`);
     
     // Check if we already sent a notification today (database-persisted check)
     if (last_daily_notification_date === today) {
-      console.log(`⏭️ Notification for ${full_name} already sent today (${today}), skipping`);
+      console.log(`⏭️ [${full_name}] Skipping: Already sent today (DB shows ${last_daily_notification_date})`);
       return;
     }
     
     // Fallback: Also check in-memory cache for backwards compatibility
     const notificationKey = `${id}-${today}`;
     if (sentNotifications.has(notificationKey)) {
+      console.log(`⏭️ [${full_name}] Skipping: Already in memory cache for ${today}`);
       return;
     }
 
-    console.log(`📊 Preparing notification for ${full_name} (${timezone})`);
+    console.log(`📊 [${full_name}] ✅ Preparing notification (not sent today yet)`);
 
     const todayData = await calculateTodayEarnings(id, timezone);
     const todayUnpaidSessions = await getTodayUnpaidSessions(id, timezone);
@@ -253,9 +261,12 @@ async function sendDailyNotification(tutor: any) {
       message += `\n*Total:* ${formatCurrency(totalTomorrow, currency)} from ${tomorrowSessions.length} session${tomorrowSessions.length !== 1 ? 's' : ''}`;
     }
 
+    console.log(`📤 [${full_name}] Sending message to Telegram...`);
     await bot.sendMessage(telegram_chat_id, message, { parse_mode: 'Markdown' });
+    console.log(`✅ [${full_name}] Message sent successfully to Telegram`);
     
     // Update database with today's date to prevent duplicates (persists across server restarts)
+    console.log(`💾 [${full_name}] Updating database: last_daily_notification_date = ${today}`);
     const { error: updateError } = await supabase
       .from('tutors')
       .update({ last_daily_notification_date: today })
@@ -263,21 +274,27 @@ async function sendDailyNotification(tutor: any) {
     
     if (updateError) {
       // If column doesn't exist or update fails, fall back to in-memory cache only
-      console.log(`⚠️ Could not update last_daily_notification_date for ${full_name}:`, updateError.message);
-      console.log('   Using in-memory cache as fallback (duplicates possible on restart)');
+      console.error(`⚠️ [${full_name}] Database update FAILED:`, updateError.message);
+      console.log(`   Using in-memory cache as fallback (duplicates possible on restart)`);
+    } else {
+      console.log(`✅ [${full_name}] Database updated successfully`);
     }
     
     // Always update in-memory cache as fallback
     sentNotifications.add(notificationKey);
-    console.log(`✅ Notification sent to ${full_name}`);
+    console.log(`✅ [${full_name}] Notification complete. Added to memory cache.`);
 
   } catch (error) {
-    console.error(`Error sending notification to tutor ${tutor.id}:`, error);
+    console.error(`❌ [${tutor.full_name || `Tutor ${tutor.id}`}] Error sending notification:`, error);
   }
 }
 
 async function checkAndSendNotifications() {
   try {
+    const systemTime = dayjs().format('YYYY-MM-DD HH:mm:ss UTC');
+    console.log(`\n🔔 ========== NOTIFICATION CHECK CYCLE ==========`);
+    console.log(`⏰ System time: ${systemTime}`);
+    
     // Try to fetch with last_daily_notification_date column (post-migration)
     let { data: tutors, error } = await supabase
       .from('tutors')
@@ -307,31 +324,44 @@ async function checkAndSendNotifications() {
       return;
     }
 
-    console.log(`🔍 Checking ${tutors.length} tutor(s) for 9 PM notifications...`);
+    console.log(`📊 Found ${tutors.length} tutor(s) subscribed to Telegram notifications`);
+    console.log(`🕐 Notification window: 9:00 PM - 9:59 PM (1 hour) in each tutor's timezone\n`);
 
     for (const tutor of tutors) {
       const now = dayjs().tz(tutor.timezone);
       const hour = now.hour();
       const minute = now.minute();
+      const currentTime = now.format('HH:mm:ss');
+      const currentDate = now.format('YYYY-MM-DD');
 
-      console.log(`  - ${tutor.full_name}: ${now.format('HH:mm')} (${tutor.timezone})`);
+      console.log(`👤 ${tutor.full_name}:`);
+      console.log(`   Local time: ${currentTime} on ${currentDate} (${tutor.timezone})`);
+      console.log(`   Last notification: ${tutor.last_daily_notification_date || 'NULL (never)'}`);
 
-      // Check if it's within 3 minutes of 9 PM (21:00-21:02)
-      // The sentNotifications Set with date-based keys prevents duplicates within the same day
-      if (hour === 21 && minute <= 2) {
-        console.log(`  ✅ Triggering notification for ${tutor.full_name}!`);
+      // Check if it's within the 9 PM hour (21:00-21:59) - 1 hour window
+      // The database column and sentNotifications Set prevent duplicates within the same day
+      if (hour === 21) {
+        console.log(`   ✅ IN NOTIFICATION WINDOW (hour ${hour})`);
+        console.log(`   🚀 Triggering notification for ${tutor.full_name}...`);
         await sendDailyNotification(tutor);
+      } else {
+        console.log(`   ⏸️  Outside window (hour ${hour}, need hour 21)`);
       }
+      console.log(''); // Empty line for readability
     }
+    
+    console.log(`🏁 ========== CHECK CYCLE COMPLETE ==========\n`);
   } catch (error) {
     console.error('❌ Error in checkAndSendNotifications:', error);
   }
 }
 
 async function resetDailyCache() {
-  // Check if any tutor is currently in their notification window (21:00-21:02)
+  // Check if any tutor is currently in their notification window (21:00-21:59)
   // to prevent clearing the cache and causing duplicate notifications
   try {
+    console.log(`🔄 Daily cache reset triggered at ${dayjs().format('YYYY-MM-DD HH:mm:ss UTC')}`);
+    
     const { data: tutors } = await supabase
       .from('tutors')
       .select('timezone')
@@ -341,10 +371,11 @@ async function resetDailyCache() {
       for (const tutor of tutors) {
         const now = dayjs().tz(tutor.timezone);
         const hour = now.hour();
-        const minute = now.minute();
         
-        if (hour === 21 && minute <= 2) {
-          console.log(`⏳ Delaying cache reset - tutor in timezone ${tutor.timezone} is in notification window`);
+        // Check if it's during the 1-hour notification window (21:00-21:59)
+        if (hour === 21) {
+          console.log(`⏳ Delaying cache reset - tutor in timezone ${tutor.timezone} is in notification window (hour ${hour})`);
+          console.log(`   Will retry cache reset in 5 minutes`);
           // Retry in 5 minutes
           setTimeout(resetDailyCache, 5 * 60 * 1000);
           return;
@@ -352,14 +383,14 @@ async function resetDailyCache() {
       }
     }
   } catch (error) {
-    console.error('Error checking notification windows:', error);
+    console.error('❌ Error checking notification windows during cache reset:', error);
   }
 
   const dailyCacheSize = sentNotifications.size;
   const bookingCacheSize = sentBookingNotifications.size;
   sentNotifications.clear();
   sentBookingNotifications.clear();
-  console.log(`🔄 Daily cache reset. Cleared ${dailyCacheSize} daily notification entries and ${bookingCacheSize} booking notification entries.`);
+  console.log(`✅ Daily cache reset complete. Cleared ${dailyCacheSize} daily notification entries and ${bookingCacheSize} booking notification entries.`);
 }
 
 async function sendBookingNotification(session: any) {

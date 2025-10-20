@@ -59,6 +59,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 20, 2025: Telegram Notification Reliability Improvements - COMPLETED
+- **Expanded Notification Window**: Increased daily notification window from 3 minutes (21:00-21:02) to 1 hour (21:00-21:59)
+  - Dramatically reduces the chance of missing notifications due to server restarts or brief downtimes
+  - Server has 60x more opportunities to send notifications each day
+  - Duplicate prevention via database `last_daily_notification_date` column ensures notifications sent only once per day
+- **Comprehensive Diagnostic Logging**: Added detailed logging throughout the entire notification flow:
+  - System time and notification window information at start of each check cycle
+  - Per-tutor evaluation showing: local time, timezone, last notification date, and window status
+  - Database operations: Telegram message sending, database updates, success/failure states
+  - Structured logging with tutor names in brackets for easy filtering (e.g., `[Max]`, `[Natalia Pikulia]`)
+  - Clear decision logging: "IN NOTIFICATION WINDOW" vs "Outside window" with hour comparisons
+  - Database update confirmations and error details
+- **Smart Cache Reset**: Updated resetDailyCache to use the new 1-hour window when checking if tutors are in notification period
+- **Improved Debugging**: Logs now provide complete visibility into notification system behavior, making it easy to diagnose any future issues by checking logs around 9 PM
+
 ### October 15, 2025: Rate Limiting & DDoS Protection Implementation - COMPLETED
 - **Comprehensive Rate Limiting**: Implemented express-rate-limit and express-slow-down middleware to protect all API endpoints from abuse and DDoS attacks
   - **Auth/Sensitive Routes** (`/api/upload`, `/api/telegram`): 5 requests per 15 minutes with slowdown after 3 requests
