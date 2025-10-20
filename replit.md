@@ -39,6 +39,11 @@ Preferred communication style: Simple, everyday language.
 - **Security Headers**: Helmet middleware for comprehensive security headers.
 - **CORS Configuration**: Properly configured CORS with credentials support and origin validation.
 - **Request Size Limits**: Limited JSON body size to 200kb.
+- **XSS Protection**: Comprehensive input sanitization using DOMPurify with a sanitize-on-display approach:
+    - **Implementation**: Centralized sanitization utility (`client/src/lib/sanitize.ts`) with `sanitizeText()` and `sanitizeHtml()` functions that strip all HTML tags by default.
+    - **Coverage**: Applied to all user-generated content in readonly contexts including student names, tags, emails, phones, session notes, unassigned names, calendar event titles, and aria-label attributes.
+    - **Design**: Sanitize-on-display pattern preserves original data in the database while preventing XSS execution at render time.
+    - **Form Inputs**: Edit forms intentionally display raw values for editing; sanitization only applies to readonly display contexts.
 
 ### System Design Choices
 - **Component-based architecture** for modularity and reusability.
@@ -66,3 +71,4 @@ Preferred communication style: Simple, everyday language.
 - **express-rate-limit**: Middleware for rate limiting.
 - **express-slow-down**: Middleware for slowing down responses.
 - **Helmet**: Middleware for setting security-related HTTP headers.
+- **DOMPurify**: XSS sanitization library for protecting against malicious user-generated content.
