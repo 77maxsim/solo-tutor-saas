@@ -30,9 +30,11 @@ Preferred communication style: Simple, everyday language.
     - **File Storage**: Supabase Storage for avatar uploads with RLS.
     - **Multi-Currency Support**: Currency conversion service using ExchangeRate-API with 24-hour caching for admin dashboard metrics.
 - **Notifications**: Telegram bot integration for daily summaries, booking alerts, and broadcast messages to subscribed tutors.
+- **Error Tracking & Monitoring**: Sentry integration for comprehensive error tracking, performance monitoring, and session replay on both frontend and backend with automatic user context attribution.
 - **Admin Dashboard**: Comprehensive dashboard with KPIs, analytics charts (e.g., weekly earnings trend), top tutors performance metrics, and multi-currency earnings conversion to USD.
 - **Student Management**: Features like favoriting students and an optimized student list display.
 - **Session Management**: Smart rate prefill in session modals and bulk actions for marking sessions as paid.
+- **Health Monitoring**: Health check endpoint (`/api/health`) for uptime monitoring and application status tracking.
 
 ### System Design Choices
 - **Component-based architecture** for modularity and reusability.
@@ -56,8 +58,48 @@ Preferred communication style: Simple, everyday language.
 - **Day.js**: Lightweight date manipulation library.
 - **Telegram Bot API**: For sending notifications and broadcast messages.
 - **ExchangeRate-API**: Currency conversion service for admin dashboard (free tier: 1,500 requests/month).
+- **Sentry**: Error tracking and performance monitoring for both frontend (@sentry/react) and backend (@sentry/node).
 
 ## Recent Changes
+
+### October 20, 2025: Sentry Error Tracking & Application Monitoring - COMPLETED
+- **Error Tracking**: Implemented comprehensive error tracking and monitoring using Sentry for both frontend and backend
+  - **Frontend Monitoring** (`@sentry/react` v10.20.0):
+    - Automatic error capture with stack traces and session replay
+    - Performance monitoring with 100% transaction sampling for full visibility
+    - Session replay: 10% of normal sessions, 100% of error sessions
+    - Browser tracing integration for performance insights
+    - Filters out browser extension errors to reduce noise
+    - User context automatically set when users log in (email, ID, name)
+    - DSN injected via HTML template placeholder for security
+  - **Backend Monitoring** (`@sentry/node` v10.20.0):
+    - Express integration for automatic request/error tracking
+    - Performance monitoring with distributed tracing
+    - Error handler captures all 4xx and 5xx errors
+    - User context set during JWT authentication for request attribution
+    - Sends default PII (request headers, IP) for better debugging context
+    - Initialized before Express app creation for complete coverage
+- **Health Check Endpoint**: Added `/api/health` endpoint returning server status, uptime, timestamp, and environment
+  - Useful for monitoring tools and uptime checks
+  - Returns JSON with status: "ok", uptime in seconds, ISO timestamp, and current environment
+- **User Context Tracking**: 
+  - Frontend: User context automatically updated on auth state changes via `AppLayout` component
+  - Backend: User context set in authentication middleware for all protected routes
+  - Clears user context on logout for privacy
+- **Environment Configuration**:
+  - Frontend DSN: `SENTRY_DSN_FRONTEND` (Replit Secret, exposed via HTML script tag)
+  - Backend DSN: `SENTRY_DSN_BACKEND` (Replit Secret, used directly in Node.js)
+  - Both configured for development environment with 100% trace sampling
+- **Files Modified**:
+  - Created: `client/src/sentry.ts`, `server/sentry.ts`
+  - Modified: `client/src/main.tsx`, `client/src/App.tsx`, `client/index.html`
+  - Modified: `server/index.ts`, `server/routes.ts`
+- **Benefits**: 
+  - Real-time error alerts and stack traces for faster debugging
+  - Performance monitoring identifies slow endpoints and bottlenecks
+  - User context helps trace issues to specific tutors/sessions
+  - Session replay allows reproducing bugs exactly as users experienced them
+  - Health endpoint enables uptime monitoring and alerting
 
 ### October 20, 2025: DST-Aware Recurring Session Scheduling - COMPLETED
 - **Fixed DST Transition Bug**: Updated recurring session creation to maintain consistent local times across DST boundaries

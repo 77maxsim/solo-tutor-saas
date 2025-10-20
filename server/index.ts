@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeTelegram } from "./telegram";
+import { initSentry, setupSentryErrorHandler } from "./sentry";
 import helmet from "helmet";
 import cors from "cors";
 import { 
@@ -11,6 +12,9 @@ import {
   publicLimiter, 
   globalLimiter 
 } from "./rateLimiters";
+
+// Initialize Sentry FIRST before creating Express app
+initSentry();
 
 const app = express();
 
@@ -80,6 +84,9 @@ app.use("/api", globalLimiter);
 
 (async () => {
   const server = await registerRoutes(app);
+
+  // Setup Sentry error handler AFTER routes but BEFORE custom error handler
+  setupSentryErrorHandler(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

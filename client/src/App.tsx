@@ -12,6 +12,7 @@ import { ScheduleSessionModal } from "@/components/modals/schedule-session-modal
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
+import { setSentryUser, clearSentryUser } from "./sentry";
 import type { User } from "@supabase/supabase-js";
 
 // Pages
@@ -623,8 +624,15 @@ function AppLayout() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         console.log("✅ AppLayout: Session restored on reload:", session.user?.email);
+        // Set Sentry user context on initial session restoration
+        setSentryUser({
+          id: session.user.id,
+          email: session.user.email || 'unknown',
+          name: session.user.user_metadata?.full_name,
+        });
       } else {
         console.log("❌ AppLayout: No session found on reload");
+        clearSentryUser();
       }
       setUser(session?.user ?? null);
       setLoading(false);
@@ -635,6 +643,17 @@ function AppLayout() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log("🔄 AppLayout: Auth state changed:", _event, session?.user?.email);
+      
+      // Update Sentry user context when auth state changes
+      if (session?.user) {
+        setSentryUser({
+          id: session.user.id,
+          email: session.user.email || 'unknown',
+          name: session.user.user_metadata?.full_name,
+        });
+      } else {
+        clearSentryUser();
+      }
       
       // Force password reset for recovery sessions
       if (_event === 'PASSWORD_RECOVERY') {

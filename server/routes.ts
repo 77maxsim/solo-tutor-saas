@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import { insertStudentSchema, insertSessionSchema, insertPaymentSchema } from "@shared/schema";
 import { convertToUSD } from "./services/currencyConverter";
 import { adminLimiter } from "./rateLimiters";
+import { setSentryUser, clearSentryUser } from "./sentry";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -34,6 +35,15 @@ async function authenticateUser(req: Request, res: Response, next: NextFunction)
     }
 
     console.log(`✅ Authenticated user ${user.email} for ${req.path}`);
+    
+    // Set Sentry user context for this request only
+    // Clear it when response finishes to prevent context leaking to other requests
+    setSentryUser(user.id, user.email || 'unknown', user.user_metadata?.full_name);
+    
+    res.on('finish', () => {
+      // Clear Sentry user context after response is sent
+      clearSentryUser();
+    });
     
     // Attach user to request for use in route handlers
     (req as any).user = user;
@@ -83,6 +93,25 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint
+  const serverStartTime = Date.now();
+  app.get("/api/health", (req, res) => {
+    const uptime = Math.floor((Date.now() - serverStartTime) / 1000); // uptime in seconds
+    res.json({
+      status: "ok",
+      uptime,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || "development",
+    });
+  });
+
+  // Sentry configuration endpoint for frontend
+  app.get("/api/sentry-config", (req, res) => {
+    res.json({
+      dsn: process.env.SENTRY_DSN_FRONTEND || '',
+    });
+  });
+
   // Avatar upload endpoint
   app.post("/api/upload/avatar", upload.single('avatar'), async (req, res) => {
     try {
