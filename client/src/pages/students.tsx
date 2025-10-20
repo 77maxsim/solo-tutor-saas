@@ -1091,7 +1091,7 @@ export default function Students() {
                           handleEditStudent(student);
                         }
                       }}
-                      aria-label={`Edit student ${student.name}`}
+                      aria-label={`Edit student ${sanitizeText(student.name)}`}
                       data-testid={`row-student-${student.id}`}
                     >
                       <TableCell>
@@ -1100,7 +1100,7 @@ export default function Students() {
                           onCheckedChange={(checked) => handleSelectRow(student.id, checked as boolean)}
                           onClick={(e) => e.stopPropagation()}
                           onKeyDown={(e) => e.stopPropagation()}
-                          aria-label={`Select ${student.name}`}
+                          aria-label={`Select ${sanitizeText(student.name)}`}
                           data-testid={`checkbox-student-${student.id}`}
                         />
                       </TableCell>
