@@ -59,6 +59,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 20, 2025: DST-Aware Recurring Session Scheduling - COMPLETED
+- **Fixed DST Transition Bug**: Updated recurring session creation to maintain consistent local times across DST boundaries
+  - Previously: Adding 7 days in UTC caused sessions to shift by 1 hour when DST changed (e.g., "13:00 Kyiv" became "12:00 Kyiv" after switching from UTC+3 to UTC+2)
+  - Now: Adding weeks in local timezone ensures "13:00 Kyiv" always stays "13:00 Kyiv" regardless of DST changes
+  - Implementation: Recurring sessions now convert to local timezone, add weeks, then convert back to UTC
+  - Impact: Only affects new recurring sessions created after this fix; existing sessions unchanged
+  - File Modified: `client/src/components/modals/schedule-session-modal.tsx`
+  - Note: Edit session modal already handles this correctly by updating each session individually in its timezone context
+
 ### October 20, 2025: Telegram Notification Reliability Improvements - COMPLETED
 - **Expanded Notification Window**: Increased daily notification window from 3 minutes (21:00-21:02) to 1 hour (21:00-21:59)
   - Dramatically reduces the chance of missing notifications due to server restarts or brief downtimes
