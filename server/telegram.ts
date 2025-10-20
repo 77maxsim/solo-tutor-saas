@@ -454,7 +454,7 @@ export async function sendBroadcast(message: string, tutors: any[]) {
     try {
       await bot.sendMessage(
         tutor.telegram_chat_id, 
-        `📢 *Announcement from TutorTrack*\n\n${message}`,
+        `📢 *Announcement from Classter*\n\n${message}`,
         { parse_mode: 'Markdown' }
       );
       console.log(`✅ Broadcast sent to ${tutor.full_name}`);
@@ -514,7 +514,7 @@ export async function initializeTelegram() {
     });
 
     bot.getMe().then((botInfo) => {
-      console.log("✅ TutorTrack Telegram bot is running!");
+      console.log("✅ Classter Telegram bot is running!");
       console.log(`📱 Bot username: @${botInfo.username}`);
       console.log(`🔗 Bot link: https://t.me/${botInfo.username}`);
     }).catch((error) => {
@@ -532,7 +532,7 @@ export async function initializeTelegram() {
       }
 
       if (!userInput || !userInput.includes('@')) {
-        await bot.sendMessage(chatId, `👋 Hi ${name}! Please reply with your email (the one you used to sign up in TutorTrack).`);
+        await bot.sendMessage(chatId, `👋 Hi ${name}! Please reply with your email (the one you used to sign up in Classter).`);
         return;
       }
 
@@ -549,7 +549,7 @@ export async function initializeTelegram() {
         } else if (!data || data.length === 0) {
           await bot.sendMessage(chatId, `⚠️ Couldn't find a tutor with that email. Please double-check and try again.`);
         } else {
-          await bot.sendMessage(chatId, `✅ You're now subscribed to daily updates from TutorTrack!`);
+          await bot.sendMessage(chatId, `✅ You're now subscribed to daily updates from Classter!`);
           console.log(`✅ chat_id saved for: ${userInput}`);
         }
       } catch (err) {
@@ -589,7 +589,7 @@ export async function initializeTelegram() {
         }
       });
 
-    console.log("📱 TutorTrack notification scheduler is running...");
+    console.log("📱 Classter notification scheduler is running...");
     console.log("⏰ Checking for 9 PM notifications every minute");
 
     checkAndSendNotifications();

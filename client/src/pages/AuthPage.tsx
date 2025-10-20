@@ -310,7 +310,7 @@ export default function AuthPage() {
               {isPasswordResetMode 
                 ? 'Enter your email to receive password reset instructions'
                 : isLogin 
-                ? 'Sign in to access your TutorTrack dashboard' 
+                ? 'Sign in to access your Classter dashboard' 
                 : 'Start managing your tutoring business today'
               }
             </CardDescription>
@@ -653,7 +653,7 @@ export default function AuthPage() {
         </Card>
 
         <div className="text-center text-xs text-muted-foreground mt-4">
-          <p>© 2025 TutorTrack. Manage your tutoring business with ease.</p>
+          <p>© 2025 Classter. Manage your tutoring business with ease.</p>
         </div>
       </div>
     </div>

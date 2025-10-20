@@ -13,7 +13,6 @@ import {
   Calendar, 
   DollarSign, 
   Users, 
-  GraduationCap,
   Plus,
   LogOut,
   Settings,
@@ -22,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
+import classterLogo from "@assets/4_1760971030398.png";
 
 import { usePendingSessions } from "@/hooks/use-pending-sessions";
 
@@ -123,11 +123,12 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
     <div className="flex h-full w-64 flex-col bg-card border-r border-border animate-slide-up">
       {/* Logo/Brand Header with Hover Effect */}
       <Link href="/dashboard">
-        <div className="flex items-center gap-3 px-6 py-6 border-b border-border hover-lift cursor-pointer group" onClick={handleNavClick}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 group-hover:scale-110 transition-all duration-300 animate-pulse-glow">
-            <GraduationCap className="h-4 w-4 text-white group-hover:animate-bounce-subtle" />
-          </div>
-          <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-200">TutorTrack</span>
+        <div className="flex items-center justify-center px-6 py-6 border-b border-border hover-lift cursor-pointer group" onClick={handleNavClick}>
+          <img 
+            src={classterLogo} 
+            alt="Classter" 
+            className="h-10 w-auto transition-all duration-300 group-hover:scale-105"
+          />
         </div>
       </Link>
 
@@ -243,7 +244,7 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
                 {tutorProfile?.full_name || 'Tutor'}
               </p>
               <p className="text-xs text-muted-foreground truncate group-hover:text-muted-foreground/80 transition-colors duration-200">
-                {tutorProfile?.email || 'TutorTrack User'}
+                {tutorProfile?.email || 'Classter User'}
               </p>
             </div>
             <Settings className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:rotate-[360deg] transition-all duration-500" />

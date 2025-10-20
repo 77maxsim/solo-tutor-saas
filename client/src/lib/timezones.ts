@@ -1,4 +1,4 @@
-// Timezone utilities and data for TutorTrack
+// Timezone utilities and data for Classter
 export interface TimezoneOption {
   value: string;
   label: string;
