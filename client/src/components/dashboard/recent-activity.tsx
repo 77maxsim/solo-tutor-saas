@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { formatCurrency } from "@/lib/utils";
+import { sanitizeText } from "@/lib/sanitize";
 
 interface Activity {
   id: string;
@@ -255,7 +256,7 @@ export function RecentActivity({ currency = 'USD', limit = 5 }: RecentActivityPr
                   <Icon className={`w-4 h-4 ${colors.icon}`} />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-foreground">{activity.description}</p>
+                  <p className="text-sm text-foreground">{sanitizeText(activity.description)}</p>
                   <p className="text-xs text-muted-foreground">{activity.time}</p>
                 </div>
                 {activity.amount && (

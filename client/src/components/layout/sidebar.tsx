@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
-import classterLogo from "@assets/5_1760971654459.png";
+import classterLogo from "@assets/Blue and Light Gray Modern Company Logo (2)_1760973142069.png";
 
 import { usePendingSessions } from "@/hooks/use-pending-sessions";
 
