@@ -18,6 +18,7 @@ import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUt
 import { useTimezone } from "@/contexts/TimezoneContext";
 import { getSessionDisplayInfo } from "@/lib/sessionDisplay";
 import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
+import { sanitizeText } from "@/lib/sanitize";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -345,7 +346,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
             <div className="space-y-3 p-4 bg-accent/50 rounded-lg">
               <div className="flex items-center gap-2 text-sm">
                 <User className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{session.student_name}</span>
+                <span className="font-medium">{sanitizeText(session.student_name)}</span>
               </div>
 
               <div className="flex items-center gap-2 text-sm">
