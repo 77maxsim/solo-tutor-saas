@@ -27,7 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { TIMEZONE_GROUPS, getBrowserTimezone } from "@/lib/timezones";
-import tutorStudentImg from "@assets/8_1760971654460.png";
+import tutorStudentImg from "@assets/Blue and Light Gray Modern Company Logo (1)_1760972575641.png";
 
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
