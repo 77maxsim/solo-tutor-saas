@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
 import { DateTime } from "luxon";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import { sanitizeText } from "@/lib/sanitize";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -406,7 +407,7 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
                       <div className="flex-1 space-y-3">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-amber-600" />
-                          <span className="font-semibold text-lg">{request.unassigned_name}</span>
+                          <span className="font-semibold text-lg">{sanitizeText(request.unassigned_name)}</span>
                           <Badge variant="outline" className="text-amber-700 border-amber-300">
                             Pending
                           </Badge>

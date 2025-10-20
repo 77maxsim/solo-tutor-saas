@@ -8,6 +8,7 @@ import { formatUtcToTutorTimezone, calculateDurationMinutes } from '@/lib/dateUt
 import { useTimezone } from '@/contexts/TimezoneContext';
 import { usePendingSessions } from '@/hooks/use-pending-sessions';
 import { PendingRequestsModal } from '@/components/modals/pending-requests-modal';
+import { sanitizeText } from '@/lib/sanitize';
 
 interface SessionWithStudent {
   id: string;
@@ -227,7 +228,7 @@ export default function MobileCalendarView({ sessions, onSelectSession, tutorCur
                       >
                         <div className="text-xs font-medium truncate leading-tight w-full text-center pointer-events-none">
                           {sessionAtTime.status === 'pending' && '⏳ '}
-                          {sessionAtTime.student_name?.split(' ')[0] || sessionAtTime.unassigned_name?.split(' ')[0] || 'Session'}
+                          {sanitizeText(sessionAtTime.student_name)?.split(' ')[0] || sanitizeText(sessionAtTime.unassigned_name)?.split(' ')[0] || 'Session'}
                         </div>
                       </button>
                     ) : isOccupied ? (
