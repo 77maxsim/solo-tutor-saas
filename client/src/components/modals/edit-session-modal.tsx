@@ -545,6 +545,10 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
                       step="15"
                       {...field}
                       onChange={(e) => field.onChange(Number(e.target.value))}
+                      onFocus={(e) => {
+                        // Auto-select text when focused for better UX
+                        e.target.select();
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
