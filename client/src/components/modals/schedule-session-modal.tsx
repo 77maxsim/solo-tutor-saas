@@ -893,6 +893,10 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
                         field.onChange(isNaN(parsed as number) ? undefined : parsed);
                         handleFieldChange('duration');
                       }}
+                      onFocus={(e) => {
+                        // Auto-select text when focused for better UX
+                        e.target.select();
+                      }}
                       data-testid="input-duration"
                     />
                   </FormControl>
@@ -923,6 +927,10 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
                         const parsed = value === "" ? undefined : parseFloat(value);
                         field.onChange(isNaN(parsed as number) ? undefined : parsed);
                         handleFieldChange('rate');
+                      }}
+                      onFocus={(e) => {
+                        // Auto-select text when focused for better UX
+                        e.target.select();
                       }}
                       data-testid="input-rate"
                     />
