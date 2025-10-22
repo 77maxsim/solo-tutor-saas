@@ -75,7 +75,7 @@ Preferred communication style: Simple, everyday language.
 - **Security Enhancements**: Comprehensive XSS protection with DOMPurify, multi-tier rate limiting, and security headers.
 - **Student Management**: Added tagging system, bulk archiving with undo, favoriting, and improved accessibility.
 - **Activity Sanitization**: All activity descriptions now properly sanitized to prevent XSS attacks.
-- **Session Form UX**: Fixed duration and rate fields to allow clearing without auto-reverting to 0, with proper NaN handling and user-friendly validation messages.
+- **Session Form UX**: Fixed duration and rate fields to allow clearing without auto-reverting to 0, with auto-select on focus for easy value replacement, proper NaN handling, and user-friendly validation messages.
 
 ### June 2025
 - **UTC Timestamp Migration**: Complete migration from legacy date/time fields to UTC timestamps.
