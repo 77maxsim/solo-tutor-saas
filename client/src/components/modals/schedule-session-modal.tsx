@@ -58,8 +58,14 @@ dayjs.extend(timezone);
 const scheduleSessionSchema = z.object({
   studentId: z.string().min(1, "Please select a student"),
   sessionStart: z.string().min(1, "Session start time is required"),
-  duration: z.number().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
-  rate: z.number().min(0, "Rate must be a positive number"),
+  duration: z.number({
+    required_error: "Duration is required",
+    invalid_type_error: "Duration is required",
+  }).min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
+  rate: z.number({
+    required_error: "Rate is required",
+    invalid_type_error: "Rate is required",
+  }).min(0, "Rate must be a positive number"),
   color: z.string().default("#3B82F6"),
   repeatWeekly: z.boolean().default(false),
   repeatWeeks: z.number().min(1, "Must repeat for at least 1 week").max(12, "Cannot repeat for more than 12 weeks").optional(),
@@ -877,11 +883,17 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
                     <Input 
                       type="number"
                       placeholder="60"
-                      {...field}
+                      name={field.name}
+                      ref={field.ref}
+                      onBlur={field.onBlur}
+                      value={field.value ?? ""}
                       onChange={(e) => {
-                        field.onChange(parseInt(e.target.value) || 0);
+                        const value = e.target.value;
+                        const parsed = value === "" ? undefined : parseInt(value, 10);
+                        field.onChange(isNaN(parsed as number) ? undefined : parsed);
                         handleFieldChange('duration');
                       }}
+                      data-testid="input-duration"
                     />
                   </FormControl>
                   <FormMessage />
@@ -902,25 +914,17 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
                       placeholder="45.00"
                       step="0.01"
                       className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                      {...field}
+                      name={field.name}
+                      ref={field.ref}
+                      onBlur={field.onBlur}
+                      value={field.value ?? ""}
                       onChange={(e) => {
-                        field.onChange(parseFloat(e.target.value) || 0);
+                        const value = e.target.value;
+                        const parsed = value === "" ? undefined : parseFloat(value);
+                        field.onChange(isNaN(parsed as number) ? undefined : parsed);
                         handleFieldChange('rate');
                       }}
-                      onFocus={(e) => {
-                        // Clear the field if it contains 0 when focused
-                        if (field.value === 0) {
-                          field.onChange('');
-                          e.target.value = '';
-                        }
-                        handleFieldChange('rate');
-                      }}
-                      onBlur={(e) => {
-                        // Reset to 0 if the field is empty when blurred
-                        if (e.target.value === '' || e.target.value === null) {
-                          field.onChange(0);
-                        }
-                      }}
+                      data-testid="input-rate"
                     />
                   </FormControl>
                   <FormMessage />
