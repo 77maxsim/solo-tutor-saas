@@ -183,3 +183,54 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
     studentEarnings
   };
 }
+
+interface MonthlyEarnings {
+  month: string;
+  year: number;
+  monthNum: number;
+  earnings: number;
+  isCurrentMonth: boolean;
+}
+
+export function calculateMonthlyEarnings(sessions: any[]): MonthlyEarnings[] {
+  if (!sessions || sessions.length === 0) {
+    return [];
+  }
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  const months: MonthlyEarnings[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(currentYear, currentMonth - i, 1);
+    const year = date.getFullYear();
+    const monthNum = date.getMonth() + 1;
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    months.push({
+      month: monthNames[date.getMonth()],
+      year,
+      monthNum,
+      earnings: 0,
+      isCurrentMonth: year === currentYear && monthNum === currentMonth + 1
+    });
+  }
+
+  sessions.forEach(session => {
+    const isPaid = session.paid === true || session.paid === 'true';
+    if (isPaid) {
+      const sessionDate = new Date(session.session_start);
+      const sessionYear = sessionDate.getFullYear();
+      const sessionMonth = sessionDate.getMonth() + 1;
+      const earnings = (session.duration / 60) * session.rate;
+      
+      const monthData = months.find(m => m.year === sessionYear && m.monthNum === sessionMonth);
+      if (monthData) {
+        monthData.earnings += earnings;
+      }
+    }
+  });
+
+  return months;
+}

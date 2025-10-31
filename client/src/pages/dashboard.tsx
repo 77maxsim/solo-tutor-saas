@@ -14,7 +14,7 @@ import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from "@/lib/queryOptimizer";
-import { calculateEarnings } from "@/lib/earningsCalculator";
+import { calculateEarnings, calculateMonthlyEarnings } from "@/lib/earningsCalculator";
 import { ScheduleSessionModal } from "@/components/modals/schedule-session-modal";
 import WelcomeAnimation from "@/components/WelcomeAnimation";
 import { 
@@ -199,7 +199,11 @@ export default function Dashboard() {
       // Use shared earnings calculator with timezone awareness
       const earningsData = calculateEarnings(sessionsWithNames, tutorTimezone);
       
+      // Calculate monthly earnings trend for percentage calculation
+      const monthlyEarningsData = calculateMonthlyEarnings(sessionsWithNames);
+      
       console.log('📦 Dashboard: Earnings data returned:', earningsData);
+      console.log('📦 Dashboard: Monthly earnings data:', monthlyEarningsData);
       
       const result = {
         sessionsThisWeek: earningsData.thisWeekSessions,
@@ -210,7 +214,8 @@ export default function Dashboard() {
         lastMonthEarnings: earningsData.lastMonthEarnings || 0,
         pendingPayments: 0,
         unpaidStudentsCount: 0,
-        activeStudents: earningsData.activeStudentsCount
+        activeStudents: earningsData.activeStudentsCount,
+        monthlyEarningsData
       };
 
       console.log('📦 Dashboard: Final result:', result);
@@ -415,12 +420,13 @@ export default function Dashboard() {
                         tutorInfo?.currency || 'USD'
                       )}
                     </div>
-                    {earningsView === 'month' && dashboardStats?.lastMonthEarnings !== undefined && !isLoading && (() => {
-                      const currentMonthEarnings = dashboardStats?.currentMonthEarnings || 0;
-                      const previousMonthEarnings = dashboardStats?.lastMonthEarnings || 0;
-                      const monthlyPercentageChange = previousMonthEarnings > 0 
-                        ? ((currentMonthEarnings - previousMonthEarnings) / previousMonthEarnings) * 100 
-                        : currentMonthEarnings > 0 ? 100 : 0;
+                    {earningsView === 'month' && dashboardStats?.monthlyEarningsData && !isLoading && (() => {
+                      const monthlyEarningsData = dashboardStats.monthlyEarningsData;
+                      const currentMonthData = monthlyEarningsData.find((m: any) => m.isCurrentMonth);
+                      const previousMonthData = monthlyEarningsData[monthlyEarningsData.length - 2];
+                      const monthlyPercentageChange = previousMonthData && previousMonthData.earnings > 0 
+                        ? ((currentMonthData?.earnings || 0) - previousMonthData.earnings) / previousMonthData.earnings * 100 
+                        : (currentMonthData?.earnings || 0) > 0 ? 100 : 0;
 
                       return (
                         <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
