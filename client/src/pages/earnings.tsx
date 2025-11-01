@@ -468,8 +468,8 @@ export default function Earnings() {
     // Calculate analytics
     const totalEarnings = filteredData.reduce((sum, m) => sum + m.earnings, 0);
     const avgEarnings = filteredData.length > 0 ? totalEarnings / filteredData.length : 0;
-    const bestMonth = [...filteredData].sort((a, b) => b.earnings - a.earnings)[0];
-    const worstMonth = [...filteredData].sort((a, b) => a.earnings - b.earnings)[0];
+    const bestMonth = filteredData.length > 0 ? [...filteredData].sort((a, b) => b.earnings - a.earnings)[0] : null;
+    const worstMonth = filteredData.length > 0 ? [...filteredData].sort((a, b) => a.earnings - b.earnings)[0] : null;
     
     // Calculate month-over-month growth (current month vs previous month)
     const calculateMonthOverMonthGrowth = () => {
@@ -558,8 +558,8 @@ Total Earnings: ${formatCurrency(totalEarnings, currency)}
 Average per Month: ${formatCurrency(avgEarnings, currency)}
 Month-over-Month Growth: ${monthOverMonthGrowth !== null ? monthOverMonthGrowth.toFixed(1) + '%' : 'N/A'}
 Period vs Previous: ${periodChange !== null ? (periodChange >= 0 ? '+' : '') + periodChange.toFixed(1) + '%' : 'N/A'}
-Best Month: ${bestMonth.month} ${bestMonth.year} (${formatCurrency(bestMonth.earnings, currency)})
-Worst Month: ${worstMonth.month} ${worstMonth.year} (${formatCurrency(worstMonth.earnings, currency)})
+Best Month: ${bestMonth ? `${bestMonth.month} ${bestMonth.year} (${formatCurrency(bestMonth.earnings, currency)})` : 'N/A'}
+Worst Month: ${worstMonth ? `${worstMonth.month} ${worstMonth.year} (${formatCurrency(worstMonth.earnings, currency)})` : 'N/A'}
 
 MONTHLY BREAKDOWN
 ${filteredData.map(m => `${m.month} ${m.year}: ${formatCurrency(m.earnings, currency)}`).join('\n')}
@@ -817,12 +817,20 @@ ${filteredData.map(m => `${m.month} ${m.year}: ${formatCurrency(m.earnings, curr
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground font-medium">Best</p>
-              <p className="text-sm font-bold text-green-600" data-testid="text-best-month">
-                {bestMonth.month}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {formatCurrency(bestMonth.earnings, currency)}
-              </p>
+              {bestMonth ? (
+                <>
+                  <p className="text-sm font-bold text-green-600" data-testid="text-best-month">
+                    {bestMonth.month}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatCurrency(bestMonth.earnings, currency)}
+                  </p>
+                </>
+              ) : (
+                <p className="text-base font-bold text-muted-foreground" data-testid="text-best-month">
+                  N/A
+                </p>
+              )}
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground font-medium">vs Previous</p>
