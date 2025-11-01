@@ -1,6 +1,23 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -22,10 +39,17 @@ import {
   Coins, 
   TrendingUp, 
   Calendar,
-  Users
+  Users,
+  Download,
+  Target,
+  Settings,
+  CalendarIcon,
+  Info
 } from "lucide-react";
 import { SessionStatCompact } from "@/components/stats/SessionStatCompact";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, ComposedChart } from 'recharts';
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 interface Session {
   id: string;
@@ -294,7 +318,7 @@ export default function Earnings() {
     };
   }, [queryClient]);
 
-  // Calculate monthly earnings for the last 6 months
+  // Calculate monthly earnings for the last 24 months (supports 12m filter + period comparison)
   const calculateMonthlyEarnings = (sessions: SessionWithStudent[]): MonthlyEarnings[] => {
     if (!sessions || sessions.length === 0) {
       return [];
@@ -304,9 +328,9 @@ export default function Earnings() {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
-    // Generate last 6 months including current month
+    // Generate last 24 months to support 12-month view + 12-month comparison
     const months: MonthlyEarnings[] = [];
-    for (let i = 5; i >= 0; i--) {
+    for (let i = 23; i >= 0; i--) {
       const date = new Date(currentYear, currentMonth - i, 1);
       const year = date.getFullYear();
       const monthNum = date.getMonth() + 1;
@@ -339,8 +363,51 @@ export default function Earnings() {
     return months;
   };
 
-  // MonthlyEarningsChart component
-  const MonthlyEarningsChart = ({ monthlyData, currency }: { monthlyData: MonthlyEarnings[], currency: string }) => {
+  // Enhanced MonthlyEarningsChart component with all features
+  const MonthlyEarningsChart = ({ monthlyData, currency, sessions: allSessions }: { monthlyData: MonthlyEarnings[], currency: string, sessions?: SessionWithStudent[] }) => {
+    // State for filters and settings
+    const [dateRange, setDateRange] = useState<'3m' | '6m' | '12m' | 'custom'>('6m');
+    const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
+    const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
+    const [monthlyGoal, setMonthlyGoal] = useState<number>(() => {
+      const saved = localStorage.getItem('monthly-earnings-goal');
+      return saved ? parseFloat(saved) : 0;
+    });
+    const [showGoalDialog, setShowGoalDialog] = useState(false);
+    const [tempGoal, setTempGoal] = useState(monthlyGoal.toString());
+    const [selectedMonthData, setSelectedMonthData] = useState<MonthlyEarnings | null>(null);
+    const [showBreakdownDialog, setShowBreakdownDialog] = useState(false);
+
+    // Query upcoming sessions for projection
+    const { data: upcomingSessions } = useQuery({
+      queryKey: ['upcoming-sessions-projection'],
+      queryFn: async () => {
+        const tutorId = await getCurrentTutorId();
+        if (!tutorId) return [];
+
+        const now = new Date();
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+        const { data, error } = await supabase
+          .from('sessions')
+          .select('id, session_start, duration, rate, paid')
+          .eq('tutor_id', tutorId)
+          .gte('session_start', now.toISOString())
+          .lte('session_start', endOfMonth.toISOString());
+
+        if (error) {
+          console.error('Error fetching upcoming sessions:', error);
+          return [];
+        }
+        return data || [];
+      },
+    });
+
+    // Save goal to localStorage
+    useEffect(() => {
+      localStorage.setItem('monthly-earnings-goal', monthlyGoal.toString());
+    }, [monthlyGoal]);
+
     if (!monthlyData || monthlyData.length === 0) {
       return (
         <div className="h-64 flex items-center justify-center text-muted-foreground">
@@ -349,67 +416,434 @@ export default function Earnings() {
       );
     }
 
-    const maxEarnings = Math.max(...monthlyData.map(m => m.earnings));
-    const currentMonthEarnings = monthlyData.find(m => m.isCurrentMonth)?.earnings || 0;
-    const previousMonthEarnings = monthlyData[monthlyData.length - 2]?.earnings || 0;
-    const percentageChange = previousMonthEarnings > 0 
-      ? ((currentMonthEarnings - previousMonthEarnings) / previousMonthEarnings) * 100 
-      : currentMonthEarnings > 0 ? 100 : 0;
+    // Filter data based on selected range
+    const getFilteredData = () => {
+      const now = new Date();
+      let monthsToShow = 6;
+      
+      if (dateRange === '3m') monthsToShow = 3;
+      else if (dateRange === '12m') monthsToShow = 12;
+      else if (dateRange === 'custom' && customStartDate && customEndDate) {
+        return monthlyData.filter(m => {
+          const monthDate = new Date(m.year, m.monthNum - 1, 1);
+          return monthDate >= customStartDate && monthDate <= customEndDate;
+        });
+      }
 
+      return monthlyData.slice(-monthsToShow);
+    };
+
+    const filteredData = getFilteredData();
+
+    // Calculate projection for current month
+    const calculateProjection = () => {
+      const currentMonth = filteredData.find(m => m.isCurrentMonth);
+      if (!currentMonth || !upcomingSessions || upcomingSessions.length === 0) return null;
+
+      const projectedEarnings = upcomingSessions.reduce((sum, session) => {
+        return sum + ((session.duration / 60) * session.rate);
+      }, 0);
+
+      return {
+        ...currentMonth,
+        projectedEarnings: currentMonth.earnings + projectedEarnings,
+        isProjection: true
+      };
+    };
+
+    const projection = calculateProjection();
+    const chartData = projection 
+      ? filteredData.map(m => m.isCurrentMonth ? { ...m, projectedEarnings: projection.projectedEarnings } : m)
+      : filteredData;
+
+    // Calculate analytics
+    const totalEarnings = filteredData.reduce((sum, m) => sum + m.earnings, 0);
+    const avgEarnings = filteredData.length > 0 ? totalEarnings / filteredData.length : 0;
+    const bestMonth = [...filteredData].sort((a, b) => b.earnings - a.earnings)[0];
+    const worstMonth = [...filteredData].sort((a, b) => a.earnings - b.earnings)[0];
+    
+    // Calculate growth rate (compound monthly growth rate) - handle edge cases
+    const calculateGrowthRate = () => {
+      if (filteredData.length < 2) return null;
+      const firstEarnings = filteredData[0].earnings;
+      const lastEarnings = filteredData[filteredData.length - 1].earnings;
+      
+      // If first month has no earnings, can't calculate meaningful growth
+      if (firstEarnings === 0) {
+        return lastEarnings > 0 ? null : 0; // null means "N/A"
+      }
+      
+      return ((lastEarnings / firstEarnings) ** (1 / (filteredData.length - 1)) - 1) * 100;
+    };
+    const growthRate = calculateGrowthRate();
+
+    // Period comparison - properly handle missing baseline data and custom ranges
+    const currentPeriodEarnings = totalEarnings;
+    
+    const calculatePeriodChange = () => {
+      // Find the chronological position of the filtered data in the full dataset
+      if (filteredData.length === 0) return null;
+      
+      const firstFilteredMonth = filteredData[0];
+      const firstFilteredIndex = monthlyData.findIndex(
+        m => m.year === firstFilteredMonth.year && m.monthNum === firstFilteredMonth.monthNum
+      );
+      
+      // Calculate the previous period based on the filtered data's position
+      const periodLength = filteredData.length;
+      const previousPeriodEndIndex = firstFilteredIndex;
+      const previousPeriodStartIndex = Math.max(0, previousPeriodEndIndex - periodLength);
+      
+      // If we don't have enough previous data (e.g., selecting the earliest months), return N/A
+      if (previousPeriodStartIndex === 0 && previousPeriodEndIndex - previousPeriodStartIndex < periodLength) {
+        return null;
+      }
+      
+      const previousPeriodData = monthlyData.slice(previousPeriodStartIndex, previousPeriodEndIndex);
+      const previousPeriodEarnings = previousPeriodData.reduce((sum, m) => sum + m.earnings, 0);
+      
+      // If previous period has no earnings but current does, can't calculate meaningful comparison
+      if (previousPeriodEarnings === 0) {
+        return currentPeriodEarnings > 0 ? null : 0;
+      }
+      
+      return ((currentPeriodEarnings - previousPeriodEarnings) / previousPeriodEarnings) * 100;
+    };
+    const periodChange = calculatePeriodChange();
+
+    // Export to CSV
+    const exportToCSV = () => {
+      const headers = ['Month', 'Year', 'Earnings', 'Sessions'];
+      const rows = filteredData.map(m => {
+        const monthSessions = allSessions?.filter(s => {
+          const sessionDate = new Date(s.session_start);
+          return sessionDate.getFullYear() === m.year && 
+                 sessionDate.getMonth() + 1 === m.monthNum &&
+                 s.paid === true;
+        }) || [];
+        
+        return [m.month, m.year, m.earnings.toFixed(2), monthSessions.length];
+      });
+
+      const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `earnings-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    // Export to PDF (simple text format)
+    const exportToPDF = () => {
+      const content = `
+EARNINGS REPORT
+Generated: ${new Date().toLocaleDateString()}
+Period: ${dateRange === 'custom' ? 'Custom Range' : `Last ${dateRange}`}
+
+SUMMARY
+Total Earnings: ${formatCurrency(totalEarnings, currency)}
+Average per Month: ${formatCurrency(avgEarnings, currency)}
+Growth Rate: ${growthRate !== null ? growthRate.toFixed(1) + '%' : 'N/A'}
+Period vs Previous: ${periodChange !== null ? (periodChange >= 0 ? '+' : '') + periodChange.toFixed(1) + '%' : 'N/A'}
+Best Month: ${bestMonth.month} ${bestMonth.year} (${formatCurrency(bestMonth.earnings, currency)})
+Worst Month: ${worstMonth.month} ${worstMonth.year} (${formatCurrency(worstMonth.earnings, currency)})
+
+MONTHLY BREAKDOWN
+${filteredData.map(m => `${m.month} ${m.year}: ${formatCurrency(m.earnings, currency)}`).join('\n')}
+      `.trim();
+
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `earnings-report-${new Date().toISOString().split('T')[0]}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    // Custom Tooltip with session count and average rate
     const CustomTooltip = ({ active, payload, label }: any) => {
       if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        const monthSessions = allSessions?.filter(s => {
+          const sessionDate = new Date(s.session_start);
+          return sessionDate.getFullYear() === data.year && 
+                 sessionDate.getMonth() + 1 === data.monthNum &&
+                 s.paid === true;
+        }) || [];
+
+        const avgRate = monthSessions.length > 0
+          ? monthSessions.reduce((sum, s) => sum + s.rate, 0) / monthSessions.length
+          : 0;
+
         return (
           <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg">
-            <p className="font-medium">{`${label}`}</p>
-            <p className="text-green-600 dark:text-green-400">
-              {`Earnings: ${formatCurrency(payload[0].value, currency)}`}
-            </p>
+            <p className="font-medium text-sm mb-2">{`${label} ${data.year}`}</p>
+            <div className="space-y-1 text-xs">
+              <p className="text-green-600 dark:text-green-400 font-semibold">
+                Earnings: {formatCurrency(payload[0].value, currency)}
+              </p>
+              {data.projectedEarnings && (
+                <p className="text-blue-600 dark:text-blue-400">
+                  Projected: {formatCurrency(data.projectedEarnings, currency)}
+                </p>
+              )}
+              <p className="text-muted-foreground">
+                Sessions: {monthSessions.length}
+              </p>
+              {avgRate > 0 && (
+                <p className="text-muted-foreground">
+                  Avg Rate: {formatCurrency(avgRate, currency)}/hr
+                </p>
+              )}
+            </div>
           </div>
         );
       }
       return null;
     };
 
+    // Custom Dot with color coding based on goal
     const CustomDot = (props: any) => {
       const { cx, cy, payload } = props;
+      let color = "#16a34a"; // green
+      
+      if (monthlyGoal > 0) {
+        if (payload.earnings >= monthlyGoal) {
+          color = "#16a34a"; // green - met goal
+        } else if (payload.earnings >= monthlyGoal * 0.7) {
+          color = "#f59e0b"; // amber - 70-99% of goal
+        } else {
+          color = "#ef4444"; // red - below 70% of goal
+        }
+      }
+      
       if (payload.isCurrentMonth) {
         return (
           <circle 
             cx={cx} 
             cy={cy} 
             r={6} 
-            fill="#16a34a" 
+            fill={color} 
             stroke="#ffffff" 
             strokeWidth={2}
             className="animate-pulse"
           />
         );
       }
-      return <circle cx={cx} cy={cy} r={3} fill="#16a34a" />;
+      return <circle cx={cx} cy={cy} r={3} fill={color} />;
+    };
+
+    // Handle month click for breakdown
+    const handleMonthClick = (data: any) => {
+      if (data && data.activePayload && data.activePayload[0]) {
+        setSelectedMonthData(data.activePayload[0].payload);
+        setShowBreakdownDialog(true);
+      }
     };
 
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">Monthly Earnings Trend</h3>
-            <p className="text-sm text-muted-foreground">Last 6 months earnings overview</p>
-          </div>
-          {percentageChange !== 0 && (
-            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-              percentageChange > 0 
-                ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' 
-                : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-            }`}>
-              <TrendingUp className={`h-3 w-3 ${percentageChange < 0 ? 'rotate-180' : ''}`} />
-              {Math.abs(percentageChange).toFixed(1)}%
+        {/* Header with controls */}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold">Monthly Earnings Trend</h3>
+              <p className="text-sm text-muted-foreground">
+                {dateRange === 'custom' ? 'Custom date range' : `Last ${dateRange}`} • Click on any month for details
+              </p>
             </div>
-          )}
+            
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Goal Setting */}
+              <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" data-testid="button-set-goal">
+                    <Target className="h-4 w-4 mr-2" />
+                    {monthlyGoal > 0 ? formatCurrency(monthlyGoal, currency) : 'Set Goal'}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Set Monthly Earnings Goal</DialogTitle>
+                    <DialogDescription>
+                      Set a target for your monthly earnings. The chart will color-code months based on goal achievement.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <Label htmlFor="goal-amount">Monthly Goal ({currency})</Label>
+                    <Input
+                      id="goal-amount"
+                      type="number"
+                      value={tempGoal}
+                      onChange={(e) => setTempGoal(e.target.value)}
+                      placeholder="0.00"
+                      data-testid="input-goal-amount"
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowGoalDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={() => {
+                      setMonthlyGoal(parseFloat(tempGoal) || 0);
+                      setShowGoalDialog(false);
+                    }} data-testid="button-save-goal">
+                      Save Goal
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Export buttons */}
+              <Button variant="outline" size="sm" onClick={exportToCSV} data-testid="button-export-csv">
+                <Download className="h-4 w-4 mr-2" />
+                CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportToPDF} data-testid="button-export-pdf">
+                <Download className="h-4 w-4 mr-2" />
+                Report
+              </Button>
+            </div>
+          </div>
+
+          {/* Date range filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant={dateRange === '3m' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDateRange('3m')}
+              data-testid="button-range-3m"
+            >
+              3 Months
+            </Button>
+            <Button
+              variant={dateRange === '6m' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDateRange('6m')}
+              data-testid="button-range-6m"
+            >
+              6 Months
+            </Button>
+            <Button
+              variant={dateRange === '12m' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDateRange('12m')}
+              data-testid="button-range-12m"
+            >
+              12 Months
+            </Button>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={dateRange === 'custom' ? 'default' : 'outline'}
+                  size="sm"
+                  data-testid="button-range-custom"
+                >
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  Custom Range
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-4" align="start">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-xs">Start Date</Label>
+                    <CalendarComponent
+                      mode="single"
+                      selected={customStartDate}
+                      onSelect={(date) => {
+                        setCustomStartDate(date);
+                        if (date && customEndDate) setDateRange('custom');
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">End Date</Label>
+                    <CalendarComponent
+                      mode="single"
+                      selected={customEndDate}
+                      onSelect={(date) => {
+                        setCustomEndDate(date);
+                        if (date && customStartDate) setDateRange('custom');
+                      }}
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Analytics Summary - Compact and Responsive */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 p-4 bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl border border-border/50">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground font-medium">Total Period</p>
+              <p className="text-base font-bold text-foreground" data-testid="text-total-period">
+                {formatCurrency(totalEarnings, currency)}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground font-medium">Avg/Month</p>
+              <p className="text-base font-bold text-foreground" data-testid="text-avg-month">
+                {formatCurrency(avgEarnings, currency)}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground font-medium">Growth</p>
+              <div className="flex items-center gap-1">
+                {growthRate !== null ? (
+                  <>
+                    <TrendingUp className={`h-3.5 w-3.5 ${growthRate >= 0 ? 'text-green-600' : 'text-red-600 rotate-180'}`} />
+                    <p className={`text-base font-bold ${growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="text-growth-rate">
+                      {growthRate.toFixed(1)}%
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-base font-bold text-muted-foreground" data-testid="text-growth-rate">
+                    N/A
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground font-medium">Best</p>
+              <p className="text-sm font-bold text-green-600" data-testid="text-best-month">
+                {bestMonth.month}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatCurrency(bestMonth.earnings, currency)}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground font-medium">vs Previous</p>
+              <div className="flex items-center gap-1">
+                {periodChange !== null ? (
+                  <>
+                    <TrendingUp className={`h-3.5 w-3.5 ${periodChange >= 0 ? 'text-green-600' : 'text-red-600 rotate-180'}`} />
+                    <p className={`text-base font-bold ${periodChange >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="text-period-change">
+                      {periodChange >= 0 ? '+' : ''}{periodChange.toFixed(1)}%
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-base font-bold text-muted-foreground" data-testid="text-period-change">
+                    N/A
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
         
-        <div className="h-64">
+        {/* Chart */}
+        <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <ComposedChart 
+              data={chartData} 
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              onClick={handleMonthClick}
+            >
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
               <XAxis 
                 dataKey="month" 
@@ -422,7 +856,6 @@ export default function Earnings() {
                 tickLine={false}
                 className="text-xs fill-muted-foreground"
                 tickFormatter={(value) => {
-                  // Format currency for chart axis (shorter format)
                   if (value >= 1000) {
                     return `${currency === 'USD' ? '$' : currency}${(value / 1000).toFixed(1)}k`;
                   }
@@ -430,17 +863,145 @@ export default function Earnings() {
                 }}
               />
               <Tooltip content={<CustomTooltip />} />
+              
+              {/* Goal line */}
+              {monthlyGoal > 0 && (
+                <ReferenceLine 
+                  y={monthlyGoal} 
+                  stroke="#ef4444" 
+                  strokeDasharray="5 5"
+                  label={{ value: 'Goal', position: 'right', fill: '#ef4444', fontSize: 12 }}
+                />
+              )}
+              
+              {/* Main earnings line */}
               <Line 
                 type="monotone" 
                 dataKey="earnings" 
                 stroke="#16a34a" 
                 strokeWidth={3}
                 dot={<CustomDot />}
-                activeDot={{ r: 8, stroke: "#16a34a", strokeWidth: 2, fill: "#ffffff" }}
+                activeDot={{ r: 8, stroke: "#16a34a", strokeWidth: 2, fill: "#ffffff", cursor: "pointer" }}
               />
-            </LineChart>
+              
+              {/* Projection line (dashed) */}
+              {projection && (
+                <Line 
+                  type="monotone" 
+                  dataKey="projectedEarnings" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  dot={false}
+                  connectNulls
+                />
+              )}
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
+
+        {/* Simplified Legend */}
+        <div className="flex items-center justify-center gap-4 text-xs flex-wrap p-3 bg-muted/20 rounded-lg border border-border/30">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-1 bg-green-600 rounded-full"></div>
+            <span className="text-muted-foreground">Actual</span>
+          </div>
+          {projection && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-1 bg-blue-600 rounded-full opacity-50"></div>
+              <span className="text-muted-foreground">Projected</span>
+            </div>
+          )}
+          {monthlyGoal > 0 && (
+            <>
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-1 bg-red-500 rounded-full border-t border-dashed"></div>
+                <span className="text-muted-foreground">Goal</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-muted-foreground/80">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-600"></div>
+                  <span className="text-[10px]">Met</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                  <span className="text-[10px]">70%+</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  <span className="text-[10px]">&lt;70%</span>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Month Breakdown Dialog */}
+        <Dialog open={showBreakdownDialog} onOpenChange={setShowBreakdownDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedMonthData?.month} {selectedMonthData?.year} Breakdown
+              </DialogTitle>
+            </DialogHeader>
+            {selectedMonthData && allSessions && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total Earnings</p>
+                    <p className="text-lg font-bold text-green-600">
+                      {formatCurrency(selectedMonthData.earnings, currency)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Sessions</p>
+                    <p className="text-lg font-bold">
+                      {allSessions.filter(s => {
+                        const sessionDate = new Date(s.session_start);
+                        return sessionDate.getFullYear() === selectedMonthData.year && 
+                               sessionDate.getMonth() + 1 === selectedMonthData.monthNum &&
+                               s.paid === true;
+                      }).length}
+                    </p>
+                  </div>
+                </div>
+                
+                {monthlyGoal > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Goal Achievement</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className={`h-2.5 rounded-full ${
+                          selectedMonthData.earnings >= monthlyGoal ? 'bg-green-600' :
+                          selectedMonthData.earnings >= monthlyGoal * 0.7 ? 'bg-amber-500' :
+                          'bg-red-500'
+                        }`}
+                        style={{ width: `${Math.min((selectedMonthData.earnings / monthlyGoal) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {((selectedMonthData.earnings / monthlyGoal) * 100).toFixed(1)}% of goal
+                    </p>
+                  </div>
+                )}
+
+                {selectedMonthData.isCurrentMonth && projection && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
+                      Month in Progress
+                    </p>
+                    <p className="text-sm">
+                      Projected: {formatCurrency(projection.projectedEarnings, currency)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Based on {upcomingSessions?.length || 0} scheduled sessions
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     );
   };
@@ -816,7 +1377,8 @@ export default function Earnings() {
           <CardContent>
             <MonthlyEarningsChart 
               monthlyData={monthlyEarningsData} 
-              currency={tutorCurrency} 
+              currency={tutorCurrency}
+              sessions={sessions}
             />
           </CardContent>
         </Card>
