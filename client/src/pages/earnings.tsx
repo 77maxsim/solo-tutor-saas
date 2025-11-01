@@ -50,6 +50,7 @@ import { SessionStatCompact } from "@/components/stats/SessionStatCompact";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, ComposedChart } from 'recharts';
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import type { DateRange } from "react-day-picker";
 
 interface Session {
   id: string;
@@ -367,8 +368,7 @@ export default function Earnings() {
   const MonthlyEarningsChart = ({ monthlyData, currency, sessions: allSessions }: { monthlyData: MonthlyEarnings[], currency: string, sessions?: SessionWithStudent[] }) => {
     // State for filters and settings
     const [dateRange, setDateRange] = useState<'3m' | '6m' | '12m' | 'custom'>('6m');
-    const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
-    const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
+    const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
     const [monthlyGoal, setMonthlyGoal] = useState<number>(() => {
       const saved = localStorage.getItem('monthly-earnings-goal');
       return saved ? parseFloat(saved) : 0;
@@ -423,10 +423,10 @@ export default function Earnings() {
       
       if (dateRange === '3m') monthsToShow = 3;
       else if (dateRange === '12m') monthsToShow = 12;
-      else if (dateRange === 'custom' && customStartDate && customEndDate) {
+      else if (dateRange === 'custom' && customDateRange?.from && customDateRange?.to) {
         return monthlyData.filter(m => {
           const monthDate = new Date(m.year, m.monthNum - 1, 1);
-          return monthDate >= customStartDate && monthDate <= customEndDate;
+          return monthDate >= customDateRange.from! && monthDate <= customDateRange.to!;
         });
       }
 
@@ -453,7 +453,16 @@ export default function Earnings() {
 
     const projection = calculateProjection();
     const chartData = projection 
-      ? filteredData.map(m => m.isCurrentMonth ? { ...m, projectedEarnings: projection.projectedEarnings } : m)
+      ? filteredData.map((m, index) => {
+          // Add projection line from previous month to current month
+          if (m.isCurrentMonth) {
+            return { ...m, projectedEarnings: projection.projectedEarnings };
+          } else if (index === filteredData.findIndex(d => d.isCurrentMonth) - 1) {
+            // Previous month - start the projection line from its actual earnings
+            return { ...m, projectedEarnings: m.earnings };
+          }
+          return m;
+        })
       : filteredData;
 
     // Calculate analytics
@@ -462,20 +471,22 @@ export default function Earnings() {
     const bestMonth = [...filteredData].sort((a, b) => b.earnings - a.earnings)[0];
     const worstMonth = [...filteredData].sort((a, b) => a.earnings - b.earnings)[0];
     
-    // Calculate growth rate (compound monthly growth rate) - handle edge cases
-    const calculateGrowthRate = () => {
-      if (filteredData.length < 2) return null;
-      const firstEarnings = filteredData[0].earnings;
-      const lastEarnings = filteredData[filteredData.length - 1].earnings;
+    // Calculate month-over-month growth (current month vs previous month)
+    const calculateMonthOverMonthGrowth = () => {
+      const currentMonthIndex = filteredData.findIndex(m => m.isCurrentMonth);
+      if (currentMonthIndex <= 0) return null; // No previous month to compare
       
-      // If first month has no earnings, can't calculate meaningful growth
-      if (firstEarnings === 0) {
-        return lastEarnings > 0 ? null : 0; // null means "N/A"
+      const currentEarnings = filteredData[currentMonthIndex].earnings;
+      const previousEarnings = filteredData[currentMonthIndex - 1].earnings;
+      
+      // If previous month has no earnings, can't calculate meaningful comparison
+      if (previousEarnings === 0) {
+        return currentEarnings > 0 ? null : 0; // null means "N/A"
       }
       
-      return ((lastEarnings / firstEarnings) ** (1 / (filteredData.length - 1)) - 1) * 100;
+      return ((currentEarnings - previousEarnings) / previousEarnings) * 100;
     };
-    const growthRate = calculateGrowthRate();
+    const monthOverMonthGrowth = calculateMonthOverMonthGrowth();
 
     // Period comparison - properly handle missing baseline data and custom ranges
     const currentPeriodEarnings = totalEarnings;
@@ -545,7 +556,7 @@ Period: ${dateRange === 'custom' ? 'Custom Range' : `Last ${dateRange}`}
 SUMMARY
 Total Earnings: ${formatCurrency(totalEarnings, currency)}
 Average per Month: ${formatCurrency(avgEarnings, currency)}
-Growth Rate: ${growthRate !== null ? growthRate.toFixed(1) + '%' : 'N/A'}
+Month-over-Month Growth: ${monthOverMonthGrowth !== null ? monthOverMonthGrowth.toFixed(1) + '%' : 'N/A'}
 Period vs Previous: ${periodChange !== null ? (periodChange >= 0 ? '+' : '') + periodChange.toFixed(1) + '%' : 'N/A'}
 Best Month: ${bestMonth.month} ${bestMonth.year} (${formatCurrency(bestMonth.earnings, currency)})
 Worst Month: ${worstMonth.month} ${worstMonth.year} (${formatCurrency(worstMonth.earnings, currency)})
@@ -748,29 +759,26 @@ ${filteredData.map(m => `${m.month} ${m.year}: ${formatCurrency(m.earnings, curr
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-4" align="start">
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-xs">Start Date</Label>
-                    <CalendarComponent
-                      mode="single"
-                      selected={customStartDate}
-                      onSelect={(date) => {
-                        setCustomStartDate(date);
-                        if (date && customEndDate) setDateRange('custom');
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">End Date</Label>
-                    <CalendarComponent
-                      mode="single"
-                      selected={customEndDate}
-                      onSelect={(date) => {
-                        setCustomEndDate(date);
-                        if (date && customStartDate) setDateRange('custom');
-                      }}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Select Date Range</Label>
+                  <CalendarComponent
+                    mode="range"
+                    selected={customDateRange}
+                    onSelect={(range) => {
+                      if (range) {
+                        setCustomDateRange(range);
+                        if (range.from && range.to) {
+                          setDateRange('custom');
+                        }
+                      }
+                    }}
+                    numberOfMonths={1}
+                  />
+                  {customDateRange?.from && customDateRange?.to && (
+                    <p className="text-xs text-muted-foreground text-center pt-2">
+                      {format(customDateRange.from, 'MMM dd, yyyy')} - {format(customDateRange.to, 'MMM dd, yyyy')}
+                    </p>
+                  )}
                 </div>
               </PopoverContent>
             </Popover>
@@ -793,11 +801,11 @@ ${filteredData.map(m => `${m.month} ${m.year}: ${formatCurrency(m.earnings, curr
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground font-medium">Growth</p>
               <div className="flex items-center gap-1">
-                {growthRate !== null ? (
+                {monthOverMonthGrowth !== null ? (
                   <>
-                    <TrendingUp className={`h-3.5 w-3.5 ${growthRate >= 0 ? 'text-green-600' : 'text-red-600 rotate-180'}`} />
-                    <p className={`text-base font-bold ${growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="text-growth-rate">
-                      {growthRate.toFixed(1)}%
+                    <TrendingUp className={`h-3.5 w-3.5 ${monthOverMonthGrowth >= 0 ? 'text-green-600' : 'text-red-600 rotate-180'}`} />
+                    <p className={`text-base font-bold ${monthOverMonthGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="text-growth-rate">
+                      {monthOverMonthGrowth.toFixed(1)}%
                     </p>
                   </>
                 ) : (
