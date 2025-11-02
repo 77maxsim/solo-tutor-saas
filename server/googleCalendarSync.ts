@@ -283,11 +283,14 @@ export async function deleteCalendarEvent(eventId: string): Promise<boolean> {
 /**
  * Sync all sessions for a tutor (bulk sync)
  */
-export async function bulkSyncSessions(tutorId: number): Promise<{ success: number; failed: number }> {
+export async function bulkSyncSessions(
+  tutorId: number,
+  onProgress?: (progress: { current: number; total: number; success: number; failed: number }) => void
+): Promise<{ success: number; failed: number; total: number }> {
   try {
     const syncEnabled = await isSyncEnabled(tutorId);
     if (!syncEnabled) {
-      return { success: 0, failed: 0 };
+      return { success: 0, failed: 0, total: 0 };
     }
 
     // Get all sessions that don't have calendar event IDs
@@ -310,13 +313,15 @@ export async function bulkSyncSessions(tutorId: number): Promise<{ success: numb
 
     if (error || !sessions) {
       console.error('Error fetching sessions for bulk sync:', error);
-      return { success: 0, failed: 0 };
+      return { success: 0, failed: 0, total: 0 };
     }
 
+    const total = sessions.length;
     let success = 0;
     let failed = 0;
 
-    for (const session of sessions) {
+    for (let i = 0; i < sessions.length; i++) {
+      const session = sessions[i];
       const sessionData: SessionData = {
         ...session,
         student_name: (session as any).students?.name,
@@ -329,14 +334,24 @@ export async function bulkSyncSessions(tutorId: number): Promise<{ success: numb
         failed++;
       }
 
+      // Send progress update
+      if (onProgress) {
+        onProgress({
+          current: i + 1,
+          total,
+          success,
+          failed,
+        });
+      }
+
       // Add small delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    console.log(`Bulk sync completed: ${success} synced, ${failed} failed`);
-    return { success, failed };
+    console.log(`Bulk sync completed: ${success} synced, ${failed} failed out of ${total}`);
+    return { success, failed, total };
   } catch (error) {
     console.error('Error in bulk sync:', error);
-    return { success: 0, failed: 0 };
+    return { success: 0, failed: 0, total: 0 };
   }
 }

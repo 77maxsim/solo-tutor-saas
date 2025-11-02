@@ -613,6 +613,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Server-Sent Events endpoint for bulk sync with progress
+  app.get("/api/google-calendar/bulk-sync-stream/:tutorId", async (req, res) => {
+    const tutorId = parseInt(req.params.tutorId);
+    
+    if (!tutorId) {
+      return res.status(400).json({ error: "Tutor ID is required" });
+    }
+
+    // Set headers for Server-Sent Events
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    try {
+      // Send progress updates
+      const result = await bulkSyncSessions(tutorId, (progress) => {
+        res.write(`data: ${JSON.stringify(progress)}\n\n`);
+      });
+
+      // Send final result
+      res.write(`data: ${JSON.stringify({ ...result, done: true })}\n\n`);
+      res.end();
+    } catch (error) {
+      console.error('Bulk sync stream error:', error);
+      res.write(`data: ${JSON.stringify({ error: 'Internal server error', done: true })}\n\n`);
+      res.end();
+    }
+  });
+
   app.get("/api/google-calendar/sync-status/:tutorId", async (req, res) => {
     try {
       const tutorId = parseInt(req.params.tutorId);

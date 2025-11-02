@@ -27,6 +27,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { Loader2, Save, User, Send, CheckCircle2, ExternalLink, Calendar, RefreshCw } from "lucide-react";
 import { ALL_TIMEZONES, TIMEZONE_GROUPS, getBrowserTimezone } from "@/lib/timezones";
 import { Switch } from "@/components/ui/switch";
+import { Progress } from "@/components/ui/progress";
 
 const profileSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
@@ -44,8 +45,19 @@ export default function Profile() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; success: number; failed: number } | null>(null);
+  const [syncEventSource, setSyncEventSource] = useState<EventSource | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Cleanup EventSource on unmount
+  useEffect(() => {
+    return () => {
+      if (syncEventSource) {
+        syncEventSource.close();
+      }
+    };
+  }, [syncEventSource]);
 
   const { data: telegramStatus, isLoading: isTelegramLoading } = useQuery({
     queryKey: ['telegram-status'],
@@ -120,40 +132,69 @@ export default function Profile() {
     },
   });
 
-  // Bulk sync mutation
-  const bulkSyncMutation = useMutation({
-    mutationFn: async () => {
-      if (!tutorProfile?.id) throw new Error('Tutor ID not found');
+  // Bulk sync with progress tracking
+  const handleBulkSync = async () => {
+    if (!tutorProfile?.id) return;
 
-      setIsSyncing(true);
-      const response = await fetch('/api/google-calendar/bulk-sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tutorId: tutorProfile.id }),
-      });
+    // Close any existing EventSource
+    if (syncEventSource) {
+      syncEventSource.close();
+    }
 
-      if (!response.ok) {
-        throw new Error('Failed to sync sessions');
-      }
+    setIsSyncing(true);
+    setSyncProgress(null);
 
-      return response.json();
-    },
-    onSuccess: (data) => {
+    try {
+      const eventSource = new EventSource(`/api/google-calendar/bulk-sync-stream/${tutorProfile.id}`);
+      setSyncEventSource(eventSource);
+
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.done) {
+          eventSource.close();
+          setSyncEventSource(null);
+          setIsSyncing(false);
+          setSyncProgress(null);
+          
+          if (data.error) {
+            toast({
+              variant: "destructive",
+              title: "Sync Failed",
+              description: "Failed to sync sessions to Google Calendar. Please try again.",
+            });
+          } else {
+            toast({
+              title: "Sync Complete",
+              description: `${data.success} session(s) synced to Google Calendar.${data.failed > 0 ? ` ${data.failed} failed.` : ''}`,
+            });
+          }
+        } else {
+          setSyncProgress(data);
+        }
+      };
+
+      eventSource.onerror = () => {
+        eventSource.close();
+        setSyncEventSource(null);
+        setIsSyncing(false);
+        setSyncProgress(null);
+        toast({
+          variant: "destructive",
+          title: "Sync Failed",
+          description: "Failed to sync sessions to Google Calendar. Please try again.",
+        });
+      };
+    } catch (error) {
       setIsSyncing(false);
-      toast({
-        title: "Sync Complete",
-        description: `${data.success} session(s) synced to Google Calendar.${data.failed > 0 ? ` ${data.failed} failed.` : ''}`,
-      });
-    },
-    onError: () => {
-      setIsSyncing(false);
+      setSyncProgress(null);
       toast({
         variant: "destructive",
         title: "Sync Failed",
         description: "Failed to sync sessions to Google Calendar. Please try again.",
       });
-    },
-  });
+    }
+  };
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -733,15 +774,15 @@ export default function Profile() {
                         </div>
                       </div>
 
-                      <div>
+                      <div className="space-y-3">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => bulkSyncMutation.mutate()}
-                          disabled={isSyncing || bulkSyncMutation.isPending}
+                          onClick={handleBulkSync}
+                          disabled={isSyncing}
                           data-testid="button-bulk-sync-calendar"
                         >
-                          {isSyncing || bulkSyncMutation.isPending ? (
+                          {isSyncing ? (
                             <>
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                               Syncing...
@@ -753,7 +794,29 @@ export default function Profile() {
                             </>
                           )}
                         </Button>
-                        <p className="text-xs text-muted-foreground mt-2">
+                        
+                        {syncProgress && (
+                          <div className="space-y-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <div className="flex justify-between text-sm">
+                              <span className="font-medium text-blue-900 dark:text-blue-100">
+                                Syncing session {syncProgress.current} of {syncProgress.total}
+                              </span>
+                              <span className="text-blue-700 dark:text-blue-300">
+                                {Math.round((syncProgress.current / syncProgress.total) * 100)}%
+                              </span>
+                            </div>
+                            <Progress 
+                              value={(syncProgress.current / syncProgress.total) * 100} 
+                              className="h-2"
+                            />
+                            <div className="flex gap-4 text-xs text-blue-700 dark:text-blue-300">
+                              <span>✓ Success: {syncProgress.success}</span>
+                              {syncProgress.failed > 0 && <span>✗ Failed: {syncProgress.failed}</span>}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <p className="text-xs text-muted-foreground">
                           This will sync all your scheduled sessions that haven't been synced yet.
                         </p>
                       </div>
