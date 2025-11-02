@@ -45,6 +45,7 @@ import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { TimePicker } from "@/components/ui/time-picker";
 import { triggerSuccessConfetti, triggerStudentConfetti } from "@/lib/confetti";
 import { formatTimeDisplay, parseTimeInput, generateTimeOptions } from "@/lib/timeFormat";
+import { triggerCalendarSync } from "@/hooks/useGoogleCalendarSync";
 import { formatUtcToTutorTimezone } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
 import dayjs from 'dayjs';
@@ -495,6 +496,11 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
           description: "Session has been updated successfully.",
         });
 
+        // Sync to Google Calendar (non-blocking)
+        if (editSession?.id) {
+          triggerCalendarSync(editSession.id);
+        }
+
         // Invalidate relevant queries
         queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
         queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
@@ -578,6 +584,15 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
             ? `${sessionCount} sessions scheduled successfully!`
             : "Session scheduled successfully!",
         });
+
+        // Sync all created sessions to Google Calendar (non-blocking)
+        if (insertedData && Array.isArray(insertedData)) {
+          for (const session of insertedData) {
+            if (session.id) {
+              triggerCalendarSync(session.id);
+            }
+          }
+        }
 
         queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
         queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });

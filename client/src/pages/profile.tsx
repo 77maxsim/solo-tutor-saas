@@ -24,8 +24,9 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
-import { Loader2, Save, User, Send, CheckCircle2, ExternalLink } from "lucide-react";
+import { Loader2, Save, User, Send, CheckCircle2, ExternalLink, Calendar, RefreshCw } from "lucide-react";
 import { ALL_TIMEZONES, TIMEZONE_GROUPS, getBrowserTimezone } from "@/lib/timezones";
+import { Switch } from "@/components/ui/switch";
 
 const profileSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
@@ -42,6 +43,7 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -68,7 +70,7 @@ export default function Profile() {
 
       const { data, error } = await supabase
         .from('tutors')
-        .select('id, full_name, email, currency, time_format, timezone, avatar_url')
+        .select('id, full_name, email, currency, time_format, timezone, avatar_url, sync_google_calendar')
         .eq('user_id', user.id)
         .single();
 
@@ -78,6 +80,76 @@ export default function Profile() {
       }
 
       return data;
+    },
+  });
+
+  // Google Calendar sync toggle mutation
+  const toggleGoogleCalendarMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!tutorProfile?.id) throw new Error('Tutor ID not found');
+
+      const response = await fetch('/api/google-calendar/toggle-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tutorId: tutorProfile.id, enabled }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update sync preference');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: data.enabled ? "Google Calendar Sync Enabled" : "Google Calendar Sync Disabled",
+        description: data.enabled 
+          ? "New sessions will be automatically added to your Google Calendar." 
+          : "Sessions will no longer sync to Google Calendar.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['tutor-profile'] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: "Failed to update Google Calendar sync preference. Please try again.",
+      });
+    },
+  });
+
+  // Bulk sync mutation
+  const bulkSyncMutation = useMutation({
+    mutationFn: async () => {
+      if (!tutorProfile?.id) throw new Error('Tutor ID not found');
+
+      setIsSyncing(true);
+      const response = await fetch('/api/google-calendar/bulk-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tutorId: tutorProfile.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to sync sessions');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setIsSyncing(false);
+      toast({
+        title: "Sync Complete",
+        description: `${data.success} session(s) synced to Google Calendar.${data.failed > 0 ? ` ${data.failed} failed.` : ''}`,
+      });
+    },
+    onError: () => {
+      setIsSyncing(false);
+      toast({
+        variant: "destructive",
+        title: "Sync Failed",
+        description: "Failed to sync sessions to Google Calendar. Please try again.",
+      });
     },
   });
 
@@ -604,6 +676,95 @@ export default function Profile() {
                       Open Telegram Bot
                     </Button>
                   </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Google Calendar Integration</CardTitle>
+              <CardDescription>
+                Automatically sync your tutoring sessions to Google Calendar.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isProfileLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Sync Toggle */}
+                  <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Calendar className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-foreground">
+                          Auto-Sync Sessions
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          When enabled, all scheduled sessions will automatically appear in your Google Calendar
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={tutorProfile?.sync_google_calendar || false}
+                      onCheckedChange={(checked) => toggleGoogleCalendarMutation.mutate(checked)}
+                      disabled={toggleGoogleCalendarMutation.isPending}
+                      data-testid="switch-google-calendar-sync"
+                    />
+                  </div>
+
+                  {/* Sync Status and Actions */}
+                  {tutorProfile?.sync_google_calendar && (
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="font-medium text-green-900 dark:text-green-100">
+                            Sync is active
+                          </p>
+                          <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                            New sessions will automatically sync to your Google Calendar. Existing sessions can be synced using the button below.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => bulkSyncMutation.mutate()}
+                          disabled={isSyncing || bulkSyncMutation.isPending}
+                          data-testid="button-bulk-sync-calendar"
+                        >
+                          {isSyncing || bulkSyncMutation.isPending ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Syncing...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              Sync Existing Sessions
+                            </>
+                          )}
+                        </Button>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          This will sync all your scheduled sessions that haven't been synced yet.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!tutorProfile?.sync_google_calendar && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        <strong>How it works:</strong> When you enable sync, all new sessions you create in Classter will automatically appear in your Google Calendar. Your existing timezone and session details are used to create properly formatted calendar events.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

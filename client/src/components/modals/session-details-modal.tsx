@@ -22,6 +22,7 @@ import { sanitizeText } from "@/lib/sanitize";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import { triggerCalendarDelete, triggerCalendarSync } from "@/hooks/useGoogleCalendarSync";
 
 // Configure dayjs plugins
 dayjs.extend(utc);
@@ -45,6 +46,7 @@ interface SessionDetails {
   created_at?: string;
   status?: string;
   unassigned_name?: string;
+  google_calendar_event_id?: string;
 }
 
 interface SessionDetailsModalProps {
@@ -199,6 +201,11 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
         description: message,
       });
 
+      // Sync to Google Calendar (non-blocking)
+      if (session?.id) {
+        triggerCalendarSync(session.id);
+      }
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
@@ -232,6 +239,11 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
         .eq('id', session.id);
 
       if (error) throw error;
+
+      // Delete Google Calendar event if exists (non-blocking)
+      if (session.google_calendar_event_id) {
+        triggerCalendarDelete(session.google_calendar_event_id);
+      }
 
       // Refresh calendar and other queries to remove deleted session
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
@@ -270,6 +282,27 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
     try {
       console.log('🔄 Cancelling future sessions for recurrence:', session.recurrence_id);
       console.log('🔄 Current session date:', session.session_start);
+
+      // First, fetch all sessions to be deleted to get their calendar event IDs
+      const { data: sessionsToDelete, error: fetchError } = await supabase
+        .from('sessions')
+        .select('id, google_calendar_event_id')
+        .eq('recurrence_id', session.recurrence_id)
+        .gte('session_start', session.session_start);
+
+      if (fetchError) {
+        console.error('❌ Error fetching sessions to delete:', fetchError);
+        throw fetchError;
+      }
+
+      // Delete Google Calendar events for all sessions (non-blocking)
+      if (sessionsToDelete && sessionsToDelete.length > 0) {
+        for (const sess of sessionsToDelete) {
+          if (sess.google_calendar_event_id) {
+            triggerCalendarDelete(sess.google_calendar_event_id);
+          }
+        }
+      }
 
       // Delete current and future sessions in the same recurrence group (use session_start instead of date)
       const { error } = await supabase

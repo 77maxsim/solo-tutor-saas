@@ -7,6 +7,7 @@ import { insertStudentSchema, insertSessionSchema, insertPaymentSchema } from "@
 import { convertToUSD } from "./services/currencyConverter";
 import { adminLimiter } from "./rateLimiters";
 import { setSentryUser, clearSentryUser } from "./sentry";
+import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, bulkSyncSessions, isSyncEnabled } from "./googleCalendarSync";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -525,6 +526,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error('Broadcast error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Google Calendar sync endpoints
+  app.post("/api/google-calendar/sync-session", async (req, res) => {
+    try {
+      const { sessionId } = req.body;
+      
+      if (!sessionId) {
+        return res.status(400).json({ error: "Session ID is required" });
+      }
+
+      // Fetch session with student name
+      const { data: session, error } = await supabase
+        .from('sessions')
+        .select(`
+          id,
+          session_start,
+          session_end,
+          tutor_id,
+          student_id,
+          notes,
+          status,
+          google_calendar_event_id,
+          unassigned_name,
+          students (name)
+        `)
+        .eq('id', sessionId)
+        .single();
+
+      if (error || !session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      const sessionData = {
+        ...session,
+        student_name: (session as any).students?.name
+      };
+
+      // If session already has a calendar event, update it; otherwise create new
+      let result;
+      if (session.google_calendar_event_id) {
+        result = await updateCalendarEvent(sessionData);
+        res.json({ success: result, action: 'updated' });
+      } else {
+        result = await createCalendarEvent(sessionData);
+        res.json({ success: !!result, action: 'created', eventId: result });
+      }
+    } catch (error) {
+      console.error('Session sync error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/google-calendar/sync-session/:eventId", async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      
+      if (!eventId) {
+        return res.status(400).json({ error: "Event ID is required" });
+      }
+
+      const result = await deleteCalendarEvent(eventId);
+      res.json({ success: result });
+    } catch (error) {
+      console.error('Delete calendar event error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/google-calendar/bulk-sync", async (req, res) => {
+    try {
+      const { tutorId } = req.body;
+      
+      if (!tutorId) {
+        return res.status(400).json({ error: "Tutor ID is required" });
+      }
+
+      const result = await bulkSyncSessions(tutorId);
+      res.json(result);
+    } catch (error) {
+      console.error('Bulk sync error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/google-calendar/sync-status/:tutorId", async (req, res) => {
+    try {
+      const tutorId = parseInt(req.params.tutorId);
+      const enabled = await isSyncEnabled(tutorId);
+      res.json({ enabled });
+    } catch (error) {
+      console.error('Sync status error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/google-calendar/toggle-sync", async (req, res) => {
+    try {
+      const { tutorId, enabled } = req.body;
+      
+      if (!tutorId || enabled === undefined) {
+        return res.status(400).json({ error: "Tutor ID and enabled status required" });
+      }
+
+      const { error } = await supabase
+        .from('tutors')
+        .update({ sync_google_calendar: enabled })
+        .eq('id', tutorId);
+
+      if (error) {
+        console.error('Toggle sync error:', error);
+        return res.status(500).json({ error: "Failed to update sync preference" });
+      }
+
+      res.json({ success: true, enabled });
+    } catch (error) {
+      console.error('Toggle sync error:', error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
