@@ -290,7 +290,7 @@ export async function bulkSyncSessions(tutorId: number): Promise<{ success: numb
       return { success: 0, failed: 0 };
     }
 
-    // Get all sessions that don't have calendar event IDs and aren't cancelled/pending
+    // Get all sessions that don't have calendar event IDs
     const { data: sessions, error } = await supabase
       .from('sessions')
       .select(`
@@ -306,9 +306,7 @@ export async function bulkSyncSessions(tutorId: number): Promise<{ success: numb
         students (name)
       `)
       .eq('tutor_id', tutorId)
-      .is('google_calendar_event_id', null)
-      .neq('status', 'cancelled')
-      .neq('status', 'pending');
+      .is('google_calendar_event_id', null);
 
     if (error || !sessions) {
       console.error('Error fetching sessions for bulk sync:', error);
