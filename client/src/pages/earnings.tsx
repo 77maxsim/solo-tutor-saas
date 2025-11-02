@@ -416,24 +416,38 @@ export default function Earnings() {
       );
     }
 
-    // Filter data based on selected range
+    // Check if custom date range is selected
+    const isCustomRange = dateRange === 'custom' && customDateRange?.from && customDateRange?.to;
+    
+    // For custom ranges, calculate directly from sessions
+    const customRangeData = isCustomRange && allSessions ? (() => {
+      const filteredSessions = allSessions.filter(s => {
+        const sessionDate = new Date(s.session_start);
+        return sessionDate >= customDateRange.from! && sessionDate <= customDateRange.to! && s.paid;
+      });
+      
+      const totalEarnings = filteredSessions.reduce((sum, s) => sum + (s.duration / 60) * s.rate, 0);
+      const sessionCount = filteredSessions.length;
+      
+      return {
+        totalEarnings,
+        sessionCount,
+        filteredSessions
+      };
+    })() : null;
+    
+    // Filter data based on selected range (for non-custom ranges)
     const getFilteredData = () => {
       const now = new Date();
       let monthsToShow = 6;
       
       if (dateRange === '3m') monthsToShow = 3;
       else if (dateRange === '12m') monthsToShow = 12;
-      else if (dateRange === 'custom' && customDateRange?.from && customDateRange?.to) {
-        return monthlyData.filter(m => {
-          const monthDate = new Date(m.year, m.monthNum - 1, 1);
-          return monthDate >= customDateRange.from! && monthDate <= customDateRange.to!;
-        });
-      }
 
       return monthlyData.slice(-monthsToShow);
     };
 
-    const filteredData = getFilteredData();
+    const filteredData = isCustomRange ? [] : getFilteredData();
 
     // Calculate projection for current month
     const calculateProjection = () => {
@@ -784,173 +798,209 @@ ${filteredData.map(m => `${m.month} ${m.year}: ${formatCurrency(m.earnings, curr
             </Popover>
           </div>
 
-          {/* Analytics Summary - Compact and Responsive */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 p-4 bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl border border-border/50">
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-medium">Total Period</p>
-              <p className="text-base font-bold text-foreground" data-testid="text-total-period">
-                {formatCurrency(totalEarnings, currency)}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-medium">Avg/Month</p>
-              <p className="text-base font-bold text-foreground" data-testid="text-avg-month">
-                {formatCurrency(avgEarnings, currency)}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-medium">Growth</p>
-              <div className="flex items-center gap-1">
-                {monthOverMonthGrowth !== null ? (
-                  <>
-                    <TrendingUp className={`h-3.5 w-3.5 ${monthOverMonthGrowth >= 0 ? 'text-green-600' : 'text-red-600 rotate-180'}`} />
-                    <p className={`text-base font-bold ${monthOverMonthGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="text-growth-rate">
-                      {monthOverMonthGrowth.toFixed(1)}%
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-base font-bold text-muted-foreground" data-testid="text-growth-rate">
-                    N/A
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-medium">Best</p>
-              {bestMonth ? (
-                <>
-                  <p className="text-sm font-bold text-green-600" data-testid="text-best-month">
-                    {bestMonth.month}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatCurrency(bestMonth.earnings, currency)}
-                  </p>
-                </>
-              ) : (
-                <p className="text-base font-bold text-muted-foreground" data-testid="text-best-month">
-                  N/A
+          {/* Custom Range Summary or Analytics */}
+          {isCustomRange && customRangeData ? (
+            <div className="space-y-4 p-6 bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl border border-border/50">
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  {format(customDateRange!.from!, 'MMM dd, yyyy')} - {format(customDateRange!.to!, 'MMM dd, yyyy')}
                 </p>
-              )}
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium mb-1">Total Earnings</p>
+                    <p className="text-4xl font-bold text-green-600" data-testid="text-custom-earnings">
+                      {formatCurrency(customRangeData.totalEarnings, currency)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium mb-1">Total Sessions</p>
+                    <p className="text-2xl font-bold text-foreground" data-testid="text-custom-sessions">
+                      {customRangeData.sessionCount}
+                    </p>
+                  </div>
+                  {customRangeData.sessionCount > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium mb-1">Average per Session</p>
+                      <p className="text-xl font-semibold text-muted-foreground">
+                        {formatCurrency(customRangeData.totalEarnings / customRangeData.sessionCount, currency)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-medium">vs Previous</p>
-              <div className="flex items-center gap-1">
-                {periodChange !== null ? (
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 p-4 bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl border border-border/50">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">Total Period</p>
+                <p className="text-base font-bold text-foreground" data-testid="text-total-period">
+                  {formatCurrency(totalEarnings, currency)}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">Avg/Month</p>
+                <p className="text-base font-bold text-foreground" data-testid="text-avg-month">
+                  {formatCurrency(avgEarnings, currency)}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">Growth</p>
+                <div className="flex items-center gap-1">
+                  {monthOverMonthGrowth !== null ? (
+                    <>
+                      <TrendingUp className={`h-3.5 w-3.5 ${monthOverMonthGrowth >= 0 ? 'text-green-600' : 'text-red-600 rotate-180'}`} />
+                      <p className={`text-base font-bold ${monthOverMonthGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="text-growth-rate">
+                        {monthOverMonthGrowth.toFixed(1)}%
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-base font-bold text-muted-foreground" data-testid="text-growth-rate">
+                      N/A
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">Best</p>
+                {bestMonth ? (
                   <>
-                    <TrendingUp className={`h-3.5 w-3.5 ${periodChange >= 0 ? 'text-green-600' : 'text-red-600 rotate-180'}`} />
-                    <p className={`text-base font-bold ${periodChange >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="text-period-change">
-                      {periodChange >= 0 ? '+' : ''}{periodChange.toFixed(1)}%
+                    <p className="text-sm font-bold text-green-600" data-testid="text-best-month">
+                      {bestMonth.month}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatCurrency(bestMonth.earnings, currency)}
                     </p>
                   </>
                 ) : (
-                  <p className="text-base font-bold text-muted-foreground" data-testid="text-period-change">
+                  <p className="text-base font-bold text-muted-foreground" data-testid="text-best-month">
                     N/A
                   </p>
                 )}
               </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">vs Previous</p>
+                <div className="flex items-center gap-1">
+                  {periodChange !== null ? (
+                    <>
+                      <TrendingUp className={`h-3.5 w-3.5 ${periodChange >= 0 ? 'text-green-600' : 'text-red-600 rotate-180'}`} />
+                      <p className={`text-base font-bold ${periodChange >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="text-period-change">
+                        {periodChange >= 0 ? '+' : ''}{periodChange.toFixed(1)}%
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-base font-bold text-muted-foreground" data-testid="text-period-change">
+                      N/A
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
         
-        {/* Chart */}
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart 
-              data={chartData} 
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              onClick={handleMonthClick}
-            >
-              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-              <XAxis 
-                dataKey="month" 
-                axisLine={false}
-                tickLine={false}
-                className="text-xs fill-muted-foreground"
-              />
-              <YAxis 
-                axisLine={false}
-                tickLine={false}
-                className="text-xs fill-muted-foreground"
-                tickFormatter={(value) => {
-                  if (value >= 1000) {
-                    return `${currency === 'USD' ? '$' : currency}${(value / 1000).toFixed(1)}k`;
-                  }
-                  return formatCurrency(value, currency);
-                }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              
-              {/* Goal line */}
-              {monthlyGoal > 0 && (
-                <ReferenceLine 
-                  y={monthlyGoal} 
-                  stroke="#ef4444" 
-                  strokeDasharray="5 5"
-                  label={{ value: 'Goal', position: 'right', fill: '#ef4444', fontSize: 12 }}
-                />
-              )}
-              
-              {/* Main earnings line */}
-              <Line 
-                type="monotone" 
-                dataKey="earnings" 
-                stroke="#16a34a" 
-                strokeWidth={3}
-                dot={<CustomDot />}
-                activeDot={{ r: 8, stroke: "#16a34a", strokeWidth: 2, fill: "#ffffff", cursor: "pointer" }}
-              />
-              
-              {/* Projection line (dashed) */}
-              {projection && (
-                <Line 
-                  type="monotone" 
-                  dataKey="projectedEarnings" 
-                  stroke="#3b82f6" 
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={false}
-                  connectNulls
-                />
-              )}
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Simplified Legend */}
-        <div className="flex items-center justify-center gap-4 text-xs flex-wrap p-3 bg-muted/20 rounded-lg border border-border/30">
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-1 bg-green-600 rounded-full"></div>
-            <span className="text-muted-foreground">Actual</span>
-          </div>
-          {projection && (
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-1 bg-blue-600 rounded-full opacity-50"></div>
-              <span className="text-muted-foreground">Projected</span>
+        {/* Chart and Legend - Hide for custom range */}
+        {!isCustomRange && (
+          <>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart 
+                  data={chartData} 
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  onClick={handleMonthClick}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis 
+                    dataKey="month" 
+                    axisLine={false}
+                    tickLine={false}
+                    className="text-xs fill-muted-foreground"
+                  />
+                  <YAxis 
+                    axisLine={false}
+                    tickLine={false}
+                    className="text-xs fill-muted-foreground"
+                    tickFormatter={(value) => {
+                      if (value >= 1000) {
+                        return `${currency === 'USD' ? '$' : currency}${(value / 1000).toFixed(1)}k`;
+                      }
+                      return formatCurrency(value, currency);
+                    }}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  
+                  {/* Goal line */}
+                  {monthlyGoal > 0 && (
+                    <ReferenceLine 
+                      y={monthlyGoal} 
+                      stroke="#ef4444" 
+                      strokeDasharray="5 5"
+                      label={{ value: 'Goal', position: 'right', fill: '#ef4444', fontSize: 12 }}
+                    />
+                  )}
+                  
+                  {/* Main earnings line */}
+                  <Line 
+                    type="monotone" 
+                    dataKey="earnings" 
+                    stroke="#16a34a" 
+                    strokeWidth={3}
+                    dot={<CustomDot />}
+                    activeDot={{ r: 8, stroke: "#16a34a", strokeWidth: 2, fill: "#ffffff", cursor: "pointer" }}
+                  />
+                  
+                  {/* Projection line (dashed) */}
+                  {projection && (
+                    <Line 
+                      type="monotone" 
+                      dataKey="projectedEarnings" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={false}
+                      connectNulls
+                    />
+                  )}
+                </ComposedChart>
+              </ResponsiveContainer>
             </div>
-          )}
-          {monthlyGoal > 0 && (
-            <>
+
+            {/* Simplified Legend */}
+            <div className="flex items-center justify-center gap-4 text-xs flex-wrap p-3 bg-muted/20 rounded-lg border border-border/30">
               <div className="flex items-center gap-1.5">
-                <div className="w-4 h-1 bg-red-500 rounded-full border-t border-dashed"></div>
-                <span className="text-muted-foreground">Goal</span>
+                <div className="w-4 h-1 bg-green-600 rounded-full"></div>
+                <span className="text-muted-foreground">Actual</span>
               </div>
-              <div className="flex items-center gap-1.5 text-muted-foreground/80">
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-green-600"></div>
-                  <span className="text-[10px]">Met</span>
+              {projection && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-1 bg-blue-600 rounded-full opacity-50"></div>
+                  <span className="text-muted-foreground">Projected</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                  <span className="text-[10px]">70%+</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <span className="text-[10px]">&lt;70%</span>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+              )}
+              {monthlyGoal > 0 && (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-4 h-1 bg-red-500 rounded-full border-t border-dashed"></div>
+                    <span className="text-muted-foreground">Goal</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground/80">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-green-600"></div>
+                      <span className="text-[10px]">Met</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                      <span className="text-[10px]">70%+</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                      <span className="text-[10px]">&lt;70%</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Month Breakdown Dialog */}
         <Dialog open={showBreakdownDialog} onOpenChange={setShowBreakdownDialog}>
