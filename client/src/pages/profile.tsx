@@ -86,19 +86,21 @@ export default function Profile() {
   // Google Calendar sync toggle mutation
   const toggleGoogleCalendarMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
-      if (!tutorProfile?.id) throw new Error('Tutor ID not found');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
 
-      const response = await fetch('/api/google-calendar/toggle-sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tutorId: tutorProfile.id, enabled }),
-      });
+      const { error } = await supabase
+        .from('tutors')
+        .update({ sync_google_calendar: enabled })
+        .eq('user_id', user.id);
 
-      if (!response.ok) {
-        throw new Error('Failed to update sync preference');
+      if (error) {
+        console.error('❌ Failed to update Google Calendar sync:', error);
+        throw error;
       }
 
-      return response.json();
+      console.log("✅ Google Calendar sync preference updated:", enabled);
+      return { enabled };
     },
     onSuccess: (data) => {
       toast({
