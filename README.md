@@ -6,10 +6,11 @@ A comprehensive, timezone-friendly tutoring management platform built with React
 
 ### Core Functionality
 - **Advanced Scheduling Tool**: Full-featured calendar with FullCalendar integration, drag-and-drop functionality, and multi-view support (month, week, day, agenda)
+- **Google Calendar Integration**: One-way sync from Classter to Google Calendar with real-time progress tracking for bulk operations
 - **Timezone-Friendly Architecture**: Complete timezone awareness with automatic detection, manual override, and proper UTC storage with local display
 - **Intelligent Dataset Optimization**: Automatic query optimization that switches strategies based on dataset size for optimal performance
 - **Student Management**: Add, edit, and organize students with tags, contact information, profile pictures, favoriting, and bulk operations
-- **Earnings Tracking**: Real-time earnings calculations with detailed breakdowns by time periods and multi-currency support
+- **Earnings Tracking**: Real-time earnings calculations with detailed breakdowns by time periods, multi-currency support, and interactive charts
 - **Public Booking**: Student-facing booking page with timezone-aware slot selection
 - **Pending Requests**: Manage booking requests from students with approval workflow
 - **Admin Dashboard**: Comprehensive system monitoring with KPIs, analytics charts, top tutors metrics, and broadcast capabilities
@@ -47,7 +48,46 @@ A comprehensive, timezone-friendly tutoring management platform built with React
 - **Multi-Currency Support**: Automatic currency conversion to USD for unified reporting
 - **Broadcast Messaging**: Send Markdown-formatted announcements to all tutors via Telegram
 
-### Recent Updates (October 2025)
+### Google Calendar Integration ✅
+- **One-Way Sync**: Automatically sync all tutoring sessions from Classter to Google Calendar
+- **Real-Time Progress**: Visual progress bar with live updates during bulk sync operations
+- **Per-Session Tracking**: Each session includes google_calendar_event_id for reference
+- **Optional Enable/Disable**: Toggle sync on/off in profile settings
+- **Bulk Sync Tool**: Sync all existing sessions with real-time progress indicator showing:
+  - Current progress (e.g., "Syncing session 45/237")
+  - Percentage completion with visual progress bar
+  - Success and failure counts
+  - Server-Sent Events (SSE) for instant updates
+- **Event Details**: Calendar events include student name, session time, duration, and notes
+- **Automatic Updates**: When you edit or delete sessions in Classter, Google Calendar updates automatically
+- **Recurring Sessions**: Supports recurring session sync with proper calendar event cleanup
+- **Non-Blocking**: Calendar sync failures don't prevent session operations from succeeding
+- **Memory Safe**: Proper EventSource cleanup prevents memory leaks
+
+### Enhanced Earnings Charts ✅
+- **Interactive Visualizations**: Recharts-powered earnings trend charts with hover interactions
+- **Multiple Time Views**: Switch between daily, weekly, and monthly earnings views
+- **Month-over-Month Comparison**: See current month vs. previous month earnings at a glance
+- **Student Breakdown**: Detailed earnings by student with session counts
+- **Real-Time Updates**: Charts update automatically as you add or modify sessions
+- **Multi-Currency Display**: Shows earnings in your preferred currency with automatic conversion for admin dashboard
+- **Performance Optimized**: Efficient data aggregation for large datasets
+- **Responsive Design**: Charts adapt to different screen sizes for mobile and desktop viewing
+
+### Recent Updates (November 2025)
+
+#### Google Calendar Integration ✅
+- **Replit Integration**: Set up Google Calendar connector via Replit's integration system
+- **Database Schema**: Added `google_calendar_event_id` column to sessions table and `sync_google_calendar` preference to tutors table
+- **Backend Service**: Isolated sync service (`googleCalendarSync.ts`) that reads UTC timestamps and tutor timezone
+- **API Endpoints**: RESTful endpoints for create/update/delete calendar events with SSE support for progress tracking
+- **Frontend Hook**: Custom hook (`useGoogleCalendarSync.ts`) for easy integration across components
+- **Settings UI**: Profile page toggle for enabling/disabling sync with real-time progress indicator
+- **CRUD Integration**: Calendar sync hooks into all session operations (create, update, delete, bulk operations)
+- **Progress Tracking**: Real-time progress bar using Server-Sent Events for bulk sync operations
+- **Memory Management**: Proper EventSource cleanup to prevent memory leaks
+
+#### Recent Updates (October 2025)
 
 #### Branding Update ✅
 - **Application rebranded to Classter** with new logo and visual identity
@@ -149,11 +189,25 @@ A comprehensive, timezone-friendly tutoring management platform built with React
    SENTRY_DSN_BACKEND=your_backend_sentry_dsn
    ```
 
+3a. **Set up Google Calendar Integration** (Optional)
+   - Navigate to the Replit Integrations panel
+   - Search for and add the "Google Calendar" connector
+   - Authorize with your Google account
+   - The integration will automatically configure OAuth credentials
+
 4. **Database Setup**
    - Run the SQL migrations in your Supabase SQL Editor
    - Required migration for Telegram notifications:
      ```sql
      ALTER TABLE tutors ADD COLUMN IF NOT EXISTS last_daily_notification_date DATE;
+     ```
+   - Required migration for Google Calendar integration:
+     ```sql
+     -- Add Google Calendar event ID tracking to sessions table
+     ALTER TABLE sessions ADD COLUMN IF NOT EXISTS google_calendar_event_id TEXT;
+     
+     -- Add Google Calendar sync preference to tutors table
+     ALTER TABLE tutors ADD COLUMN IF NOT EXISTS sync_google_calendar BOOLEAN DEFAULT false;
      ```
 
 5. **Start the development server**
@@ -164,9 +218,9 @@ A comprehensive, timezone-friendly tutoring management platform built with React
 ## 🗄 Database Schema
 
 ### Core Tables
-- **tutors**: User profiles linked to Supabase Auth, includes timezone, currency, admin status, and Telegram chat ID
+- **tutors**: User profiles linked to Supabase Auth, includes timezone, currency, admin status, Telegram chat ID, and Google Calendar sync preference
 - **students**: Student records with contact info, tags, favorite status, and metadata
-- **sessions**: Tutoring sessions with UTC timestamps (`session_start`, `session_end`), notes, and payment status
+- **sessions**: Tutoring sessions with UTC timestamps (`session_start`, `session_end`), notes, payment status, and Google Calendar event ID
 - **booking_slots**: Available time slots for public booking
 - **payments**: Payment tracking for completed sessions
 
@@ -302,6 +356,70 @@ Ensure all required environment variables are set:
 - Telegram bot token (if using notifications)
 - Sentry DSNs (if using error tracking)
 
+## 📅 Google Calendar Integration
+
+### How It Works
+The integration provides one-way synchronization from Classter to Google Calendar:
+
+1. **Enable Sync**: Go to Profile → Google Calendar Integration and toggle sync on
+2. **Automatic Sync**: New sessions automatically appear in your Google Calendar
+3. **Bulk Sync**: Sync all existing sessions with the "Sync Existing Sessions" button
+4. **Real-Time Progress**: Watch live progress with percentage, success/fail counts
+5. **Updates**: When you edit a session in Classter, the Google Calendar event updates automatically
+6. **Deletions**: When you delete a session in Classter, the calendar event is removed
+
+### Calendar Event Details
+Each synced event includes:
+- **Title**: Student name + "Session"
+- **Time**: Converted from UTC to your local timezone
+- **Duration**: Exact session length
+- **Description**: Session notes (if any)
+- **Color Coding**: Visual distinction for different session types
+
+### Progress Indicator
+When syncing multiple sessions, you'll see:
+- Real-time progress: "Syncing session 45/237"
+- Visual progress bar with percentage
+- Success count: ✓ Success: 45
+- Failure count (if any): ✗ Failed: 2
+- Non-blocking UI - continue using the app while syncing
+
+### Important Notes
+- **One-Way Sync**: Changes in Google Calendar won't sync back to Classter
+- **Non-Blocking**: Calendar sync failures don't prevent session operations
+- **Optional**: You can toggle sync on/off anytime in your profile settings
+- **Bulk Operations**: Recurring sessions and bulk deletions sync all affected calendar events
+
+### Transfer Ownership
+If you transfer the Replit project:
+1. New owner needs to re-authorize Google Calendar in Replit integrations
+2. No code changes required
+3. All existing `google_calendar_event_id` references remain valid
+4. One-time setup process
+
+## 📊 Earnings Analytics
+
+### Dashboard Features
+- **Total Earnings**: Cumulative earnings across all sessions
+- **Today's Earnings**: Real-time tracking of today's completed sessions
+- **Weekly/Monthly Views**: Switch between time periods for detailed analysis
+- **Student Breakdown**: See which students contribute most to your earnings
+- **Interactive Charts**: Hover over data points to see exact values
+- **Trend Analysis**: Month-over-month comparison to track growth
+
+### Chart Types
+1. **Earnings Trend**: Line chart showing earnings over time with configurable periods
+2. **Student Distribution**: See earnings breakdown by student with session counts
+3. **Monthly Comparison**: Compare current month vs. previous month performance
+4. **Top Performers**: Identify your most valuable students
+
+### Features
+- **Real-Time Updates**: Charts update automatically as sessions are added/modified
+- **Multi-Currency**: View earnings in your preferred currency
+- **Responsive**: Charts adapt to mobile and desktop screens
+- **Performance Optimized**: Handles large datasets efficiently
+- **Export Ready**: Data structured for easy export to other tools
+
 ## 📱 Public Booking Flow
 
 Students can book sessions through a public booking page:
@@ -319,12 +437,14 @@ Students can book sessions through a public booking page:
 ### For Tutors
 1. **Sign up/Login**: Create account with email, timezone, and currency preferences
 2. **Profile Setup**: Upload avatar, configure notification preferences
-3. **Add Students**: Create student profiles with tags and contact information
-4. **Create Availability**: Set up available time slots for public booking
-5. **Schedule Sessions**: Use calendar to schedule and manage sessions
-6. **Handle Requests**: Review and approve student booking requests
-7. **Track Earnings**: Monitor income with detailed analytics
-8. **Telegram Alerts**: Subscribe for daily summaries and booking notifications
+3. **Google Calendar**: (Optional) Enable Google Calendar sync for automatic session syncing
+4. **Add Students**: Create student profiles with tags and contact information
+5. **Create Availability**: Set up available time slots for public booking
+6. **Schedule Sessions**: Use calendar to schedule and manage sessions
+7. **Handle Requests**: Review and approve student booking requests
+8. **Track Earnings**: Monitor income with interactive charts and detailed analytics
+9. **Telegram Alerts**: Subscribe for daily summaries and booking notifications
+10. **Bulk Sync**: Sync all existing sessions to Google Calendar with real-time progress
 
 ### For Students
 1. **Access Booking Page**: Visit tutor's public booking URL
@@ -362,6 +482,14 @@ Students can book sessions through a public booking page:
 - Monitor query execution times in console logs
 - Review Sentry for slow transaction alerts
 - Check database indexes are properly configured
+
+**Google Calendar Sync Issues**
+- Ensure Google Calendar connector is authorized in Replit integrations
+- Verify `google_calendar_event_id` and `sync_google_calendar` columns exist in database
+- Check that sync is enabled in Profile settings
+- Review browser console for EventSource errors
+- For bulk sync issues, check server logs for SSE connection errors
+- Ensure sessions have valid `session_start` and `session_end` timestamps
 
 **Rate Limiting Errors**
 - Wait for the rate limit window to expire
