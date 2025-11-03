@@ -1,8 +1,11 @@
+// Import Sentry instrumentation FIRST before any other imports
+import "./instrument";
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeTelegram } from "./telegram";
-import { initSentry, setupSentryErrorHandler } from "./sentry";
+import { setupSentryErrorHandler } from "./sentry";
 import helmet from "helmet";
 import cors from "cors";
 import { 
@@ -12,9 +15,6 @@ import {
   publicLimiter, 
   globalLimiter 
 } from "./rateLimiters";
-
-// Initialize Sentry FIRST before creating Express app
-initSentry();
 
 const app = express();
 
