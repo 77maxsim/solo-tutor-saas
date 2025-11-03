@@ -282,6 +282,7 @@ export async function deleteCalendarEvent(eventId: string): Promise<boolean> {
 
 /**
  * Sync all sessions for a tutor (bulk sync)
+ * Creates calendar events for new sessions and updates existing ones
  */
 export async function bulkSyncSessions(
   tutorId: number,
@@ -293,7 +294,7 @@ export async function bulkSyncSessions(
       return { success: 0, failed: 0, total: 0 };
     }
 
-    // Get all sessions that don't have calendar event IDs and are not cancelled or pending
+    // Get all scheduled/completed sessions (both with and without event IDs)
     const { data: sessions, error } = await supabase
       .from('sessions')
       .select(`
@@ -309,7 +310,6 @@ export async function bulkSyncSessions(
         students (name)
       `)
       .eq('tutor_id', tutorId)
-      .is('google_calendar_event_id', null)
       .not('status', 'in', '(cancelled,pending)');
 
     if (error || !sessions) {
@@ -328,8 +328,16 @@ export async function bulkSyncSessions(
         student_name: (session as any).students?.name,
       };
 
-      const eventId = await createCalendarEvent(sessionData);
-      if (eventId) {
+      let result: boolean | string | null = false;
+      
+      // If session has an event ID, update it; otherwise create new
+      if (session.google_calendar_event_id) {
+        result = await updateCalendarEvent(sessionData);
+      } else {
+        result = await createCalendarEvent(sessionData);
+      }
+
+      if (result) {
         success++;
       } else {
         failed++;
