@@ -16,7 +16,8 @@ import {
   Plus,
   LogOut,
   Settings,
-  Shield
+  Shield,
+  Bug
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -202,6 +203,31 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
             </div>
           </Link>
         )}
+
+        {/* Sentry Test Link - Development Tool */}
+        <Link href="/sentry-test">
+          <div
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 group hover-lift relative overflow-hidden mt-2",
+              location === "/sentry-test"
+                ? "bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-lg"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-md"
+            )}
+            onClick={handleNavClick}
+            data-testid="link-sentry-test"
+          >
+            <Bug className={cn(
+              "h-4 w-4 transition-all duration-300",
+              location === "/sentry-test" ? "animate-bounce-subtle" : "group-hover:scale-110"
+            )} />
+            <span className="group-hover:translate-x-1 transition-transform duration-200">
+              Sentry Test
+            </span>
+            {location === "/sentry-test" && (
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-400/20 to-red-400/20 animate-pulse" />
+            )}
+          </div>
+        </Link>
 
         <Separator className="my-6 animate-fade-in" style={{animationDelay: '0.5s'}} />
 

@@ -113,6 +113,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Sentry test endpoints - for testing error tracking
+  app.post("/api/test-sentry/error", (req, res) => {
+    const error = new Error("Test backend error from Sentry test endpoint");
+    (error as any).testData = {
+      endpoint: "/api/test-sentry/error",
+      timestamp: new Date().toISOString(),
+      testType: "generic-error"
+    };
+    throw error;
+  });
+
+  app.post("/api/test-sentry/auth-error", (req, res) => {
+    const error: any = new Error("Unauthorized access - test error");
+    error.status = 401;
+    throw error;
+  });
+
+  app.post("/api/test-sentry/server-error", (req, res) => {
+    const error: any = new Error("Internal server error - test error");
+    error.status = 500;
+    error.additionalContext = {
+      database: "connection_failed",
+      service: "payment_processor"
+    };
+    throw error;
+  });
+
   // Avatar upload endpoint
   app.post("/api/upload/avatar", upload.single('avatar'), async (req, res) => {
     try {
