@@ -748,6 +748,22 @@ export default function Calendar() {
 
       if (error) throw error;
 
+      // Sync to Google Calendar (create or update event)
+      try {
+        const response = await fetch('/api/google-calendar/sync-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: session.id })
+        });
+        
+        if (!response.ok) {
+          console.warn('Failed to sync session to Google Calendar');
+        }
+      } catch (syncError) {
+        console.warn('Google Calendar sync error:', syncError);
+        // Non-blocking: continue even if calendar sync fails
+      }
+
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
       toast({
         title: "Session Updated",
@@ -804,6 +820,22 @@ export default function Calendar() {
         .eq('id', session.id);
 
       if (error) throw error;
+
+      // Sync to Google Calendar (create or update event)
+      try {
+        const response = await fetch('/api/google-calendar/sync-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: session.id })
+        });
+        
+        if (!response.ok) {
+          console.warn('Failed to sync session to Google Calendar');
+        }
+      } catch (syncError) {
+        console.warn('Google Calendar sync error:', syncError);
+        // Non-blocking: continue even if calendar sync fails
+      }
 
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
       toast({

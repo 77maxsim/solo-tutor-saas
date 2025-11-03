@@ -35,6 +35,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { useTimezone } from "@/contexts/TimezoneContext";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
+import { triggerCalendarDelete } from "@/hooks/useGoogleCalendarSync";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -64,6 +65,7 @@ interface SessionData {
   notes?: string;
   color?: string;
   recurrence_id?: string;
+  google_calendar_event_id?: string;
 }
 
 interface EditSessionModalProps {
@@ -437,8 +439,15 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
         .eq('id', session.id);
 
       if (error) throw error;
+      
+      return session;
     },
-    onSuccess: () => {
+    onSuccess: (deletedSession) => {
+      // Delete Google Calendar event if exists (non-blocking)
+      if (deletedSession.google_calendar_event_id) {
+        triggerCalendarDelete(deletedSession.google_calendar_event_id);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
       toast({
