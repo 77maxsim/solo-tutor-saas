@@ -8,6 +8,7 @@ import { convertToUSD } from "./services/currencyConverter";
 import { adminLimiter } from "./rateLimiters";
 import { setSentryUser, clearSentryUser } from "./sentry";
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, bulkSyncSessions, isSyncEnabled } from "./googleCalendarSync";
+import { Sentry } from "./instrument";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -123,7 +124,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
     
     // Manually capture the error with Sentry
-    const { Sentry } = require("./instrument");
     Sentry.captureException(error);
     
     throw error;
@@ -134,7 +134,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     error.status = 401;
     
     // Manually capture the error with Sentry
-    const { Sentry } = require("./instrument");
     Sentry.captureException(error);
     
     throw error;
@@ -149,7 +148,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
     
     // Manually capture the error with Sentry
-    const { Sentry } = require("./instrument");
     Sentry.captureException(error);
     
     throw error;
