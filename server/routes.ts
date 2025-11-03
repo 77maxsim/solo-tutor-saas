@@ -124,8 +124,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
     
     // Manually capture the error with Sentry and flush immediately
-    Sentry.captureException(error);
-    await Sentry.flush(2000); // Wait up to 2 seconds for Sentry to send the error
+    console.log("🔍 Sentry test: Capturing exception...");
+    const eventId = Sentry.captureException(error);
+    console.log("🔍 Sentry event ID:", eventId);
+    console.log("🔍 Sentry test: Flushing...");
+    const flushed = await Sentry.flush(2000); // Wait up to 2 seconds for Sentry to send the error
+    console.log("🔍 Sentry flush result:", flushed);
     
     throw error;
   });
