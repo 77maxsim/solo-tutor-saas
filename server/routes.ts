@@ -121,12 +121,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: new Date().toISOString(),
       testType: "generic-error"
     };
+    
+    // Manually capture the error with Sentry
+    const { Sentry } = require("./instrument");
+    Sentry.captureException(error);
+    
     throw error;
   });
 
   app.post("/api/test-sentry/auth-error", (req, res) => {
     const error: any = new Error("Unauthorized access - test error");
     error.status = 401;
+    
+    // Manually capture the error with Sentry
+    const { Sentry } = require("./instrument");
+    Sentry.captureException(error);
+    
     throw error;
   });
 
@@ -137,6 +147,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       database: "connection_failed",
       service: "payment_processor"
     };
+    
+    // Manually capture the error with Sentry
+    const { Sentry } = require("./instrument");
+    Sentry.captureException(error);
+    
     throw error;
   });
 
