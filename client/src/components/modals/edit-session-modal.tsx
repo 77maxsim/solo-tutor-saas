@@ -36,6 +36,7 @@ import { useTimezone } from "@/contexts/TimezoneContext";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { triggerCalendarDelete } from "@/hooks/useGoogleCalendarSync";
+import { invalidateSessionCountCache } from "@/lib/queryOptimizer";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -403,6 +404,12 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['student-session-history'] });
+      
+      // Invalidate session count cache for optimization
+      const tutorId = await getCurrentTutorId();
+      if (tutorId) {
+        invalidateSessionCountCache(tutorId);
+      }
 
       // Reset form and close modal
       setTimeout(() => {
@@ -442,7 +449,7 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       
       return session;
     },
-    onSuccess: (deletedSession) => {
+    onSuccess: async (deletedSession) => {
       // Delete Google Calendar event if exists (non-blocking)
       if (deletedSession.google_calendar_event_id) {
         triggerCalendarDelete(deletedSession.google_calendar_event_id);
@@ -450,6 +457,13 @@ export function EditSessionModal({ open, onOpenChange, session, isRecurring = fa
       
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      
+      // Invalidate session count cache for optimization
+      const tutorId = await getCurrentTutorId();
+      if (tutorId) {
+        invalidateSessionCountCache(tutorId);
+      }
+      
       toast({
         title: "Session deleted",
         description: "The session has been successfully deleted.",

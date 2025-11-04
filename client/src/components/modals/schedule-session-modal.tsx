@@ -48,6 +48,7 @@ import { formatTimeDisplay, parseTimeInput, generateTimeOptions } from "@/lib/ti
 import { triggerCalendarSync } from "@/hooks/useGoogleCalendarSync";
 import { formatUtcToTutorTimezone } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import { invalidateSessionCountCache } from "@/lib/queryOptimizer";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -505,6 +506,9 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
         queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
         queryClient.invalidateQueries({ queryKey: ['student-session-history'] });
+        
+        // Invalidate session count cache for optimization
+        invalidateSessionCountCache(tutorId);
 
       } else {
         // Create new session(s) with UTC timestamps
@@ -596,6 +600,9 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
 
         queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
         queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+        
+        // Invalidate session count cache for optimization
+        invalidateSessionCountCache(tutorId);
 
         console.log("Session created:", insertedData);
       }

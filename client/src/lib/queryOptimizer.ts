@@ -2,13 +2,25 @@ import { supabase } from "@/lib/supabaseClient";
 import { datasetMonitor } from "@/lib/datasetMonitor";
 
 // Cache for tutor session counts to avoid repeated queries
-const sessionCountCache = new Map<string, { count: number; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const sessionCountCache = new Map<string, { count: number; timestamp: number; isOptimized: boolean }>();
+const CACHE_DURATION = 90 * 1000; // 90 seconds
 
 // Configuration constants for optimization thresholds
-const OPTIMIZATION_THRESHOLD = 500; // Sessions count to trigger optimization
+const OPTIMIZATION_THRESHOLD = 500; // Sessions count to enable optimization
+const DISABLE_THRESHOLD = 470; // Sessions count to disable optimization (hysteresis buffer)
 const MAX_UNPAID_SESSIONS_LIMIT = 1000; // Safety limit for unpaid sessions
 const QUERY_TIMEOUT = 30000; // 30 seconds timeout for queries
+
+// Export function to invalidate cache after session mutations
+export function invalidateSessionCountCache(tutorId?: string): void {
+  if (tutorId) {
+    sessionCountCache.delete(tutorId);
+    console.log(`Session count cache invalidated for tutor: ${tutorId}`);
+  } else {
+    sessionCountCache.clear();
+    console.log('Session count cache cleared for all tutors');
+  }
+}
 
 export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean> {
   // Check cache first
@@ -16,8 +28,18 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
   const now = Date.now();
   
   if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-    const shouldOptimize = cached.count > OPTIMIZATION_THRESHOLD;
-    console.log(`Using cached count for tutor: ${cached.count} sessions, optimized: ${shouldOptimize}`);
+    // Use hysteresis logic: maintain current optimization state unless crossing the opposite threshold
+    let shouldOptimize: boolean;
+    
+    if (cached.isOptimized) {
+      // Currently optimized: only disable if count drops below DISABLE_THRESHOLD
+      shouldOptimize = cached.count >= DISABLE_THRESHOLD;
+    } else {
+      // Currently not optimized: only enable if count reaches OPTIMIZATION_THRESHOLD
+      shouldOptimize = cached.count >= OPTIMIZATION_THRESHOLD;
+    }
+    
+    console.log(`Using cached count for tutor: ${cached.count} sessions, optimized: ${shouldOptimize} (hysteresis: was ${cached.isOptimized})`);
     return shouldOptimize;
   }
 
@@ -35,15 +57,26 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
 
     const sessionCount = count || 0;
     
-    // Cache the result
+    // Determine optimization state using hysteresis
+    const previousState = cached?.isOptimized ?? false;
+    let shouldOptimize: boolean;
+    
+    if (previousState) {
+      // Was optimized: only disable if below DISABLE_THRESHOLD
+      shouldOptimize = sessionCount >= DISABLE_THRESHOLD;
+    } else {
+      // Was not optimized: only enable if at or above OPTIMIZATION_THRESHOLD
+      shouldOptimize = sessionCount >= OPTIMIZATION_THRESHOLD;
+    }
+    
+    // Cache the result with optimization state
     sessionCountCache.set(tutorId, {
       count: sessionCount,
-      timestamp: now
+      timestamp: now,
+      isOptimized: shouldOptimize
     });
 
-    // Use optimized query if session count exceeds threshold
-    const shouldOptimize = sessionCount > OPTIMIZATION_THRESHOLD;
-    console.log(`Dataset analysis: ${sessionCount} sessions, optimization ${shouldOptimize ? 'enabled' : 'disabled'}`);
+    console.log(`Dataset analysis: ${sessionCount} sessions, optimization ${shouldOptimize ? 'enabled' : 'disabled'} (threshold: enable≥${OPTIMIZATION_THRESHOLD}, disable<${DISABLE_THRESHOLD})`);
     
     return shouldOptimize;
   } catch (error) {

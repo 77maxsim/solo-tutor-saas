@@ -19,6 +19,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
+import { invalidateSessionCountCache } from "@/lib/queryOptimizer";
 import { Clock, User, Calendar, Check, X, Loader2, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
@@ -204,7 +205,7 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
 
       console.log('✅ Session updated successfully');
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       console.log('🎉 Request accepted successfully, invalidating queries...');
       toast({
         title: "Request Accepted",
@@ -226,6 +227,12 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
       
       // Also invalidate any student-related queries
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      
+      // Invalidate session count cache for optimization
+      const tutorId = await getCurrentTutorId();
+      if (tutorId) {
+        invalidateSessionCountCache(tutorId);
+      }
       
       console.log('🔄 Cache refresh completed after accepting request');
     },
@@ -256,7 +263,7 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Request Declined",
         description: "The booking request has been declined and removed.",
@@ -266,6 +273,12 @@ export function PendingRequestsModal({ open, onOpenChange, highlightSessionId }:
       queryClient.invalidateQueries({ queryKey: ['pending-sessions-count'] });
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      
+      // Invalidate session count cache for optimization
+      const tutorId = await getCurrentTutorId();
+      if (tutorId) {
+        invalidateSessionCountCache(tutorId);
+      }
     },
     onError: (error: any) => {
       toast({

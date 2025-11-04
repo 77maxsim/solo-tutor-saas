@@ -19,6 +19,8 @@ import { useTimezone } from "@/contexts/TimezoneContext";
 import { getSessionDisplayInfo } from "@/lib/sessionDisplay";
 import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
 import { sanitizeText } from "@/lib/sanitize";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
+import { invalidateSessionCountCache } from "@/lib/queryOptimizer";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -187,7 +189,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
         return { type: 'single', count: 1 };
       }
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       let message = "Session data updated successfully";
       
       if (data.type === 'series') {
@@ -210,6 +212,12 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      
+      // Invalidate session count cache for optimization
+      const tutorId = await getCurrentTutorId();
+      if (tutorId) {
+        invalidateSessionCountCache(tutorId);
+      }
 
       handleClose();
     },
@@ -249,6 +257,12 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['student-session-history'] });
+      
+      // Invalidate session count cache for optimization
+      const tutorId = await getCurrentTutorId();
+      if (tutorId) {
+        invalidateSessionCountCache(tutorId);
+      }
 
       toast({
         title: "Session Deleted",
@@ -332,6 +346,12 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
+      
+      // Invalidate session count cache for optimization
+      const tutorId = await getCurrentTutorId();
+      if (tutorId) {
+        invalidateSessionCountCache(tutorId);
+      }
 
       // Close the modal after successful cancellation
       handleClose();
