@@ -114,52 +114,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Sentry test endpoints - for testing error tracking
-  app.post("/api/test-sentry/error", async (req, res) => {
-    const error = new Error("Test backend error from Sentry test endpoint");
-    (error as any).testData = {
-      endpoint: "/api/test-sentry/error",
-      timestamp: new Date().toISOString(),
-      testType: "generic-error"
-    };
-    
-    // Manually capture the error with Sentry and flush immediately
-    console.log("🔍 Sentry test: Capturing exception...");
-    const eventId = Sentry.captureException(error);
-    console.log("🔍 Sentry event ID:", eventId);
-    console.log("🔍 Sentry test: Flushing...");
-    const flushed = await Sentry.flush(2000); // Wait up to 2 seconds for Sentry to send the error
-    console.log("🔍 Sentry flush result:", flushed);
-    
-    throw error;
-  });
-
-  app.post("/api/test-sentry/auth-error", async (req, res) => {
-    const error: any = new Error("Unauthorized access - test error");
-    error.status = 401;
-    
-    // Manually capture the error with Sentry and flush immediately
-    Sentry.captureException(error);
-    await Sentry.flush(2000); // Wait up to 2 seconds for Sentry to send the error
-    
-    throw error;
-  });
-
-  app.post("/api/test-sentry/server-error", async (req, res) => {
-    const error: any = new Error("Internal server error - test error");
-    error.status = 500;
-    error.additionalContext = {
-      database: "connection_failed",
-      service: "payment_processor"
-    };
-    
-    // Manually capture the error with Sentry and flush immediately
-    Sentry.captureException(error);
-    await Sentry.flush(2000); // Wait up to 2 seconds for Sentry to send the error
-    
-    throw error;
-  });
-
   // Avatar upload endpoint
   app.post("/api/upload/avatar", upload.single('avatar'), async (req, res) => {
     try {
