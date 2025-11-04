@@ -30,6 +30,8 @@ Preferred communication style: Simple, everyday language.
     - **Earnings Calculation**: Shared logic for calculating earnings and generating financial statistics.
     - **File Storage**: Supabase Storage for avatar uploads with RLS policies.
     - **Multi-Currency Support**: Currency conversion service with 24-hour caching for admin dashboard metrics.
+    - **Query Timeout Protection**: 30-second timeout on all Supabase queries with proper abort signal handling to prevent hung requests.
+    - **API Usage Monitoring**: Comprehensive tracking of ExchangeRate-API calls with monthly limits (1,500 requests) and 80% threshold warnings.
 - **Notifications**: Telegram bot integration for daily summaries, booking alerts, and broadcast messages.
 - **Error Tracking & Monitoring**: Sentry integration for comprehensive error tracking, performance monitoring, and session replay on both frontend and backend.
 - **Admin Dashboard**: Comprehensive dashboard with KPIs, analytics charts, top tutors performance metrics, and multi-currency earnings conversion to USD.
