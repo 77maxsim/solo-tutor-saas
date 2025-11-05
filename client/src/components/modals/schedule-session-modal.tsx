@@ -504,6 +504,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
 
         // Invalidate relevant queries
         queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['upcoming-sessions-expected'] });
         queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
         queryClient.invalidateQueries({ queryKey: ['student-session-history'] });
         
@@ -599,6 +600,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         }
 
         queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['upcoming-sessions-expected'] });
         queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
         
         // Invalidate session count cache for optimization
