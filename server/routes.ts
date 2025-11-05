@@ -7,7 +7,7 @@ import { insertStudentSchema, insertSessionSchema, insertPaymentSchema } from "@
 import { convertToUSD } from "./services/currencyConverter";
 import { adminLimiter } from "./rateLimiters";
 import { setSentryUser, clearSentryUser } from "./sentry";
-import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, bulkSyncSessions, isSyncEnabled } from "./googleCalendarSync";
+import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, bulkSyncSessions, isSyncEnabled, getAuthorizationUrl, handleOAuthCallback, disconnectGoogleCalendar } from "./googleCalendarSync";
 import { Sentry } from "./instrument";
 
 const supabase = createClient(
@@ -112,6 +112,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({
       dsn: process.env.SENTRY_DSN_FRONTEND || '',
     });
+  });
+
+  // Google Calendar OAuth endpoints
+  app.get("/api/auth/google/connect", authenticateUser, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      
+      // Get tutor ID from user
+      const { data: tutor, error } = await supabase
+        .from('tutors')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error || !tutor) {
+        return res.status(404).json({ error: "Tutor not found" });
+      }
+
+      const authUrl = getAuthorizationUrl(tutor.id);
+      res.json({ authUrl });
+    } catch (error) {
+      console.error("Error generating Google OAuth URL:", error);
+      res.status(500).json({ error: "Failed to generate authorization URL" });
+    }
+  });
+
+  app.get("/api/auth/google/callback", async (req, res) => {
+    try {
+      const { code, state } = req.query;
+
+      if (!code || !state) {
+        return res.status(400).send("Missing authorization code or state");
+      }
+
+      const tutorId = parseInt(state as string);
+      if (isNaN(tutorId)) {
+        return res.status(400).send("Invalid state parameter");
+      }
+
+      const success = await handleOAuthCallback(code as string, tutorId);
+
+      if (success) {
+        // Redirect back to settings page with success message
+        res.redirect('/?googleCalendarConnected=true');
+      } else {
+        res.redirect('/?googleCalendarError=true');
+      }
+    } catch (error) {
+      console.error("Error handling Google OAuth callback:", error);
+      res.redirect('/?googleCalendarError=true');
+    }
+  });
+
+  app.post("/api/auth/google/disconnect", authenticateUser, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      
+      // Get tutor ID from user
+      const { data: tutor, error } = await supabase
+        .from('tutors')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error || !tutor) {
+        return res.status(404).json({ error: "Tutor not found" });
+      }
+
+      const success = await disconnectGoogleCalendar(tutor.id);
+
+      if (success) {
+        res.json({ success: true, message: "Google Calendar disconnected successfully" });
+      } else {
+        res.status(500).json({ error: "Failed to disconnect Google Calendar" });
+      }
+    } catch (error) {
+      console.error("Error disconnecting Google Calendar:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   // Avatar upload endpoint
@@ -590,7 +669,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Event ID is required" });
       }
 
-      const result = await deleteCalendarEvent(eventId);
+      // Look up session to get tutor_id
+      const { data: session, error } = await supabase
+        .from('sessions')
+        .select('tutor_id')
+        .eq('google_calendar_event_id', eventId)
+        .single();
+
+      if (error || !session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      const result = await deleteCalendarEvent(session.tutor_id, eventId);
       res.json({ success: result });
     } catch (error) {
       console.error('Delete calendar event error:', error);

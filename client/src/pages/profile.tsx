@@ -82,7 +82,7 @@ export default function Profile() {
 
       const { data, error } = await supabase
         .from('tutors')
-        .select('id, full_name, email, currency, time_format, timezone, avatar_url, sync_google_calendar')
+        .select('id, full_name, email, currency, time_format, timezone, avatar_url, sync_google_calendar, google_calendar_connected')
         .eq('user_id', user.id)
         .single();
 
@@ -92,6 +92,72 @@ export default function Profile() {
       }
 
       return data;
+    },
+  });
+
+  // Google Calendar connection mutations
+  const connectGoogleCalendarMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch('/api/auth/google/connect', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get authorization URL');
+      }
+
+      const { authUrl } = await response.json();
+      return authUrl;
+    },
+    onSuccess: (authUrl) => {
+      window.location.href = authUrl;
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Connection Failed",
+        description: "Failed to connect Google Calendar. Please try again.",
+      });
+    },
+  });
+
+  const disconnectGoogleCalendarMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch('/api/auth/google/disconnect', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to disconnect Google Calendar');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Google Calendar Disconnected",
+        description: "Your Google Calendar has been disconnected successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['tutor-profile'] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Disconnection Failed",
+        description: "Failed to disconnect Google Calendar. Please try again.",
+      });
     },
   });
 
@@ -728,7 +794,7 @@ export default function Profile() {
             <CardHeader>
               <CardTitle>Google Calendar Integration</CardTitle>
               <CardDescription>
-                Automatically sync your tutoring sessions to Google Calendar.
+                Connect your Google Calendar to automatically sync tutoring sessions.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -736,8 +802,63 @@ export default function Profile() {
                 <div className="flex items-center justify-center py-4">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
+              ) : !tutorProfile?.google_calendar_connected ? (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-medium text-blue-900 dark:text-blue-100">
+                        Connect Your Google Calendar
+                      </p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                        Link your Google Calendar to automatically sync all your tutoring sessions. Each session will appear as an event in your personal calendar.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">Benefits:</p>
+                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>Automatic synchronization of all scheduled sessions</li>
+                      <li>View your tutoring schedule alongside personal events</li>
+                      <li>Receive Google Calendar notifications for upcoming sessions</li>
+                      <li>Access your schedule from any device</li>
+                    </ul>
+                  </div>
+
+                  <Button
+                    onClick={() => connectGoogleCalendarMutation.mutate()}
+                    disabled={connectGoogleCalendarMutation.isPending}
+                    data-testid="button-connect-google-calendar"
+                  >
+                    {connectGoogleCalendarMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Connect Google Calendar
+                      </>
+                    )}
+                  </Button>
+                </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Connection Status */}
+                  <div className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-medium text-green-900 dark:text-green-100">
+                        Google Calendar Connected
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                        Your Google Calendar is successfully linked and ready to sync sessions.
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Sync Toggle */}
                   <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                     <div className="flex items-start gap-3">
@@ -747,7 +868,7 @@ export default function Profile() {
                           Auto-Sync Sessions
                         </p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          When enabled, all scheduled sessions will automatically appear in your Google Calendar
+                          Automatically sync all scheduled sessions to your Google Calendar
                         </p>
                       </div>
                     </div>
@@ -759,22 +880,14 @@ export default function Profile() {
                     />
                   </div>
 
-                  {/* Sync Status and Actions */}
+                  {/* Bulk Sync Section */}
                   {tutorProfile?.sync_google_calendar && (
                     <div className="space-y-3">
-                      <div className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
-                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1">
-                          <p className="font-medium text-green-900 dark:text-green-100">
-                            Sync is active
-                          </p>
-                          <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                            New sessions will automatically sync to your Google Calendar. Existing sessions can be synced using the button below.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
+                      <div className="space-y-3 p-4 border border-border rounded-lg">
+                        <p className="text-sm font-medium text-foreground">Sync Existing Sessions</p>
+                        <p className="text-xs text-muted-foreground">
+                          Use this to sync all your previously scheduled sessions to Google Calendar.
+                        </p>
                         <Button
                           variant="outline"
                           size="sm"
@@ -790,7 +903,7 @@ export default function Profile() {
                           ) : (
                             <>
                               <RefreshCw className="w-4 h-4 mr-2" />
-                              Sync Existing Sessions
+                              Sync All Sessions
                             </>
                           )}
                         </Button>
@@ -815,21 +928,33 @@ export default function Profile() {
                             </div>
                           </div>
                         )}
-                        
-                        <p className="text-xs text-muted-foreground">
-                          This will sync all your scheduled sessions that haven't been synced yet.
-                        </p>
                       </div>
                     </div>
                   )}
 
-                  {!tutorProfile?.sync_google_calendar && (
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        <strong>How it works:</strong> When you enable sync, all new sessions you create in Classter will automatically appear in your Google Calendar. Your existing timezone and session details are used to create properly formatted calendar events.
-                      </p>
-                    </div>
-                  )}
+                  {/* Disconnect Button */}
+                  <div className="pt-2 border-t border-border">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => disconnectGoogleCalendarMutation.mutate()}
+                      disabled={disconnectGoogleCalendarMutation.isPending}
+                      data-testid="button-disconnect-google-calendar"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      {disconnectGoogleCalendarMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Disconnecting...
+                        </>
+                      ) : (
+                        'Disconnect Google Calendar'
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      This will remove the connection to your Google Calendar. Existing synced events will remain in your calendar.
+                    </p>
+                  </div>
                 </div>
               )}
             </CardContent>
