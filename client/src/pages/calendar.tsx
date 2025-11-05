@@ -132,8 +132,14 @@ export default function Calendar() {
     const startDate = dayjs(arg.start).subtract(7, 'days').toISOString();
     const endDate = dayjs(arg.end).add(7, 'days').toISOString();
     
-    console.log('📅 Calendar view changed - new range:', startDate, 'to', endDate);
-    setVisibleRange({ start: startDate, end: endDate });
+    // Only update if the range actually changed (prevents infinite loop)
+    setVisibleRange(prev => {
+      if (!prev || prev.start !== startDate || prev.end !== endDate) {
+        console.log('📅 Calendar view changed - new range:', startDate, 'to', endDate);
+        return { start: startDate, end: endDate };
+      }
+      return prev;
+    });
   }, [currentDate]);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [editSession, setEditSession] = useState<SessionWithStudent | null>(null);
