@@ -122,12 +122,15 @@ export default function Calendar() {
 
   // Handle calendar date changes (for month view title and refetching sessions)
   const handleDatesSet = useCallback((arg: any) => {
+    console.log('🎯 handleDatesSet called - arg.start:', arg.start, 'arg.end:', arg.end, 'view:', arg.view?.type);
     const newDate = arg.start;
     setCurrentDate(prev => {
       // Only update if month actually changed
       if (!isSameMonth(newDate, prev)) {
+        console.log('📅 Month changed from', prev, 'to', newDate);
         return newDate;
       }
+      console.log('📅 Same month, not updating currentDate');
       return prev;
     });
     
@@ -142,6 +145,7 @@ export default function Calendar() {
         console.log('📅 Calendar view changed - new range:', startDate, 'to', endDate);
         return { start: startDate, end: endDate };
       }
+      console.log('📅 Same range, not updating visibleRange');
       return prev;
     });
   }, []);
@@ -905,14 +909,22 @@ export default function Calendar() {
 
   // Navigation handlers
   const handlePrevious = () => {
+    console.log('🔄 handlePrevious called - navigating to previous period');
     if (calendarRef.current) {
-      calendarRef.current.getApi().prev();
+      const api = calendarRef.current.getApi();
+      console.log('📅 Current date before prev():', api.getDate());
+      api.prev();
+      console.log('📅 Current date after prev():', api.getDate());
     }
   };
 
   const handleNext = () => {
+    console.log('🔄 handleNext called - navigating to next period');
     if (calendarRef.current) {
-      calendarRef.current.getApi().next();
+      const api = calendarRef.current.getApi();
+      console.log('📅 Current date before next():', api.getDate());
+      api.next();
+      console.log('📅 Current date after next():', api.getDate());
     }
   };
 
