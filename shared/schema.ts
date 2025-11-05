@@ -95,3 +95,22 @@ export type InsertBookingSlot = z.infer<typeof insertBookingSlotSchema>;
 export type BookingSlot = typeof bookingSlots.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type Payment = typeof payments.$inferSelect;
+
+// Tutor type for Supabase tutors table (not managed by Drizzle)
+export interface Tutor {
+  id: number;
+  email: string;
+  full_name: string;
+  user_id: string;
+  timezone: string;
+  sync_google_calendar: boolean;
+  google_access_token?: string | null;
+  google_refresh_token?: string | null;
+  google_token_expires_at?: string | null;
+  google_calendar_connected: boolean;
+  avatar_url?: string | null;
+  currency?: string;
+  time_format?: string;
+  is_admin?: boolean;
+  created_at?: string;
+}
