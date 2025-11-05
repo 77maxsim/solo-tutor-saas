@@ -146,12 +146,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).send("Missing authorization code or state");
       }
 
-      const tutorId = parseInt(state as string);
-      if (isNaN(tutorId)) {
-        return res.status(400).send("Invalid state parameter");
-      }
-
-      const success = await handleOAuthCallback(code as string, tutorId);
+      // Validate state token and exchange for tokens
+      const success = await handleOAuthCallback(code as string, state as string);
 
       if (success) {
         // Redirect back to settings page with success message

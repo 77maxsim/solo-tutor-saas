@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import { createClient } from '@supabase/supabase-js';
 import { DateTime } from 'luxon';
 import type { Tutor } from '@shared/schema';
+import crypto from 'crypto';
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -14,6 +15,28 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const REDIRECT_URI = process.env.REPLIT_DEPLOYMENT 
   ? `https://${process.env.REPLIT_DEPLOYMENT}/api/auth/google/callback`
   : 'http://localhost:5000/api/auth/google/callback';
+
+// OAuth state management - stores cryptographically secure state tokens
+interface OAuthState {
+  tutorId: number;
+  expiresAt: number;
+}
+
+const oauthStates = new Map<string, OAuthState>();
+
+// Clean up expired states every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  const tokensToDelete: string[] = [];
+  
+  oauthStates.forEach((state, token) => {
+    if (state.expiresAt < now) {
+      tokensToDelete.push(token);
+    }
+  });
+  
+  tokensToDelete.forEach(token => oauthStates.delete(token));
+}, 10 * 60 * 1000);
 
 interface SessionData {
   id: number;
@@ -449,6 +472,43 @@ export async function bulkSyncSessions(
 }
 
 /**
+ * Generate a cryptographically secure state token for OAuth
+ */
+function generateStateToken(tutorId: number): string {
+  const token = crypto.randomBytes(32).toString('base64url');
+  const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
+  
+  oauthStates.set(token, { tutorId, expiresAt });
+  
+  console.log(`Generated OAuth state token for tutor ${tutorId}, expires at ${new Date(expiresAt).toISOString()}`);
+  return token;
+}
+
+/**
+ * Validate and consume an OAuth state token
+ */
+function validateStateToken(token: string): number | null {
+  const state = oauthStates.get(token);
+  
+  if (!state) {
+    console.log('OAuth state token not found:', token);
+    return null;
+  }
+  
+  if (state.expiresAt < Date.now()) {
+    console.log('OAuth state token expired for tutor:', state.tutorId);
+    oauthStates.delete(token);
+    return null;
+  }
+  
+  // Remove token after use (one-time use only)
+  oauthStates.delete(token);
+  
+  console.log(`Validated OAuth state token for tutor ${state.tutorId}`);
+  return state.tutorId;
+}
+
+/**
  * Generate Google OAuth authorization URL for a tutor
  */
 export function getAuthorizationUrl(tutorId: number): string {
@@ -466,10 +526,12 @@ export function getAuthorizationUrl(tutorId: number): string {
     'https://www.googleapis.com/auth/calendar.events',
   ];
 
+  const stateToken = generateStateToken(tutorId);
+
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: scopes,
-    state: tutorId.toString(), // Pass tutor ID in state parameter
+    state: stateToken, // Use cryptographically secure state token
     prompt: 'consent', // Force consent screen to get refresh token
   });
 
@@ -478,9 +540,19 @@ export function getAuthorizationUrl(tutorId: number): string {
 
 /**
  * Exchange authorization code for tokens and store in database
+ * @param code - Authorization code from Google
+ * @param stateToken - State token to validate
  */
-export async function handleOAuthCallback(code: string, tutorId: number): Promise<boolean> {
+export async function handleOAuthCallback(code: string, stateToken: string): Promise<boolean> {
   try {
+    // Validate state token and get tutor ID
+    const tutorId = validateStateToken(stateToken);
+    
+    if (!tutorId) {
+      console.error('Invalid or expired OAuth state token');
+      return false;
+    }
+
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
       throw new Error('Google OAuth credentials not configured');
     }
