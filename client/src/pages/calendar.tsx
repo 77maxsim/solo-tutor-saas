@@ -123,9 +123,13 @@ export default function Calendar() {
   // Handle calendar date changes (for month view title and refetching sessions)
   const handleDatesSet = useCallback((arg: any) => {
     const newDate = arg.start;
-    if (!isSameMonth(newDate, currentDate)) {
-      setCurrentDate(newDate);
-    }
+    setCurrentDate(prev => {
+      // Only update if month actually changed
+      if (!isSameMonth(newDate, prev)) {
+        return newDate;
+      }
+      return prev;
+    });
     
     // Update visible range to trigger session refetch
     // Add padding to ensure we fetch sessions beyond the visible range
@@ -140,7 +144,7 @@ export default function Calendar() {
       }
       return prev;
     });
-  }, [currentDate]);
+  }, []);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [editSession, setEditSession] = useState<SessionWithStudent | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
