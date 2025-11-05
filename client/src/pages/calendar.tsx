@@ -111,18 +111,29 @@ export default function Calendar() {
   
   const [calendarView, setCalendarView] = useState<'week' | 'month' | 'agenda'>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Track the visible date range for fetching sessions
+  const [visibleRange, setVisibleRange] = useState<{start: string, end: string} | null>(null);
 
   // Helper function to check if two dates are in the same month
   const isSameMonth = (date1: Date, date2: Date): boolean => {
     return dayjs(date1).isSame(dayjs(date2), 'month');
   };
 
-  // Handle calendar date changes (for month view title)
+  // Handle calendar date changes (for month view title and refetching sessions)
   const handleDatesSet = useCallback((arg: any) => {
     const newDate = arg.start;
     if (!isSameMonth(newDate, currentDate)) {
       setCurrentDate(newDate);
     }
+    
+    // Update visible range to trigger session refetch
+    // Add padding to ensure we fetch sessions beyond the visible range
+    const startDate = dayjs(arg.start).subtract(7, 'days').toISOString();
+    const endDate = dayjs(arg.end).add(7, 'days').toISOString();
+    
+    console.log('📅 Calendar view changed - new range:', startDate, 'to', endDate);
+    setVisibleRange({ start: startDate, end: endDate });
   }, [currentDate]);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [editSession, setEditSession] = useState<SessionWithStudent | null>(null);
@@ -207,9 +218,9 @@ export default function Calendar() {
   const tutorCurrency = tutorData?.currency || 'USD';
   const timeFormat = tutorData?.time_format || '24h';
 
-  // Fetch sessions data with optimization
+  // Fetch sessions data with optimization and date range filtering
   const { data: sessions = [], isLoading } = useQuery({
-    queryKey: ['calendar-sessions'],
+    queryKey: ['calendar-sessions', visibleRange?.start, visibleRange?.end],
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) return [];
@@ -217,10 +228,19 @@ export default function Calendar() {
       const tz = tutorTimezone || 'UTC';
       console.log('🔍 Fetching calendar sessions for tutor:', tutorId, 'timezone:', tz);
       
-      return await fetchCalendarSessions(tutorId, tz);
+      // If we have a visible range, use it for filtering
+      if (visibleRange) {
+        return await fetchCalendarSessions(tutorId, tz, visibleRange.start, visibleRange.end);
+      }
+      
+      // Otherwise, fetch a default range (current month + 1 month before and after)
+      const defaultStart = dayjs().subtract(1, 'month').startOf('month').toISOString();
+      const defaultEnd = dayjs().add(1, 'month').endOf('month').toISOString();
+      return await fetchCalendarSessions(tutorId, tz, defaultStart, defaultEnd);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
+    enabled: true, // Always enabled, will use default range if visibleRange not set
   });
 
   // Get unique students for filter

@@ -1,0 +1,168 @@
+✅ Calendar event created: {id: 'ebfc072a...', title: '💰 Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '4dcbd8ac...', title: '💰 Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'b0067e8c...', title: '💰 Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '146388ea...', title: '💰 Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '2a947f01...', title: '💰 Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '530cb155...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'f718948b...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '008b9202...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '2d576cd3...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '4947ef6e...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'cad067f3...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'd487a7ce...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'd18743d3...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '3c626f1e...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'd94c3302...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '83bb43fd...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '6dc35c5d...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '6bea75bc...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '735feb7f...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'f3ade8ef...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '6439a14c...', title: 'Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'e4595549...', title: 'Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'cf7ac37f...', title: 'Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '11e0d78e...', title: 'King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'b10b0825...', title: 'King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '062047e1...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'cbbe9f88...', title: 'Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '95303300...', title: 'Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '31614c74...', title: 'August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: '97535a43...', title: 'August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'bd5df920...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 ✅ Calendar event created: {id: 'e0c88076...', title: 'Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+index-4flsBhLk.js:56 📊 Calendar event summary: {totalFiltered: 1000, validEvents: 1000, skippedSessions: 0, june23Events: 6, june23EventTimes: Array(6), …}
+index-4flsBhLk.js:56 📅 Final events array for FullCalendar: {totalEvents: 1000, june23Events: 6, sampleJune23: Array(6)}
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 📅 Calendar dateClick triggered: {date: Fri Nov 07 2025 11:45:00 GMT+0200 (Eastern European Standard Time), dateStr: '2025-11-07T17:45:00+08:00', allDay: false, dayEl: td.fc-day.fc-day-fri.fc-day-future.fc-timegrid-col, jsEvent: MouseEvent, …}
+index-4flsBhLk.js:56 🎯 Date clicked for new session: {clicked_date: Fri Nov 07 2025 11:45:00 GMT+0200 (Eastern European Standard Time), tutor_timezone: 'Asia/Shanghai', form_date: '2025-11-07', form_time: '17:45', duration: 60}
+index-4flsBhLk.js:56 🔍 Current pending modal state: false
+index-4flsBhLk.js:56 🔍 Current highlightedSessionId: undefined
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 🔍 Current pending modal state: false
+index-4flsBhLk.js:56 🔍 Current highlightedSessionId: undefined
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: true}
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: true}
+index-4flsBhLk.js:56 🔍 Current pending modal state: false
+index-4flsBhLk.js:56 🔍 Current highlightedSessionId: undefined
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: true}
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: false}
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: true}
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: true}
+index-4flsBhLk.js:56 🔍 Current pending modal state: false
+index-4flsBhLk.js:56 🔍 Current highlightedSessionId: undefined
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: true}
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: false}
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: true}
+index-4flsBhLk.js:56 Session submission data: {sessionStart: '2025-11-07T09:45:00.000Z', duration: 60, tutorTimezone: 'Asia/Shanghai'}
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: true}
+index-4flsBhLk.js:56 Session UTC timestamps: {session_start: '2025-11-07T09:45:00.000Z', session_end: '2025-11-07T10:45:00.000Z', duration_minutes: 60, verification: {…}}
+index-4flsBhLk.js:56 Recurring session 1 UTC (DST-aware): {week_offset: 1, local_time: '2025-11-14 17:45', start_utc: '2025-11-14T09:45:00.000Z', end_utc: '2025-11-14T10:45:00.000Z'}
+index-4flsBhLk.js:56 Session count cache invalidated for tutor: 0805984a-febf-423b-bef1-ba8dbd25760b
+index-4flsBhLk.js:56 Session created: (2) [{…}, {…}]
+index-4flsBhLk.js:56 🔍 Current pending modal state: false
+index-4flsBhLk.js:56 🔍 Current highlightedSessionId: undefined
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: true}
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: false}
+index-4flsBhLk.js:56 🔍 Fetching calendar sessions for tutor: 0805984a-febf-423b-bef1-ba8dbd25760b timezone: Asia/Shanghai
+index-4flsBhLk.js:56 📅 fetchCalendarSessions called for tutor: 0805984a-febf-423b-bef1-ba8dbd25760b timezone: Asia/Shanghai
+index-4flsBhLk.js:56 Dataset analysis: 1807 sessions, optimization enabled (threshold: enable≥500, disable<470)
+index-4flsBhLk.js:56 🔧 Using optimized query pattern for calendar
+index-4flsBhLk.js:56 🔍 Current pending modal state: false
+index-4flsBhLk.js:56 🔍 Current highlightedSessionId: undefined
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 Fetch finished loading: HEAD "https://gwxhjznrclfbqcnbrrgo.supabase.co/rest/v1/sessions?select=*&tutor_id=eq.0805984a-febf-423b-bef1-ba8dbd25760b".
+(anonymous) @ index-4flsBhLk.js:56
+(anonymous) @ index-4flsBhLk.js:84
+kNe @ index-4flsBhLk.js:84
+(anonymous) @ index-4flsBhLk.js:83
+(anonymous) @ index-4flsBhLk.js:83
+o @ index-4flsBhLk.js:83
+Promise.then
+c @ index-4flsBhLk.js:83
+(anonymous) @ index-4flsBhLk.js:83
+EPe @ index-4flsBhLk.js:83
+(anonymous) @ index-4flsBhLk.js:83
+then @ index-4flsBhLk.js:78
+2index-4flsBhLk.js:56 ✓ Google Calendar synced
+index-4flsBhLk.js:56 ✅ Optimized query returned: 1000 sessions
+index-4flsBhLk.js:56 🔍 Current pending modal state: false
+index-4flsBhLk.js:56 🔍 Current highlightedSessionId: undefined
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: false}
+index-4flsBhLk.js:56 🔄 AppLayout: Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+index-4flsBhLk.js:56 🔄 Auth state changed: SIGNED_IN true
+index-4flsBhLk.js:56 🔍 Starting timezone fetch...
+index-4flsBhLk.js:56 🔄 Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+index-4flsBhLk.js:56 🔍 Current pending modal state: false
+index-4flsBhLk.js:56 🔍 Current highlightedSessionId: undefined
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: false}
+index-4flsBhLk.js:56 🔍 Auth state check: {hasSession: true, hasUser: true, userId: '0805984a-febf-423b-bef1-ba8dbd25760b', sessionError: null, userError: null}
+index-4flsBhLk.js:56 🔍 User authenticated, fetching tutor timezone for user_id: 0805984a-febf-423b-bef1-ba8dbd25760b
+index-4flsBhLk.js:56 🌍 Tutor query result: {data: {…}, error: null, user_id: '0805984a-febf-423b-bef1-ba8dbd25760b'}
+index-4flsBhLk.js:56 🌍 Successfully set tutor timezone: Asia/Shanghai for tutor: Oliver
+index-4flsBhLk.js:56 🔄 AppLayout: Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+index-4flsBhLk.js:56 🔄 Auth state changed: SIGNED_IN true
+index-4flsBhLk.js:56 🔍 Starting timezone fetch...
+index-4flsBhLk.js:56 🔄 Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+index-4flsBhLk.js:56 🔍 Current pending modal state: false
+index-4flsBhLk.js:56 🔍 Current highlightedSessionId: undefined
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: false}
+index-4flsBhLk.js:56 🔍 Auth state check: {hasSession: true, hasUser: true, userId: '0805984a-febf-423b-bef1-ba8dbd25760b', sessionError: null, userError: null}
+index-4flsBhLk.js:56 🔍 User authenticated, fetching tutor timezone for user_id: 0805984a-febf-423b-bef1-ba8dbd25760b
+index-4flsBhLk.js:56 🌍 Tutor query result: {data: {…}, error: null, user_id: '0805984a-febf-423b-bef1-ba8dbd25760b'}
+index-4flsBhLk.js:56 🌍 Successfully set tutor timezone: Asia/Shanghai for tutor: Oliver
+index-4flsBhLk.js:56 🔄 AppLayout: Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+index-4flsBhLk.js:56 🔄 Auth state changed: SIGNED_IN true
+index-4flsBhLk.js:56 🔍 Starting timezone fetch...
+index-4flsBhLk.js:56 🔄 Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+index-4flsBhLk.js:56 🔍 Current pending modal state: false
+index-4flsBhLk.js:56 🔍 Current highlightedSessionId: undefined
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: false}
+index-4flsBhLk.js:56 🔍 Auth state check: {hasSession: true, hasUser: true, userId: '0805984a-febf-423b-bef1-ba8dbd25760b', sessionError: null, userError: null}
+index-4flsBhLk.js:56 🔍 User authenticated, fetching tutor timezone for user_id: 0805984a-febf-423b-bef1-ba8dbd25760b
+index-4flsBhLk.js:56 🌍 Tutor query result: {data: {…}, error: null, user_id: '0805984a-febf-423b-bef1-ba8dbd25760b'}
+index-4flsBhLk.js:56 🌍 Successfully set tutor timezone: Asia/Shanghai for tutor: Oliver
+index-4flsBhLk.js:56 🔄 AppLayout: Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+index-4flsBhLk.js:56 🔄 Auth state changed: SIGNED_IN true
+index-4flsBhLk.js:56 🔍 Starting timezone fetch...
+index-4flsBhLk.js:56 🔄 Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+index-4flsBhLk.js:56 🔍 Current pending modal state: false
+index-4flsBhLk.js:56 🔍 Current highlightedSessionId: undefined
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: false}
+index-4flsBhLk.js:56 🔍 Auth state check: {hasSession: true, hasUser: true, userId: '0805984a-febf-423b-bef1-ba8dbd25760b', sessionError: null, userError: null}
+index-4flsBhLk.js:56 🔍 User authenticated, fetching tutor timezone for user_id: 0805984a-febf-423b-bef1-ba8dbd25760b
+index-4flsBhLk.js:56 🌍 Tutor query result: {data: {…}, error: null, user_id: '0805984a-febf-423b-bef1-ba8dbd25760b'}
+index-4flsBhLk.js:56 🌍 Successfully set tutor timezone: Asia/Shanghai for tutor: Oliver
+index-4flsBhLk.js:56 🔄 AppLayout: Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+index-4flsBhLk.js:56 🔄 Auth state changed: SIGNED_IN true
+index-4flsBhLk.js:56 🔍 Starting timezone fetch...
+index-4flsBhLk.js:56 🔄 Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+index-4flsBhLk.js:56 🔍 Current pending modal state: false
+index-4flsBhLk.js:56 🔍 Current highlightedSessionId: undefined
+index-4flsBhLk.js:56 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+index-4flsBhLk.js:56 🔥 Modal should be open: false because open: false or highlightSessionId: false
+index-4flsBhLk.js:56 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: false}
+index-4flsBhLk.js:56 🔍 Auth state check: {hasSession: true, hasUser: true, userId: '0805984a-febf-423b-bef1-ba8dbd25760b', sessionError: null, userError: null}
+index-4flsBhLk.js:56 🔍 User authenticated, fetching tutor timezone for user_id: 0805984a-febf-423b-bef1-ba8dbd25760b
+index-4flsBhLk.js:56 🌍 Tutor query result: {data: {…}, error: null, user_id: '0805984a-febf-423b-bef1-ba8dbd25760b'}
+index-4flsBhLk.js:56 🌍 Successfully set tutor timezone: Asia/Shanghai for tutor: Oliver

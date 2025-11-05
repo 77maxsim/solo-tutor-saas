@@ -26,13 +26,20 @@ export interface CalendarSession {
  * Fetches calendar sessions with dataset optimization
  * @param tutorId - The tutor's ID
  * @param tz - The tutor's timezone (not used in this function but kept for API consistency)
+ * @param startDate - Start date of the visible range (optional, for date filtering)
+ * @param endDate - End date of the visible range (optional, for date filtering)
  * @returns Array of sessions with student names
  */
 export async function fetchCalendarSessions(
   tutorId: string,
-  tz: string
+  tz: string,
+  startDate?: string,
+  endDate?: string
 ): Promise<CalendarSession[]> {
   console.log('📅 fetchCalendarSessions called for tutor:', tutorId, 'timezone:', tz);
+  if (startDate && endDate) {
+    console.log('📅 Date range filter:', startDate, 'to', endDate);
+  }
   
   // Step 1: Check if we should use optimization
   const shouldOptimize = await shouldUseOptimizedQuery(tutorId);
@@ -43,11 +50,21 @@ export async function fetchCalendarSessions(
     // Step 2a: Optimized query - fetch sessions and students separately
     console.log('🔧 Using optimized query pattern for calendar');
     
-    // Fetch sessions with minimal columns
-    const { data: sessionsData, error: sessionsError } = await supabase
+    // Build sessions query with date filtering
+    let sessionsQuery = supabase
       .from('sessions')
       .select('id, student_id, tutor_id, session_start, session_end, paid, status, rate, duration, notes, color, recurrence_id, unassigned_name, created_at')
       .eq('tutor_id', tutorId);
+    
+    // Add date range filter if provided
+    if (startDate && endDate) {
+      sessionsQuery = sessionsQuery
+        .gte('session_start', startDate)
+        .lte('session_start', endDate);
+    }
+    
+    // Fetch sessions with minimal columns
+    const { data: sessionsData, error: sessionsError } = await sessionsQuery;
     
     if (sessionsError) {
       console.error('Error fetching sessions:', sessionsError);
@@ -101,7 +118,8 @@ export async function fetchCalendarSessions(
     // Step 2b: Standard query - use JOIN for small datasets
     console.log('📊 Using standard query with JOIN for calendar');
     
-    const { data, error } = await supabase
+    // Build query with date filtering
+    let query = supabase
       .from('sessions')
       .select(`
         id,
@@ -124,6 +142,15 @@ export async function fetchCalendarSessions(
         )
       `)
       .eq('tutor_id', tutorId);
+    
+    // Add date range filter if provided
+    if (startDate && endDate) {
+      query = query
+        .gte('session_start', startDate)
+        .lte('session_start', endDate);
+    }
+    
+    const { data, error } = await query;
     
     if (error) {
       console.error('Error fetching sessions:', error);
