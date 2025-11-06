@@ -255,6 +255,7 @@ export default function Calendar() {
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
     enabled: true, // Always enabled, will use default range if visibleRange not set
+    placeholderData: (previousData) => previousData, // Keep previous sessions while refetching to prevent calendar jump
   });
 
   // Get unique students for filter

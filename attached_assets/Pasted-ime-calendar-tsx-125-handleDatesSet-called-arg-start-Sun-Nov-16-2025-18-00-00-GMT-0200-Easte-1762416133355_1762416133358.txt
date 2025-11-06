@@ -1,0 +1,874 @@
+ime)
+calendar.tsx:125 🎯 handleDatesSet called - arg.start: Sun Nov 16 2025 18:00:00 GMT+0200 (Eastern European Standard Time) arg.end: Sun Nov 23 2025 18:00:00 GMT+0200 (Eastern European Standard Time) view: timeGridWeek
+calendar.tsx:133 📅 Same month, not updating currentDate
+calendar.tsx:145 📅 Calendar view changed - new range: 2025-11-09T16:00:00.000Z to 2025-11-30T16:00:00.000Z
+calendar.tsx:927 📅 Current date after next(): Sun Nov 16 2025 18:00:00 GMT+0200 (Eastern European Standard Time)
+calendar.tsx:100 🔍 Current pending modal state: false
+calendar.tsx:102 🔍 Current highlightedSessionId: undefined
+calendar.tsx:274 📊 Unique students found: 46 (46) ['August', 'Eric (old)', 'Katie', 'Ryan', 'Meera', 'Joy', 'Ron', 'Bruce', 'Eathon 2', 'Nathen', 'John', 'Joy +', 'Kola', 'CiCi+', 'Rod', 'Vince', 'Andy 2', 'PiPi', 'Ethan', 'Sea', 'Cherry', 'Reggie', 'Eric NEW', 'King', 'CiCi', 'Rabbit', 'Joey', 'Henry', 'Allen', 'Andy (Felix)', 'Victor', 'Eric (school)', 'Max New', 'LittleSix', 'Lisa', 'Enoch', 'Elven', 'PaoPao', 'Sunny', 'Alex', 'Aria', 'Kyoko', 'Chloe', 'Shine', 'Zoey', 'Eathon Old']
+calendar.tsx:280 🔍 Filtering sessions - selected student: all
+calendar.tsx:281 🔍 Raw sessions count: 238
+calendar.tsx:303 🔍 Returning all sessions
+calendar.tsx:321 🔄 Converting sessions to FullCalendar events
+calendar.tsx:322 🌍 Current tutorTimezone value: Asia/Shanghai
+calendar.tsx:323 📊 Total raw sessions: 238
+calendar.tsx:324 📊 Total filtered sessions: 238
+calendar.tsx:325 📊 Selected student filter: all
+calendar.tsx:326 📊 Sessions data: (238) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, …]
+calendar.tsx:340 📋 Booking requests in filtered sessions: 0
+calendar.tsx:379 ✅ Calendar event created: {id: '201f93bb...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f5b1c8a0...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3bd672b4...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9654ccfd...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '638527b8...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2fdfa504...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '884a8ce1...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7daf33d3...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4e8e5a3f...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd8f5f1aa...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5b36239c...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bc704cff...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '725e4eba...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '64dc55f3...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '63ab7b15...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'fb121ccf...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9585839a...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ac805a7e...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'fbfc580b...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1507968a...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e4e9b736...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '16fc1fa0...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6cbed235...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '906dfc89...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1d1ae851...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'fb819cdc...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a42452c9...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '44c969f1...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ce4f9ce0...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '388d7a0d...', title: '💰 John', student_name: 'John', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4cb6eb46...', title: '💰 John', student_name: 'John', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'aef10df1...', title: '💰 John', student_name: 'John', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a40732f1...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'dd1c06fb...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7d4be04d...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'daff0e41...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b3c335f8...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0eac2171...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '15845fdb...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3be5afc4...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9bf19c6a...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7040e582...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'fc165102...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e1ecb520...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3f3f61e8...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6708a960...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4dd8b5d3...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4051cf58...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e78a0828...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '30dc33a9...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2c8405dd...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f8e80465...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a50bef39...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6f1a5f78...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f3cef85f...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'dc610f7f...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3e7c2ac2...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '217e8143...', title: '💰 PiPi', student_name: 'PiPi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7d3029db...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '406cb141...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f3f0d4dc...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7eaefbd6...', title: '💰 Sea', student_name: 'Sea', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'de7cf269...', title: '💰 Sea', student_name: 'Sea', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bfe23817...', title: '💰 Sea', student_name: 'Sea', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '79561700...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '361d51ee...', title: '💰 Cherry', student_name: 'Cherry', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '65f3f647...', title: '💰 Cherry', student_name: 'Cherry', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2ac2fbfc...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'cf1d9b58...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '54ae34b8...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7a6eed1c...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '12d7bf4e...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '671db3d2...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '830368ed...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a37a8d47...', title: '💰 Eric NEW', student_name: 'Eric NEW', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e5fb3942...', title: '💰 Eric NEW', student_name: 'Eric NEW', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5bba4f33...', title: '💰 Eric NEW', student_name: 'Eric NEW', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6a72d1b1...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'eb43bfdc...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4c0fe251...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd26b2f3b...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3954c5be...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a5502ba6...', title: '💰 PiPi', student_name: 'PiPi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd65b6cc9...', title: '💰 PiPi', student_name: 'PiPi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7ad59fb7...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'da35bcf4...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c211739d...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '829e1157...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f4395591...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '386c64a6...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '8a603d0f...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '564cf579...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '97aabe6b...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6ffd8918...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1be80ddd...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '759fabdf...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bb5b4685...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5a12c665...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a016001e...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '43b77781...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '13e77c58...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1d76b73f...', title: '💰 Joey', student_name: 'Joey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '08f66ffb...', title: '💰 Joey', student_name: 'Joey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd462e2bd...', title: '💰 Joey', student_name: 'Joey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9bd45174...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd04797b0...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b6945bf8...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '672b68d2...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '37bbbbe8...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'caefd3dc...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '90e34cc2...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '317a6f0a...', title: '💰 Allen', student_name: 'Allen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1662ebbc...', title: '💰 Allen', student_name: 'Allen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd988b1f9...', title: '💰 Allen', student_name: 'Allen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ac1c99b2...', title: '💰 Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c95f5bb8...', title: '💰 Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e04e6488...', title: '💰 Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '530cb155...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f718948b...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '008b9202...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6bea75bc...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '735feb7f...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '073a95e4...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '14b7de3c...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5684043a...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7808ddc9...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '42e90db9...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd36bbc26...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a5f9ac13...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bd9587c5...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '8841076d...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2f237ed3...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '817c4442...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4997963c...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '93fcc37d...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5edc0e8d...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5bc90723...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6cdab35a...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '531933ed...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '951b40f6...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '743fe226...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bf897a70...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '18dc7fdf...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9e23b116...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9b08dc91...', title: '💰 LittleSix', student_name: 'LittleSix', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '069aa13d...', title: '💰 LittleSix', student_name: 'LittleSix', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd88629c4...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd1849473...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2cf9cc3d...', title: '💰 LittleSix', student_name: 'LittleSix', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '21c971a2...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6bbbce2b...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '21f2acde...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9b3e540d...', title: '💰 Cherry', student_name: 'Cherry', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ff7ccd70...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1444f036...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '353e31bd...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '316dab1c...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '008923c2...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b6881577...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a82ab6a7...', title: '💰 Enoch', student_name: 'Enoch', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '07c633ec...', title: '💰 Enoch', student_name: 'Enoch', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1bf31411...', title: '💰 Enoch', student_name: 'Enoch', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ba1a604c...', title: '💰 Elven', student_name: 'Elven', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4f3d30ab...', title: '💰 Elven', student_name: 'Elven', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2ebe455b...', title: '💰 Elven', student_name: 'Elven', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ac70eaf7...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e2920bd8...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a921559e...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a8bf4008...', title: '💰 Sunny', student_name: 'Sunny', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '945ee0a7...', title: '💰 Sunny', student_name: 'Sunny', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6c4f902e...', title: '💰 Sunny', student_name: 'Sunny', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'dd2c11ac...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd46b53b3...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4042c3e9...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '23398ddf...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0ffa78ca...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a9fdbc94...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '52fc28c1...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bf98cdf3...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6d796e19...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3650bdd6...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6c213f6c...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4845c733...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0343a88c...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '25729372...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '87c988ac...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '840e3cd0...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bc7007b9...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f202d094...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b87dd87b...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '53628a54...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '11020e7f...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ea65546b...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7e365c41...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3246f19c...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '03dbc654...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '562deb75...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '736412ae...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3660ce66...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c62a4d59...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '44f52eb8...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'af0449a0...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '946b5258...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '46bf6204...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c354808f...', title: '💰 Enoch', student_name: 'Enoch', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '871d2479...', title: '💰 Alex', student_name: 'Alex', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '15e3bbf8...', title: '💰 Alex', student_name: 'Alex', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4f405a76...', title: '💰 Alex', student_name: 'Alex', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd2d180fc...', title: '💰 Aria', student_name: 'Aria', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '74d11e30...', title: '💰 Aria', student_name: 'Aria', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b7899836...', title: '💰 Aria', student_name: 'Aria', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5fb526fe...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'da676aaf...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6ca7e2d8...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4ac37193...', title: '💰 Kyoko', student_name: 'Kyoko', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ac5c0f73...', title: '💰 Kyoko', student_name: 'Kyoko', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '05fa644a...', title: '💰 Kyoko', student_name: 'Kyoko', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c809d68d...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '605e4756...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '91fcc209...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'beaa24a4...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3daf56c3...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e7cddf53...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6234e4a1...', title: '💰 Chloe', student_name: 'Chloe', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'cb7aa3d0...', title: '💰 Chloe', student_name: 'Chloe', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '59679c03...', title: '💰 Chloe', student_name: 'Chloe', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'cf46f5fa...', title: '💰 Shine', student_name: 'Shine', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '723322d8...', title: '💰 Shine', student_name: 'Shine', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '48f53615...', title: '💰 Shine', student_name: 'Shine', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5f5fbc86...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e0b5f362...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bc4dd5bb...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '56829461...', title: '💰 Zoey', student_name: 'Zoey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2cb67280...', title: '💰 Zoey', student_name: 'Zoey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'da4a5ca7...', title: '💰 Zoey', student_name: 'Zoey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ef1131f6...', title: '💰 Eathon Old', student_name: 'Eathon Old', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0b252b7a...', title: '💰 Eathon Old', student_name: 'Eathon Old', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '080516b5...', title: '💰 Eathon Old', student_name: 'Eathon Old', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:395 📊 Calendar event summary: {totalFiltered: 238, validEvents: 238, skippedSessions: 0, june23Events: 0, june23EventTimes: Array(0), …}
+calendar.tsx:413 📅 Final events array for FullCalendar: {totalEvents: 238, june23Events: 0, sampleJune23: Array(0)}
+pending-requests-modal.tsx:59 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+pending-requests-modal.tsx:63 🔥 Modal should be open: false because open: false or highlightSessionId: false
+calendar.tsx:125 🎯 handleDatesSet called - arg.start: Sun Nov 16 2025 18:00:00 GMT+0200 (Eastern European Standard Time) arg.end: Sun Nov 23 2025 18:00:00 GMT+0200 (Eastern European Standard Time) view: timeGridWeek
+calendar.tsx:100 🔍 Current pending modal state: false
+calendar.tsx:102 🔍 Current highlightedSessionId: undefined
+calendar.tsx:133 📅 Same month, not updating currentDate
+calendar.tsx:148 📅 Same range, not updating visibleRange
+calendar.tsx:922 🔄 handleNext called - navigating to next period
+calendar.tsx:925 📅 Current date before next(): Sun Nov 16 2025 18:00:00 GMT+0200 (Eastern European Standard Time)
+calendar.tsx:125 🎯 handleDatesSet called - arg.start: Sun Nov 23 2025 18:00:00 GMT+0200 (Eastern European Standard Time) arg.end: Sun Nov 30 2025 18:00:00 GMT+0200 (Eastern European Standard Time) view: timeGridWeek
+calendar.tsx:133 📅 Same month, not updating currentDate
+calendar.tsx:145 📅 Calendar view changed - new range: 2025-11-16T16:00:00.000Z to 2025-12-07T16:00:00.000Z
+calendar.tsx:927 📅 Current date after next(): Sun Nov 23 2025 18:00:00 GMT+0200 (Eastern European Standard Time)
+calendar.tsx:100 🔍 Current pending modal state: false
+calendar.tsx:102 🔍 Current highlightedSessionId: undefined
+calendar.tsx:274 📊 Unique students found: 0 []
+calendar.tsx:280 🔍 Filtering sessions - selected student: all
+calendar.tsx:281 🔍 Raw sessions count: 0
+calendar.tsx:303 🔍 Returning all sessions
+calendar.tsx:321 🔄 Converting sessions to FullCalendar events
+calendar.tsx:322 🌍 Current tutorTimezone value: Asia/Shanghai
+calendar.tsx:323 📊 Total raw sessions: 0
+calendar.tsx:324 📊 Total filtered sessions: 0
+calendar.tsx:325 📊 Selected student filter: all
+calendar.tsx:326 📊 Sessions data: []
+calendar.tsx:340 📋 Booking requests in filtered sessions: 0
+calendar.tsx:395 📊 Calendar event summary: {totalFiltered: 0, validEvents: 0, skippedSessions: 0, june23Events: 0, june23EventTimes: Array(0), …}
+calendar.tsx:413 📅 Final events array for FullCalendar: {totalEvents: 0, june23Events: 0, sampleJune23: Array(0)}
+calendar.tsx:243 🔍 Fetching calendar sessions for tutor: 0805984a-febf-423b-bef1-ba8dbd25760b timezone: Asia/Shanghai
+calendarOptimizer.ts:39 📅 fetchCalendarSessions called for tutor: 0805984a-febf-423b-bef1-ba8dbd25760b timezone: Asia/Shanghai
+calendarOptimizer.ts:41 📅 Date range filter: 2025-11-16T16:00:00.000Z to 2025-12-07T16:00:00.000Z
+queryOptimizer.ts:42 Using cached count for tutor: 2016 sessions, optimized: true (hysteresis: was true)
+calendarOptimizer.ts:51 🔧 Using optimized query pattern for calendar
+calendarOptimizer.ts:116 ✅ Optimized query returned: 237 sessions
+calendar.tsx:100 🔍 Current pending modal state: false
+calendar.tsx:102 🔍 Current highlightedSessionId: undefined
+calendar.tsx:274 📊 Unique students found: 46 (46) ['August', 'Joy', 'Eric (old)', 'Katie', 'Ryan', 'Joy +', 'Meera', 'Ron', 'Bruce', 'Eathon 2', 'Nathen', 'John', 'Kola', 'CiCi+', 'Rod', 'Vince', 'Andy 2', 'PiPi', 'Ethan', 'Sea', 'Cherry', 'Reggie', 'Eric NEW', 'King', 'CiCi', 'Rabbit', 'Joey', 'Henry', 'Allen', 'Andy (Felix)', 'Victor', 'Eric (school)', 'Max New', 'LittleSix', 'Lisa', 'Enoch', 'Elven', 'PaoPao', 'Sunny', 'Alex', 'Aria', 'Kyoko', 'Chloe', 'Shine', 'Zoey', 'Eathon Old']
+calendar.tsx:280 🔍 Filtering sessions - selected student: all
+calendar.tsx:281 🔍 Raw sessions count: 237
+calendar.tsx:303 🔍 Returning all sessions
+calendar.tsx:321 🔄 Converting sessions to FullCalendar events
+calendar.tsx:322 🌍 Current tutorTimezone value: Asia/Shanghai
+calendar.tsx:323 📊 Total raw sessions: 237
+calendar.tsx:324 📊 Total filtered sessions: 237
+calendar.tsx:325 📊 Selected student filter: all
+calendar.tsx:326 📊 Sessions data: (237) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, …]
+calendar.tsx:340 📋 Booking requests in filtered sessions: 0
+calendar.tsx:379 ✅ Calendar event created: {id: '201f93bb...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f5b1c8a0...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5abc7f2f...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'cba0d80a...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3bd672b4...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2fdfa504...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '884a8ce1...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5867b4c9...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd8f5f1aa...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5b36239c...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd4dcfd7c...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '55b78064...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '725e4eba...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '64dc55f3...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a7aeecc9...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'fb121ccf...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9585839a...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'fbfc580b...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1507968a...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '53484908...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '16fc1fa0...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6cbed235...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '071c55a8...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '906dfc89...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1d1ae851...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1e500c6a...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a42452c9...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '44c969f1...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '8f9d12af...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4cb6eb46...', title: '💰 John', student_name: 'John', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'aef10df1...', title: '💰 John', student_name: 'John', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '025daed7...', title: '💰 John', student_name: 'John', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'dd1c06fb...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7d4be04d...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd3ccba6e...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'daff0e41...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b3c335f8...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '15845fdb...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3be5afc4...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5a0291c5...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9697cac2...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7040e582...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0cff5a8f...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e1ecb520...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3f3f61e8...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '434465df...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6708a960...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4051cf58...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e78a0828...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'eda98fef...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '633fee60...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '30dc33a9...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'aa558d4d...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a50bef39...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6f1a5f78...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'dc610f7f...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3e7c2ac2...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd59007ae...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '217e8143...', title: '💰 PiPi', student_name: 'PiPi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '406cb141...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f3f0d4dc...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9c6184a8...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'de7cf269...', title: '💰 Sea', student_name: 'Sea', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bfe23817...', title: '💰 Sea', student_name: 'Sea', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b6ead770...', title: '💰 Sea', student_name: 'Sea', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '361d51ee...', title: '💰 Cherry', student_name: 'Cherry', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '65f3f647...', title: '💰 Cherry', student_name: 'Cherry', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'cf1d9b58...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '60d07b2d...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '54ae34b8...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7a6eed1c...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '12d7bf4e...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '671db3d2...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c1cb00d9...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '99b10e2d...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a37a8d47...', title: '💰 Eric NEW', student_name: 'Eric NEW', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e5fb3942...', title: '💰 Eric NEW', student_name: 'Eric NEW', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c6f995e6...', title: '💰 Eric NEW', student_name: 'Eric NEW', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'eb43bfdc...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4c0fe251...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5138cacf...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd26b2f3b...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3954c5be...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd65b6cc9...', title: '💰 PiPi', student_name: 'PiPi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'da35bcf4...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c211739d...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '07455e51...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '62e272a1...', title: '💰 PiPi', student_name: 'PiPi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f4395591...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '386c64a6...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f5f29ce9...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '564cf579...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b42a5bb7...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '241cebe6...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6ffd8918...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1be80ddd...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bb5b4685...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5a12c665...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7f2aab4c...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '190dfb22...', title: '💰 Cherry', student_name: 'Cherry', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '43b77781...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '13e77c58...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '51225c0f...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '08f66ffb...', title: '💰 Joey', student_name: 'Joey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd462e2bd...', title: '💰 Joey', student_name: 'Joey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0ad09a43...', title: '💰 Joey', student_name: 'Joey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd04797b0...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b6945bf8...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ba78f280...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '672b68d2...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'caefd3dc...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '90e34cc2...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4d772b44...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1662ebbc...', title: '💰 Allen', student_name: 'Allen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd988b1f9...', title: '💰 Allen', student_name: 'Allen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'df8ff995...', title: '💰 Allen', student_name: 'Allen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c95f5bb8...', title: '💰 Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e04e6488...', title: '💰 Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'faabb1ae...', title: '💰 Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f718948b...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '008b9202...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2d576cd3...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '735feb7f...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '14b7de3c...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5684043a...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2d7ad409...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c4dca4e1...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7808ddc9...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '42e90db9...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a5f9ac13...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bd9587c5...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'eb85b354...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2f237ed3...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '817c4442...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '524d61d7...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd7369382...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5edc0e8d...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5bc90723...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7a1883d6...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '531933ed...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '951b40f6...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b5323225...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bf897a70...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '18dc7fdf...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a48401fb...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'cdb802d2...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9b08dc91...', title: '💰 LittleSix', student_name: 'LittleSix', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '78ccc6cf...', title: '💰 LittleSix', student_name: 'LittleSix', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '069aa13d...', title: '💰 LittleSix', student_name: 'LittleSix', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd88629c4...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd1849473...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6bbbce2b...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '03896598...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '21f2acde...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ff7ccd70...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '353e31bd...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '316dab1c...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '71678e2d...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b6881577...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '07c633ec...', title: '💰 Enoch', student_name: 'Enoch', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1bf31411...', title: '💰 Enoch', student_name: 'Enoch', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5392e261...', title: '💰 Enoch', student_name: 'Enoch', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4f3d30ab...', title: '💰 Elven', student_name: 'Elven', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2ebe455b...', title: '💰 Elven', student_name: 'Elven', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '22c0f01e...', title: '💰 Elven', student_name: 'Elven', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e2920bd8...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a921559e...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ad4a2c38...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '945ee0a7...', title: '💰 Sunny', student_name: 'Sunny', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6c4f902e...', title: '💰 Sunny', student_name: 'Sunny', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b7f1a0ef...', title: '💰 Sunny', student_name: 'Sunny', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd46b53b3...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4042c3e9...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0d44656c...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0ffa78ca...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a9fdbc94...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7978fb86...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bf98cdf3...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6d796e19...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'adaf44a6...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6c213f6c...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4845c733...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '43df519d...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '25729372...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '87c988ac...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0294cc18...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bc7007b9...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f202d094...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '90cee86e...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '53628a54...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '11020e7f...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ddd36688...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7e365c41...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3246f19c...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '98f006b6...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '562deb75...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '736412ae...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c383ac50...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c62a4d59...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '44f52eb8...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5ad381f2...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '946b5258...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '46bf6204...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5ae60671...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '15e3bbf8...', title: '💰 Alex', student_name: 'Alex', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4f405a76...', title: '💰 Alex', student_name: 'Alex', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c8df47a4...', title: '💰 Alex', student_name: 'Alex', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '74d11e30...', title: '💰 Aria', student_name: 'Aria', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b7899836...', title: '💰 Aria', student_name: 'Aria', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '202d6ea9...', title: '💰 Aria', student_name: 'Aria', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'da676aaf...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6ca7e2d8...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '191c7158...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ac5c0f73...', title: '💰 Kyoko', student_name: 'Kyoko', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '05fa644a...', title: '💰 Kyoko', student_name: 'Kyoko', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f90e4506...', title: '💰 Kyoko', student_name: 'Kyoko', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '605e4756...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '91fcc209...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6606e8f3...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3daf56c3...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e7cddf53...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '91af88ad...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'cb7aa3d0...', title: '💰 Chloe', student_name: 'Chloe', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '59679c03...', title: '💰 Chloe', student_name: 'Chloe', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2436f889...', title: '💰 Chloe', student_name: 'Chloe', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '723322d8...', title: '💰 Shine', student_name: 'Shine', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '48f53615...', title: '💰 Shine', student_name: 'Shine', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0e398c19...', title: '💰 Shine', student_name: 'Shine', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e0b5f362...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bc4dd5bb...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'feacf6db...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2cb67280...', title: '💰 Zoey', student_name: 'Zoey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'da4a5ca7...', title: '💰 Zoey', student_name: 'Zoey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6d9b9ef6...', title: '💰 Zoey', student_name: 'Zoey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0b252b7a...', title: '💰 Eathon Old', student_name: 'Eathon Old', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '080516b5...', title: '💰 Eathon Old', student_name: 'Eathon Old', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f06d234c...', title: '💰 Eathon Old', student_name: 'Eathon Old', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:395 📊 Calendar event summary: {totalFiltered: 237, validEvents: 237, skippedSessions: 0, june23Events: 0, june23EventTimes: Array(0), …}
+calendar.tsx:413 📅 Final events array for FullCalendar: {totalEvents: 237, june23Events: 0, sampleJune23: Array(0)}
+pending-requests-modal.tsx:59 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+pending-requests-modal.tsx:63 🔥 Modal should be open: false because open: false or highlightSessionId: false
+@sentry_react.js?v=5d30a285:6879 Unknown option 'data-replit-metadata'
+(anonymous) @ @sentry_react.js?v=5d30a285:6879
+warnUnknownOptions @ chunk-IDYPI226.js?v=5d30a285:8902
+computeOptionsData @ chunk-IDYPI226.js?v=5d30a285:8688
+CalendarDataManager @ chunk-IDYPI226.js?v=5d30a285:8519
+Calendar @ chunk-IDYPI226.js?v=5d30a285:9297
+componentDidMount @ @fullcalendar_react.js?v=5d30a285:49
+commitLayoutEffectOnFiber @ chunk-276SZO74.js?v=5d30a285:17030
+commitLayoutMountEffects_complete @ chunk-276SZO74.js?v=5d30a285:17980
+commitLayoutEffects_begin @ chunk-276SZO74.js?v=5d30a285:17969
+commitLayoutEffects @ chunk-276SZO74.js?v=5d30a285:17920
+commitRootImpl @ chunk-276SZO74.js?v=5d30a285:19353
+commitRoot @ chunk-276SZO74.js?v=5d30a285:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=5d30a285:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=5d30a285:9119
+(anonymous) @ chunk-276SZO74.js?v=5d30a285:18627
+setTimeout
+(anonymous) @ @sentry_react.js?v=5d30a285:15189
+scheduleFn @ @tanstack_react-query.js?v=5d30a285:555
+flush @ @tanstack_react-query.js?v=5d30a285:569
+batch @ @tanstack_react-query.js?v=5d30a285:587
+dispatch_fn @ @tanstack_react-query.js?v=5d30a285:996
+setData @ @tanstack_react-query.js?v=5d30a285:696
+onSuccess @ @tanstack_react-query.js?v=5d30a285:897
+resolve @ @tanstack_react-query.js?v=5d30a285:456
+Promise.then
+run @ @tanstack_react-query.js?v=5d30a285:498
+start @ @tanstack_react-query.js?v=5d30a285:536
+fetch @ @tanstack_react-query.js?v=5d30a285:926
+executeFetch_fn @ @tanstack_react-query.js?v=5d30a285:2211
+setOptions @ @tanstack_react-query.js?v=5d30a285:1955
+(anonymous) @ @tanstack_react-query.js?v=5d30a285:3032
+commitHookEffectListMount @ chunk-276SZO74.js?v=5d30a285:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=5d30a285:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=5d30a285:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=5d30a285:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=5d30a285:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=5d30a285:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=5d30a285:19447
+commitRootImpl @ chunk-276SZO74.js?v=5d30a285:19416
+commitRoot @ chunk-276SZO74.js?v=5d30a285:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=5d30a285:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=5d30a285:9119
+(anonymous) @ chunk-276SZO74.js?v=5d30a285:18627
+@sentry_react.js?v=5d30a285:6879 Unknown option 'data-component-name'
+(anonymous) @ @sentry_react.js?v=5d30a285:6879
+warnUnknownOptions @ chunk-IDYPI226.js?v=5d30a285:8902
+computeOptionsData @ chunk-IDYPI226.js?v=5d30a285:8688
+CalendarDataManager @ chunk-IDYPI226.js?v=5d30a285:8519
+Calendar @ chunk-IDYPI226.js?v=5d30a285:9297
+componentDidMount @ @fullcalendar_react.js?v=5d30a285:49
+commitLayoutEffectOnFiber @ chunk-276SZO74.js?v=5d30a285:17030
+commitLayoutMountEffects_complete @ chunk-276SZO74.js?v=5d30a285:17980
+commitLayoutEffects_begin @ chunk-276SZO74.js?v=5d30a285:17969
+commitLayoutEffects @ chunk-276SZO74.js?v=5d30a285:17920
+commitRootImpl @ chunk-276SZO74.js?v=5d30a285:19353
+commitRoot @ chunk-276SZO74.js?v=5d30a285:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=5d30a285:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=5d30a285:9119
+(anonymous) @ chunk-276SZO74.js?v=5d30a285:18627
+setTimeout
+(anonymous) @ @sentry_react.js?v=5d30a285:15189
+scheduleFn @ @tanstack_react-query.js?v=5d30a285:555
+flush @ @tanstack_react-query.js?v=5d30a285:569
+batch @ @tanstack_react-query.js?v=5d30a285:587
+dispatch_fn @ @tanstack_react-query.js?v=5d30a285:996
+setData @ @tanstack_react-query.js?v=5d30a285:696
+onSuccess @ @tanstack_react-query.js?v=5d30a285:897
+resolve @ @tanstack_react-query.js?v=5d30a285:456
+Promise.then
+run @ @tanstack_react-query.js?v=5d30a285:498
+start @ @tanstack_react-query.js?v=5d30a285:536
+fetch @ @tanstack_react-query.js?v=5d30a285:926
+executeFetch_fn @ @tanstack_react-query.js?v=5d30a285:2211
+setOptions @ @tanstack_react-query.js?v=5d30a285:1955
+(anonymous) @ @tanstack_react-query.js?v=5d30a285:3032
+commitHookEffectListMount @ chunk-276SZO74.js?v=5d30a285:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=5d30a285:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=5d30a285:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=5d30a285:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=5d30a285:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=5d30a285:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=5d30a285:19447
+commitRootImpl @ chunk-276SZO74.js?v=5d30a285:19416
+commitRoot @ chunk-276SZO74.js?v=5d30a285:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=5d30a285:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=5d30a285:9119
+(anonymous) @ chunk-276SZO74.js?v=5d30a285:18627
+calendar.tsx:125 🎯 handleDatesSet called - arg.start: Sun Nov 02 2025 18:00:00 GMT+0200 (Eastern European Standard Time) arg.end: Sun Nov 09 2025 18:00:00 GMT+0200 (Eastern European Standard Time) view: timeGridWeek
+calendar.tsx:100 🔍 Current pending modal state: false
+calendar.tsx:102 🔍 Current highlightedSessionId: undefined
+calendar.tsx:133 📅 Same month, not updating currentDate
+calendar.tsx:145 📅 Calendar view changed - new range: 2025-10-26T16:00:00.000Z to 2025-11-16T16:00:00.000Z
+calendar.tsx:274 📊 Unique students found: 47 (47) ['August', 'Eric (old)', 'Katie', 'Ron', 'CiCi+', 'Ryan', 'Meera', 'Joy', 'Bruce', 'Eathon 2', 'Nathen', 'John', 'Kola', 'Rod', 'Vince', 'Andy 2', 'Joy +', 'Ethan', 'Sea', 'Reggie', 'Eric NEW', 'King', 'PiPi', 'CiCi', 'Rabbit', 'Joey', 'Cherry', 'Henry', 'Allen', 'Victor', 'Andy (Felix)', 'Eric (school)', 'Max New', 'LittleSix', 'Lisa', 'Enoch', 'Elven', 'PaoPao', 'Sunny', 'Alex', 'Aria', 'Kyoko', 'Chloe', 'Shine', 'Zoey', 'Eathon Old', 'TEST']
+calendar.tsx:280 🔍 Filtering sessions - selected student: all
+calendar.tsx:281 🔍 Raw sessions count: 141
+calendar.tsx:303 🔍 Returning all sessions
+calendar.tsx:321 🔄 Converting sessions to FullCalendar events
+calendar.tsx:322 🌍 Current tutorTimezone value: Asia/Shanghai
+calendar.tsx:323 📊 Total raw sessions: 141
+calendar.tsx:324 📊 Total filtered sessions: 141
+calendar.tsx:325 📊 Selected student filter: all
+calendar.tsx:326 📊 Sessions data: (141) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, …]
+calendar.tsx:340 📋 Booking requests in filtered sessions: 0
+calendar.tsx:379 ✅ Calendar event created: {id: '79f32b0e...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '8115a1ad...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9654ccfd...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '638527b8...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f0a46cae...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5f83bf34...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ff234589...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7daf33d3...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '356a5ef8...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4e8e5a3f...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '178beb03...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bc704cff...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '63ab7b15...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '32fcf1b8...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ac805a7e...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1a33685d...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e4e9b736...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd388ec4e...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '23aee05e...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'fb819cdc...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ce4f9ce0...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ebce2ecc...', title: '💰 John', student_name: 'John', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '388d7a0d...', title: '💰 John', student_name: 'John', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a40732f1...', title: '💰 Ryan', student_name: 'Ryan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '82b287a8...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0eac2171...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9bf19c6a...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3f74b10b...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'fc165102...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6629e22d...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4dd8b5d3...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2c8405dd...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9a591a2d...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f8e80465...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e5d4c1b0...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f3cef85f...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '10ce0edb...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7d3029db...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3cefe32b...', title: '💰 Sea', student_name: 'Sea', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7eaefbd6...', title: '💰 Sea', student_name: 'Sea', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '71730035...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '55140806...', title: '💰 Meera', student_name: 'Meera', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'e4f75ad5...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '79561700...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2ac2fbfc...', title: '💰 CiCi+', student_name: 'CiCi+', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '830368ed...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5bba4f33...', title: '💰 Eric NEW', student_name: 'Eric NEW', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'db8a3df1...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1c683ada...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6a72d1b1...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'beedddc0...', title: '💰 PiPi', student_name: 'PiPi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a5502ba6...', title: '💰 PiPi', student_name: 'PiPi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '843c8916...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '7ad59fb7...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '648cdde5...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '829e1157...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '8a603d0f...', title: '💰 King', student_name: 'King', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '97aabe6b...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '481aed27...', title: '💰 Eric NEW', student_name: 'Eric NEW', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '759fabdf...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5645149d...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '95b46069...', title: '💰 Joey', student_name: 'Joey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a016001e...', title: '💰 Ethan', student_name: 'Ethan', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '737d64d7...', title: '💰 Cherry', student_name: 'Cherry', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1d76b73f...', title: '💰 Joey', student_name: 'Joey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5edc2a3e...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9bd45174...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c053145a...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '37bbbbe8...', title: '💰 Eric (old)', student_name: 'Eric (old)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a392facf...', title: '💰 Allen', student_name: 'Allen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '317a6f0a...', title: '💰 Allen', student_name: 'Allen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '87bfe037...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ac1c99b2...', title: '💰 Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '530cb155...', title: '💰 Rabbit', student_name: 'Rabbit', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6bea75bc...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6499963d...', title: 'Andy (Felix)', student_name: 'Andy (Felix)', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6838008c...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '073a95e4...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd36bbc26...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9ef61390...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '8841076d...', title: '💰 Eric (school)', student_name: 'Eric (school)', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2453a309...', title: 'Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c3196cfb...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4997963c...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '93fcc37d...', title: '💰 Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ec80f5e9...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6cdab35a...', title: '💰 Nathen', student_name: 'Nathen', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '93969591...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '743fe226...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '39baf0de...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9e23b116...', title: '💰 Vince', student_name: 'Vince', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c787e7a7...', title: '💰 LittleSix', student_name: 'LittleSix', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '2cf9cc3d...', title: '💰 LittleSix', student_name: 'LittleSix', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '21c971a2...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'bc6ca5b9...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9b3e540d...', title: '💰 Cherry', student_name: 'Cherry', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '26a40670...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1444f036...', title: '💰 Reggie', student_name: 'Reggie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '9a01e6cc...', title: 'Victor', student_name: 'Victor', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '97d2ecec...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '008923c2...', title: '💰 Joy +', student_name: 'Joy +', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '33ba44ab...', title: '💰 Enoch', student_name: 'Enoch', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a82ab6a7...', title: '💰 Enoch', student_name: 'Enoch', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'f9250833...', title: '💰 Elven', student_name: 'Elven', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ba1a604c...', title: '💰 Elven', student_name: 'Elven', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ac70eaf7...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'a8bf4008...', title: '💰 Sunny', student_name: 'Sunny', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'dd2c11ac...', title: '💰 Rod', student_name: 'Rod', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '23398ddf...', title: '💰 Bruce', student_name: 'Bruce', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '52fc28c1...', title: '💰 Andy 2', student_name: 'Andy 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3650bdd6...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '0343a88c...', title: '💰 Katie', student_name: 'Katie', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '840e3cd0...', title: '💰 August', student_name: 'August', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'b87dd87b...', title: '💰 PaoPao', student_name: 'PaoPao', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ea65546b...', title: '💰 Lisa', student_name: 'Lisa', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '03dbc654...', title: '💰 Eathon 2', student_name: 'Eathon 2', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '3660ce66...', title: '💰 Joy', student_name: 'Joy', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'af0449a0...', title: '💰 Kola', student_name: 'Kola', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c354808f...', title: '💰 Enoch', student_name: 'Enoch', selected_color: '#F87171', final_background: '#F87171', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '871d2479...', title: '💰 Alex', student_name: 'Alex', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '99c13ee7...', title: '💰 Aria', student_name: 'Aria', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd2d180fc...', title: '💰 Aria', student_name: 'Aria', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'be69f7bc...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5fb526fe...', title: '💰 Henry', student_name: 'Henry', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '4ac37193...', title: '💰 Kyoko', student_name: 'Kyoko', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '97574663...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'c809d68d...', title: '💰 Max New', student_name: 'Max New', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1b8fbe86...', title: '💰 Kyoko', student_name: 'Kyoko', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ee045063...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'beaa24a4...', title: '💰 CiCi', student_name: 'CiCi', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1e43b9a2...', title: '💰 Chloe', student_name: 'Chloe', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '6234e4a1...', title: '💰 Chloe', student_name: 'Chloe', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd2efab39...', title: '💰 Shine', student_name: 'Shine', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'cf46f5fa...', title: '💰 Shine', student_name: 'Shine', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '82fe1118...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '5f5fbc86...', title: '💰 Ron', student_name: 'Ron', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '1ec5881b...', title: '💰 Zoey', student_name: 'Zoey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '56829461...', title: '💰 Zoey', student_name: 'Zoey', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: '82209f7b...', title: '💰 Eathon Old', student_name: 'Eathon Old', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'ef1131f6...', title: '💰 Eathon Old', student_name: 'Eathon Old', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:379 ✅ Calendar event created: {id: 'd4d4a28a...', title: '💰 TEST', student_name: 'TEST', selected_color: '#3B82F6', final_background: '#3B82F6', …}
+calendar.tsx:395 📊 Calendar event summary: {totalFiltered: 141, validEvents: 141, skippedSessions: 0, june23Events: 0, june23EventTimes: Array(0), …}
+calendar.tsx:413 📅 Final events array for FullCalendar: {totalEvents: 141, june23Events: 0, sampleJune23: Array(0)}
+pending-requests-modal.tsx:59 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+pending-requests-modal.tsx:63 🔥 Modal should be open: false because open: false or highlightSessionId: false
+calendar.tsx:125 🎯 handleDatesSet called - arg.start: Sun Nov 02 2025 18:00:00 GMT+0200 (Eastern European Standard Time) arg.end: Sun Nov 09 2025 18:00:00 GMT+0200 (Eastern European Standard Time) view: timeGridWeek
+calendar.tsx:100 🔍 Current pending modal state: false
+calendar.tsx:102 🔍 Current highlightedSessionId: undefined
+calendar.tsx:133 📅 Same month, not updating currentDate
+calendar.tsx:148 📅 Same range, not updating visibleRange
+@sentry_react.js?v=5d30a285:14704 Fetch finished loading: POST "https://o4510221043630080.ingest.us.sentry.io/api/4510221082558464/envelope/?sentry_version=7&sentry_key=169a61d18c79470b81f1115c67cb3b2a&sentry_client=sentry.javascript.react%2F10.20.0".
+makeRequest @ @sentry_react.js?v=5d30a285:14704
+requestTask @ @sentry_react.js?v=5d30a285:5873
+add @ @sentry_react.js?v=5d30a285:5767
+send @ @sentry_react.js?v=5d30a285:5887
+sendEnvelope @ @sentry_react.js?v=5d30a285:5301
+_flushOutcomes @ @sentry_react.js?v=5d30a285:5578
+(anonymous) @ @sentry_react.js?v=5d30a285:12713
+@sentry_react.js?v=5d30a285:14704 Fetch finished loading: POST "https://o4510221043630080.ingest.us.sentry.io/api/4510221082558464/envelope/?sentry_version=7&sentry_key=169a61d18c79470b81f1115c67cb3b2a&sentry_client=sentry.javascript.react%2F10.20.0".
+makeRequest @ @sentry_react.js?v=5d30a285:14704
+requestTask @ @sentry_react.js?v=5d30a285:5873
+add @ @sentry_react.js?v=5d30a285:5767
+send @ @sentry_react.js?v=5d30a285:5887
+sendEnvelope @ @sentry_react.js?v=5d30a285:5301
+sendSpanEnvelope @ @sentry_react.js?v=5d30a285:3098
+_onSpanEnded @ @sentry_react.js?v=5d30a285:3003
+end @ @sentry_react.js?v=5d30a285:2931
+_onInp @ @sentry_react.js?v=5d30a285:14646
+triggerHandlers2 @ @sentry_react.js?v=5d30a285:13319
+(anonymous) @ @sentry_react.js?v=5d30a285:13367
+(anonymous) @ @sentry_react.js?v=5d30a285:12787
+(anonymous) @ @sentry_react.js?v=5d30a285:13203
+onHiddenOrPageHide @ @sentry_react.js?v=5d30a285:13142
+sentryWrapped @ @sentry_react.js?v=5d30a285:12328
+App.tsx:645 🔄 AppLayout: Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+TimezoneContext.tsx:21 🔄 Auth state changed: SIGNED_IN true
+TimezoneContext.tsx:42 🔍 Starting timezone fetch...
+App.tsx:564 🔄 Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+calendar.tsx:100 🔍 Current pending modal state: false
+calendar.tsx:102 🔍 Current highlightedSessionId: undefined
+pending-requests-modal.tsx:59 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+pending-requests-modal.tsx:63 🔥 Modal should be open: false because open: false or highlightSessionId: false
+schedule-session-modal.tsx:680 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: false}
+calendar.tsx:125 🎯 handleDatesSet called - arg.start: Sun Nov 02 2025 18:00:00 GMT+0200 (Eastern European Standard Time) arg.end: Sun Nov 09 2025 18:00:00 GMT+0200 (Eastern European Standard Time) view: timeGridWeek
+calendar.tsx:133 📅 Same month, not updating currentDate
+calendar.tsx:148 📅 Same range, not updating visibleRange
+TimezoneContext.tsx:53 🔍 Auth state check: {hasSession: true, hasUser: true, userId: '0805984a-febf-423b-bef1-ba8dbd25760b', sessionError: null, userError: null}
+TimezoneContext.tsx:68 🔍 User authenticated, fetching tutor timezone for user_id: 0805984a-febf-423b-bef1-ba8dbd25760b
+TimezoneContext.tsx:76 🌍 Tutor query result: {data: {…}, error: null, user_id: '0805984a-febf-423b-bef1-ba8dbd25760b'}
+TimezoneContext.tsx:83 🌍 Successfully set tutor timezone: Asia/Shanghai for tutor: Oliver
+App.tsx:645 🔄 AppLayout: Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+TimezoneContext.tsx:21 🔄 Auth state changed: SIGNED_IN true
+TimezoneContext.tsx:42 🔍 Starting timezone fetch...
+App.tsx:564 🔄 Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+calendar.tsx:100 🔍 Current pending modal state: false
+calendar.tsx:102 🔍 Current highlightedSessionId: undefined
+pending-requests-modal.tsx:59 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+pending-requests-modal.tsx:63 🔥 Modal should be open: false because open: false or highlightSessionId: false
+schedule-session-modal.tsx:680 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: false}
+calendar.tsx:125 🎯 handleDatesSet called - arg.start: Sun Nov 02 2025 18:00:00 GMT+0200 (Eastern European Standard Time) arg.end: Sun Nov 09 2025 18:00:00 GMT+0200 (Eastern European Standard Time) view: timeGridWeek
+calendar.tsx:100 🔍 Current pending modal state: false
+calendar.tsx:102 🔍 Current highlightedSessionId: undefined
+calendar.tsx:133 📅 Same month, not updating currentDate
+calendar.tsx:148 📅 Same range, not updating visibleRange
+TimezoneContext.tsx:53 🔍 Auth state check: {hasSession: true, hasUser: true, userId: '0805984a-febf-423b-bef1-ba8dbd25760b', sessionError: null, userError: null}hasSession: truehasUser: truesessionError: nulluserError: nulluserId: "0805984a-febf-423b-bef1-ba8dbd25760b"[[Prototype]]: Object
+TimezoneContext.tsx:68 🔍 User authenticated, fetching tutor timezone for user_id: 0805984a-febf-423b-bef1-ba8dbd25760b
+TimezoneContext.tsx:76 🌍 Tutor query result: {data: {…}, error: null, user_id: '0805984a-febf-423b-bef1-ba8dbd25760b'}
+TimezoneContext.tsx:83 🌍 Successfully set tutor timezone: Asia/Shanghai for tutor: Oliver
+App.tsx:645 🔄 AppLayout: Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+TimezoneContext.tsx:21 🔄 Auth state changed: SIGNED_IN true
+TimezoneContext.tsx:42 🔍 Starting timezone fetch...
+App.tsx:564 🔄 Auth state changed: SIGNED_IN oleg.klimchuk1992@gmail.com
+calendar.tsx:100 🔍 Current pending modal state: false
+calendar.tsx:102 🔍 Current highlightedSessionId: undefined
+pending-requests-modal.tsx:59 🎭 PendingRequestsModal render - open: false highlightSessionId: undefined
+pending-requests-modal.tsx:63 🔥 Modal should be open: false because open: false or highlightSessionId: false
+schedule-session-modal.tsx:680 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Asia/Shanghai', isTimezoneLoading: false, open: false}
+calendar.tsx:125 🎯 handleDatesSet called - arg.start: Sun Nov 02 2025 18:00:00 GMT+0200 (Eastern European Standard Time) arg.end: Sun Nov 09 2025 18:00:00 GMT+0200 (Eastern European Standard Time) view: timeGridWeek
+calendar.tsx:133 📅 Same month, not updating currentDate
+calendar.tsx:148 📅 Same range, not updating visibleRange
+TimezoneContext.tsx:53 🔍 Auth state check: {hasSession: true, hasUser: true, userId: '0805984a-febf-423b-bef1-ba8dbd25760b', sessionError: null, userError: null}
+TimezoneContext.tsx:68 🔍 User authenticated, fetching tutor timezone for user_id: 0805984a-febf-423b-bef1-ba8dbd25760b
+TimezoneContext.tsx:76 🌍 Tutor query result: {data: {…}, error: null, user_id: '0805984a-febf-423b-bef1-ba8dbd25760b'}
+TimezoneContext.tsx:83 🌍 Successfully set tutor timezone: Asia/Shanghai for tutor: Oliver
