@@ -9,6 +9,8 @@ import { adminLimiter } from "./rateLimiters";
 import { setSentryUser, clearSentryUser } from "./sentry";
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, bulkSyncSessions, isSyncEnabled, getAuthorizationUrl, handleOAuthCallback, disconnectGoogleCalendar } from "./googleCalendarSync";
 import { Sentry } from "./instrument";
+import fs from "fs";
+import path from "path";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -762,6 +764,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, enabled });
     } catch (error) {
       console.error('Toggle sync error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/logo", (req, res) => {
+    try {
+      const logoPath = path.join(process.cwd(), 'attached_assets', 'Blue and Light Gray Modern Company Logo (2)_1760973142069.png');
+      
+      if (!fs.existsSync(logoPath)) {
+        return res.status(404).json({ error: "Logo not found" });
+      }
+      
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+      
+      const logoBuffer = fs.readFileSync(logoPath);
+      res.send(logoBuffer);
+    } catch (error) {
+      console.error('Logo serving error:', error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
