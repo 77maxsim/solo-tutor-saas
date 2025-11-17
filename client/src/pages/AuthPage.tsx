@@ -147,10 +147,17 @@ export default function AuthPage() {
           }, 1000);
         }
       } else {
-        // Signup
+        // Signup - store profile data in user_metadata for later tutor creation
         const { data: authData, error } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
+          options: {
+            data: {
+              full_name: data.fullName?.trim() || data.email.split('@')[0],
+              currency: data.currency || 'USD',
+              timezone: data.timezone || getBrowserTimezone(),
+            }
+          }
         });
 
         if (error) {
@@ -164,39 +171,9 @@ export default function AuthPage() {
             description: error.message,
           });
         } else if (authData.user) {
-          // Check if tutor record already exists
-          const { data: existingTutor } = await supabase
-            .from('tutors')
-            .select('id')
-            .eq('user_id', authData.user.id)
-            .single();
-
-          // Only create tutor record if it doesn't exist
-          if (!existingTutor) {
-            const { error: tutorError } = await supabase
-              .from('tutors')
-              .insert([{
-                user_id: authData.user.id,
-                email: authData.user.email,
-                full_name: data.fullName?.trim() || data.email.split('@')[0],
-                currency: data.currency || 'USD',
-                created_at: new Date().toISOString(),
-              }]);
-
-            if (tutorError) {
-              console.error('Error creating tutor record:', tutorError);
-              toast({
-                variant: "destructive",
-                title: "Setup Error",
-                description: "Account created but profile setup failed. Please contact support.",
-              });
-              return;
-            }
-          }
-
           setAuthMessage({
             type: 'success',
-            message: 'Account created successfully! Please check your email to verify your account.'
+            message: 'Thanks for signing up! Please check your email to verify your account.'
           });
           toast({
             title: "Account Created",
