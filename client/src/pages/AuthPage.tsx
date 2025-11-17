@@ -148,14 +148,16 @@ export default function AuthPage() {
         }
       } else {
         // Signup - store profile data in user_metadata for later tutor creation
+        const { email, password, fullName, currency, timezone } = data;
+        
         const { data: authData, error } = await supabase.auth.signUp({
-          email: data.email,
-          password: data.password,
+          email,
+          password,
           options: {
             data: {
-              full_name: data.fullName?.trim() || data.email.split('@')[0],
-              currency: data.currency || 'USD',
-              timezone: data.timezone || getBrowserTimezone(),
+              full_name: fullName,
+              currency: currency,
+              timezone: timezone
             }
           }
         });
