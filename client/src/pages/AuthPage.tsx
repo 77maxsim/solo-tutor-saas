@@ -150,6 +150,13 @@ export default function AuthPage() {
         // Signup - store profile data in user_metadata for later tutor creation
         const { email, password, fullName, currency, timezone } = data;
         
+        console.log('🔍 Signup Debug - Form data:', { email, fullName, currency, timezone });
+        console.log('🔍 Signup Debug - Sending to Supabase:', {
+          email,
+          password: '***',
+          metadata: { full_name: fullName, currency, timezone }
+        });
+        
         const { data: authData, error } = await supabase.auth.signUp({
           email,
           password,
@@ -160,6 +167,12 @@ export default function AuthPage() {
               timezone: timezone
             }
           }
+        });
+        
+        console.log('🔍 Signup Debug - Response:', { 
+          success: !error, 
+          userId: authData?.user?.id,
+          userMetadata: authData?.user?.user_metadata 
         });
 
         if (error) {
