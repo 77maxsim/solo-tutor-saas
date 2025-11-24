@@ -28,6 +28,14 @@ import { Loader2, Save, User, Send, CheckCircle2, ExternalLink, Calendar, Refres
 import { ALL_TIMEZONES, TIMEZONE_GROUPS, getBrowserTimezone } from "@/lib/timezones";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const profileSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
@@ -38,7 +46,12 @@ const profileSchema = z.object({
   timezone: z.string().min(1, "Timezone is required"),
 });
 
+const emailChangeSchema = z.object({
+  new_email: z.string().email("Please enter a valid email address"),
+});
+
 type ProfileForm = z.infer<typeof profileSchema>;
+type EmailChangeForm = z.infer<typeof emailChangeSchema>;
 
 export default function Profile() {
   const [isLoading, setIsLoading] = useState(false);
@@ -47,15 +60,9 @@ export default function Profile() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; success: number; failed: number } | null>(null);
   const [syncEventSource, setSyncEventSource] = useState<EventSource | null>(null);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const handleChangeEmail = () => {
-    toast({
-      title: "Email Change Request",
-      description: "Please contact support to change your email address.",
-    });
-  };
 
   // Cleanup EventSource on unmount
   useEffect(() => {
@@ -279,6 +286,13 @@ export default function Profile() {
     },
   });
 
+  const emailChangeForm = useForm<EmailChangeForm>({
+    resolver: zodResolver(emailChangeSchema),
+    defaultValues: {
+      new_email: "",
+    },
+  });
+
   // Update form values when profile data loads
   useEffect(() => {
     if (tutorProfile) {
@@ -392,6 +406,46 @@ export default function Profile() {
       });
     },
   });
+
+  // Email change mutation
+  const changeEmailMutation = useMutation({
+    mutationFn: async (data: EmailChangeForm) => {
+      const { error } = await supabase.auth.updateUser({
+        email: data.new_email,
+      });
+
+      if (error) {
+        console.error('Email change error:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Verification Email Sent",
+        description: "Please check your new email inbox and click the verification link to complete the email change.",
+      });
+      setIsEmailDialogOpen(false);
+      emailChangeForm.reset();
+    },
+    onError: (error: any) => {
+      console.error('Email change error:', error);
+      toast({
+        variant: "destructive",
+        title: "Email Change Failed",
+        description: error.message || "Failed to change email. Please try again.",
+      });
+    },
+  });
+
+  const handleChangeEmail = () => {
+    setIsEmailDialogOpen(true);
+  };
+
+  const handleEmailChangeSubmit = async (data: EmailChangeForm) => {
+    await changeEmailMutation.mutateAsync(data);
+  };
 
   const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -980,6 +1034,71 @@ export default function Profile() {
           </Card>
         </div>
       </div>
+
+      {/* Email Change Dialog */}
+      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Email Address</DialogTitle>
+            <DialogDescription>
+              Enter your new email address. You'll receive a verification email to confirm the change.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...emailChangeForm}>
+            <form onSubmit={emailChangeForm.handleSubmit(handleEmailChangeSubmit)} className="space-y-4">
+              <FormField
+                control={emailChangeForm.control}
+                name="new_email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Email Address</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="Enter your new email"
+                        disabled={changeEmailMutation.isPending}
+                        data-testid="input-new-email"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEmailDialogOpen(false)}
+                  disabled={changeEmailMutation.isPending}
+                  data-testid="button-cancel-email-change"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={changeEmailMutation.isPending}
+                  data-testid="button-submit-email-change"
+                >
+                  {changeEmailMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4 mr-2" />
+                      Send Verification Email
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
