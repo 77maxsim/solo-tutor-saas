@@ -1,0 +1,36 @@
+Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+App.tsx:36 [App boot] at https://ec9fb557-50d5-405c-98d8-d614eb2aed68-00-2rf69aikweg09.spock.replit.dev/auth
+TimezoneContext.tsx:42 🔍 Starting timezone fetch...
+gwxhjznrclfbqcnbrrgo.supabase.co/auth/v1/token?grant_type=refresh_token:1  Failed to load resource: the server responded with a status of 400 ()
+@sentry_react.js?v=5d30a285:6879 🔄 AppLayout: Auth state changed: SIGNED_OUT undefined
+@sentry_react.js?v=5d30a285:6879 🔄 Auth state changed: SIGNED_OUT false
+@sentry_react.js?v=5d30a285:6879 AuthApiError: Invalid Refresh Token: Refresh Token Not Found
+    at handleError2 (@supabase_supabase-js.js?v=5d30a285:4567:9)
+    at async _handleRequest2 (@supabase_supabase-js.js?v=5d30a285:4608:5)
+    at async _request (@supabase_supabase-js.js?v=5d30a285:4592:16)
+    at async @supabase_supabase-js.js?v=5d30a285:6322:16
+    at async @supabase_supabase-js.js?v=5d30a285:4419:26
+(anonymous) @ @sentry_react.js?v=5d30a285:6879
+@sentry_react.js?v=5d30a285:6879 🔄 AppLayout: Auth state changed: SIGNED_OUT undefined
+@sentry_react.js?v=5d30a285:6879 🔄 Auth state changed: SIGNED_OUT false
+@sentry_react.js?v=5d30a285:6879 ❌ AppLayout: No session found on reload
+@sentry_react.js?v=5d30a285:6879 🔄 AppLayout: Auth state changed: INITIAL_SESSION undefined
+@sentry_react.js?v=5d30a285:6879 🔍 Auth state check: Object
+@sentry_react.js?v=5d30a285:6879 No authenticated user found, using default timezone Europe/Kyiv
+@sentry_react.js?v=5d30a285:6879 🔄 Auth state changed: INITIAL_SESSION false
+@sentry_react.js?v=5d30a285:6879 ❌ No session found on reload
+@sentry_react.js?v=5d30a285:6879 🔄 Auth state changed: INITIAL_SESSION undefined
+@sentry_react.js?v=5d30a285:6879 🔍 Starting timezone fetch...
+@sentry_react.js?v=5d30a285:6879 🔍 Auth state check: Object
+@sentry_react.js?v=5d30a285:6879 No authenticated user found, using default timezone Europe/Kyiv
+5auth:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+@sentry_react.js?v=5d30a285:6879 Button clicked
+@sentry_react.js?v=5d30a285:6879 Form state: Object
+@sentry_react.js?v=5d30a285:6879 Form values: Object
+@sentry_react.js?v=5d30a285:6879 Button clicked
+@sentry_react.js?v=5d30a285:6879 Form state: Object
+@sentry_react.js?v=5d30a285:6879 Form values: Object
+@sentry_react.js?v=5d30a285:6879 Form submitted with data: Object
+@sentry_react.js?v=5d30a285:6879 🔍 Signup Debug - Form data: Object
+@sentry_react.js?v=5d30a285:6879 🔍 Signup Debug - Sending to Supabase: Object
+@sentry_react.js?v=5d30a285:6879 🔍 Signup Debug - Response: Object
