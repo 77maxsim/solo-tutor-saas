@@ -196,7 +196,15 @@ export default function AuthPage() {
           });
           setTimeout(() => {
             setIsLogin(true);
-            form.reset();
+            form.reset({
+              email: "",
+              password: "",
+              fullName: "",
+              currency: "USD",
+              timezone: getBrowserTimezone(),
+              confirmPassword: "",
+              rememberMe: false,
+            });
           }, 2000);
         }
       }
@@ -227,6 +235,8 @@ export default function AuthPage() {
       email: "",
       password: "",
       fullName: "",
+      currency: "USD",
+      timezone: getBrowserTimezone(),
       confirmPassword: "",
       rememberMe: false,
     });
@@ -507,6 +517,7 @@ export default function AuthPage() {
                             className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                             onClick={() => setShowPassword(!showPassword)}
                             disabled={isLoading}
+                            tabIndex={-1}
                           >
                             {showPassword ? (
                               <EyeOff className="h-4 w-4 text-gray-500" />
@@ -544,6 +555,7 @@ export default function AuthPage() {
                               className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                               disabled={isLoading}
+                              tabIndex={-1}
                             >
                               {showConfirmPassword ? (
                                 <EyeOff className="h-4 w-4 text-gray-500" />
