@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
-import { Loader2, Save, User, Send, CheckCircle2, ExternalLink, Calendar, RefreshCw } from "lucide-react";
+import { Loader2, Save, User, Send, CheckCircle2, ExternalLink, Calendar, RefreshCw, Mail } from "lucide-react";
 import { ALL_TIMEZONES, TIMEZONE_GROUPS, getBrowserTimezone } from "@/lib/timezones";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
@@ -49,6 +49,13 @@ export default function Profile() {
   const [syncEventSource, setSyncEventSource] = useState<EventSource | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const handleChangeEmail = () => {
+    toast({
+      title: "Email Change Request",
+      description: "Please contact support to change your email address.",
+    });
+  };
 
   // Cleanup EventSource on unmount
   useEffect(() => {
@@ -557,15 +564,27 @@ export default function Profile() {
                   {/* Email Display (Read-only) */}
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={tutorProfile?.email || ""}
-                      disabled
-                      className="bg-muted"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="email"
+                        type="email"
+                        value={tutorProfile?.email || ""}
+                        disabled
+                        className="bg-muted flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleChangeEmail}
+                        data-testid="button-change-email"
+                        className="px-4"
+                      >
+                        <Mail className="w-4 h-4 mr-2" />
+                        Change
+                      </Button>
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Email cannot be changed. Contact support if you need to update your email.
+                      To update your email, click the Change button above.
                     </p>
                   </div>
 
