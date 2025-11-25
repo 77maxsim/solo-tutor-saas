@@ -402,22 +402,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .gte('session_start', startOfWeek.toISOString());
 
       // Total earnings (paid sessions) - convert all currencies to USD
+      // First get all tutors to map their currencies reliably
+      const { data: allTutors } = await supabase
+        .from('tutors')
+        .select('id, currency');
+      
+      const tutorCurrencyMap: { [id: string]: string } = {};
+      if (allTutors) {
+        for (const tutor of allTutors) {
+          tutorCurrencyMap[tutor.id] = tutor.currency || 'USD';
+        }
+      }
+
       const { data: paidSessions } = await supabase
         .from('sessions')
-        .select(`
-          duration, 
-          rate,
-          tutors!inner (
-            currency
-          )
-        `)
+        .select('tutor_id, duration, rate')
         .eq('paid', true);
 
       let totalEarningsUSD = 0;
       if (paidSessions) {
         for (const session of paidSessions) {
           const earningsInCurrency = (session.duration / 60) * parseFloat(session.rate);
-          const currency = (session.tutors as any)?.currency || 'USD';
+          const currency = tutorCurrencyMap[session.tutor_id] || 'USD';
           const earningsUSD = await convertToUSD(earningsInCurrency, currency);
           totalEarningsUSD += earningsUSD;
         }
@@ -479,17 +485,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startDate.setDate(now.getDate() - 7);
       }
 
+      // First get all tutors to map their currencies reliably
+      const { data: allTutors } = await supabase
+        .from('tutors')
+        .select('id, currency');
+      
+      const tutorCurrencyMap: { [id: string]: string } = {};
+      if (allTutors) {
+        for (const tutor of allTutors) {
+          tutorCurrencyMap[tutor.id] = tutor.currency || 'USD';
+        }
+      }
+
       const { data: sessions } = await supabase
         .from('sessions')
-        .select(`
-          session_start, 
-          duration, 
-          rate, 
-          paid,
-          tutors!inner (
-            currency
-          )
-        `)
+        .select('tutor_id, session_start, duration, rate')
         .gte('session_start', startDate.toISOString())
         .eq('paid', true)
         .order('session_start', { ascending: true });
@@ -501,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const session of sessions) {
           const date = new Date(session.session_start).toISOString().split('T')[0];
           const earningsInCurrency = (session.duration / 60) * parseFloat(session.rate);
-          const currency = (session.tutors as any)?.currency || 'USD';
+          const currency = tutorCurrencyMap[session.tutor_id] || 'USD';
           const earningsUSD = await convertToUSD(earningsInCurrency, currency);
           
           if (!earningsByDate[date]) {
@@ -526,37 +536,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Get top tutors
   app.get("/api/admin/top-tutors", authenticateUser, authorizeAdmin, adminLimiter, async (req, res) => {
     try {
-      // Get all sessions with tutor info
+      // First, get all tutors with their info for reliable currency data
+      const { data: tutors } = await supabase
+        .from('tutors')
+        .select('id, full_name, email, currency');
+      
+      // Create a map of tutor info by ID for fast lookup
+      const tutorMap: { [id: string]: { name: string; email: string; currency: string } } = {};
+      if (tutors) {
+        for (const tutor of tutors) {
+          tutorMap[tutor.id] = {
+            name: tutor.full_name || 'Unknown',
+            email: tutor.email || '',
+            currency: tutor.currency || 'USD'
+          };
+        }
+      }
+
+      // Get all paid sessions
       const { data: sessions } = await supabase
         .from('sessions')
-        .select(`
-          tutor_id,
-          duration,
-          rate,
-          paid,
-          tutors (
-            full_name,
-            email,
-            currency
-          )
-        `)
+        .select('tutor_id, duration, rate')
         .eq('paid', true);
 
-      // Aggregate by tutor with USD conversion
+      // Aggregate by tutor with USD conversion using reliable tutor currency data
       const tutorStatsMap: { [tutorId: string]: any } = {};
       
       if (sessions) {
         for (const session of sessions) {
           const tutorId = session.tutor_id;
+          const tutorInfo = tutorMap[tutorId];
           const earningsInCurrency = (session.duration / 60) * parseFloat(session.rate);
-          const currency = (session.tutors as any)?.currency || 'USD';
+          const currency = tutorInfo?.currency || 'USD';
           const earningsUSD = await convertToUSD(earningsInCurrency, currency);
           
           if (!tutorStatsMap[tutorId]) {
             tutorStatsMap[tutorId] = {
               tutorId,
-              name: (session.tutors as any)?.full_name || 'Unknown',
-              email: (session.tutors as any)?.email || '',
+              name: tutorInfo?.name || 'Unknown',
+              email: tutorInfo?.email || '',
               totalEarnings: 0,
               sessionCount: 0
             };
