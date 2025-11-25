@@ -553,17 +553,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Get all paid sessions
+      // Get all sessions (both paid boolean and string 'true' values)
       const { data: sessions } = await supabase
         .from('sessions')
-        .select('tutor_id, duration, rate')
-        .eq('paid', true);
+        .select('tutor_id, duration, rate, paid');
 
       // Aggregate by tutor with USD conversion using reliable tutor currency data
       const tutorStatsMap: { [tutorId: string]: any } = {};
       
       if (sessions) {
         for (const session of sessions) {
+          // Handle both boolean true and string 'true' for paid field
+          const isPaid = session.paid === true || session.paid === 'true';
+          if (!isPaid) continue;
+          
           const tutorId = session.tutor_id;
           const tutorInfo = tutorMap[tutorId];
           const earningsInCurrency = (session.duration / 60) * parseFloat(session.rate);
