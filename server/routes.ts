@@ -558,6 +558,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from('sessions')
         .select('tutor_id, duration, rate, paid');
 
+      // Debug: Log unique paid values to understand the data format
+      if (sessions && sessions.length > 0) {
+        const paidValues = new Set(sessions.map(s => JSON.stringify({ value: s.paid, type: typeof s.paid })));
+        console.log('DEBUG top-tutors: Unique paid field values:', [...paidValues]);
+        console.log('DEBUG top-tutors: Total sessions fetched:', sessions.length);
+      }
+
       // Aggregate by tutor with USD conversion using reliable tutor currency data
       const tutorStatsMap: { [tutorId: string]: any } = {};
       
