@@ -553,27 +553,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Get all sessions (both paid boolean and string 'true' values)
+      // Get all paid sessions with high limit to avoid Supabase's default 1000 row limit
       const { data: sessions } = await supabase
         .from('sessions')
-        .select('tutor_id, duration, rate, paid');
-
-      // Debug: Log unique paid values to understand the data format
-      if (sessions && sessions.length > 0) {
-        const paidValues = new Set(sessions.map(s => JSON.stringify({ value: s.paid, type: typeof s.paid })));
-        console.log('DEBUG top-tutors: Unique paid field values:', [...paidValues]);
-        console.log('DEBUG top-tutors: Total sessions fetched:', sessions.length);
-      }
+        .select('tutor_id, duration, rate, paid')
+        .eq('paid', true)
+        .limit(10000);
 
       // Aggregate by tutor with USD conversion using reliable tutor currency data
       const tutorStatsMap: { [tutorId: string]: any } = {};
       
       if (sessions) {
         for (const session of sessions) {
-          // Handle both boolean true and string 'true' for paid field
-          const isPaid = session.paid === true || session.paid === 'true';
-          if (!isPaid) continue;
-          
           const tutorId = session.tutor_id;
           const tutorInfo = tutorMap[tutorId];
           const earningsInCurrency = (session.duration / 60) * parseFloat(session.rate);

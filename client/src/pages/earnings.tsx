@@ -197,72 +197,7 @@ export default function Earnings() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // For Oliver's account, use only the working paid sessions query and bypass broken session mapping
-      if (tutorId === '0805984a-febf-423b-bef1-ba8dbd25760b') {
-        console.log('🔍 Earnings page - Using only verified paid sessions for Oliver');
-        
-        // Get the working paid sessions
-        const { data: paidSessions, error: paidError } = await supabase
-          .from('sessions')
-          .select('id, session_start, session_end, duration, rate, paid, student_id, created_at')
-          .eq('tutor_id', tutorId)
-          .eq('paid', true)
-          .gte('session_start', '2025-06-01T00:00:00.000Z')
-          .lte('session_start', '2025-06-30T23:59:59.999Z');
-
-        if (paidError) {
-          console.error('Error fetching Oliver paid sessions:', paidError);
-          throw paidError;
-        }
-
-        console.log('🔍 Oliver paid sessions found:', paidSessions?.length || 0);
-
-        // Get all unpaid sessions from a different time period for context
-        const { data: unpaidSessions, error: unpaidError } = await supabase
-          .from('sessions')
-          .select('id, session_start, session_end, duration, rate, paid, student_id, created_at')
-          .eq('tutor_id', tutorId)
-          .eq('paid', false)
-          .order('session_start', { ascending: false })
-          .limit(100); // Limit to avoid performance issues
-
-        if (unpaidError) {
-          console.error('Error fetching unpaid sessions:', unpaidError);
-        }
-
-        // Get student names separately
-        const { data: students, error: studentsError } = await supabase
-          .from('students')
-          .select('id, name')
-          .eq('tutor_id', tutorId);
-
-        if (studentsError) {
-          console.error('Error fetching students:', studentsError);
-          throw studentsError;
-        }
-
-        // Create student name map
-        const studentNameMap = new Map();
-        students?.forEach(student => {
-          studentNameMap.set(student.id, student.name);
-        });
-
-        // Combine paid and unpaid sessions with student names
-        const allSessions = [
-          ...(paidSessions || []),
-          ...(unpaidSessions || [])
-        ].map((session: any) => ({
-          ...session,
-          student_name: studentNameMap.get(session.student_id) || 'Unknown Student'
-        }));
-
-        console.log('🔍 Oliver combined sessions:', allSessions.length);
-        console.log('🔍 Oliver confirmed paid sessions:', allSessions.filter(s => s.paid === true).length);
-
-        return allSessions as SessionWithStudent[];
-      }
-
-      // For other tutors, use the standard query
+      // Standard query for all tutors (removed hardcoded Oliver filter that was limiting to June 2025 only)
       const { data, error } = await supabase
         .from('sessions')
         .select(`
