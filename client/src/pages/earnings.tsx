@@ -30,7 +30,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
-import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } from "@/lib/queryOptimizer";
+import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions, invalidateSessionCountCache } from "@/lib/queryOptimizer";
 import { formatCurrency } from "@/lib/utils";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
@@ -187,30 +187,48 @@ export default function Earnings() {
     },
   });
 
-  const { data: sessions, isLoading, error } = useQuery<SessionWithStudent[]>({
-    queryKey: ['earnings-sessions'],
-    staleTime: 0,
-    refetchOnMount: true,
+  // Get tutorId for cache key - this ensures each tutor has their own cache
+  const { data: currentTutorId } = useQuery({
+    queryKey: ['current-tutor-id'],
     queryFn: async () => {
       const tutorId = await getCurrentTutorId();
+      console.log('📊 CURRENT TUTOR ID:', tutorId?.substring(0, 8) + '...');
+      return tutorId;
+    },
+    staleTime: 60000, // 1 minute
+  });
+
+  const { data: sessions, isLoading, error } = useQuery<SessionWithStudent[]>({
+    queryKey: ['earnings-sessions', currentTutorId],
+    staleTime: 0,
+    refetchOnMount: 'always',
+    gcTime: 0,
+    enabled: !!currentTutorId,
+    queryFn: async () => {
+      console.log('📊 EARNINGS PAGE: Starting session fetch at', new Date().toISOString());
+      const tutorId = currentTutorId;
       if (!tutorId) {
         throw new Error('User not authenticated or tutor record not found');
       }
 
+      // Clear any stale optimization cache for this tutor
+      invalidateSessionCountCache(tutorId);
+      
       // Use Dataset optimization system for tutors with large datasets (500+ sessions)
       // This ensures we get ALL sessions without Supabase's default 1000-row limit
       const useOptimized = await shouldUseOptimizedQuery(tutorId);
       
       let sessionsData;
       if (useOptimized) {
-        console.log('Earnings page: Using optimized query for large dataset');
+        console.log('📊 Earnings page: Using OPTIMIZED query for large dataset');
         sessionsData = await getOptimizedSessions(tutorId);
       } else {
-        console.log('Earnings page: Using standard query');
+        console.log('📊 Earnings page: Using STANDARD query');
         sessionsData = await getStandardSessions(tutorId);
       }
 
       // Transform the data to match SessionWithStudent interface
+      // CRITICAL: Ensure paid is coerced to boolean to avoid 'true' string comparison issues
       const sessionsWithNames = sessionsData?.map((session: any) => ({
         id: session.id,
         student_id: session.student_id,
@@ -219,11 +237,15 @@ export default function Earnings() {
         session_end: session.session_end,
         duration: session.duration,
         rate: parseFloat(session.rate) || 0,
-        paid: session.paid,
+        paid: session.paid === true || session.paid === 'true',
         created_at: session.created_at
       })) || [];
 
-      console.log(`Earnings page: Fetched ${sessionsWithNames.length} sessions for tutor ${tutorId.substring(0, 8)}...`);
+      const paidCount = sessionsWithNames.filter((s: any) => s.paid === true).length;
+      console.log(`📊 EARNINGS PAGE RESULT: Fetched ${sessionsWithNames.length} total sessions, ${paidCount} paid for tutor ${tutorId.substring(0, 8)}...`);
+      if (paidCount < 100) {
+        console.warn(`⚠️ LOW PAID COUNT: Only ${paidCount} paid sessions. If this seems wrong, check optimization path.`);
+      }
 
       return sessionsWithNames as SessionWithStudent[];
     },
@@ -231,6 +253,8 @@ export default function Earnings() {
 
   // Set up Supabase realtime subscription
   useEffect(() => {
+    if (!currentTutorId) return;
+    
     const channel = supabase
       .channel('earnings-sessions-changes')
       .on(
@@ -242,7 +266,9 @@ export default function Earnings() {
         },
         (payload) => {
           console.log('Sessions updated, refreshing earnings data:', payload);
-          queryClient.invalidateQueries({ queryKey: ['earnings-sessions'] });
+          // Invalidate tutor-specific cache
+          invalidateSessionCountCache(currentTutorId);
+          queryClient.invalidateQueries({ queryKey: ['earnings-sessions', currentTutorId] });
         }
       )
       .subscribe();
@@ -250,7 +276,7 @@ export default function Earnings() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, currentTutorId]);
 
   // Calculate monthly earnings for the last 24 months (supports 12m filter + period comparison)
   const calculateMonthlyEarnings = (sessions: SessionWithStudent[]): MonthlyEarnings[] => {
