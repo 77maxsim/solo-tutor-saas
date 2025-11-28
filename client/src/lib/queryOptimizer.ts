@@ -87,7 +87,7 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
 
 export async function getOptimizedSessions(tutorId: string) {
   const startTime = Date.now();
-  console.log('Using optimized query pattern for large dataset, tutor:', tutorId);
+  console.log('🔥 OPTIMIZED QUERY: Starting for tutor', tutorId.substring(0, 8) + '...');
   
   try {
     // Get ALL sessions without joins to avoid performance issues
@@ -112,15 +112,15 @@ export async function getOptimizedSessions(tutorId: string) {
       return await getStandardSessions(tutorId);
     }
 
-    console.log('Optimized query raw data:', {
-      totalRows: allSessions?.length || 0,
+    const rowCount = allSessions?.length || 0;
+    console.log('🔥 OPTIMIZED QUERY RESULT:', {
+      totalRowsReturned: rowCount,
+      queryHadLimit10000: true,
+      POTENTIAL_TRUNCATION: rowCount === 1000 ? '⚠️ EXACTLY 1000 ROWS - POSSIBLE TRUNCATION!' : 'OK',
       firstRow: allSessions?.[0] ? {
         id: allSessions[0].id?.substring(0, 8) + '...',
         status: allSessions[0].status,
-        session_start: allSessions[0].session_start,
-        session_end: allSessions[0].session_end,
-        unassigned_name: allSessions[0].unassigned_name,
-        student_id: allSessions[0].student_id
+        session_start: allSessions[0].session_start
       } : null
     });
 
@@ -225,7 +225,7 @@ export async function getStandardSessions(tutorId: string) {
   const startTime = Date.now();
   
   try {
-    console.log('Standard query - fetching sessions for tutor:', tutorId);
+    console.log('📊 STANDARD QUERY: Starting for tutor', tutorId.substring(0, 8) + '...');
     
     // Use .limit(10000) to override Supabase's default 1000-row limit
     const { data, error } = await supabase
@@ -265,15 +265,15 @@ export async function getStandardSessions(tutorId: string) {
       throw error;
     }
 
-    console.log('Standard query raw data:', {
-      totalRows: data?.length || 0,
+    const rowCount = data?.length || 0;
+    console.log('📊 STANDARD QUERY RESULT:', {
+      totalRowsReturned: rowCount,
+      queryHadLimit10000: true,
+      POTENTIAL_TRUNCATION: rowCount === 1000 ? '⚠️ EXACTLY 1000 ROWS - POSSIBLE TRUNCATION!' : 'OK',
       firstRow: data?.[0] ? {
         id: data[0].id?.substring(0, 8) + '...',
         status: data[0].status,
-        session_start: data[0].session_start,
-        session_end: data[0].session_end,
-        unassigned_name: data[0].unassigned_name,
-        student_id: data[0].student_id
+        session_start: data[0].session_start
       } : null
     });
 
