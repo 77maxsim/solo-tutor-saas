@@ -91,11 +91,13 @@ export async function getOptimizedSessions(tutorId: string) {
   
   try {
     // Get ALL sessions without joins to avoid performance issues
+    // Use .limit(10000) to override Supabase's default 1000-row limit
     const { data: allSessions, error } = await supabase
       .from('sessions')
       .select('id, student_id, session_start, session_end, duration, rate, paid, notes, color, recurrence_id, created_at, status, unassigned_name')
       .eq('tutor_id', tutorId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(10000);
 
     if (error) {
       console.error('Error fetching optimized sessions:', error);
@@ -225,6 +227,7 @@ export async function getStandardSessions(tutorId: string) {
   try {
     console.log('Standard query - fetching sessions for tutor:', tutorId);
     
+    // Use .limit(10000) to override Supabase's default 1000-row limit
     const { data, error } = await supabase
       .from('sessions')
       .select(`
@@ -248,7 +251,8 @@ export async function getStandardSessions(tutorId: string) {
         )
       `)
       .eq('tutor_id', tutorId)
-      .order('session_start', { ascending: false });
+      .order('session_start', { ascending: false })
+      .limit(10000);
 
     if (error) {
       console.error('Error fetching standard sessions:', error);

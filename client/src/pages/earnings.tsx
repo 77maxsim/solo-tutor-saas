@@ -197,35 +197,33 @@ export default function Earnings() {
         throw new Error('User not authenticated or tutor record not found');
       }
 
-      // Standard query for all tutors (removed hardcoded Oliver filter that was limiting to June 2025 only)
-      const { data, error } = await supabase
-        .from('sessions')
-        .select(`
-          id,
-          student_id,
-          session_start,
-          session_end,
-          duration,
-          rate,
-          paid,
-          created_at,
-          students (
-            name
-          )
-        `)
-        .eq('tutor_id', tutorId)
-        .order('session_start', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching earnings data:', error);
-        throw error;
+      // Use Dataset optimization system for tutors with large datasets (500+ sessions)
+      // This ensures we get ALL sessions without Supabase's default 1000-row limit
+      const useOptimized = await shouldUseOptimizedQuery(tutorId);
+      
+      let sessionsData;
+      if (useOptimized) {
+        console.log('Earnings page: Using optimized query for large dataset');
+        sessionsData = await getOptimizedSessions(tutorId);
+      } else {
+        console.log('Earnings page: Using standard query');
+        sessionsData = await getStandardSessions(tutorId);
       }
 
-      // Transform the data to include student_name
-      const sessionsWithNames = data?.map((session: any) => ({
-        ...session,
-        student_name: session.students?.name || 'Unknown Student'
+      // Transform the data to match SessionWithStudent interface
+      const sessionsWithNames = sessionsData?.map((session: any) => ({
+        id: session.id,
+        student_id: session.student_id,
+        student_name: session.student_name || 'Unknown Student',
+        session_start: session.session_start,
+        session_end: session.session_end,
+        duration: session.duration,
+        rate: parseFloat(session.rate) || 0,
+        paid: session.paid,
+        created_at: session.created_at
       })) || [];
+
+      console.log(`Earnings page: Fetched ${sessionsWithNames.length} sessions for tutor ${tutorId.substring(0, 8)}...`);
 
       return sessionsWithNames as SessionWithStudent[];
     },

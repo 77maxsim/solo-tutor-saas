@@ -414,10 +414,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Use .limit(10000) to override Supabase's default 1000-row limit for accurate totals
       const { data: paidSessions } = await supabase
         .from('sessions')
         .select('tutor_id, duration, rate')
-        .eq('paid', true);
+        .eq('paid', true)
+        .limit(10000);
 
       let totalEarningsUSD = 0;
       if (paidSessions) {
