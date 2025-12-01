@@ -264,7 +264,7 @@ export default function UnpaidSessions() {
       ['Date', 'Student Name', 'Amount Unpaid'].join(','),
       ...sortedSessions.map(session => {
         const date = tutorTimezone 
-          ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MMMM D, YYYY')
+          ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MMMM d, yyyy')
           : new Date(session.session_start).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'long',
@@ -274,14 +274,15 @@ export default function UnpaidSessions() {
         return [
           `"${date}"`,
           `"${session.student_name}"`,
-          formatCurrency(parseFloat(amount), tutorCurrency)
+          `"${formatCurrency(parseFloat(amount), tutorCurrency)}"`
         ].join(',');
       }),
       '',
-      ['', 'TOTAL UNPAID:', formatCurrency(totalAmount, tutorCurrency)].join(',')
+      ['', 'TOTAL UNPAID:', `"${formatCurrency(totalAmount, tutorCurrency)}"`].join(',')
     ];
 
-    const csvContent = csvRows.join('\n');
+    const BOM = '\uFEFF';
+    const csvContent = BOM + csvRows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
