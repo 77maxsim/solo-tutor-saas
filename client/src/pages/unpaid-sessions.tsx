@@ -43,7 +43,7 @@ interface UnpaidSession {
 }
 
 export default function UnpaidSessions() {
-  const [openDates, setOpenDates] = useState<Set<string>>(new Set());
+  const [openWeeks, setOpenWeeks] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { tutorTimezone } = useTimezone();
@@ -242,33 +242,46 @@ export default function UnpaidSessions() {
     markAllAsPaidMutation.mutate();
   };
 
-  const toggleDateGroup = (date: string) => {
-    const newOpenDates = new Set(openDates);
-    if (newOpenDates.has(date)) {
-      newOpenDates.delete(date);
-    } else {
-      newOpenDates.add(date);
-    }
-    setOpenDates(newOpenDates);
+  const getWeekStart = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day;
+    return new Date(d.setDate(diff));
   };
 
-  const formatDateGroup = (date: string) => {
-    const sessionDate = new Date(date);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const lastWeek = new Date(today);
-    lastWeek.setDate(today.getDate() - 7);
+  const getWeekKey = (date: Date) => {
+    const weekStart = getWeekStart(date);
+    return weekStart.toISOString().split('T')[0];
+  };
 
-    if (sessionDate.toDateString() === today.toDateString()) {
-      return "Today";
-    } else if (sessionDate.toDateString() === yesterday.toDateString()) {
-      return "Yesterday";
-    } else if (sessionDate >= lastWeek) {
-      return sessionDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  const toggleWeekGroup = (weekKey: string) => {
+    const newOpenWeeks = new Set(openWeeks);
+    if (newOpenWeeks.has(weekKey)) {
+      newOpenWeeks.delete(weekKey);
     } else {
-      return sessionDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+      newOpenWeeks.add(weekKey);
+    }
+    setOpenWeeks(newOpenWeeks);
+  };
+
+  const formatWeekGroup = (weekKey: string) => {
+    const weekStart = new Date(weekKey);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    const today = new Date();
+    const thisWeekStart = getWeekStart(today);
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+    if (weekKey === thisWeekStart.toISOString().split('T')[0]) {
+      return "This Week";
+    } else if (weekKey === lastWeekStart.toISOString().split('T')[0]) {
+      return "Last Week";
+    } else {
+      const monthStart = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const monthEnd = weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return `Week of ${monthStart} - ${monthEnd}`;
     }
   };
 
@@ -280,13 +293,13 @@ export default function UnpaidSessions() {
     return diffDays;
   };
 
-  // Group sessions by date
+  // Group sessions by week
   const groupedSessions = sessions.reduce((groups: { [key: string]: UnpaidSession[] }, session) => {
-    const date = new Date(session.session_start).toISOString().split('T')[0];
-    if (!groups[date]) {
-      groups[date] = [];
+    const weekKey = getWeekKey(new Date(session.session_start));
+    if (!groups[weekKey]) {
+      groups[weekKey] = [];
     }
-    groups[date].push(session);
+    groups[weekKey].push(session);
     return groups;
   }, {});
 
@@ -426,7 +439,7 @@ export default function UnpaidSessions() {
               <div>
                 <CardTitle className="text-2xl font-bold">All Unpaid Sessions</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Overdue sessions grouped by date, sorted chronologically
+                  Overdue sessions grouped by week, sorted chronologically
                 </p>
               </div>
               {totalSessions > 0 && (
@@ -466,11 +479,11 @@ export default function UnpaidSessions() {
               </div>
             ) : (
               <div className="space-y-4">
-                {Object.entries(groupedSessions).map(([date, dateSessions]) => (
+                {Object.entries(groupedSessions).map(([weekKey, weekSessions]) => (
                   <Collapsible
-                    key={date}
-                    open={openDates.has(date)}
-                    onOpenChange={() => toggleDateGroup(date)}
+                    key={weekKey}
+                    open={openWeeks.has(weekKey)}
+                    onOpenChange={() => toggleWeekGroup(weekKey)}
                   >
                     <CollapsibleTrigger asChild>
                       <Button
@@ -482,13 +495,13 @@ export default function UnpaidSessions() {
                             <CalendarIcon className="w-4 h-4 text-orange-600" />
                           </div>
                           <div className="text-left">
-                            <h3 className="font-semibold text-base">{formatDateGroup(date)}</h3>
+                            <h3 className="font-semibold text-base">{formatWeekGroup(weekKey)}</h3>
                             <p className="text-sm text-muted-foreground">
-                              {dateSessions.length} overdue session{dateSessions.length !== 1 ? 's' : ''}
+                              {weekSessions.length} overdue session{weekSessions.length !== 1 ? 's' : ''}
                             </p>
                           </div>
                         </div>
-                        {openDates.has(date) ? (
+                        {openWeeks.has(weekKey) ? (
                           <ChevronDown className="h-4 w-4" />
                         ) : (
                           <ChevronRight className="h-4 w-4" />
@@ -497,7 +510,7 @@ export default function UnpaidSessions() {
                     </CollapsibleTrigger>
 
                     <CollapsibleContent className="space-y-2 mt-2">
-                      {dateSessions.map((session) => {
+                      {weekSessions.map((session) => {
                         const calculatedPrice = (session.duration / 60) * session.rate;
                         const daysOverdue = getDaysOverdue(session.session_start);
                         
@@ -554,7 +567,7 @@ export default function UnpaidSessions() {
                                     </Button>
                                   }
                                   title={`Mark overdue session with ${session.student_name} as paid?`}
-                                  description={`This will mark the session on ${formatDateGroup(new Date(session.session_start).toISOString().split('T')[0])} as paid.`}
+                                  description="This will mark the session as paid and update your earnings dashboard."
                                   confirmText="Yes, mark as paid"
                                   cancelText="Cancel"
                                   onConfirm={() => handleMarkAsPaid(session.id)}
