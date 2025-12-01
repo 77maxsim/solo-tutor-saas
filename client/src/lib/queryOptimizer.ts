@@ -113,14 +113,48 @@ export async function getOptimizedSessions(tutorId: string) {
     }
 
     const rowCount = allSessions?.length || 0;
+    
+    // Calculate date range of returned sessions for debugging
+    let minDate = null;
+    let maxDate = null;
+    let paidCount = 0;
+    let paidTrueCount = 0;
+    let paidStringTrueCount = 0;
+    
+    if (allSessions && allSessions.length > 0) {
+      const dates = allSessions.map(s => new Date(s.session_start).getTime());
+      minDate = new Date(Math.min(...dates)).toISOString();
+      maxDate = new Date(Math.max(...dates)).toISOString();
+      
+      // Count paid sessions with detailed type checking
+      allSessions.forEach(s => {
+        if (s.paid === true) paidTrueCount++;
+        if (s.paid === 'true') paidStringTrueCount++;
+        if (s.paid === true || s.paid === 'true') paidCount++;
+      });
+    }
+    
     console.log('🔥 OPTIMIZED QUERY RESULT:', {
       totalRowsReturned: rowCount,
       queryHadLimit10000: true,
       POTENTIAL_TRUNCATION: rowCount === 1000 ? '⚠️ EXACTLY 1000 ROWS - POSSIBLE TRUNCATION!' : 'OK',
+      DATE_RANGE: {
+        oldest: minDate,
+        newest: maxDate,
+        spanMonths: minDate && maxDate ? Math.ceil((new Date(maxDate).getTime() - new Date(minDate).getTime()) / (30 * 24 * 60 * 60 * 1000)) : 0
+      },
+      PAID_ANALYSIS: {
+        totalPaid: paidCount,
+        paidBooleanTrue: paidTrueCount,
+        paidStringTrue: paidStringTrueCount,
+        unpaid: rowCount - paidCount
+      },
       firstRow: allSessions?.[0] ? {
         id: allSessions[0].id?.substring(0, 8) + '...',
         status: allSessions[0].status,
-        session_start: allSessions[0].session_start
+        session_start: allSessions[0].session_start,
+        paid: allSessions[0].paid,
+        paidType: typeof allSessions[0].paid
       } : null
     });
 

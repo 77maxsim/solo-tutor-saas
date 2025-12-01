@@ -242,9 +242,21 @@ export default function Earnings() {
       })) || [];
 
       const paidCount = sessionsWithNames.filter((s: any) => s.paid === true).length;
+      
+      // Calculate date range for debugging large dataset issues
+      let dateRangeInfo = 'No sessions';
+      if (sessionsWithNames.length > 0) {
+        const dates = sessionsWithNames.map((s: any) => new Date(s.session_start).getTime());
+        const minDate = new Date(Math.min(...dates)).toISOString().split('T')[0];
+        const maxDate = new Date(Math.max(...dates)).toISOString().split('T')[0];
+        dateRangeInfo = `${minDate} to ${maxDate}`;
+      }
+      
       console.log(`📊 EARNINGS PAGE RESULT: Fetched ${sessionsWithNames.length} total sessions, ${paidCount} paid for tutor ${tutorId.substring(0, 8)}...`);
-      if (paidCount < 100) {
-        console.warn(`⚠️ LOW PAID COUNT: Only ${paidCount} paid sessions. If this seems wrong, check optimization path.`);
+      console.log(`📊 EARNINGS DATE RANGE: ${dateRangeInfo}`);
+      
+      if (paidCount < 100 && sessionsWithNames.length > 500) {
+        console.warn(`⚠️ LOW PAID COUNT: Only ${paidCount} paid sessions out of ${sessionsWithNames.length}. If this seems wrong, check optimization path.`);
       }
 
       return sessionsWithNames as SessionWithStudent[];
@@ -1069,8 +1081,9 @@ ${filteredData.map(m => `${m.month} ${m.year}: ${formatCurrency(m.earnings, curr
     sessions.forEach(session => {
       const sessionDate = new Date(session.session_start);
       const earnings = (session.duration / 60) * session.rate;
-      // Standardized paid session check (consistent with other components)
-      const isPaid = session.paid === true;
+      // Resilient paid session check - handle both boolean and string values from different query paths
+      // This matches earningsCalculator.ts for consistency across Dashboard and Earnings pages
+      const isPaid = session.paid === true || (session as any).paid === 'true';
       
       // Total earnings (only from paid sessions)
       if (isPaid) {
