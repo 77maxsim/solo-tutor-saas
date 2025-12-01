@@ -11,7 +11,8 @@ import {
   AlertTriangle,
   X,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Download
 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -242,6 +243,61 @@ export default function UnpaidSessions() {
     markAllAsPaidMutation.mutate();
   };
 
+  const handleDownloadReport = () => {
+    if (sessions.length === 0) {
+      toast({
+        title: "No sessions to download",
+        description: "There are no unpaid sessions to include in the report.",
+      });
+      return;
+    }
+
+    const sortedSessions = [...sessions].sort((a, b) => 
+      new Date(b.session_start).getTime() - new Date(a.session_start).getTime()
+    );
+
+    const totalAmount = sessions.reduce((sum, session) => {
+      return sum + (session.duration / 60) * session.rate;
+    }, 0);
+
+    const csvRows = [
+      ['Date', 'Student Name', 'Amount Unpaid'].join(','),
+      ...sortedSessions.map(session => {
+        const date = tutorTimezone 
+          ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MMMM D, YYYY')
+          : new Date(session.session_start).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            });
+        const amount = ((session.duration / 60) * session.rate).toFixed(2);
+        return [
+          `"${date}"`,
+          `"${session.student_name}"`,
+          formatCurrency(parseFloat(amount), tutorCurrency)
+        ].join(',');
+      }),
+      '',
+      ['', 'TOTAL UNPAID:', formatCurrency(totalAmount, tutorCurrency)].join(',')
+    ];
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `unpaid_sessions_report_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Report downloaded",
+      description: `Downloaded report with ${sessions.length} unpaid session${sessions.length !== 1 ? 's' : ''}.`,
+    });
+  };
+
   const getWeekStart = (date: Date) => {
     const d = new Date(date);
     const day = d.getDay();
@@ -443,27 +499,37 @@ export default function UnpaidSessions() {
                 </p>
               </div>
               {totalSessions > 0 && (
-                <ConfirmActionModal
-                  trigger={
-                    <Button
-                      disabled={markAllAsPaidMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      data-testid="button-mark-all-paid"
-                    >
-                      <Coins className="h-4 w-4 mr-2" />
-                      {markAllAsPaidMutation.isPending ? 'Processing...' : 'Mark All as Paid'}
-                    </Button>
-                  }
-                  title={`Mark all ${sessions.filter(s => {
-                    const now = dayjs.utc();
-                    return !s.paid && now.isAfter(s.session_end);
-                  }).length} past unpaid sessions as paid?`}
-                  description="This will mark all overdue sessions as paid and update your earnings dashboard."
-                  confirmText="Yes, mark as paid"
-                  cancelText="Cancel"
-                  onConfirm={handleMarkAllAsPaid}
-                  disabled={markAllAsPaidMutation.isPending}
-                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleDownloadReport}
+                    data-testid="button-download-report"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Report
+                  </Button>
+                  <ConfirmActionModal
+                    trigger={
+                      <Button
+                        disabled={markAllAsPaidMutation.isPending}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        data-testid="button-mark-all-paid"
+                      >
+                        <Coins className="h-4 w-4 mr-2" />
+                        {markAllAsPaidMutation.isPending ? 'Processing...' : 'Mark All as Paid'}
+                      </Button>
+                    }
+                    title={`Mark all ${sessions.filter(s => {
+                      const now = dayjs.utc();
+                      return !s.paid && now.isAfter(s.session_end);
+                    }).length} past unpaid sessions as paid?`}
+                    description="This will mark all overdue sessions as paid and update your earnings dashboard."
+                    confirmText="Yes, mark as paid"
+                    cancelText="Cancel"
+                    onConfirm={handleMarkAllAsPaid}
+                    disabled={markAllAsPaidMutation.isPending}
+                  />
+                </div>
               )}
             </div>
           </CardHeader>
