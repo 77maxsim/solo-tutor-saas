@@ -1,0 +1,31 @@
+polling interval
+@sentry_react.js?v=5d30a285:6879 📡 UnpaidSessions: Cleaning up subscription
+@sentry_react.js?v=5d30a285:6879 📡 UnpaidSessions: Subscription status: CLOSED
+@sentry_react.js?v=5d30a285:6879 📡 UnpaidSessions: Subscription failed, increasing polling frequency
+@sentry_react.js?v=5d30a285:6879 📡 UnpaidSessions: Cleaning up polling interval
+@sentry_react.js?v=5d30a285:6879 🔍 Earnings page - Sessions data being used for calculations: Object
+@sentry_react.js?v=5d30a285:6879 🔍 Earnings page - Sessions data being used for calculations: Object
+@sentry_react.js?v=5d30a285:6879 🔍 Earnings page - Sessions data being used for calculations: Object
+@sentry_react.js?v=5d30a285:6879 🔍 Earnings page - Sessions data being used for calculations: Object
+@sentry_react.js?v=5d30a285:6879 🔍 Earnings page - Sessions data being used for calculations: Object
+@sentry_react.js?v=5d30a285:6879 📊 CURRENT TUTOR ID: 7bf25f7b...
+@sentry_react.js?v=5d30a285:6879 🔍 Earnings page - Sessions data being used for calculations: Object
+@sentry_react.js?v=5d30a285:6879 📊 EARNINGS PAGE: Starting session fetch at 2025-12-01T16:25:34.710Z
+@sentry_react.js?v=5d30a285:6879 Session count cache invalidated for tutor: 7bf25f7b-f16e-4d75-9847-087276da4e0b
+@sentry_react.js?v=5d30a285:6879 Dataset analysis: 773 sessions, optimization enabled (threshold: enable≥500, disable<470)
+@sentry_react.js?v=5d30a285:6879 📊 Earnings page: Using OPTIMIZED query for large dataset
+@sentry_react.js?v=5d30a285:6879 🔥 OPTIMIZED QUERY: Starting PAGINATED fetch for tutor 7bf25f7b...
+@sentry_react.js?v=5d30a285:6879 🔥 PAGINATED FETCH: Starting batch retrieval...
+@sentry_react.js?v=5d30a285:6879 🔥 Batch 1: Retrieved 773 sessions (range 0-999)
+@sentry_react.js?v=5d30a285:6879 🔥 Pagination complete: Last batch had 773 rows (< 1000)
+@sentry_react.js?v=5d30a285:6879 🔥 PAGINATED QUERY COMPLETE: Object
+@sentry_react.js?v=5d30a285:6879 📊 Query Performance [optimized]: Object
+@sentry_react.js?v=5d30a285:6879 Optimized query results: Object
+@sentry_react.js?v=5d30a285:6879 📊 EARNINGS PAGE RESULT: Fetched 773 total sessions, 506 paid for tutor 7bf25f7b...
+@sentry_react.js?v=5d30a285:6879 📊 EARNINGS DATE RANGE: 2025-06-01 to 2026-02-20
+@sentry_react.js?v=5d30a285:6879 🔍 Earnings page - Sessions data being used for calculations: Object
+@sentry_react.js?v=5d30a285:6879 🔍 Earnings page - Final earnings results: Object
+gwxhjznrclfbqcnbrrgo.supabase.co/rest/v1/sessions?select=*&tutor_id=eq.7bf25f7b-f16e-4d75-9847-087276da4e0b&date=lt.2024-12-01:1  Failed to load resource: the server responded with a status of 400 ()
+@sentry_react.js?v=5d30a285:6879 Error checking archiving eligibility: Object
+(anonymous) @ @sentry_react.js?v=5d30a285:6879
+schedule-session-modal.tsx:680 ScheduleSessionModal - Timezone state: {tutorTimezone: 'Europe/Kyiv', isTimezoneLoading: false, open: false}

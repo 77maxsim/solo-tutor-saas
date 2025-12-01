@@ -24,7 +24,12 @@ Preferred communication style: Simple, everyday language.
 - **Database**: Supabase (PostgreSQL) with Row Level Security (RLS) for data access control and real-time features.
 - **Authentication**: Supabase Auth for email/password, with JWT for secure API access.
 - **Data Handling**:
-    - **Dataset Optimization System**: Dynamically switches query strategies based on dataset size for performance (500+ sessions threshold).
+    - **Dataset Optimization System**: Dynamically switches query strategies based on dataset size for performance.
+        - **Threshold**: 500 sessions triggers optimization mode (with hysteresis at 470 to prevent flapping).
+        - **Standard Path** (<500 sessions): Single query with joins for student data.
+        - **Optimized Path** (500+ sessions): Paginated batch fetching using Supabase `.range()` in 1000-row batches to overcome Supabase's implicit row limits. Includes deduplication, separate student data fetch, and comprehensive logging.
+        - **Safety Limits**: Maximum 20 batches (20,000 sessions) with automatic fallback to standard query on errors.
+        - **Performance Tracking**: Query execution times monitored via `datasetMonitor` with alerts for slow queries.
     - **UTC Timestamp Migration**: All session times are stored as UTC and converted to the tutor's local timezone for display.
     - **Real-time Updates**: Supabase subscriptions combined with polling for robust real-time data synchronization.
     - **Earnings Calculation**: Shared logic for calculating earnings and generating financial statistics.
@@ -70,3 +75,40 @@ Preferred communication style: Simple, everyday language.
 - **express-slow-down**: Middleware for slowing down responses.
 - **Helmet**: Middleware for setting security-related HTTP headers.
 - **DOMPurify**: XSS sanitization library for protecting against malicious user-generated content.
+
+## Future Roadmap
+
+### Scalability Improvements (Priority: Medium)
+The current Dataset Optimization system handles up to 20,000 sessions per tutor. For long-term sustainability with high-volume tutors, the following improvements are planned:
+
+1. **Session Archiving System**
+   - Auto-archive sessions older than 18 months to a dedicated history table
+   - Archived sessions remain accessible via a separate "Historical Data" view
+   - Reduces active dataset size for faster queries
+   - Target: Implement when any tutor approaches 8,000-10,000 sessions
+
+2. **Server-Side Earnings Aggregation**
+   - Create backend API endpoints for pre-calculated earnings summaries
+   - Endpoints: `/api/earnings/summary`, `/api/earnings/monthly`, `/api/earnings/by-student`
+   - Reduces frontend payload from full session list to aggregated totals
+   - Enables faster dashboard loading for large accounts
+
+3. **Date Range Filtering for Large Datasets**
+   - Add UI controls to filter sessions by date range (e.g., "Last 6 months", "This year")
+   - Default to recent data with option to load historical data on demand
+   - Reduces initial load time while maintaining full data access
+
+4. **Performance Monitoring Alerts**
+   - Enhance `datasetMonitor` to trigger UI notifications when queries exceed 5 batches or 5 seconds
+   - Suggest date range filtering or archiving to users approaching limits
+   - Proactive guidance before performance degradation occurs
+
+### Scalability Thresholds
+| Sessions | Batches | Status | Recommended Action |
+|----------|---------|--------|-------------------|
+| <500 | 1 | Standard query | None needed |
+| 500-5,000 | 1-5 | Optimized, fast | None needed |
+| 5,000-10,000 | 5-10 | Optimized, slight slowdown | Consider date filtering |
+| 10,000-15,000 | 10-15 | Noticeable latency | Implement archiving |
+| 15,000-20,000 | 15-20 | Approaching limit | Archiving required |
+| >20,000 | >20 | Current limit | Server-side aggregation needed |
