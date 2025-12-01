@@ -87,32 +87,70 @@ export async function shouldUseOptimizedQuery(tutorId: string): Promise<boolean>
 
 export async function getOptimizedSessions(tutorId: string) {
   const startTime = Date.now();
-  console.log('🔥 OPTIMIZED QUERY: Starting for tutor', tutorId.substring(0, 8) + '...');
+  console.log('🔥 OPTIMIZED QUERY: Starting PAGINATED fetch for tutor', tutorId.substring(0, 8) + '...');
   
   try {
-    // Get ALL sessions without joins to avoid performance issues
-    // Use .limit(10000) to override Supabase's default 1000-row limit
-    const { data: allSessions, error } = await supabase
-      .from('sessions')
-      .select('id, student_id, session_start, session_end, duration, rate, paid, notes, color, recurrence_id, created_at, status, unassigned_name')
-      .eq('tutor_id', tutorId)
-      .order('created_at', { ascending: false })
-      .limit(10000);
-
-    if (error) {
-      console.error('Error fetching optimized sessions:', error);
-      console.error('Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-      // Fallback to standard query on error
-      console.log('Falling back to standard query due to optimization error');
-      return await getStandardSessions(tutorId);
+    // PAGINATED FETCH: Supabase enforces an implicit ~1000 row limit despite .limit()
+    // We use .range() to fetch in batches of 1000 and combine all results
+    const BATCH_SIZE = 1000;
+    const MAX_BATCHES = 20; // Safety limit: 20 * 1000 = 20,000 sessions max
+    const allSessions: any[] = [];
+    const seenIds = new Set<string>(); // For deduplication
+    let currentBatch = 0;
+    let hasMore = true;
+    
+    console.log('🔥 PAGINATED FETCH: Starting batch retrieval...');
+    
+    while (hasMore && currentBatch < MAX_BATCHES) {
+      const rangeStart = currentBatch * BATCH_SIZE;
+      const rangeEnd = rangeStart + BATCH_SIZE - 1;
+      
+      const { data: batchData, error } = await supabase
+        .from('sessions')
+        .select('id, student_id, session_start, session_end, duration, rate, paid, notes, color, recurrence_id, created_at, status, unassigned_name')
+        .eq('tutor_id', tutorId)
+        .order('created_at', { ascending: false })
+        .range(rangeStart, rangeEnd);
+      
+      if (error) {
+        console.error(`Error fetching batch ${currentBatch}:`, error);
+        if (currentBatch === 0) {
+          // First batch failed, fall back to standard query
+          console.log('Falling back to standard query due to pagination error');
+          return await getStandardSessions(tutorId);
+        }
+        // Partial data retrieved, continue with what we have
+        break;
+      }
+      
+      const batchCount = batchData?.length || 0;
+      console.log(`🔥 Batch ${currentBatch + 1}: Retrieved ${batchCount} sessions (range ${rangeStart}-${rangeEnd})`);
+      
+      // Add unique sessions to our collection (deduplicate by ID)
+      if (batchData) {
+        for (const session of batchData) {
+          if (!seenIds.has(session.id)) {
+            seenIds.add(session.id);
+            allSessions.push(session);
+          }
+        }
+      }
+      
+      // Check if we should continue fetching
+      if (batchCount < BATCH_SIZE) {
+        // Got fewer than requested, we've reached the end
+        hasMore = false;
+        console.log(`🔥 Pagination complete: Last batch had ${batchCount} rows (< ${BATCH_SIZE})`);
+      }
+      
+      currentBatch++;
     }
-
-    const rowCount = allSessions?.length || 0;
+    
+    if (currentBatch >= MAX_BATCHES) {
+      console.warn(`⚠️ Reached maximum batch limit (${MAX_BATCHES}). Some sessions may be missing.`);
+    }
+    
+    const rowCount = allSessions.length;
     
     // Calculate date range of returned sessions for debugging
     let minDate = null;
@@ -121,7 +159,7 @@ export async function getOptimizedSessions(tutorId: string) {
     let paidTrueCount = 0;
     let paidStringTrueCount = 0;
     
-    if (allSessions && allSessions.length > 0) {
+    if (allSessions.length > 0) {
       const dates = allSessions.map(s => new Date(s.session_start).getTime());
       minDate = new Date(Math.min(...dates)).toISOString();
       maxDate = new Date(Math.max(...dates)).toISOString();
@@ -134,10 +172,10 @@ export async function getOptimizedSessions(tutorId: string) {
       });
     }
     
-    console.log('🔥 OPTIMIZED QUERY RESULT:', {
+    console.log('🔥 PAGINATED QUERY COMPLETE:', {
       totalRowsReturned: rowCount,
-      queryHadLimit10000: true,
-      POTENTIAL_TRUNCATION: rowCount === 1000 ? '⚠️ EXACTLY 1000 ROWS - POSSIBLE TRUNCATION!' : 'OK',
+      batchesFetched: currentBatch,
+      deduplicatedCount: seenIds.size,
       DATE_RANGE: {
         oldest: minDate,
         newest: maxDate,
@@ -149,19 +187,17 @@ export async function getOptimizedSessions(tutorId: string) {
         paidStringTrue: paidStringTrueCount,
         unpaid: rowCount - paidCount
       },
-      firstRow: allSessions?.[0] ? {
+      firstSession: allSessions[0] ? {
         id: allSessions[0].id?.substring(0, 8) + '...',
-        status: allSessions[0].status,
         session_start: allSessions[0].session_start,
-        paid: allSessions[0].paid,
-        paidType: typeof allSessions[0].paid
+        paid: allSessions[0].paid
+      } : null,
+      lastSession: allSessions[allSessions.length - 1] ? {
+        id: allSessions[allSessions.length - 1].id?.substring(0, 8) + '...',
+        session_start: allSessions[allSessions.length - 1].session_start,
+        paid: allSessions[allSessions.length - 1].paid
       } : null
     });
-
-    // Safety check: If we get an unexpectedly large dataset, log a warning
-    if (allSessions && allSessions.length > 10000) {
-      console.warn(`Very large dataset detected: ${allSessions.length} sessions. Consider additional optimization.`);
-    }
 
     // Get student data separately
     const { data: students, error: studentsError } = await supabase
