@@ -416,12 +416,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // PAGINATED FETCH: Use .range() to fetch all paid sessions in batches
       // Supabase enforces an implicit ~1000 row limit despite .limit()
+      // IMPORTANT: Must use .order() for deterministic pagination with .range()
       const BATCH_SIZE = 1000;
       const MAX_BATCHES = 30; // Safety limit: 30 * 1000 = 30,000 sessions max
       const allPaidSessions: any[] = [];
       const seenIds = new Set<string>();
       let currentBatch = 0;
       let hasMore = true;
+      let duplicatesFound = 0;
       
       console.log('📊 Admin Metrics: Starting paginated fetch of paid sessions for total earnings...');
       
@@ -433,6 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .from('sessions')
           .select('id, tutor_id, duration, rate')
           .eq('paid', true)
+          .order('id', { ascending: true })
           .range(rangeStart, rangeEnd);
         
         if (error) {
@@ -448,6 +451,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (!seenIds.has(session.id)) {
               seenIds.add(session.id);
               allPaidSessions.push(session);
+            } else {
+              duplicatesFound++;
             }
           }
         }
@@ -458,6 +463,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         currentBatch++;
+      }
+      
+      if (duplicatesFound > 0) {
+        console.warn(`⚠️ Admin Metrics: Found ${duplicatesFound} duplicate sessions during pagination`);
+      }
+      
+      if (currentBatch >= MAX_BATCHES && hasMore) {
+        console.warn(`⚠️ Admin Metrics: Reached max batch limit (${MAX_BATCHES}). Total earnings may be incomplete.`);
       }
       
       console.log(`📊 Admin Metrics: Fetched ${allPaidSessions.length} paid sessions in ${currentBatch} batches`);
@@ -596,12 +609,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // PAGINATED FETCH: Use .range() to fetch all paid sessions in batches
       // Supabase enforces an implicit ~1000 row limit despite .limit()
+      // IMPORTANT: Must use .order() for deterministic pagination with .range()
       const BATCH_SIZE = 1000;
       const MAX_BATCHES = 30; // Safety limit: 30 * 1000 = 30,000 sessions max
       const allSessions: any[] = [];
       const seenIds = new Set<string>();
       let currentBatch = 0;
       let hasMore = true;
+      let duplicatesFound = 0;
       
       console.log('📊 Top Tutors: Starting paginated fetch of paid sessions...');
       
@@ -613,6 +628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .from('sessions')
           .select('id, tutor_id, duration, rate')
           .eq('paid', true)
+          .order('id', { ascending: true })
           .range(rangeStart, rangeEnd);
         
         if (error) {
@@ -628,6 +644,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (!seenIds.has(session.id)) {
               seenIds.add(session.id);
               allSessions.push(session);
+            } else {
+              duplicatesFound++;
             }
           }
         }
@@ -638,6 +656,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         currentBatch++;
+      }
+      
+      if (duplicatesFound > 0) {
+        console.warn(`⚠️ Top Tutors: Found ${duplicatesFound} duplicate sessions during pagination`);
+      }
+      
+      if (currentBatch >= MAX_BATCHES && hasMore) {
+        console.warn(`⚠️ Top Tutors: Reached max batch limit (${MAX_BATCHES}). Earnings may be incomplete.`);
       }
       
       console.log(`📊 Top Tutors: Fetched ${allSessions.length} paid sessions in ${currentBatch} batches`);
