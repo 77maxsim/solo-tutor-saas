@@ -384,22 +384,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .select('*', { count: 'exact', head: true });
 
       // Active students (students with at least one session in last 30 days)
+      // Use paginated fetch to get all sessions, as Supabase has implicit row limits
       const thirtyDaysAgo = new Date(now);
       thirtyDaysAgo.setDate(now.getDate() - 30);
       
-      const { data: activeSessions } = await supabase
-        .from('sessions')
-        .select('student_id')
-        .gte('session_start', thirtyDaysAgo.toISOString())
-        .not('student_id', 'is', null);
+      const STUDENT_BATCH_SIZE = 1000;
+      const MAX_STUDENT_BATCHES = 30;
+      const allStudentIds = new Set<string>();
+      let studentBatch = 0;
+      let hasMoreStudents = true;
+      
+      console.log('📊 Admin Metrics: Starting paginated fetch for active students...');
+      
+      while (hasMoreStudents && studentBatch < MAX_STUDENT_BATCHES) {
+        const rangeStart = studentBatch * STUDENT_BATCH_SIZE;
+        const rangeEnd = rangeStart + STUDENT_BATCH_SIZE - 1;
+        
+        const { data: studentSessions, error } = await supabase
+          .from('sessions')
+          .select('student_id')
+          .gte('session_start', thirtyDaysAgo.toISOString())
+          .lte('session_start', now.toISOString())
+          .not('student_id', 'is', null)
+          .order('id', { ascending: true })
+          .range(rangeStart, rangeEnd);
+        
+        if (error) {
+          console.error(`Error fetching student batch ${studentBatch}:`, error);
+          break;
+        }
+        
+        const batchCount = studentSessions?.length || 0;
+        
+        if (studentSessions) {
+          for (const session of studentSessions) {
+            if (session.student_id) {
+              allStudentIds.add(session.student_id);
+            }
+          }
+        }
+        
+        if (batchCount < STUDENT_BATCH_SIZE) {
+          hasMoreStudents = false;
+        }
+        
+        studentBatch++;
+      }
+      
+      console.log(`📊 Admin Metrics: Found ${allStudentIds.size} unique active students from ${studentBatch} batches`);
+      const activeStudents = allStudentIds.size;
 
-      const activeStudents = new Set(activeSessions?.map(s => s.student_id)).size;
-
-      // Sessions this week
+      // Sessions this week - count only sessions that have already occurred (not future scheduled)
       const { count: sessionsThisWeek } = await supabase
         .from('sessions')
         .select('*', { count: 'exact', head: true })
-        .gte('session_start', startOfWeek.toISOString());
+        .gte('session_start', startOfWeek.toISOString())
+        .lte('session_start', now.toISOString());
 
       // Total earnings (paid sessions) - convert all currencies to USD
       // First get all tutors to map their currencies reliably
