@@ -372,8 +372,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Get metrics
       const now = new Date();
+      // Use Monday as start of week (matching tutor dashboards)
+      // getDay() returns 0=Sunday, 1=Monday, etc.
+      // To get Monday: if Sunday (0), go back 6 days; otherwise go back (day - 1) days
+      const dayOfWeek = now.getDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay());
+      startOfWeek.setDate(now.getDate() - daysToMonday);
       startOfWeek.setHours(0, 0, 0, 0);
 
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
