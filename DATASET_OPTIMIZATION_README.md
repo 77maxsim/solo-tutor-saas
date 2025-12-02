@@ -29,6 +29,87 @@ SELECT id, name FROM students WHERE tutor_id = ?
 -- Combined in JavaScript
 ```
 
+---
+
+## Paginated Batch Fetching
+
+### The Problem
+
+Supabase enforces an implicit ~1000 row limit on queries. When a tutor has more than 1000 sessions, a simple query like `SELECT * FROM sessions WHERE tutor_id = ?` will only return the first 1000 rows, causing **data loss**.
+
+### The Solution: Batch Fetching
+
+Instead of one query, the system fetches data in batches of 1000 using Supabase's `.range()` method:
+
+```javascript
+// Batch fetching approach
+const BATCH_SIZE = 1000;
+let batch = 0;
+let allSessions = [];
+
+while (hasMore && batch < MAX_BATCHES) {
+  const { data } = await supabase
+    .from('sessions')
+    .range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1);
+  
+  allSessions.push(...data);
+  hasMore = data.length === BATCH_SIZE;
+  batch++;
+}
+```
+
+### Implementation Details
+
+#### Tutor Dashboard (Client-Side)
+Located in `client/src/lib/queryOptimizer.ts`:
+
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| `BATCH_SIZE` | 1,000 | Rows per batch |
+| `MAX_BATCHES` | 20 | Safety limit |
+| **Max Sessions** | 20,000 | Per tutor |
+
+Features:
+- **Deduplication**: Uses `Set` to prevent duplicate sessions across batches
+- **Graceful Degradation**: Falls back to standard query if batch fetching fails
+- **Performance Logging**: Tracks batch count and execution time
+
+#### Admin Dashboard (Server-Side)
+Located in `server/routes.ts`:
+
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| `BATCH_SIZE` | 1,000 | Rows per batch |
+| `MAX_BATCHES` | 30 | Safety limit (higher for admin) |
+| **Max Sessions** | 30,000 | Across all tutors |
+
+Used as fallback when RPC functions are not installed.
+
+### Console Logging
+
+Tutor dashboard logs:
+```
+🔥 PAGINATED FETCH: Starting batch retrieval...
+🔥 Batch 1: Retrieved 1000 sessions (range 0-999)
+🔥 Batch 2: Retrieved 1000 sessions (range 1000-1999)
+🔥 Batch 3: Retrieved 387 sessions (range 2000-2999)
+🔥 Pagination complete: Last batch had 387 rows (< 1000)
+```
+
+### When It Activates
+
+| Context | Trigger | Max Sessions |
+|---------|---------|--------------|
+| Tutor Dashboard | 500+ sessions | 20,000 |
+| Admin Dashboard (Fallback) | RPC not available | 30,000 |
+
+### Safety Features
+
+1. **Maximum Batch Limit**: Prevents infinite loops
+2. **Deduplication**: Handles potential overlapping rows
+3. **Error Recovery**: Continues with partial data if a batch fails
+4. **Fallback Chain**: Optimized → Standard → Empty array
+
 ## Safety Measures
 
 ### Performance Monitoring
