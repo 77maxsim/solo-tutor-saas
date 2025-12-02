@@ -40,6 +40,9 @@ Preferred communication style: Simple, everyday language.
 - **Notifications**: Telegram bot integration for daily summaries, booking alerts, and broadcast messages.
 - **Error Tracking & Monitoring**: Sentry integration for comprehensive error tracking, performance monitoring, and session replay on both frontend and backend.
 - **Admin Dashboard**: Comprehensive dashboard with KPIs, analytics charts, top tutors performance metrics, and multi-currency earnings conversion to USD.
+    - **SQL Aggregation for Scalability**: Admin metrics use PostgreSQL RPC functions for server-side aggregation (handles millions of sessions). Falls back to paginated batch fetching if RPC functions not installed.
+    - **RPC Functions**: `get_active_students_count`, `get_earnings_by_tutor`, `get_top_tutors_earnings`, `get_active_tutors_count`, `get_unpaid_sessions_count` - defined in `create-admin-aggregate-functions.sql`.
+    - **Week Calculation**: Uses Monday as start of week (matching individual tutor dashboards).
 - **Student Management**: Features a tagging system, bulk operations (e.g., archiving), favoriting, and profile picture management.
 - **Session Management**: Includes smart rate prefill, bulk actions (e.g., mark as paid), session notes with sanitization, and recurring sessions functionality.
 - **Health Monitoring**: Health check endpoint (`/api/health`) for uptime monitoring.

@@ -368,13 +368,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin endpoints - check if user is admin first, then apply rate limiting
+  // Uses server-side SQL aggregation for scalability (handles millions of sessions)
   app.get("/api/admin/metrics", authenticateUser, authorizeAdmin, adminLimiter, async (req, res) => {
     try {
-      // Get metrics
       const now = new Date();
+      const startTime = Date.now();
+      
       // Use Monday as start of week (matching tutor dashboards)
-      // getDay() returns 0=Sunday, 1=Monday, etc.
-      // To get Monday: if Sunday (0), go back 6 days; otherwise go back (day - 1) days
       const dayOfWeek = now.getDay();
       const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       const startOfWeek = new Date(now);
@@ -382,177 +382,173 @@ export async function registerRoutes(app: Express): Promise<Server> {
       startOfWeek.setHours(0, 0, 0, 0);
 
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      console.log('📊 Admin Metrics: Using SQL aggregation for scalable metrics...');
+      
+      // Try to use RPC functions for aggregation (scalable approach)
+      // Falls back to direct queries if RPC functions don't exist
+      let activeStudents = 0;
+      let totalEarningsUSD = 0;
+      let weeklyActiveUsers = 0;
+      let monthlyActiveUsers = 0;
+      let unpaidSessions = 0;
+      let useRpcFunctions = true;
 
-      // Total tutors
+      // 1. Total tutors (simple count, always works)
       const { count: totalTutors } = await supabase
         .from('tutors')
         .select('*', { count: 'exact', head: true });
 
-      // Active students (students with at least one session in last 30 days)
-      // Use paginated fetch to get all sessions, as Supabase has implicit row limits
-      const thirtyDaysAgo = new Date(now);
-      thirtyDaysAgo.setDate(now.getDate() - 30);
-      
-      const STUDENT_BATCH_SIZE = 1000;
-      const MAX_STUDENT_BATCHES = 30;
-      const allStudentIds = new Set<string>();
-      let studentBatch = 0;
-      let hasMoreStudents = true;
-      
-      console.log('📊 Admin Metrics: Starting paginated fetch for active students...');
-      
-      while (hasMoreStudents && studentBatch < MAX_STUDENT_BATCHES) {
-        const rangeStart = studentBatch * STUDENT_BATCH_SIZE;
-        const rangeEnd = rangeStart + STUDENT_BATCH_SIZE - 1;
-        
-        const { data: studentSessions, error } = await supabase
-          .from('sessions')
-          .select('student_id')
-          .gte('session_start', thirtyDaysAgo.toISOString())
-          .lte('session_start', now.toISOString())
-          .not('student_id', 'is', null)
-          .order('id', { ascending: true })
-          .range(rangeStart, rangeEnd);
-        
-        if (error) {
-          console.error(`Error fetching student batch ${studentBatch}:`, error);
-          break;
-        }
-        
-        const batchCount = studentSessions?.length || 0;
-        
-        if (studentSessions) {
-          for (const session of studentSessions) {
-            if (session.student_id) {
-              allStudentIds.add(session.student_id);
-            }
-          }
-        }
-        
-        if (batchCount < STUDENT_BATCH_SIZE) {
-          hasMoreStudents = false;
-        }
-        
-        studentBatch++;
-      }
-      
-      console.log(`📊 Admin Metrics: Found ${allStudentIds.size} unique active students from ${studentBatch} batches`);
-      const activeStudents = allStudentIds.size;
-
-      // Sessions this week - count only sessions that have already occurred (not future scheduled)
+      // 2. Sessions this week (simple count with filter, always works)
       const { count: sessionsThisWeek } = await supabase
         .from('sessions')
         .select('*', { count: 'exact', head: true })
         .gte('session_start', startOfWeek.toISOString())
         .lte('session_start', now.toISOString());
 
-      // Total earnings (paid sessions) - convert all currencies to USD
-      // First get all tutors to map their currencies reliably
-      const { data: allTutors } = await supabase
-        .from('tutors')
-        .select('id, currency');
+      // 3. Try RPC function for active students (COUNT DISTINCT)
+      const { data: activeStudentsResult, error: activeStudentsError } = await supabase
+        .rpc('get_active_students_count', { days_back: 30 });
       
-      const tutorCurrencyMap: { [id: string]: string } = {};
-      if (allTutors) {
-        for (const tutor of allTutors) {
-          tutorCurrencyMap[tutor.id] = tutor.currency || 'USD';
+      if (activeStudentsError) {
+        console.log('📊 RPC get_active_students_count not available, using fallback...');
+        useRpcFunctions = false;
+      } else {
+        activeStudents = activeStudentsResult || 0;
+      }
+
+      // 4. Try RPC function for earnings aggregation
+      const { data: earningsData, error: earningsError } = await supabase
+        .rpc('get_earnings_by_tutor', { paid_only: true });
+      
+      if (earningsError) {
+        console.log('📊 RPC get_earnings_by_tutor not available, using fallback...');
+        useRpcFunctions = false;
+      } else if (earningsData) {
+        // Convert earnings from each tutor's currency to USD
+        for (const tutorEarnings of earningsData) {
+          const earningsUSD = await convertToUSD(
+            parseFloat(tutorEarnings.total_earnings) || 0,
+            tutorEarnings.tutor_currency || 'USD'
+          );
+          totalEarningsUSD += earningsUSD;
         }
       }
 
-      // PAGINATED FETCH: Use .range() to fetch all paid sessions in batches
-      // Supabase enforces an implicit ~1000 row limit despite .limit()
-      // IMPORTANT: Must use .order() for deterministic pagination with .range()
-      const BATCH_SIZE = 1000;
-      const MAX_BATCHES = 30; // Safety limit: 30 * 1000 = 30,000 sessions max
-      const allPaidSessions: any[] = [];
-      const seenIds = new Set<string>();
-      let currentBatch = 0;
-      let hasMore = true;
-      let duplicatesFound = 0;
+      // 5. Try RPC for unpaid sessions
+      const { data: unpaidResult, error: unpaidError } = await supabase
+        .rpc('get_unpaid_sessions_count');
       
-      console.log('📊 Admin Metrics: Starting paginated fetch of paid sessions for total earnings...');
-      
-      while (hasMore && currentBatch < MAX_BATCHES) {
-        const rangeStart = currentBatch * BATCH_SIZE;
-        const rangeEnd = rangeStart + BATCH_SIZE - 1;
-        
-        const { data: batchData, error } = await supabase
+      if (unpaidError) {
+        // Fallback to direct count
+        const { count } = await supabase
           .from('sessions')
-          .select('id, tutor_id, duration, rate')
-          .eq('paid', true)
-          .order('id', { ascending: true })
-          .range(rangeStart, rangeEnd);
-        
-        if (error) {
-          console.error(`Error fetching batch ${currentBatch}:`, error);
-          break;
-        }
-        
-        const batchCount = batchData?.length || 0;
-        
-        // Add unique sessions (deduplicate by ID)
-        if (batchData) {
-          for (const session of batchData) {
-            if (!seenIds.has(session.id)) {
-              seenIds.add(session.id);
-              allPaidSessions.push(session);
-            } else {
-              duplicatesFound++;
-            }
-          }
-        }
-        
-        // Check if we've reached the end
-        if (batchCount < BATCH_SIZE) {
-          hasMore = false;
-        }
-        
-        currentBatch++;
+          .select('*', { count: 'exact', head: true })
+          .eq('paid', false)
+          .lte('session_end', now.toISOString());
+        unpaidSessions = count || 0;
+      } else {
+        unpaidSessions = unpaidResult || 0;
       }
+
+      // 6. Try RPC for weekly active tutors
+      const { data: weeklyResult, error: weeklyError } = await supabase
+        .rpc('get_active_tutors_count', { days_back: 7 });
       
-      if (duplicatesFound > 0) {
-        console.warn(`⚠️ Admin Metrics: Found ${duplicatesFound} duplicate sessions during pagination`);
-      }
-      
-      if (currentBatch >= MAX_BATCHES && hasMore) {
-        console.warn(`⚠️ Admin Metrics: Reached max batch limit (${MAX_BATCHES}). Total earnings may be incomplete.`);
-      }
-      
-      console.log(`📊 Admin Metrics: Fetched ${allPaidSessions.length} paid sessions in ${currentBatch} batches`);
-
-      let totalEarningsUSD = 0;
-      for (const session of allPaidSessions) {
-        const earningsInCurrency = (session.duration / 60) * parseFloat(session.rate);
-        const currency = tutorCurrencyMap[session.tutor_id] || 'USD';
-        const earningsUSD = await convertToUSD(earningsInCurrency, currency);
-        totalEarningsUSD += earningsUSD;
+      if (weeklyError) {
+        // Fallback
+        const sevenDaysAgo = new Date(now);
+        sevenDaysAgo.setDate(now.getDate() - 7);
+        const { data: weeklyTutors } = await supabase
+          .from('sessions')
+          .select('tutor_id')
+          .gte('session_start', sevenDaysAgo.toISOString());
+        weeklyActiveUsers = new Set(weeklyTutors?.map(s => s.tutor_id)).size;
+      } else {
+        weeklyActiveUsers = weeklyResult || 0;
       }
 
-      // Unpaid sessions count
-      const { count: unpaidSessions } = await supabase
-        .from('sessions')
-        .select('*', { count: 'exact', head: true })
-        .eq('paid', false)
-        .lte('session_end', now.toISOString());
-
-      // Weekly Active Users (tutors with sessions in last 7 days)
-      const sevenDaysAgo = new Date(now);
-      sevenDaysAgo.setDate(now.getDate() - 7);
-
-      const { data: weeklyActiveTutors } = await supabase
-        .from('sessions')
-        .select('tutor_id')
-        .gte('session_start', sevenDaysAgo.toISOString());
-
-      const weeklyActiveUsers = new Set(weeklyActiveTutors?.map(s => s.tutor_id)).size;
-
-      // Monthly Active Users
-      const { data: monthlyActiveTutors } = await supabase
+      // 7. Monthly active users (use start of month)
+      const { data: monthlyTutors } = await supabase
         .from('sessions')
         .select('tutor_id')
         .gte('session_start', startOfMonth.toISOString());
+      monthlyActiveUsers = new Set(monthlyTutors?.map(s => s.tutor_id)).size;
 
-      const monthlyActiveUsers = new Set(monthlyActiveTutors?.map(s => s.tutor_id)).size;
+      // If RPC functions aren't available, use fallback for remaining metrics
+      if (!useRpcFunctions) {
+        console.log('📊 Admin Metrics: RPC functions not available. Please run create-admin-aggregate-functions.sql in Supabase SQL Editor.');
+        console.log('📊 Admin Metrics: Using paginated fallback (slower, limited to 30k sessions)...');
+        
+        // Fallback: Active students via pagination
+        const thirtyDaysAgo = new Date(now);
+        thirtyDaysAgo.setDate(now.getDate() - 30);
+        
+        const BATCH_SIZE = 1000;
+        const MAX_BATCHES = 30;
+        const allStudentIds = new Set<string>();
+        let batch = 0;
+        let hasMore = true;
+        
+        while (hasMore && batch < MAX_BATCHES) {
+          const { data: sessions } = await supabase
+            .from('sessions')
+            .select('student_id')
+            .gte('session_start', thirtyDaysAgo.toISOString())
+            .lte('session_start', now.toISOString())
+            .not('student_id', 'is', null)
+            .order('id', { ascending: true })
+            .range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1);
+          
+          if (!sessions || sessions.length < BATCH_SIZE) hasMore = false;
+          sessions?.forEach(s => s.student_id && allStudentIds.add(s.student_id));
+          batch++;
+        }
+        activeStudents = allStudentIds.size;
+
+        // Fallback: Earnings via pagination
+        const { data: allTutors } = await supabase
+          .from('tutors')
+          .select('id, currency');
+        
+        const tutorCurrencyMap: { [id: string]: string } = {};
+        allTutors?.forEach(t => tutorCurrencyMap[t.id] = t.currency || 'USD');
+
+        batch = 0;
+        hasMore = true;
+        totalEarningsUSD = 0;
+        const seenIds = new Set<string>();
+        
+        while (hasMore && batch < MAX_BATCHES) {
+          const { data: sessions } = await supabase
+            .from('sessions')
+            .select('id, tutor_id, duration, rate')
+            .eq('paid', true)
+            .order('id', { ascending: true })
+            .range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1);
+          
+          if (!sessions || sessions.length < BATCH_SIZE) hasMore = false;
+          
+          if (sessions) {
+            for (const s of sessions) {
+              if (!seenIds.has(s.id)) {
+                seenIds.add(s.id);
+                const earnings = (s.duration / 60) * parseFloat(s.rate);
+                const currency = tutorCurrencyMap[s.tutor_id] || 'USD';
+                totalEarningsUSD += await convertToUSD(earnings, currency);
+              }
+            }
+          }
+          batch++;
+        }
+        
+        if (batch >= MAX_BATCHES && hasMore) {
+          console.warn('⚠️ Admin Metrics: Reached 30k session limit. Install RPC functions for unlimited scalability.');
+        }
+      }
+
+      const elapsed = Date.now() - startTime;
+      console.log(`📊 Admin Metrics: Completed in ${elapsed}ms (RPC: ${useRpcFunctions})`);
 
       res.json({
         totalTutors,
@@ -632,115 +628,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin: Get top tutors
+  // Admin: Get top tutors - uses SQL aggregation for scalability
   app.get("/api/admin/top-tutors", authenticateUser, authorizeAdmin, adminLimiter, async (req, res) => {
     try {
-      // First, get all tutors with their info for reliable currency data
+      const startTime = Date.now();
+      console.log('📊 Top Tutors: Fetching with SQL aggregation...');
+      
+      // Try RPC function first (returns pre-aggregated data)
+      const { data: rpcResult, error: rpcError } = await supabase
+        .rpc('get_top_tutors_earnings', { limit_count: 10 });
+      
+      if (!rpcError && rpcResult) {
+        // RPC function available - convert to USD and return
+        const topTutors = [];
+        for (const tutor of rpcResult) {
+          const earningsUSD = await convertToUSD(
+            parseFloat(tutor.total_earnings) || 0,
+            tutor.tutor_currency || 'USD'
+          );
+          topTutors.push({
+            tutorId: tutor.tutor_id,
+            name: tutor.tutor_name,
+            email: tutor.tutor_email,
+            totalEarnings: earningsUSD,
+            sessionCount: parseInt(tutor.session_count) || 0
+          });
+        }
+        
+        // Sort by USD earnings (may differ from original currency order)
+        topTutors.sort((a, b) => b.totalEarnings - a.totalEarnings);
+        
+        const elapsed = Date.now() - startTime;
+        console.log(`📊 Top Tutors: Completed via RPC in ${elapsed}ms`);
+        return res.json(topTutors);
+      }
+      
+      // Fallback: paginated batch fetch
+      console.log('📊 Top Tutors: RPC not available, using paginated fallback...');
+      
       const { data: tutors } = await supabase
         .from('tutors')
         .select('id, full_name, email, currency');
       
-      // Create a map of tutor info by ID for fast lookup
       const tutorMap: { [id: string]: { name: string; email: string; currency: string } } = {};
-      if (tutors) {
-        for (const tutor of tutors) {
-          tutorMap[tutor.id] = {
-            name: tutor.full_name || 'Unknown',
-            email: tutor.email || '',
-            currency: tutor.currency || 'USD'
-          };
-        }
-      }
+      tutors?.forEach(t => {
+        tutorMap[t.id] = {
+          name: t.full_name || 'Unknown',
+          email: t.email || '',
+          currency: t.currency || 'USD'
+        };
+      });
 
-      // PAGINATED FETCH: Use .range() to fetch all paid sessions in batches
-      // Supabase enforces an implicit ~1000 row limit despite .limit()
-      // IMPORTANT: Must use .order() for deterministic pagination with .range()
       const BATCH_SIZE = 1000;
-      const MAX_BATCHES = 30; // Safety limit: 30 * 1000 = 30,000 sessions max
-      const allSessions: any[] = [];
+      const MAX_BATCHES = 30;
       const seenIds = new Set<string>();
-      let currentBatch = 0;
+      const tutorStatsMap: { [tutorId: string]: any } = {};
+      let batch = 0;
       let hasMore = true;
-      let duplicatesFound = 0;
       
-      console.log('📊 Top Tutors: Starting paginated fetch of paid sessions...');
-      
-      while (hasMore && currentBatch < MAX_BATCHES) {
-        const rangeStart = currentBatch * BATCH_SIZE;
-        const rangeEnd = rangeStart + BATCH_SIZE - 1;
-        
-        const { data: batchData, error } = await supabase
+      while (hasMore && batch < MAX_BATCHES) {
+        const { data: sessions } = await supabase
           .from('sessions')
           .select('id, tutor_id, duration, rate')
           .eq('paid', true)
           .order('id', { ascending: true })
-          .range(rangeStart, rangeEnd);
+          .range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1);
         
-        if (error) {
-          console.error(`Error fetching batch ${currentBatch}:`, error);
-          break;
-        }
+        if (!sessions || sessions.length < BATCH_SIZE) hasMore = false;
         
-        const batchCount = batchData?.length || 0;
-        
-        // Add unique sessions (deduplicate by ID)
-        if (batchData) {
-          for (const session of batchData) {
-            if (!seenIds.has(session.id)) {
-              seenIds.add(session.id);
-              allSessions.push(session);
-            } else {
-              duplicatesFound++;
+        if (sessions) {
+          for (const s of sessions) {
+            if (!seenIds.has(s.id)) {
+              seenIds.add(s.id);
+              const tutorInfo = tutorMap[s.tutor_id];
+              const earnings = (s.duration / 60) * parseFloat(s.rate);
+              const earningsUSD = await convertToUSD(earnings, tutorInfo?.currency || 'USD');
+              
+              if (!tutorStatsMap[s.tutor_id]) {
+                tutorStatsMap[s.tutor_id] = {
+                  tutorId: s.tutor_id,
+                  name: tutorInfo?.name || 'Unknown',
+                  email: tutorInfo?.email || '',
+                  totalEarnings: 0,
+                  sessionCount: 0
+                };
+              }
+              tutorStatsMap[s.tutor_id].totalEarnings += earningsUSD;
+              tutorStatsMap[s.tutor_id].sessionCount += 1;
             }
           }
         }
-        
-        // Check if we've reached the end
-        if (batchCount < BATCH_SIZE) {
-          hasMore = false;
-        }
-        
-        currentBatch++;
+        batch++;
       }
       
-      if (duplicatesFound > 0) {
-        console.warn(`⚠️ Top Tutors: Found ${duplicatesFound} duplicate sessions during pagination`);
-      }
-      
-      if (currentBatch >= MAX_BATCHES && hasMore) {
-        console.warn(`⚠️ Top Tutors: Reached max batch limit (${MAX_BATCHES}). Earnings may be incomplete.`);
-      }
-      
-      console.log(`📊 Top Tutors: Fetched ${allSessions.length} paid sessions in ${currentBatch} batches`);
-
-      // Aggregate by tutor with USD conversion using reliable tutor currency data
-      const tutorStatsMap: { [tutorId: string]: any } = {};
-      
-      for (const session of allSessions) {
-        const tutorId = session.tutor_id;
-        const tutorInfo = tutorMap[tutorId];
-        const earningsInCurrency = (session.duration / 60) * parseFloat(session.rate);
-        const currency = tutorInfo?.currency || 'USD';
-        const earningsUSD = await convertToUSD(earningsInCurrency, currency);
-        
-        if (!tutorStatsMap[tutorId]) {
-          tutorStatsMap[tutorId] = {
-            tutorId,
-            name: tutorInfo?.name || 'Unknown',
-            email: tutorInfo?.email || '',
-            totalEarnings: 0,
-            sessionCount: 0
-          };
-        }
-        
-        tutorStatsMap[tutorId].totalEarnings += earningsUSD;
-        tutorStatsMap[tutorId].sessionCount += 1;
+      if (batch >= MAX_BATCHES && hasMore) {
+        console.warn('⚠️ Top Tutors: Reached 30k limit. Install RPC functions for unlimited scalability.');
       }
 
       const topTutors = Object.values(tutorStatsMap)
         .sort((a: any, b: any) => b.totalEarnings - a.totalEarnings)
         .slice(0, 10);
 
+      const elapsed = Date.now() - startTime;
+      console.log(`📊 Top Tutors: Completed via fallback in ${elapsed}ms`);
+      
       res.json(topTutors);
     } catch (error) {
       console.error('Top tutors error:', error);
