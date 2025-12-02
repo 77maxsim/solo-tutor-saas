@@ -414,21 +414,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Use .limit(10000) to override Supabase's default 1000-row limit for accurate totals
-      const { data: paidSessions } = await supabase
-        .from('sessions')
-        .select('tutor_id, duration, rate')
-        .eq('paid', true)
-        .limit(10000);
+      // PAGINATED FETCH: Use .range() to fetch all paid sessions in batches
+      // Supabase enforces an implicit ~1000 row limit despite .limit()
+      const BATCH_SIZE = 1000;
+      const MAX_BATCHES = 30; // Safety limit: 30 * 1000 = 30,000 sessions max
+      const allPaidSessions: any[] = [];
+      const seenIds = new Set<string>();
+      let currentBatch = 0;
+      let hasMore = true;
+      
+      console.log('📊 Admin Metrics: Starting paginated fetch of paid sessions for total earnings...');
+      
+      while (hasMore && currentBatch < MAX_BATCHES) {
+        const rangeStart = currentBatch * BATCH_SIZE;
+        const rangeEnd = rangeStart + BATCH_SIZE - 1;
+        
+        const { data: batchData, error } = await supabase
+          .from('sessions')
+          .select('id, tutor_id, duration, rate')
+          .eq('paid', true)
+          .range(rangeStart, rangeEnd);
+        
+        if (error) {
+          console.error(`Error fetching batch ${currentBatch}:`, error);
+          break;
+        }
+        
+        const batchCount = batchData?.length || 0;
+        
+        // Add unique sessions (deduplicate by ID)
+        if (batchData) {
+          for (const session of batchData) {
+            if (!seenIds.has(session.id)) {
+              seenIds.add(session.id);
+              allPaidSessions.push(session);
+            }
+          }
+        }
+        
+        // Check if we've reached the end
+        if (batchCount < BATCH_SIZE) {
+          hasMore = false;
+        }
+        
+        currentBatch++;
+      }
+      
+      console.log(`📊 Admin Metrics: Fetched ${allPaidSessions.length} paid sessions in ${currentBatch} batches`);
 
       let totalEarningsUSD = 0;
-      if (paidSessions) {
-        for (const session of paidSessions) {
-          const earningsInCurrency = (session.duration / 60) * parseFloat(session.rate);
-          const currency = tutorCurrencyMap[session.tutor_id] || 'USD';
-          const earningsUSD = await convertToUSD(earningsInCurrency, currency);
-          totalEarningsUSD += earningsUSD;
-        }
+      for (const session of allPaidSessions) {
+        const earningsInCurrency = (session.duration / 60) * parseFloat(session.rate);
+        const currency = tutorCurrencyMap[session.tutor_id] || 'USD';
+        const earningsUSD = await convertToUSD(earningsInCurrency, currency);
+        totalEarningsUSD += earningsUSD;
       }
 
       // Unpaid sessions count
