@@ -555,37 +555,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Get all paid sessions with high limit to avoid Supabase's default 1000 row limit
-      const { data: sessions } = await supabase
-        .from('sessions')
-        .select('tutor_id, duration, rate, paid')
-        .eq('paid', true)
-        .limit(10000);
+      // PAGINATED FETCH: Use .range() to fetch all paid sessions in batches
+      // Supabase enforces an implicit ~1000 row limit despite .limit()
+      const BATCH_SIZE = 1000;
+      const MAX_BATCHES = 30; // Safety limit: 30 * 1000 = 30,000 sessions max
+      const allSessions: any[] = [];
+      const seenIds = new Set<string>();
+      let currentBatch = 0;
+      let hasMore = true;
+      
+      console.log('📊 Top Tutors: Starting paginated fetch of paid sessions...');
+      
+      while (hasMore && currentBatch < MAX_BATCHES) {
+        const rangeStart = currentBatch * BATCH_SIZE;
+        const rangeEnd = rangeStart + BATCH_SIZE - 1;
+        
+        const { data: batchData, error } = await supabase
+          .from('sessions')
+          .select('id, tutor_id, duration, rate')
+          .eq('paid', true)
+          .range(rangeStart, rangeEnd);
+        
+        if (error) {
+          console.error(`Error fetching batch ${currentBatch}:`, error);
+          break;
+        }
+        
+        const batchCount = batchData?.length || 0;
+        
+        // Add unique sessions (deduplicate by ID)
+        if (batchData) {
+          for (const session of batchData) {
+            if (!seenIds.has(session.id)) {
+              seenIds.add(session.id);
+              allSessions.push(session);
+            }
+          }
+        }
+        
+        // Check if we've reached the end
+        if (batchCount < BATCH_SIZE) {
+          hasMore = false;
+        }
+        
+        currentBatch++;
+      }
+      
+      console.log(`📊 Top Tutors: Fetched ${allSessions.length} paid sessions in ${currentBatch} batches`);
 
       // Aggregate by tutor with USD conversion using reliable tutor currency data
       const tutorStatsMap: { [tutorId: string]: any } = {};
       
-      if (sessions) {
-        for (const session of sessions) {
-          const tutorId = session.tutor_id;
-          const tutorInfo = tutorMap[tutorId];
-          const earningsInCurrency = (session.duration / 60) * parseFloat(session.rate);
-          const currency = tutorInfo?.currency || 'USD';
-          const earningsUSD = await convertToUSD(earningsInCurrency, currency);
-          
-          if (!tutorStatsMap[tutorId]) {
-            tutorStatsMap[tutorId] = {
-              tutorId,
-              name: tutorInfo?.name || 'Unknown',
-              email: tutorInfo?.email || '',
-              totalEarnings: 0,
-              sessionCount: 0
-            };
-          }
-          
-          tutorStatsMap[tutorId].totalEarnings += earningsUSD;
-          tutorStatsMap[tutorId].sessionCount += 1;
+      for (const session of allSessions) {
+        const tutorId = session.tutor_id;
+        const tutorInfo = tutorMap[tutorId];
+        const earningsInCurrency = (session.duration / 60) * parseFloat(session.rate);
+        const currency = tutorInfo?.currency || 'USD';
+        const earningsUSD = await convertToUSD(earningsInCurrency, currency);
+        
+        if (!tutorStatsMap[tutorId]) {
+          tutorStatsMap[tutorId] = {
+            tutorId,
+            name: tutorInfo?.name || 'Unknown',
+            email: tutorInfo?.email || '',
+            totalEarnings: 0,
+            sessionCount: 0
+          };
         }
+        
+        tutorStatsMap[tutorId].totalEarnings += earningsUSD;
+        tutorStatsMap[tutorId].sessionCount += 1;
       }
 
       const topTutors = Object.values(tutorStatsMap)
