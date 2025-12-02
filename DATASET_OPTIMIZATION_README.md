@@ -120,3 +120,85 @@ The system uses three main components:
    - Specialized optimization for dashboard statistics
 
 This ensures any future tutor with extensive session data will automatically receive optimized performance without any manual configuration or code changes.
+
+---
+
+## Admin Dashboard: SQL Aggregation System
+
+### Overview
+
+The Admin Dashboard uses a separate, more scalable approach using PostgreSQL RPC functions for server-side aggregation. This enables the admin dashboard to handle millions of sessions instantly.
+
+### How It Works
+
+Instead of fetching all sessions and counting them in JavaScript:
+```javascript
+// Old approach (slow, limited)
+const sessions = await fetchAll('sessions'); // 30,000 max
+const count = sessions.length;
+```
+
+The system uses SQL to do the counting:
+```sql
+-- New approach (instant, unlimited)
+SELECT COUNT(*) FROM sessions WHERE ...
+```
+
+### RPC Functions
+
+Six PostgreSQL functions handle all admin metrics:
+
+| Function | Purpose | Returns |
+|----------|---------|---------|
+| `get_active_students_count(days)` | Unique students with sessions | Integer |
+| `get_earnings_by_tutor(paid_only)` | Earnings per tutor/currency | Table |
+| `get_top_tutors_earnings(limit)` | Top earners with aggregates | Table |
+| `get_active_tutors_count(days)` | Active tutors in period | Integer |
+| `get_unpaid_sessions_count()` | Unpaid completed sessions | Integer |
+| `get_sessions_count_in_range(start, end)` | Sessions in date range | Integer |
+
+### Installation
+
+Run the SQL in `create-admin-aggregate-functions.sql` via Supabase SQL Editor:
+
+1. Go to Supabase Dashboard → SQL Editor
+2. Create new query
+3. Paste contents of `create-admin-aggregate-functions.sql`
+4. Click "Run"
+
+### Fallback Behavior
+
+If RPC functions are not installed:
+- System automatically uses paginated batch fetching
+- Limited to 30,000 sessions maximum
+- Console shows: `(RPC: false)`
+
+When RPC is active:
+- Unlimited scalability
+- Console shows: `(RPC: true)`
+
+### Performance Comparison
+
+| Metric | Fallback Mode | RPC Mode | Improvement |
+|--------|---------------|----------|-------------|
+| Admin Metrics | ~3,500ms | ~1,400ms | 2.5x faster |
+| Top Tutors | ~3,000ms | ~236ms | 12x faster |
+| Scalability | 30k sessions | Unlimited | ∞ |
+
+### Monitoring
+
+Console logs indicate the mode:
+```
+📊 Admin Metrics: Completed in 1406ms (RPC: true)
+📊 Top Tutors: Completed via RPC in 236ms
+```
+
+Or in fallback mode:
+```
+📊 Admin Metrics: RPC functions not available, using fallback...
+📊 Admin Metrics: Completed in 3461ms (RPC: false)
+```
+
+### Week Calculation
+
+Both admin dashboard and individual tutor dashboards use **Monday as the start of week** for consistent metrics across the platform.
