@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
@@ -15,11 +14,18 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Calendar, Clock, DollarSign, CheckCircle, XCircle, ChevronDown, ChevronRight, FolderOpen, Folder } from "lucide-react";
-import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Calendar, Clock, DollarSign, CheckCircle, XCircle, ChevronDown, ChevronRight, FolderOpen, Folder, AlertTriangle, User, UserX } from "lucide-react";
+import { formatDate, formatTime, formatCurrency, cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { SessionDetailsModal } from "./session-details-modal";
 import { ScheduleSessionModal } from "./schedule-session-modal";
+import { useCancellationStats, formatCancellationRate } from "@/hooks/useCancellationStats";
 
 interface Session {
   id: string;
@@ -91,6 +97,11 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
       return data || [];
     },
     enabled: !!student && isOpen,
+  });
+
+  const { data: cancellationStats } = useCancellationStats({
+    studentId: student?.id,
+    minSessions: 5,
   });
 
   // Separate sessions into upcoming and past
@@ -224,6 +235,58 @@ export function StudentSessionHistoryModal({ isOpen, onClose, student }: Student
               📅 Session History - {student?.name}
             </DialogTitle>
           </DialogHeader>
+
+          {/* Cancellation Stats */}
+          {cancellationStats && cancellationStats.totalCancelled > 0 && (
+            <div className="px-1 py-2 border-b">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className={cn(
+                          "h-4 w-4",
+                          cancellationStats.cancellationRate > 15 ? "text-red-500" :
+                          cancellationStats.cancellationRate > 5 ? "text-yellow-500" : "text-muted-foreground"
+                        )} />
+                        <span className="text-sm font-medium">Cancellation Rate</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className={cn(
+                          "text-sm font-bold",
+                          cancellationStats.cancellationRate > 15 ? "text-red-600" :
+                          cancellationStats.cancellationRate > 5 ? "text-yellow-600" : "text-green-600"
+                        )}>
+                          {formatCancellationRate(
+                            cancellationStats.cancellationRate,
+                            cancellationStats.hasEnoughData,
+                            cancellationStats.rawCounts
+                          )}
+                        </span>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {cancellationStats.tutorCancelled} tutor
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <UserX className="h-3 w-3" />
+                            {cancellationStats.studentCancelled} student
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-sm">
+                      {cancellationStats.hasEnoughData
+                        ? `${cancellationStats.totalCancelled} cancelled out of ${cancellationStats.totalCancelled + cancellationStats.totalCompleted} sessions`
+                        : `Need at least 5 sessions to calculate rate. Currently ${cancellationStats.totalCancelled + cancellationStats.totalCompleted} sessions.`}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          )}
 
           <div className="flex-1 overflow-y-auto space-y-4">
             {isLoading ? (

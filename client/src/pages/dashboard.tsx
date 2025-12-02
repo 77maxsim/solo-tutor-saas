@@ -7,6 +7,7 @@ import { UpcomingSessions } from "@/components/dashboard/upcoming-sessions";
 import { PaymentOverview } from "@/components/dashboard/unpaid-past-sessions";
 import { ExpectedEarnings } from "@/components/dashboard/expected-earnings";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { CancellationRateCard } from "@/components/dashboard/cancellation-rate-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -511,6 +512,11 @@ export default function Dashboard() {
             )}
           </Droppable>
         </DragDropContext>
+
+        {/* Additional Stats - Cancellation Rate */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8 w-full">
+          <CancellationRateCard />
+        </div>
 
         {/* Sessions and Activity Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 w-full">

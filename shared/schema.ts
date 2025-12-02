@@ -45,6 +45,12 @@ export const sessions = pgTable("sessions", {
   notes: text("notes"), // Optional notes for the session
   unassignedName: text("unassigned_name"), // For public bookings without student_id
   color: text("color"),
+  // Cancellation tracking fields
+  cancellationReason: text("cancellation_reason"), // 'tutor' or 'student' - who cancelled
+  cancelledAt: timestamp("cancelled_at"), // When the session was cancelled
+  cancellationNote: text("cancellation_note"), // Optional note explaining cancellation
+  cancellationSource: text("cancellation_source"), // 'single' or 'bulk' - how it was cancelled
+  bulkExcluded: boolean("bulk_excluded").default(false), // Exclude from cancellation rate calculations
 });
 
 export const bookingSlots = pgTable("booking_slots", {
@@ -113,4 +119,26 @@ export interface Tutor {
   time_format?: string;
   is_admin?: boolean;
   created_at?: string;
+}
+
+// Cancellation tracking types
+export type CancellationReason = 'tutor' | 'student';
+export type CancellationSource = 'single' | 'bulk';
+
+export interface CancellationData {
+  cancellation_reason: CancellationReason;
+  cancelled_at: string;
+  cancellation_note?: string;
+  cancellation_source: CancellationSource;
+  bulk_excluded?: boolean;
+}
+
+export interface CancellationStats {
+  totalCancelled: number;
+  totalCompleted: number;
+  tutorCancelled: number;
+  studentCancelled: number;
+  cancellationRate: number;
+  tutorCancellationRate: number;
+  studentCancellationRate: number;
 }

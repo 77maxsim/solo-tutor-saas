@@ -17,14 +17,14 @@ import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
 import { getSessionDisplayInfo } from "@/lib/sessionDisplay";
-import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
+import { CancelSessionModal } from "@/components/modals/cancel-session-modal";
 import { sanitizeText } from "@/lib/sanitize";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { invalidateSessionCountCache } from "@/lib/queryOptimizer";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import { triggerCalendarDelete, triggerCalendarSync } from "@/hooks/useGoogleCalendarSync";
+import { triggerCalendarSync } from "@/hooks/useGoogleCalendarSync";
 
 // Configure dayjs plugins
 dayjs.extend(utc);
@@ -64,9 +64,12 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
   const [notes, setNotes] = useState(session?.notes || "");
   const [applyToSeries, setApplyToSeries] = useState(false);
   const [sessionColor, setSessionColor] = useState(session?.color || '#3B82F6');
-  const [isDeleting, setIsDeleting] = useState(false);
   const [showNotesSection, setShowNotesSection] = useState(false);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showBulkCancelModal, setShowBulkCancelModal] = useState(false);
+  const [bulkSessionIds, setBulkSessionIds] = useState<string[]>([]);
+  const [bulkGoogleEventIds, setBulkGoogleEventIds] = useState<string[]>([]);
 
   // Reset state when modal opens/closes
   const handleClose = () => {
@@ -234,57 +237,12 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
     updateSessionMutation.mutate({ notes, color: sessionColor, applyToSeries, repeatWeekly });
   };
 
-  // Delete session function - handles individual session deletion
-  const handleDeleteSession = async () => {
-    if (!session?.id) return;
-
-    setIsDeleting(true);
-
-    try {
-      const { error } = await supabase
-        .from('sessions')
-        .delete()
-        .eq('id', session.id);
-
-      if (error) throw error;
-
-      // Delete Google Calendar event if exists (non-blocking)
-      if (session.google_calendar_event_id) {
-        triggerCalendarDelete(session.google_calendar_event_id);
-      }
-
-      // Refresh calendar and other queries to remove deleted session
-      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['student-session-history'] });
-      
-      // Invalidate session count cache for optimization
-      const tutorId = await getCurrentTutorId();
-      if (tutorId) {
-        invalidateSessionCountCache(tutorId);
-      }
-
-      toast({
-        title: "Session Deleted",
-        description: "The session has been successfully cancelled and removed."
-      });
-
-      onClose(); // Only close modal after successful deletion
-    } catch (error: any) {
-      console.error('Error deleting session:', error);
-      toast({
-        variant: "destructive",
-        title: "Failed to Delete Session",
-        description: error.message || "An error occurred while deleting the session."
-      });
-    } finally {
-      setIsDeleting(false);
-    }
+  const openCancelModal = () => {
+    setShowCancelModal(true);
   };
 
-  const handleCancelFutureSessions = async () => {
+  const openBulkCancelModal = async () => {
     if (!session?.recurrence_id) {
-      console.log('❌ No recurrence_id found for session');
       toast({
         title: "Error",
         description: "Cannot cancel future sessions: No recurrence group found",
@@ -294,75 +252,31 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
     }
 
     try {
-      console.log('🔄 Cancelling future sessions for recurrence:', session.recurrence_id);
-      console.log('🔄 Current session date:', session.session_start);
-
-      // First, fetch all sessions to be deleted to get their calendar event IDs
-      const { data: sessionsToDelete, error: fetchError } = await supabase
+      const { data: sessionsToCancel, error: fetchError } = await supabase
         .from('sessions')
         .select('id, google_calendar_event_id')
         .eq('recurrence_id', session.recurrence_id)
         .gte('session_start', session.session_start);
 
-      if (fetchError) {
-        console.error('❌ Error fetching sessions to delete:', fetchError);
-        throw fetchError;
+      if (fetchError) throw fetchError;
+
+      if (sessionsToCancel && sessionsToCancel.length > 0) {
+        setBulkSessionIds(sessionsToCancel.map(s => s.id));
+        setBulkGoogleEventIds(sessionsToCancel.filter(s => s.google_calendar_event_id).map(s => s.google_calendar_event_id!));
+        setShowBulkCancelModal(true);
       }
-
-      // Delete Google Calendar events for all sessions (non-blocking)
-      if (sessionsToDelete && sessionsToDelete.length > 0) {
-        for (const sess of sessionsToDelete) {
-          if (sess.google_calendar_event_id) {
-            triggerCalendarDelete(sess.google_calendar_event_id);
-          }
-        }
-      }
-
-      // Delete current and future sessions in the same recurrence group (use session_start instead of date)
-      const { error } = await supabase
-        .from('sessions')
-        .delete()
-        .eq('recurrence_id', session.recurrence_id)
-        .gte('session_start', session.session_start);
-
-      if (error) {
-        console.error('❌ Error cancelling future sessions:', error);
-        toast({
-          title: "Error",
-          description: "Failed to cancel future sessions",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('✅ Successfully cancelled future sessions');
-      toast({
-        title: "Success",
-        description: "Future sessions cancelled successfully",
-      });
-
-      // Invalidate queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
-      
-      // Invalidate session count cache for optimization
-      const tutorId = await getCurrentTutorId();
-      if (tutorId) {
-        invalidateSessionCountCache(tutorId);
-      }
-
-      // Close the modal after successful cancellation
-      handleClose();
     } catch (error) {
-      console.error('❌ Error in handleCancelFutureSessions:', error);
+      console.error('Error fetching sessions for bulk cancel:', error);
       toast({
-        title: "Error", 
-        description: "Failed to cancel future sessions",
+        title: "Error",
+        description: "Failed to load sessions for cancellation",
         variant: "destructive",
       });
     }
+  };
+
+  const handleCancelSuccess = () => {
+    handleClose();
   };
 
   console.log('📄 SessionDetailsModal render check:', {
@@ -561,39 +475,27 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                     size="sm" 
                     onClick={() => {
                       console.log('🔧 Edit this session button clicked');
-                      // Dispatch edit session event
                       window.dispatchEvent(new CustomEvent('editSession', { 
                         detail: { session } 
                       }));
                       handleClose();
                     }}
                     className="flex items-center justify-center gap-2 h-10"
+                    data-testid="button-edit-session"
                   >
                     <Pencil className="w-4 h-4" />
                     <span className="text-sm">Edit</span>
                   </Button>
-                  <ConfirmActionModal
-                    trigger={
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        disabled={isDeleting}
-                        className="flex items-center justify-center gap-2 h-10"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span className="text-sm">
-                          {isDeleting ? "Canceling..." : "Cancel"}
-                        </span>
-                      </Button>
-                    }
-                    title="Cancel this session?"
-                    description="This will remove the session from your calendar and cannot be undone."
-                    confirmText="Yes, cancel session"
-                    cancelText="No, keep session"
-                    onConfirm={handleDeleteSession}
-                    isDestructive={true}
-                    disabled={isDeleting}
-                  />
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={openCancelModal}
+                    className="flex items-center justify-center gap-2 h-10"
+                    data-testid="button-cancel-session"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="text-sm">Cancel</span>
+                  </Button>
                 </div>
               </div>
 
@@ -607,36 +509,26 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
                       size="sm" 
                       onClick={() => {
                         console.log('🔧 Edit future sessions button clicked');
-                        // Dispatch edit series event
                         window.dispatchEvent(new CustomEvent('editSeries', { 
                           detail: { session } 
                         }));
                         handleClose();
                       }}
                       className="flex items-center justify-center gap-2 h-10"
+                      data-testid="button-edit-future-sessions"
                     >
                       <Repeat className="w-4 h-4" />
                       <span className="text-sm">Edit future sessions</span>
                     </Button>
-                    <ConfirmActionModal
-                      trigger={
-                        <Button 
-                          variant="destructive"
-                          className="w-full"
-                          disabled={!session?.recurrence_id}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          <span className="text-sm">Cancel future sessions</span>
-                        </Button>
-                      }
-                      title="Cancel all future sessions?"
-                      description="This will cancel this session and all future sessions in this recurring series. This action cannot be undone."
-                      confirmText="Yes, cancel all future sessions"
-                      cancelText="No, keep sessions"
-                      onConfirm={handleCancelFutureSessions}
-                      isDestructive={true}
-                      disabled={!session?.recurrence_id}
-                    />
+                    <Button 
+                      variant="destructive"
+                      className="w-full"
+                      onClick={openBulkCancelModal}
+                      data-testid="button-cancel-future-sessions"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      <span className="text-sm">Cancel future sessions</span>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -646,7 +538,7 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
 
         <div className="flex justify-end gap-2 pt-4 border-t bg-background flex-shrink-0">
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            Close
           </Button>
           <Button 
             onClick={handleSave}
@@ -656,6 +548,34 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
           </Button>
         </div>
       </DialogContent>
+
+      {/* Cancel Session Modal - Single Session */}
+      <CancelSessionModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        sessionId={session?.id || ""}
+        studentId={session?.student_id}
+        studentName={session?.student_name || ""}
+        googleCalendarEventId={session?.google_calendar_event_id}
+        onSuccess={handleCancelSuccess}
+      />
+
+      {/* Cancel Session Modal - Bulk (Future Sessions) */}
+      <CancelSessionModal
+        isOpen={showBulkCancelModal}
+        onClose={() => {
+          setShowBulkCancelModal(false);
+          setBulkSessionIds([]);
+          setBulkGoogleEventIds([]);
+        }}
+        sessionId={session?.id || ""}
+        studentId={session?.student_id}
+        studentName={session?.student_name || ""}
+        isBulk={true}
+        bulkSessionIds={bulkSessionIds}
+        bulkGoogleEventIds={bulkGoogleEventIds}
+        onSuccess={handleCancelSuccess}
+      />
     </Dialog>
   );
 }

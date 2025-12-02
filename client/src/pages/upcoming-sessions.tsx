@@ -21,6 +21,7 @@ import { useTimezone } from "@/contexts/TimezoneContext";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CancelSessionModal } from "@/components/modals/cancel-session-modal";
 
 interface Session {
   id: string;
@@ -37,6 +38,8 @@ interface Session {
 
 export default function UpcomingSessions() {
   const [openDates, setOpenDates] = useState<Set<string>>(new Set());
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelSessionData, setCancelSessionData] = useState<{ id: string; studentId: string; studentName: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { tutorTimezone } = useTimezone();
@@ -105,37 +108,6 @@ export default function UpcomingSessions() {
     },
   });
 
-  // Cancel session mutation
-  const cancelSessionMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
-      const { error } = await supabase
-        .from('sessions')
-        .delete()
-        .eq('id', sessionId);
-
-      if (error) {
-        console.error('Error canceling session:', error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      toast({
-        title: "Session canceled",
-        description: "The session has been successfully canceled.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['all-upcoming-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['upcoming-sessions'] });
-    },
-    onError: (error) => {
-      console.error('Error canceling session:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to cancel session. Please try again.",
-      });
-    },
-  });
-
   // Mark as paid mutation
   const markAsPaidMutation = useMutation({
     mutationFn: async (sessionId: string) => {
@@ -168,10 +140,14 @@ export default function UpcomingSessions() {
     },
   });
 
-  const handleCancelSession = (sessionId: string, studentName: string) => {
-    if (window.confirm(`Are you sure you want to cancel the session with ${studentName}?`)) {
-      cancelSessionMutation.mutate(sessionId);
-    }
+  const handleCancelSession = (sessionId: string, studentId: string, studentName: string) => {
+    setCancelSessionData({ id: sessionId, studentId, studentName });
+    setShowCancelModal(true);
+  };
+
+  const handleCancelModalClose = () => {
+    setShowCancelModal(false);
+    setCancelSessionData(null);
   };
 
   const handleMarkAsPaid = (sessionId: string, studentName: string) => {
@@ -481,6 +457,7 @@ export default function UpcomingSessions() {
                                     className="text-green-600 border-green-200 hover:bg-green-50"
                                     onClick={() => handleMarkAsPaid(session.id, session.student_name)}
                                     disabled={markAsPaidMutation.isPending}
+                                    data-testid={`button-mark-paid-${session.id}`}
                                   >
                                     <Coins className="h-3 w-3 mr-1" />
                                     Mark Paid
@@ -490,8 +467,8 @@ export default function UpcomingSessions() {
                                   variant="ghost"
                                   size="sm"
                                   className="text-gray-400 hover:text-red-600"
-                                  onClick={() => handleCancelSession(session.id, session.student_name)}
-                                  disabled={cancelSessionMutation.isPending}
+                                  onClick={() => handleCancelSession(session.id, session.student_id, session.student_name)}
+                                  data-testid={`button-cancel-session-${session.id}`}
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
@@ -508,6 +485,18 @@ export default function UpcomingSessions() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Cancel Session Modal */}
+      {cancelSessionData && (
+        <CancelSessionModal
+          isOpen={showCancelModal}
+          onClose={handleCancelModalClose}
+          sessionId={cancelSessionData.id}
+          studentId={cancelSessionData.studentId}
+          studentName={cancelSessionData.studentName}
+          onSuccess={handleCancelModalClose}
+        />
+      )}
     </div>
   );
 }
