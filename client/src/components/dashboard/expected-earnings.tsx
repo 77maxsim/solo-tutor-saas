@@ -155,6 +155,7 @@ export function ExpectedEarnings({ currency = 'USD' }: ExpectedEarningsProps) {
           )
         `)
         .eq('tutor_id', tutorId)
+        .neq('status', 'cancelled') // Exclude cancelled sessions
         .gte('session_start', now.toISOString())
         .order('session_start', { ascending: true });
 

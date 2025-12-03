@@ -91,6 +91,7 @@ export default function UpcomingSessions() {
           )
         `)
         .eq('tutor_id', tutorId)
+        .neq('status', 'cancelled') // Exclude cancelled sessions
         .gte('session_start', new Date().toISOString())
         .order('session_start', { ascending: true });
 

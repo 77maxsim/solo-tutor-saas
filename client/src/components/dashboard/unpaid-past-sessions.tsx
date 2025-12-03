@@ -85,6 +85,7 @@ export function PaymentOverview({ currency = 'USD', limit = 0, showViewAll = tru
         `)
         .eq('tutor_id', tutorId)
         .eq('paid', false)
+        .neq('status', 'cancelled') // Exclude cancelled sessions
         .lt('session_start', now)
         .order('session_start', { ascending: false });
 

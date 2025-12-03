@@ -54,7 +54,8 @@ export async function fetchCalendarSessions(
     let sessionsQuery = supabase
       .from('sessions')
       .select('id, student_id, tutor_id, session_start, session_end, paid, status, rate, duration, notes, color, recurrence_id, unassigned_name, created_at')
-      .eq('tutor_id', tutorId);
+      .eq('tutor_id', tutorId)
+      .neq('status', 'cancelled'); // Exclude cancelled sessions from calendar
     
     // Add date range filter if provided
     if (startDate && endDate) {
@@ -141,7 +142,8 @@ export async function fetchCalendarSessions(
           name
         )
       `)
-      .eq('tutor_id', tutorId);
+      .eq('tutor_id', tutorId)
+      .neq('status', 'cancelled'); // Exclude cancelled sessions from calendar
     
     // Add date range filter if provided
     if (startDate && endDate) {

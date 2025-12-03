@@ -62,6 +62,7 @@ export function UpcomingSessions({ currency = 'USD', limit = 5, showViewAll = tr
           )
         `)
         .eq('tutor_id', tutorId)
+        .neq('status', 'cancelled') // Exclude cancelled sessions
         .gte('session_start', new Date().toISOString()) // Only future sessions using UTC timestamps
         .order('session_start', { ascending: true });
 
