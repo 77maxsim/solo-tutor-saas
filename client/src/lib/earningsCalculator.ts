@@ -94,6 +94,11 @@ export function calculateEarnings(sessions: any[], tutorTimezone?: string) {
   const activeStudentsSet = new Set<string>();
 
   sessions.forEach(session => {
+    // Skip cancelled sessions - they shouldn't count toward any totals
+    if (session.status === 'cancelled') {
+      return;
+    }
+    
     const sessionDate = new Date(session.session_start);
     const earnings = (session.duration / 60) * session.rate;
     
@@ -218,6 +223,11 @@ export function calculateMonthlyEarnings(sessions: any[]): MonthlyEarnings[] {
   }
 
   sessions.forEach(session => {
+    // Skip cancelled sessions - they shouldn't count toward any totals
+    if (session.status === 'cancelled') {
+      return;
+    }
+    
     const isPaid = session.paid === true || session.paid === 'true';
     if (isPaid) {
       const sessionDate = new Date(session.session_start);
