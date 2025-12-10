@@ -48,7 +48,7 @@ export function CancellationRateCard({ className }: CancellationRateCardProps) {
               <TooltipContent className="max-w-xs">
                 <p className="text-sm">
                   {stats?.hasEnoughData
-                    ? "Percentage of sessions cancelled vs. completed"
+                    ? `Based on the last ${stats.daysBack} days. Percentage of sessions cancelled vs. completed.`
                     : `Need at least 5 sessions to calculate rate. Currently showing raw count.`}
                 </p>
               </TooltipContent>
@@ -76,6 +76,7 @@ export function CancellationRateCard({ className }: CancellationRateCardProps) {
                 {stats?.hasEnoughData && (
                   <p className="text-xs text-muted-foreground">
                     {stats.totalCancelled} cancelled / {stats.totalCancelled + stats.totalCompleted} total
+                    <span className="ml-1 text-muted-foreground/70">(last {stats.daysBack} days)</span>
                   </p>
                 )}
               </div>

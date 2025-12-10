@@ -6,25 +6,33 @@ import type { CancellationStats } from "@shared/schema";
 interface CancellationStatsOptions {
   studentId?: string;
   minSessions?: number;
+  daysBack?: number; // Number of days to look back (default 90)
 }
 
 const MIN_SESSIONS_FOR_RATE = 5;
+const DEFAULT_DAYS_BACK = 90;
 
 export function useCancellationStats(options: CancellationStatsOptions = {}) {
-  const { studentId, minSessions = MIN_SESSIONS_FOR_RATE } = options;
+  const { studentId, minSessions = MIN_SESSIONS_FOR_RATE, daysBack = DEFAULT_DAYS_BACK } = options;
 
   return useQuery({
-    queryKey: ["cancellation-stats", studentId || "all"],
-    queryFn: async (): Promise<CancellationStats & { hasEnoughData: boolean; rawCounts: { cancelled: number; completed: number } }> => {
+    queryKey: ["cancellation-stats", studentId || "all", daysBack],
+    queryFn: async (): Promise<CancellationStats & { hasEnoughData: boolean; rawCounts: { cancelled: number; completed: number }; daysBack: number }> => {
       const tutorId = await getCurrentTutorId();
       if (!tutorId) {
         throw new Error("User not authenticated or tutor record not found");
       }
 
+      // Calculate the date cutoff for the time window
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+      const cutoffIso = cutoffDate.toISOString();
+
       let query = supabase
         .from("sessions")
-        .select("id, status, cancellation_reason, bulk_excluded, session_end")
-        .eq("tutor_id", tutorId);
+        .select("id, status, cancellation_reason, bulk_excluded, session_end, session_start")
+        .eq("tutor_id", tutorId)
+        .gte("session_start", cutoffIso);
 
       if (studentId) {
         query = query.eq("student_id", studentId);
@@ -86,6 +94,7 @@ export function useCancellationStats(options: CancellationStatsOptions = {}) {
           cancelled: totalCancelled,
           completed: totalCompleted,
         },
+        daysBack,
       };
     },
     staleTime: 5 * 60 * 1000,
