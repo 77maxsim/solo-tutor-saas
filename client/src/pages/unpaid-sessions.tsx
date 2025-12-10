@@ -98,6 +98,7 @@ export default function UnpaidSessions() {
         `)
         .eq('tutor_id', tutorId)
         .eq('paid', false)
+        .neq('status', 'cancelled') // Exclude cancelled sessions
         .lt('session_start', new Date().toISOString())
         .order('session_start', { ascending: false });
 
