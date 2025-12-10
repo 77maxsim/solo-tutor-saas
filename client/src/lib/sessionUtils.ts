@@ -42,6 +42,14 @@ export function convertSessionToCalendarEvent(
     paid: session.paid
   });
   
+  // Check if session is in the past
+  const now = dayjs.utc();
+  const sessionEnd = dayjs.utc(session.session_end);
+  const isPastSession = sessionEnd.isBefore(now);
+  
+  // Check if past session is unpaid (and not cancelled)
+  const isPastUnpaid = isPastSession && !session.paid && session.status !== 'cancelled';
+  
   // Only override user's color choice for critical status indicators
   if (session.status === 'pending') {
     backgroundColor = '#f59e0b'; // Amber for pending requests (critical status)
@@ -49,16 +57,15 @@ export function convertSessionToCalendarEvent(
   } else if (session.status === 'confirmed' && !session.student_id) {
     backgroundColor = '#10b981'; // Green for unassigned confirmed sessions (critical status)
     title = `📝 ${sanitizeText(session.unassigned_name) || 'Unassigned Session'}`;
-  } 
-  // For regular sessions, respect user's color choice and only add visual indicators in title
-  else if (!session.paid) {
+  } else if (isPastUnpaid) {
+    // Past unpaid sessions get light red/salmon background with warning indicator
+    backgroundColor = '#f87171'; // Light red (red-400) for past unpaid
+    title = `⚠️ ${title}`; // Warning indicator for overdue payment
+    textColor = '#ffffff';
+  } else if (!session.paid) {
+    // Future unpaid sessions just get the money bag icon
     title = `💰 ${title}`; // Add unpaid indicator to title but keep user's color
   }
-
-  // Check if session is in the past
-  const now = dayjs.utc();
-  const sessionEnd = dayjs.utc(session.session_end);
-  const isPastSession = sessionEnd.isBefore(now);
 
   return {
     id: session.id,
@@ -66,11 +73,12 @@ export function convertSessionToCalendarEvent(
     start: startDate,
     end: endDate,
     backgroundColor,
-    borderColor: backgroundColor,
+    borderColor: isPastUnpaid ? '#dc2626' : backgroundColor, // Darker red border for past unpaid
     textColor,
     extendedProps: { 
       ...session, 
-      isPastSession
+      isPastSession,
+      isPastUnpaid
     }
   };
 }
