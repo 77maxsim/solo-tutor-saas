@@ -27,9 +27,11 @@ import { useTimezone } from "@/contexts/TimezoneContext";
 import { ConfirmActionModal } from "@/components/ui/confirm-action-modal";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 
 // Configure dayjs plugins
 dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface UnpaidSession {
   id: string;
@@ -351,15 +353,72 @@ export default function UnpaidSessions() {
     return diffDays;
   };
 
-  // Group sessions by week
-  const groupedSessions = sessions.reduce((groups: { [key: string]: UnpaidSession[] }, session) => {
-    const weekKey = getWeekKey(new Date(session.session_start));
-    if (!groups[weekKey]) {
-      groups[weekKey] = [];
+  // Get date key for grouping sessions by date (uses tutor timezone)
+  const getDateKey = (utcDateString: string) => {
+    if (tutorTimezone) {
+      return formatUtcToTutorTimezone(utcDateString, tutorTimezone, 'yyyy-MM-dd');
     }
-    groups[weekKey].push(session);
+    // Fallback to local date
+    return new Date(utcDateString).toLocaleDateString('en-CA'); // ISO format YYYY-MM-DD
+  };
+
+  // Get today's and yesterday's date keys in tutor timezone
+  const getTodayKey = () => {
+    if (tutorTimezone) {
+      return dayjs().tz(tutorTimezone).format('YYYY-MM-DD');
+    }
+    return new Date().toLocaleDateString('en-CA');
+  };
+
+  const getYesterdayKey = () => {
+    if (tutorTimezone) {
+      return dayjs().tz(tutorTimezone).subtract(1, 'day').format('YYYY-MM-DD');
+    }
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday.toLocaleDateString('en-CA');
+  };
+
+  // Format date for display
+  const formatDateGroup = (dateKey: string) => {
+    const todayKey = getTodayKey();
+    const yesterdayKey = getYesterdayKey();
+    
+    if (dateKey === todayKey) {
+      return "Today";
+    } else if (dateKey === yesterdayKey) {
+      return "Yesterday";
+    } else {
+      // Parse the date key and format it nicely
+      const date = new Date(dateKey + 'T12:00:00'); // Use noon to avoid timezone edge cases
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+  };
+
+  // Group sessions by week, then by date within each week
+  const groupedSessions = sessions.reduce((groups: { [key: string]: { [dateKey: string]: UnpaidSession[] } }, session) => {
+    const sessionDate = new Date(session.session_start);
+    const weekKey = getWeekKey(sessionDate);
+    const dateKey = getDateKey(session.session_start);
+    
+    if (!groups[weekKey]) {
+      groups[weekKey] = {};
+    }
+    if (!groups[weekKey][dateKey]) {
+      groups[weekKey][dateKey] = [];
+    }
+    groups[weekKey][dateKey].push(session);
     return groups;
   }, {});
+
+  // Helper to count total sessions in a week
+  const getWeekSessionCount = (weekData: { [dateKey: string]: UnpaidSession[] }) => {
+    return Object.values(weekData).reduce((sum, dateSessions) => sum + dateSessions.length, 0);
+  };
 
   // Calculate summary statistics
   const totalSessions = sessions.length;
@@ -497,7 +556,7 @@ export default function UnpaidSessions() {
               <div>
                 <CardTitle className="text-2xl font-bold">All Unpaid Sessions</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Overdue sessions grouped by week, sorted chronologically
+                  Overdue sessions grouped by week and date
                 </p>
               </div>
               {totalSessions > 0 && (
@@ -547,108 +606,125 @@ export default function UnpaidSessions() {
               </div>
             ) : (
               <div className="space-y-4">
-                {Object.entries(groupedSessions).map(([weekKey, weekSessions]) => (
-                  <Collapsible
-                    key={weekKey}
-                    open={openWeeks.has(weekKey)}
-                    onOpenChange={() => toggleWeekGroup(weekKey)}
-                  >
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-between p-3 h-auto hover:bg-orange-50"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                            <CalendarIcon className="w-4 h-4 text-orange-600" />
-                          </div>
-                          <div className="text-left">
-                            <h3 className="font-semibold text-base">{formatWeekGroup(weekKey)}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {weekSessions.length} overdue session{weekSessions.length !== 1 ? 's' : ''}
-                            </p>
-                          </div>
-                        </div>
-                        {openWeeks.has(weekKey) ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </CollapsibleTrigger>
-
-                    <CollapsibleContent className="space-y-2 mt-2">
-                      {weekSessions.map((session) => {
-                        const calculatedPrice = (session.duration / 60) * session.rate;
-                        const daysOverdue = getDaysOverdue(session.session_start);
-                        
-                        return (
-                          <div
-                            key={session.id}
-                            className="ml-11 p-4 bg-orange-50 border border-orange-200 rounded-lg"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-medium text-gray-900">
-                                    {session.student_name}
-                                  </h4>
-                                  <Badge variant="destructive" className="text-xs">
-                                    {daysOverdue} day{daysOverdue !== 1 ? 's' : ''} overdue
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center gap-4 text-sm text-gray-600">
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {session.session_start && session.session_end && tutorTimezone
-                                      ? (() => {
-                                          const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
-                                          const duration = calculateDurationMinutes(session.session_start, session.session_end);
-                                          console.log('💰 Unpaid sessions time display:', {
-                                            student: session.student_name,
-                                            utc_start: session.session_start,
-                                            tutor_timezone: tutorTimezone,
-                                            displayed_time: startTime
-                                          });
-                                          return `${startTime} (${duration} min)`;
-                                        })()
-                                      : 'Loading timezone...'}
-                                  </span>
-                                  <span className="font-medium text-orange-600">
-                                    {formatCurrency(calculatedPrice, tutorCurrency)}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <ConfirmActionModal
-                                  trigger={
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="text-green-600 border-green-200 hover:bg-green-50"
-                                      disabled={markAsPaidMutation.isPending}
-                                      data-testid={`button-mark-paid-${session.id}`}
-                                    >
-                                      <Coins className="h-3 w-3 mr-1" />
-                                      Mark Paid
-                                    </Button>
-                                  }
-                                  title={`Mark overdue session with ${session.student_name} as paid?`}
-                                  description="This will mark the session as paid and update your earnings dashboard."
-                                  confirmText="Yes, mark as paid"
-                                  cancelText="Cancel"
-                                  onConfirm={() => handleMarkAsPaid(session.id)}
-                                  disabled={markAsPaidMutation.isPending}
-                                />
-                              </div>
+                {Object.entries(groupedSessions).map(([weekKey, weekData]) => {
+                  const weekSessionCount = getWeekSessionCount(weekData);
+                  const sortedDates = Object.keys(weekData).sort((a, b) => b.localeCompare(a));
+                  
+                  return (
+                    <Collapsible
+                      key={weekKey}
+                      open={openWeeks.has(weekKey)}
+                      onOpenChange={() => toggleWeekGroup(weekKey)}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-between p-3 h-auto hover:bg-orange-50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                              <CalendarIcon className="w-4 h-4 text-orange-600" />
+                            </div>
+                            <div className="text-left">
+                              <h3 className="font-semibold text-base">{formatWeekGroup(weekKey)}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {weekSessionCount} overdue session{weekSessionCount !== 1 ? 's' : ''}
+                              </p>
                             </div>
                           </div>
-                        );
-                      })}
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
+                          {openWeeks.has(weekKey) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+
+                      <CollapsibleContent className="mt-2">
+                        {sortedDates.map((dateKey) => {
+                          const dateSessions = weekData[dateKey];
+                          return (
+                            <div key={dateKey} className="mb-3">
+                              <div className="ml-11 flex items-center gap-2 mb-2">
+                                <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                                <span className="text-sm font-medium text-gray-700">
+                                  {formatDateGroup(dateKey)}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({dateSessions.length} session{dateSessions.length !== 1 ? 's' : ''})
+                                </span>
+                              </div>
+                              <div className="space-y-2">
+                                {dateSessions.map((session) => {
+                                  const calculatedPrice = (session.duration / 60) * session.rate;
+                                  const daysOverdue = getDaysOverdue(session.session_start);
+                                  
+                                  return (
+                                    <div
+                                      key={session.id}
+                                      className="ml-14 p-4 bg-orange-50 border border-orange-200 rounded-lg"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <h4 className="font-medium text-gray-900">
+                                              {session.student_name}
+                                            </h4>
+                                            <Badge variant="destructive" className="text-xs">
+                                              {daysOverdue} day{daysOverdue !== 1 ? 's' : ''} overdue
+                                            </Badge>
+                                          </div>
+                                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                                            <span className="flex items-center gap-1">
+                                              <Clock className="h-3 w-3" />
+                                              {session.session_start && session.session_end && tutorTimezone
+                                                ? (() => {
+                                                    const startTime = formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'HH:mm');
+                                                    const duration = calculateDurationMinutes(session.session_start, session.session_end);
+                                                    return `${startTime} (${duration} min)`;
+                                                  })()
+                                                : 'Loading timezone...'}
+                                            </span>
+                                            <span className="font-medium text-orange-600">
+                                              {formatCurrency(calculatedPrice, tutorCurrency)}
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                          <ConfirmActionModal
+                                            trigger={
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="text-green-600 border-green-200 hover:bg-green-50"
+                                                disabled={markAsPaidMutation.isPending}
+                                                data-testid={`button-mark-paid-${session.id}`}
+                                              >
+                                                <Coins className="h-3 w-3 mr-1" />
+                                                Mark Paid
+                                              </Button>
+                                            }
+                                            title={`Mark overdue session with ${session.student_name} as paid?`}
+                                            description="This will mark the session as paid and update your earnings dashboard."
+                                            confirmText="Yes, mark as paid"
+                                            cancelText="Cancel"
+                                            onConfirm={() => handleMarkAsPaid(session.id)}
+                                            disabled={markAsPaidMutation.isPending}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })}
               </div>
             )}
           </CardContent>
