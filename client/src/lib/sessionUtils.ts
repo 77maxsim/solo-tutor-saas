@@ -50,6 +50,9 @@ export function convertSessionToCalendarEvent(
   // Check if past session is unpaid (and not cancelled)
   const isPastUnpaid = isPastSession && !session.paid && session.status !== 'cancelled';
   
+  // Build className for special styling
+  let className = '';
+  
   // Only override user's color choice for critical status indicators
   if (session.status === 'pending') {
     backgroundColor = '#f59e0b'; // Amber for pending requests (critical status)
@@ -58,10 +61,9 @@ export function convertSessionToCalendarEvent(
     backgroundColor = '#10b981'; // Green for unassigned confirmed sessions (critical status)
     title = `📝 ${sanitizeText(session.unassigned_name) || 'Unassigned Session'}`;
   } else if (isPastUnpaid) {
-    // Past unpaid sessions get light red/salmon background with warning indicator
-    backgroundColor = '#f87171'; // Light red (red-400) for past unpaid
-    title = `⚠️ ${title}`; // Warning indicator for overdue payment
-    textColor = '#ffffff';
+    // Past unpaid sessions: keep student color but add stripe pattern class
+    className = 'fc-event--past-unpaid';
+    // Don't override backgroundColor - keep student's color
   } else if (!session.paid) {
     // Future unpaid sessions just get the money bag icon
     title = `💰 ${title}`; // Add unpaid indicator to title but keep user's color
@@ -75,6 +77,7 @@ export function convertSessionToCalendarEvent(
     backgroundColor,
     borderColor: isPastUnpaid ? '#dc2626' : backgroundColor, // Darker red border for past unpaid
     textColor,
+    className,
     extendedProps: { 
       ...session, 
       isPastSession,

@@ -817,6 +817,79 @@
     @apply opacity-90 transform scale-105 transition-all duration-150;
   }
 
+  /* Past unpaid sessions - diagonal stripe pattern with warning badge */
+  .fc-event.fc-event--past-unpaid {
+    position: relative;
+    outline: 2px solid #dc2626;
+    outline-offset: -1px;
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+
+  .fc-event.fc-event--past-unpaid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 3px,
+      rgba(220, 38, 38, 0.25) 3px,
+      rgba(220, 38, 38, 0.25) 6px
+    );
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 1;
+  }
+
+  .fc-event.fc-event--past-unpaid::after {
+    content: '⚠';
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    background: #dc2626;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    line-height: 1;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% {
+      outline-color: #dc2626;
+    }
+    50% {
+      outline-color: #f87171;
+    }
+  }
+
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .fc-event.fc-event--past-unpaid {
+      animation: none;
+    }
+  }
+
+  /* Dark mode adjustments for past unpaid */
+  .dark .fc-event.fc-event--past-unpaid::before {
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 3px,
+      rgba(248, 113, 113, 0.3) 3px,
+      rgba(248, 113, 113, 0.3) 6px
+    );
+  }
+
   .fc-timegrid-slot {
     @apply border-gray-100 dark:border-gray-700;
   }
