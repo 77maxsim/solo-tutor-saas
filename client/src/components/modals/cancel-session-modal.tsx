@@ -230,24 +230,24 @@ export function CancelSessionModal({
             />
           </div>
 
-          {isBulk && (
-            <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <Checkbox
-                id="exclude-from-rate"
-                checked={excludeFromRate}
-                onCheckedChange={(checked) => setExcludeFromRate(!!checked)}
-                data-testid="checkbox-exclude-from-rate"
-              />
-              <div className="space-y-1">
-                <Label htmlFor="exclude-from-rate" className="font-medium cursor-pointer">
-                  Exclude from cancellation rate
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  These {sessionCount} sessions won't count toward cancellation statistics
-                </p>
-              </div>
+          <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <Checkbox
+              id="exclude-from-rate"
+              checked={excludeFromRate}
+              onCheckedChange={(checked) => setExcludeFromRate(!!checked)}
+              data-testid="checkbox-exclude-from-rate"
+            />
+            <div className="space-y-1">
+              <Label htmlFor="exclude-from-rate" className="font-medium cursor-pointer">
+                Exclude from cancellation rate
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {sessionCount === 1 
+                  ? "This session won't count toward cancellation statistics"
+                  : `These ${sessionCount} sessions won't count toward cancellation statistics`}
+              </p>
             </div>
-          )}
+          </div>
         </div>
 
         <DialogFooter className="flex gap-2 sm:gap-0">
