@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, Clock, User, DollarSign, Edit, Trash2, ChevronDown, Plus, Pencil, Repeat } from "lucide-react";
+import { Calendar, Clock, User, DollarSign, Edit, Trash2, ChevronDown, Plus, Pencil, Repeat, CheckCircle } from "lucide-react";
 import { formatDate, formatTime, formatCurrency } from "@/lib/utils";
 import { formatUtcToTutorTimezone, calculateDurationMinutes } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
@@ -228,6 +228,49 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
       toast({
         title: "Error",
         description: error.message || "Failed to update session. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const markAsPaidMutation = useMutation({
+    mutationFn: async () => {
+      if (!session) throw new Error("No session selected");
+
+      const { error } = await supabase
+        .from('sessions')
+        .update({ paid: true })
+        .eq('id', session.id);
+
+      if (error) {
+        console.error('Error marking session as paid:', error);
+        throw error;
+      }
+    },
+    onSuccess: async () => {
+      toast({
+        title: "Session Marked as Paid",
+        description: `Payment recorded for ${session?.student_name || 'this session'}`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['unpaid-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['earnings'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      
+      const tutorId = await getCurrentTutorId();
+      if (tutorId) {
+        invalidateSessionCountCache(tutorId);
+      }
+
+      handleClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to mark session as paid. Please try again.",
         variant: "destructive",
       });
     },
@@ -466,6 +509,28 @@ export function SessionDetailsModal({ isOpen, onClose, session }: SessionDetails
 
             {/* Session Actions */}
             <div className="space-y-4 pt-4 border-t">
+              {/* Mark as Paid - show for unpaid past sessions */}
+              {!session.paid && session.session_end && new Date(session.session_end) < new Date() && (
+                <div className="border rounded-md p-3 bg-green-50/50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium text-green-800 dark:text-green-200">Payment Pending</h4>
+                      <p className="text-xs text-green-600 dark:text-green-400">This session hasn't been marked as paid yet</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => markAsPaidMutation.mutate()}
+                      disabled={markAsPaidMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      data-testid="button-mark-as-paid"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      {markAsPaidMutation.isPending ? "Saving..." : "Mark as Paid"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* This Session Section */}
               <div className="border rounded-md p-3 bg-gray-50/50 dark:bg-gray-800/50">
                 <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">This Session</h4>
