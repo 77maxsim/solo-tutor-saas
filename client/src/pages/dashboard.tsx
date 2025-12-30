@@ -18,6 +18,8 @@ import { shouldUseOptimizedQuery, getOptimizedSessions, getStandardSessions } fr
 import { calculateEarnings, calculateMonthlyEarnings } from "@/lib/earningsCalculator";
 import { ScheduleSessionModal } from "@/components/modals/schedule-session-modal";
 import WelcomeAnimation from "@/components/WelcomeAnimation";
+import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 import { 
   BookOpen, 
   Coins, 
@@ -57,6 +59,7 @@ const defaultCardOrder: DashboardCard[] = [
 export default function Dashboard() {
   const queryClient = useQueryClient();
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const { refreshProgress } = useOnboarding();
   
   // Force refresh dashboard stats after payment updates
   useEffect(() => {
@@ -482,6 +485,11 @@ export default function Dashboard() {
 
       {/* Dashboard Content */}
       <div className="p-4 sm:p-6 w-full">
+        {/* Onboarding Checklist for new users */}
+        <div className="mb-6">
+          <OnboardingChecklist />
+        </div>
+
         {/* Draggable Quick Stats Cards */}
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="dashboard-cards" direction="horizontal">

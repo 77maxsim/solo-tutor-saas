@@ -68,6 +68,7 @@ import { StudentSessionHistoryModal } from "@/components/modals/student-session-
 import { getAvatarDisplay } from "@/lib/avatarUtils";
 import StudentFilters, { SortKey } from "@/components/students/StudentFilters";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 
 interface Session {
   id: string;
@@ -100,6 +101,7 @@ export default function Students() {
   const queryClient = useQueryClient();
   const { tutorTimezone } = useTimezone();
   const { toast } = useToast();
+  const { refreshProgress } = useOnboarding();
 
   // Selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -199,6 +201,7 @@ export default function Students() {
       setIsAddStudentOpen(false);
       queryClient.invalidateQueries({ queryKey: ['student-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      refreshProgress();
     },
     onError: (error: any) => {
       toast({

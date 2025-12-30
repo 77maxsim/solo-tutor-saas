@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { getCurrentTutorId } from '@/lib/tutorHelpers';
 import { useTimezone } from '@/contexts/TimezoneContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import {
   Clock,
   Calendar as CalendarIcon,
@@ -136,6 +137,7 @@ export default function AddSlotCalendarModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { tutorTimezone } = useTimezone();
+  const { refreshProgress } = useOnboarding();
   const calendarRef = useRef<FullCalendar>(null);
   const isMobile = useIsMobile();
 
@@ -512,6 +514,7 @@ export default function AddSlotCalendarModal({
       onSlotAdded();
       onOpenChange(false);
       form.reset();
+      refreshProgress();
 
     } catch (error) {
       toast({
@@ -593,6 +596,7 @@ export default function AddSlotCalendarModal({
       queryClient.invalidateQueries({ queryKey: ["booking-slots"] });
       onSlotAdded();
       onOpenChange(false); // Close modal for mobile
+      refreshProgress();
 
     } catch (error) {
       toast({

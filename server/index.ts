@@ -110,9 +110,6 @@ app.use("/api", globalLimiter);
     serveStatic(app);
   }
 
-  // Initialize Telegram bot and notification scheduler
-  await initializeTelegram();
-
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
@@ -123,5 +120,11 @@ app.use("/api", globalLimiter);
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Initialize Telegram bot and notification scheduler AFTER server starts
+    // This prevents telegram initialization from blocking server startup
+    initializeTelegram().catch(err => {
+      console.error("Failed to initialize Telegram bot:", err);
+    });
   });
 })();

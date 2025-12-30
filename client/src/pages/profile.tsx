@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Loader2, Save, User, Send, CheckCircle2, ExternalLink, Calendar, RefreshCw, Mail } from "lucide-react";
 import { ALL_TIMEZONES, TIMEZONE_GROUPS, getBrowserTimezone } from "@/lib/timezones";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -63,6 +64,7 @@ export default function Profile() {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { refreshProgress } = useOnboarding();
 
   // Cleanup EventSource on unmount
   useEffect(() => {
@@ -396,6 +398,7 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ['tutor-profile'] });
       queryClient.invalidateQueries({ queryKey: ['tutor-info'] });
       queryClient.invalidateQueries({ queryKey: ['tutor-timezone'] });
+      refreshProgress();
     },
     onError: (error) => {
       console.error('Profile update error:', error);
