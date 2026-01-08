@@ -119,6 +119,8 @@ export interface Tutor {
   time_format?: string;
   is_admin?: boolean;
   created_at?: string;
+  onboarding_completed?: boolean;
+  onboarding_dismissed?: boolean;
 }
 
 // Cancellation tracking types
