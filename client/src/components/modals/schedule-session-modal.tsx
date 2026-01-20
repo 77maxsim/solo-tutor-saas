@@ -48,6 +48,7 @@ import { formatTimeDisplay, parseTimeInput, generateTimeOptions } from "@/lib/ti
 import { triggerCalendarSync } from "@/hooks/useGoogleCalendarSync";
 import { formatUtcToTutorTimezone } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 import { invalidateSessionCountCache } from "@/lib/queryOptimizer";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -128,6 +129,7 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { tutorTimezone, isLoading: isTimezoneLoading } = useTimezone();
+  const { refreshProgress } = useOnboarding();
 
   // Track which fields user has manually modified to prevent overwriting
   const [userModifiedFields, setUserModifiedFields] = useState<Set<string>>(new Set());
@@ -605,6 +607,9 @@ export function ScheduleSessionModal({ open, onOpenChange, editSession, editMode
         
         // Invalidate session count cache for optimization
         invalidateSessionCountCache(tutorId);
+        
+        // Refresh onboarding progress
+        refreshProgress();
 
         console.log("Session created:", insertedData);
       }

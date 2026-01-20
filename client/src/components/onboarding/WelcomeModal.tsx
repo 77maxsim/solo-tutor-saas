@@ -13,7 +13,6 @@ import {
   Sparkles, 
   User, 
   Calendar, 
-  Users, 
   MessageCircle,
   ArrowRight,
   CheckCircle2
@@ -30,18 +29,11 @@ const stepDetails = [
     time: '1 min',
   },
   {
-    id: 'availability',
+    id: 'session',
     icon: Calendar,
-    title: 'Set Your Availability',
-    description: 'Define when you\'re free for tutoring so students can book with you.',
+    title: 'Set Up Your First Class',
+    description: 'Schedule your first tutoring session to get started.',
     time: '2 min',
-  },
-  {
-    id: 'student',
-    icon: Users,
-    title: 'Add Your First Student',
-    description: 'Create a student profile to track sessions and earnings.',
-    time: '1 min',
   },
   {
     id: 'telegram',

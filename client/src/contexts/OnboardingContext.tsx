@@ -53,28 +53,20 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         return null;
       }
 
-      const { data: students, error: studentsError } = await supabase
-        .from('students')
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('sessions')
         .select('id')
         .eq('tutor_id', tutorId)
         .limit(1);
 
-      const { data: bookingSlots, error: slotsError } = await supabase
-        .from('booking_slots')
-        .select('id')
-        .eq('tutor_id', tutorId)
-        .limit(1);
-
-      const hasStudents = students && students.length > 0;
-      const hasAvailability = bookingSlots && bookingSlots.length > 0;
+      const hasSessions = sessions && sessions.length > 0;
       const hasProfileCompleted = !!(tutor.full_name && tutor.full_name.trim() && tutor.timezone && tutor.currency);
       const hasTelegram = !!tutor.telegram_chat_id;
 
       return {
         tutor,
         hasProfileCompleted,
-        hasStudents,
-        hasAvailability,
+        hasSessions,
         hasTelegram,
         onboardingCompleted: tutor.onboarding_completed || false,
         onboardingDismissed: tutor.onboarding_dismissed || false,
@@ -94,20 +86,12 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       action: 'Go to Profile',
     },
     {
-      id: 'availability',
-      title: 'Set Your Availability',
-      description: 'Define when you\'re available for tutoring sessions',
-      completed: onboardingData?.hasAvailability || false,
-      href: '/availability',
-      action: 'Set Availability',
-    },
-    {
-      id: 'student',
-      title: 'Add Your First Student',
-      description: 'Create a student profile to start tracking sessions',
-      completed: onboardingData?.hasStudents || false,
-      href: '/students',
-      action: 'Add Student',
+      id: 'session',
+      title: 'Set Up Your First Class',
+      description: 'Schedule your first tutoring session to get started',
+      completed: onboardingData?.hasSessions || false,
+      href: '/calendar',
+      action: 'Schedule Class',
     },
     {
       id: 'telegram',

@@ -17,7 +17,7 @@ Preferred communication style: Simple, everyday language.
 - **Accessibility**: Screen reader support, proper ARIA labels, and keyboard navigation.
 - **Responsive Design**: Mobile-first approach with dedicated mobile header and sidebar components.
 - **Dashboard Customization**: Drag-and-drop dashboard cards using React Beautiful DnD.
-- **Onboarding System**: Guided 4-step onboarding flow for new tutors to complete profile, set availability, add first student, and connect Telegram notifications.
+- **Onboarding System**: Guided 3-step onboarding flow for new tutors to complete profile, set up their first class, and connect Telegram notifications.
 
 ### Technical Implementations
 - **State Management**: React Query (TanStack Query) for server state management and caching.

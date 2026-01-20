@@ -9,7 +9,6 @@ import {
   Circle, 
   User, 
   Calendar, 
-  Users, 
   MessageCircle,
   Sparkles,
   X,
@@ -20,8 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const stepIcons: Record<string, React.ElementType> = {
   profile: User,
-  availability: Calendar,
-  student: Users,
+  session: Calendar,
   telegram: MessageCircle,
 };
 
