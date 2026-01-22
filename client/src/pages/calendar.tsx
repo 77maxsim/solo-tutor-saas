@@ -25,7 +25,8 @@ import {
   Clock,
   User,
   Check,
-  X
+  X,
+  Tag
 } from 'lucide-react';
 import { fetchCalendarSessions } from '@/lib/calendarOptimizer';
 import { convertSessionToCalendarEvent, debugSessionConversion } from '@/lib/sessionUtils';
@@ -94,6 +95,7 @@ export default function Calendar() {
   const [view, setView] = useState<string>('timeGridWeek');
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<string>('all');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sessionForDetails, setSessionForDetails] = useState<SessionWithStudent | null>(null);
   const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
   const [showPendingRequestsModal, setShowPendingRequestsModal] = useState(false);
@@ -258,6 +260,51 @@ export default function Calendar() {
     placeholderData: (previousData) => previousData, // Keep previous sessions while refetching to prevent calendar jump
   });
 
+  // Fetch students with their tags for filtering
+  const { data: studentsWithTags = [] } = useQuery({
+    queryKey: ['students-with-tags'],
+    queryFn: async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) return [];
+
+      const { data, error } = await supabase
+        .from('students')
+        .select('id, name, tags')
+        .eq('tutor_id', tutorId)
+        .is('archived_at', null);
+
+      if (error) {
+        console.error('Error fetching students with tags:', error);
+        return [];
+      }
+
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Create a map of student_id -> tags for quick lookup
+  const studentTagsMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    studentsWithTags.forEach(student => {
+      if (student.id && student.tags) {
+        map.set(student.id, student.tags);
+      }
+    });
+    return map;
+  }, [studentsWithTags]);
+
+  // Get unique tags for filter dropdown
+  const uniqueTags = useMemo(() => {
+    const allTags = new Set<string>();
+    studentsWithTags.forEach(student => {
+      if (student.tags && Array.isArray(student.tags)) {
+        student.tags.forEach(tag => allTags.add(tag));
+      }
+    });
+    return Array.from(allTags).sort();
+  }, [studentsWithTags]);
+
   // Get unique students for filter
   const uniqueStudents = useMemo(() => {
     const students = sessions
@@ -276,46 +323,31 @@ export default function Calendar() {
     return students.sort((a, b) => a.name.localeCompare(b.name));
   }, [sessions]);
 
-  // Filter sessions based on selected student (include unassigned sessions)
+  // Filter sessions based on selected student and tags
   const filteredSessions = useMemo(() => {
-    console.log('🔍 Filtering sessions - selected student:', selectedStudent);
+    console.log('🔍 Filtering sessions - selected student:', selectedStudent, 'selected tags:', selectedTags);
     console.log('🔍 Raw sessions count:', sessions.length);
     
-    // Check for June 23rd sessions specifically
-    const june23Sessions = sessions.filter(s => 
-      s.session_start && s.session_start.includes('2025-06-23')
-    );
-    if (june23Sessions.length > 0) {
-      console.log('🔍 June 23rd sessions found:', june23Sessions.length);
-      june23Sessions.forEach(s => {
-        console.log('June 23 session:', {
-          id: s.id?.substring(0, 8) + '...',
-          student_name: s.student_name,
-          student_id: s.student_id,
-          status: s.status,
-          session_start: s.session_start,
-          session_end: s.session_end,
-          has_timestamps: !!(s.session_start && s.session_end)
-        });
+    let filtered = sessions;
+    
+    // Filter by student if not 'all'
+    if (selectedStudent !== 'all') {
+      filtered = filtered.filter(session => session.student_id === selectedStudent);
+    }
+    
+    // Filter by tags if any are selected
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(session => {
+        if (!session.student_id) return false; // Unassigned sessions don't have tags
+        const studentTags = studentTagsMap.get(session.student_id) || [];
+        // Session passes if student has ANY of the selected tags
+        return selectedTags.some(tag => studentTags.includes(tag));
       });
     }
     
-    if (selectedStudent === 'all') {
-      console.log('🔍 Returning all sessions');
-      return sessions;
-    }
-    
-    const filtered = sessions.filter(session => {
-      // Include sessions assigned to selected student
-      if (session.student_id === selectedStudent) return true;
-      // Also include unassigned sessions when 'all' is selected
-      if (selectedStudent === 'all' && !session.student_id) return true;
-      return false;
-    });
-    
     console.log('🔍 Filtered sessions count:', filtered.length);
     return filtered;
-  }, [sessions, selectedStudent]);
+  }, [sessions, selectedStudent, selectedTags, studentTagsMap]);
 
   // Convert sessions to FullCalendar events
   const events: FullCalendarEvent[] = useMemo(() => {
@@ -1009,6 +1041,29 @@ export default function Calendar() {
             </Select>
           </div>
 
+          {/* Tag Filter */}
+          {uniqueTags.length > 0 && (
+            <div className="mb-4">
+              <Select 
+                value={selectedTags.length === 0 ? 'all' : selectedTags[0]} 
+                onValueChange={(value) => setSelectedTags(value === 'all' ? [] : [value])}
+              >
+                <SelectTrigger className="w-full" data-testid="select-tag-filter">
+                  <Tag className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by tag" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tags</SelectItem>
+                  {uniqueTags.map((tag) => (
+                    <SelectItem key={tag} value={tag}>
+                      {tag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Navigation */}
           <div className="flex items-center justify-between mb-4">
             <Button
@@ -1191,6 +1246,27 @@ export default function Calendar() {
                 ))}
               </SelectContent>
             </Select>
+
+            {/* Tag Filter */}
+            {uniqueTags.length > 0 && (
+              <Select 
+                value={selectedTags.length === 0 ? 'all' : selectedTags[0]} 
+                onValueChange={(value) => setSelectedTags(value === 'all' ? [] : [value])}
+              >
+                <SelectTrigger className="w-40" data-testid="select-tag-filter-desktop">
+                  <Tag className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by tag" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tags</SelectItem>
+                  {uniqueTags.map((tag) => (
+                    <SelectItem key={tag} value={tag}>
+                      {tag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             {/* Pending Requests Button */}
             {pendingCount > 0 && (
