@@ -286,16 +286,16 @@ export function CancellationRateCard({ className }: CancellationRateCardProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-orange-500" />
-              All Recent Cancellations
+              Recent Cancellations
               <span className="text-sm font-normal text-muted-foreground ml-2">
-                ({details?.cancelledSessions?.length || 0} total)
+                (last 20 of {details?.cancelledSessions?.length || 0})
               </span>
             </DialogTitle>
           </DialogHeader>
 
           <ScrollArea className="flex-1 pr-4 -mr-4">
             <div className="space-y-2 pb-4">
-              {details?.cancelledSessions?.map((session) => (
+              {details?.cancelledSessions?.slice(0, 20).map((session) => (
                 <div key={session.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg px-4 py-3 text-sm">
                   <div className="flex flex-col">
                     <span className="font-medium">{session.student_name}</span>
