@@ -12,9 +12,22 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const REDIRECT_URI = process.env.REPLIT_DEPLOYMENT 
-  ? `https://${process.env.REPLIT_DEPLOYMENT}/api/auth/google/callback`
-  : 'http://localhost:5000/api/auth/google/callback';
+
+// Determine the correct redirect URI based on environment
+function getRedirectUri(): string {
+  // For Replit deployments (production)
+  if (process.env.REPLIT_DEPLOYMENT) {
+    return `https://${process.env.REPLIT_DEPLOYMENT}/api/auth/google/callback`;
+  }
+  // For Replit development environment
+  if (process.env.REPLIT_DEV_DOMAIN) {
+    return `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/google/callback`;
+  }
+  // Fallback for local development
+  return 'http://localhost:5000/api/auth/google/callback';
+}
+
+const REDIRECT_URI = getRedirectUri();
 
 // OAuth state management - stores cryptographically secure state tokens
 interface OAuthState {
