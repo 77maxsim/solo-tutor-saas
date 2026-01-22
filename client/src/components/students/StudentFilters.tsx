@@ -14,13 +14,11 @@ export interface StudentFiltersProps {
   onSortKeyChange: (v: SortKey) => void;
   query: string;
   onQueryChange: (v: string) => void;
-  onReset: () => void;
 }
 
 export default function StudentFilters({
   sortKey, onSortKeyChange,
   query, onQueryChange,
-  onReset,
 }: StudentFiltersProps) {
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-4">
@@ -52,14 +50,6 @@ export default function StudentFilters({
           />
         </div>
       </div>
-
-      <button
-        onClick={onReset}
-        className="self-start md:self-auto border px-3 py-2 rounded-md hover:bg-gray-50"
-        type="button"
-      >
-        Reset
-      </button>
     </div>
   );
 }
