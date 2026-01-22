@@ -293,7 +293,7 @@ export function CancellationRateCard({ className }: CancellationRateCardProps) {
             </DialogTitle>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 pr-4 -mr-4">
+          <ScrollArea className="h-[60vh] pr-4 -mr-4">
             <div className="space-y-2 pb-4">
               {details?.cancelledSessions?.slice(0, 20).map((session) => (
                 <div key={session.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg px-4 py-3 text-sm">
