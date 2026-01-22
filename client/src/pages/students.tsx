@@ -986,10 +986,6 @@ export default function Students() {
                   onSortKeyChange={setSortKey}
                   query={query}
                   onQueryChange={setQuery}
-                  onReset={() => {
-                    setSortKey("top_earners");
-                    setQuery("");
-                  }}
                 />
                 
                 {/* Bulk Actions Bar */}
