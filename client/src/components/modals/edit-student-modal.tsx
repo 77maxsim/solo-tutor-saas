@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+import { getCurrentTutorId } from "@/lib/tutorHelpers";
 import { useToast } from "@/hooks/use-toast";
 import CreatableSelect from "react-select/creatable";
 import {
@@ -60,6 +61,37 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedTags, setSelectedTags] = useState<TagOption[]>([]);
+
+  // Fetch existing tags from all students
+  const { data: existingTagOptions = [] } = useQuery({
+    queryKey: ['existing-tags-for-edit'],
+    queryFn: async () => {
+      const tutorId = await getCurrentTutorId();
+      if (!tutorId) return [];
+      
+      const { data, error } = await supabase
+        .from('students')
+        .select('tags')
+        .eq('tutor_id', tutorId)
+        .not('tags', 'is', null);
+
+      if (error) {
+        console.error('Error fetching existing tags:', error);
+        return [];
+      }
+
+      // Extract unique tags from all students
+      const allTags = new Set<string>();
+      data.forEach(student => {
+        if (student.tags && Array.isArray(student.tags)) {
+          student.tags.forEach(tag => allTags.add(tag));
+        }
+      });
+
+      return Array.from(allTags).map(tag => ({ value: tag, label: tag }));
+    },
+    enabled: isOpen,
+  });
 
   const form = useForm<EditStudentForm>({
     resolver: zodResolver(editStudentSchema),
@@ -300,6 +332,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                       isMulti
                       value={selectedTags}
                       onChange={handleTagsChange}
+                      options={existingTagOptions}
                       placeholder="Add tags..."
                       noOptionsMessage={() => "Type to create a new tag"}
                       formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
