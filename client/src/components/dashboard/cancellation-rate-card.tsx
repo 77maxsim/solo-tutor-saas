@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { useCancellationStats, useCancellationDetails, formatCancellationRate } from "@/hooks/useCancellationStats";
-import { User, UserX, Info, TrendingDown, Calendar, XCircle } from "lucide-react";
+import { User, UserX, Info, TrendingDown, Calendar, XCircle, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatUtcToTutorTimezone } from "@/lib/dateUtils";
 import { useTimezone } from "@/contexts/TimezoneContext";
@@ -15,6 +16,7 @@ interface CancellationRateCardProps {
 
 export function CancellationRateCard({ className }: CancellationRateCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAllCancellationsOpen, setIsAllCancellationsOpen] = useState(false);
   const { data: stats, isLoading, error } = useCancellationStats();
   const { data: details, isLoading: isLoadingDetails } = useCancellationDetails({ 
     enabled: isModalOpen,
@@ -218,12 +220,25 @@ export function CancellationRateCard({ className }: CancellationRateCardProps) {
               {/* Recent Cancellations */}
               {details?.cancelledSessions && details.cancelledSessions.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    Recent Cancellations
-                  </h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {details.cancelledSessions.slice(0, 10).map((session) => (
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      Recent Cancellations
+                    </h4>
+                    {details.cancelledSessions.length > 5 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsAllCancellationsOpen(true)}
+                        className="text-xs h-7 px-2 text-muted-foreground hover:text-foreground"
+                      >
+                        View All ({details.cancelledSessions.length})
+                        <ChevronRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {details.cancelledSessions.slice(0, 5).map((session) => (
                       <div key={session.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2 text-sm">
                         <div className="flex flex-col">
                           <span className="font-medium">{session.student_name}</span>
@@ -245,11 +260,6 @@ export function CancellationRateCard({ className }: CancellationRateCardProps) {
                         </span>
                       </div>
                     ))}
-                    {details.cancelledSessions.length > 10 && (
-                      <p className="text-xs text-center text-muted-foreground py-2">
-                        + {details.cancelledSessions.length - 10} more cancellations
-                      </p>
-                    )}
                   </div>
                 </div>
               )}
@@ -265,6 +275,48 @@ export function CancellationRateCard({ className }: CancellationRateCardProps) {
                   No cancellations in this time period
                 </p>
               )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Expanded All Cancellations Modal */}
+      <Dialog open={isAllCancellationsOpen} onOpenChange={setIsAllCancellationsOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-orange-500" />
+              All Recent Cancellations
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                ({details?.cancelledSessions?.length || 0} total)
+              </span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <ScrollArea className="flex-1 pr-4 -mr-4">
+            <div className="space-y-2 pb-4">
+              {details?.cancelledSessions?.map((session) => (
+                <div key={session.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg px-4 py-3 text-sm">
+                  <div className="flex flex-col">
+                    <span className="font-medium">{session.student_name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {tutorTimezone 
+                        ? formatUtcToTutorTimezone(session.session_start, tutorTimezone, 'MMM d, yyyy')
+                        : new Date(session.session_start).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <span className={cn(
+                    "text-xs px-2 py-1 rounded-full whitespace-nowrap",
+                    session.cancellation_reason === "tutor" 
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                      : session.cancellation_reason === "student"
+                      ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                      : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                  )}>
+                    {formatReasonLabel(session.cancellation_reason || "unspecified")}
+                  </span>
+                </div>
+              ))}
             </div>
           </ScrollArea>
         </DialogContent>
