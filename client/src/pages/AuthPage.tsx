@@ -664,8 +664,11 @@ export default function AuthPage() {
           </CardContent>
         </Card>
 
-        <div className="text-center text-xs text-muted-foreground mt-4">
+        <div className="text-center text-xs text-muted-foreground mt-4 space-y-1">
           <p>© 2025 Classter. Manage your tutoring business with ease.</p>
+          <a href="/privacy-policy" className="hover:underline hover:text-foreground transition-colors">
+            Privacy Policy
+          </a>
         </div>
       </div>
     </div>

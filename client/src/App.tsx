@@ -33,6 +33,7 @@ import AuthPage from "./pages/AuthPage.tsx";
 import AuthCallback from "./pages/AuthCallback.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import PublicBookingPage from "./pages/public-booking/[tutorId].tsx";
+import PrivacyPolicy from "./pages/privacy-policy";
 
 // VERY TOP: log first
 console.log('[App boot] at', window.location.href);
@@ -66,7 +67,7 @@ if (checkForAuthTokensAndRedirect()) {
 }
 
 // PUBLIC routes and recovery URL detection
-const PUBLIC_PATHS = ['/auth', '/auth/callback', '/reset-password', '/booking'];
+const PUBLIC_PATHS = ['/auth', '/auth/callback', '/reset-password', '/booking', '/privacy-policy'];
 
 function isPublicPath() {
   const { pathname, search, hash } = window.location;
@@ -596,7 +597,10 @@ function Router() {
       {/* 4) Public booking */}
       <Route path="/booking/:tutorId" component={PublicBookingPage} />
 
-      {/* 5) Protected routes */}
+      {/* 5) Privacy Policy (public) */}
+      <Route path="/privacy-policy">{() => <PrivacyPolicy />}</Route>
+
+      {/* 6) Protected routes */}
       <Route path="/" component={ProtectedDashboard} />
       <Route path="/dashboard" component={ProtectedDashboard} />
       <Route path="/calendar" component={ProtectedCalendar} />
