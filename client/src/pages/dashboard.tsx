@@ -27,6 +27,8 @@ import {
   Plus,
   TrendingUp 
 } from "lucide-react";
+import { useUsdToggle } from "@/hooks/useUsdToggle";
+import { UsdToggle } from "@/components/ui/usd-toggle";
 
 interface SessionWithStudent {
   id: string;
@@ -60,6 +62,8 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const { refreshProgress } = useOnboarding();
+  
+  // USD toggle - will be initialized after tutorInfo is loaded
   
   // Force refresh dashboard stats after payment updates
   useEffect(() => {
@@ -162,6 +166,18 @@ export default function Dashboard() {
       return data;
     },
   });
+
+  // USD toggle functionality - uses tutor's currency
+  const tutorCurrency = tutorInfo?.currency || 'USD';
+  const { 
+    showUsd, 
+    toggle: toggleUsd, 
+    convertToUsd, 
+    getDisplayCurrency,
+    isLoadingRate,
+    rateData,
+    isUsdAvailable 
+  } = useUsdToggle(tutorCurrency);
 
   // Fetch dashboard statistics using getCurrentTutorId helper (same as Earnings page)
   const { data: dashboardStats, isLoading, error: dashboardError } = useQuery({
@@ -365,11 +381,31 @@ export default function Dashboard() {
       case 'expected_earnings':
         return <ExpectedEarnings currency={tutorInfo?.currency || 'USD'} />;
       case 'earnings_summary':
+        const rawEarnings = earningsView === 'today' 
+          ? dashboardStats?.todayEarnings || 0
+          : earningsView === 'week' 
+          ? dashboardStats?.currentWeekEarnings || 0
+          : dashboardStats?.currentMonthEarnings || 0;
+        const displayEarnings = showUsd ? convertToUsd(rawEarnings) : rawEarnings;
+        const displayCurrency = getDisplayCurrency();
+        
         return (
           <Card className="hover-lift cursor-pointer transition-all duration-300 group hover:shadow-lg hover:shadow-green-100/50 dark:hover:shadow-green-900/20 border-2 hover:border-green-200 dark:hover:border-green-700 dark:bg-card dark:shadow-md dark:border-gray-700">
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-                <CardTitle className="text-sm font-medium group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-200 dark:text-gray-200">Earnings</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-200 dark:text-gray-200">Earnings</CardTitle>
+                  {isUsdAvailable && (
+                    <UsdToggle
+                      showUsd={showUsd}
+                      onToggle={toggleUsd}
+                      isLoading={isLoadingRate}
+                      isAvailable={isUsdAvailable}
+                      defaultCurrency={tutorCurrency}
+                      rateInfo={rateData ? { rate: rateData.rate, cached: rateData.cached, expiresIn: rateData.expiresIn } : undefined}
+                    />
+                  )}
+                </div>
                 <div className="flex items-center gap-2">
                   <Coins className="h-4 w-4 text-green-600 dark:text-green-400 group-hover:scale-110 group-hover:animate-bounce-subtle transition-all duration-300" />
                   <div className="flex rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-1">
@@ -415,14 +451,7 @@ export default function Dashboard() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400 group-hover:scale-105 transition-transform duration-200">
-                      {isLoading ? "..." : formatCurrency(
-                        earningsView === 'today' 
-                          ? dashboardStats?.todayEarnings || 0
-                          : earningsView === 'week' 
-                          ? dashboardStats?.currentWeekEarnings || 0
-                          : dashboardStats?.currentMonthEarnings || 0, 
-                        tutorInfo?.currency || 'USD'
-                      )}
+                      {isLoading || (showUsd && isLoadingRate) ? "..." : formatCurrency(displayEarnings, displayCurrency)}
                     </div>
                     {earningsView === 'month' && dashboardStats?.monthlyEarningsData && !isLoading && (() => {
                       const monthlyEarningsData = dashboardStats.monthlyEarningsData;

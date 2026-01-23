@@ -46,6 +46,8 @@ import {
   CalendarIcon,
   Info
 } from "lucide-react";
+import { useUsdToggle } from "@/hooks/useUsdToggle";
+import { UsdToggle } from "@/components/ui/usd-toggle";
 import { SessionStatCompact } from "@/components/stats/SessionStatCompact";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, ComposedChart } from 'recharts';
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -186,6 +188,17 @@ export default function Earnings() {
       return data?.currency || 'USD';
     },
   });
+
+  // USD toggle functionality - uses tutor's currency
+  const { 
+    showUsd, 
+    toggle: toggleUsd, 
+    convertToUsd, 
+    getDisplayCurrency,
+    isLoadingRate,
+    rateData,
+    isUsdAvailable 
+  } = useUsdToggle(tutorCurrency);
 
   // Get tutorId for cache key - this ensures each tutor has their own cache
   const { data: currentTutorId } = useQuery({
@@ -1180,15 +1193,31 @@ ${filteredData.map(m => `${m.month} ${m.year}: ${formatCurrency(m.earnings, curr
   const renderCard = (card: EarningsCard, index: number) => {
     switch (card.id) {
       case 'total_earnings':
+        const totalRawEarnings = earnings?.totalEarnings || 0;
+        const totalDisplayEarnings = showUsd ? convertToUsd(totalRawEarnings) : totalRawEarnings;
+        const totalDisplayCurrency = getDisplayCurrency();
+        
         return (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+                {isUsdAvailable && (
+                  <UsdToggle
+                    showUsd={showUsd}
+                    onToggle={toggleUsd}
+                    isLoading={isLoadingRate}
+                    isAvailable={isUsdAvailable}
+                    defaultCurrency={tutorCurrency}
+                    rateInfo={rateData ? { rate: rateData.rate, cached: rateData.cached, expiresIn: rateData.expiresIn } : undefined}
+                  />
+                )}
+              </div>
               <Coins className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(earnings?.totalEarnings || 0, tutorCurrency)}
+                {isLoadingRate && showUsd ? "..." : formatCurrency(totalDisplayEarnings, totalDisplayCurrency)}
               </div>
               <p className="text-xs text-muted-foreground">
                 From all sessions
