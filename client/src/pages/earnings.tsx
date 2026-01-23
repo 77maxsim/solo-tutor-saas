@@ -392,9 +392,13 @@ export default function Earnings() {
     
     // For custom ranges, calculate directly from sessions
     const customRangeData = isCustomRange && allSessions ? (() => {
+      // Set end date to end of day (23:59:59.999) to include all sessions on that day
+      const endOfDay = new Date(customDateRange.to!);
+      endOfDay.setHours(23, 59, 59, 999);
+      
       const filteredSessions = allSessions.filter(s => {
         const sessionDate = new Date(s.session_start);
-        return sessionDate >= customDateRange.from! && sessionDate <= customDateRange.to! && s.paid;
+        return sessionDate >= customDateRange.from! && sessionDate <= endOfDay && s.paid;
       });
       
       const totalEarnings = filteredSessions.reduce((sum, s) => sum + (s.duration / 60) * s.rate, 0);
