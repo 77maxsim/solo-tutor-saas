@@ -22,7 +22,7 @@ export function useUsdToggle(defaultCurrency: string = 'USD') {
   }, [showUsd]);
 
   const { data: rateData, isLoading: isLoadingRate, error: rateError, refetch } = useQuery<UsdRateResponse>({
-    queryKey: ['usd-exchange-rate'],
+    queryKey: ['usd-exchange-rate', defaultCurrency],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {

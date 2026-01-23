@@ -36,6 +36,7 @@ Preferred communication style: Simple, everyday language.
     - **Earnings Calculation**: Shared logic for calculating earnings and generating financial statistics.
     - **File Storage**: Supabase Storage for avatar uploads with RLS policies.
     - **Multi-Currency Support**: Currency conversion service with 24-hour caching for admin dashboard metrics.
+    - **USD Toggle for Tutors**: Tutors with non-USD currencies can toggle earnings display to USD. Exchange rates are cached per tutor for 12 hours to minimize API calls. Implemented via `/api/tutor/usd-rate` endpoint with rate caching in the tutors table (`usd_exchange_rate`, `usd_rate_fetched_at` columns).
     - **Query Timeout Protection**: 30-second timeout on all Supabase queries with proper abort signal handling to prevent hung requests.
     - **API Usage Monitoring**: Comprehensive tracking of ExchangeRate-API calls with monthly limits (1,500 requests) and 80% threshold warnings.
 - **Notifications**: Telegram bot integration for daily summaries, booking alerts, and broadcast messages.
