@@ -367,6 +367,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tutor USD exchange rate endpoint with 12-hour caching
+  // Returns cached rate if available and fresh, otherwise fetches new rate
+  app.get("/api/tutor/usd-rate", authenticateUser, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      
+      // Get tutor info including cached rate
+      const { data: tutor, error } = await supabase
+        .from('tutors')
+        .select('id, currency, usd_exchange_rate, usd_rate_fetched_at')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error || !tutor) {
+        return res.status(404).json({ error: "Tutor not found" });
+      }
+
+      // If tutor's currency is USD, no conversion needed
+      if (tutor.currency === 'USD' || !tutor.currency) {
+        return res.json({ 
+          rate: 1, 
+          currency: 'USD',
+          cached: true,
+          message: 'No conversion needed for USD'
+        });
+      }
+
+      const CACHE_DURATION_HOURS = 12;
+      const now = new Date();
+      
+      // Check if we have a cached rate that's still valid
+      if (tutor.usd_exchange_rate && tutor.usd_rate_fetched_at) {
+        const fetchedAt = new Date(tutor.usd_rate_fetched_at);
+        const hoursSinceFetch = (now.getTime() - fetchedAt.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursSinceFetch < CACHE_DURATION_HOURS) {
+          console.log(`💾 Using cached USD rate for tutor ${tutor.id} (${hoursSinceFetch.toFixed(1)}h old)`);
+          return res.json({
+            rate: tutor.usd_exchange_rate,
+            currency: tutor.currency,
+            cached: true,
+            fetchedAt: tutor.usd_rate_fetched_at,
+            expiresIn: Math.round((CACHE_DURATION_HOURS - hoursSinceFetch) * 60) // minutes
+          });
+        }
+      }
+
+      // Fetch fresh rate from API
+      console.log(`🔄 Fetching fresh USD rate for tutor ${tutor.id} (${tutor.currency} → USD)`);
+      
+      const { getExchangeRates } = await import('./services/currencyConverter.js');
+      const rates = await getExchangeRates();
+      const rate = rates[tutor.currency];
+
+      if (!rate) {
+        return res.status(400).json({ error: `Exchange rate not found for ${tutor.currency}` });
+      }
+
+      // The rate from API is "1 USD = X currency", so to convert currency to USD: amount / rate
+      // We store the rate directly so frontend can calculate: amount / usd_exchange_rate = USD amount
+      const usdExchangeRate = rate;
+
+      // Update tutor's cached rate in database
+      const { error: updateError } = await supabase
+        .from('tutors')
+        .update({
+          usd_exchange_rate: usdExchangeRate,
+          usd_rate_fetched_at: now.toISOString()
+        })
+        .eq('id', tutor.id);
+
+      if (updateError) {
+        console.error('Failed to cache USD rate:', updateError);
+        // Continue anyway, just won't be cached
+      }
+
+      res.json({
+        rate: usdExchangeRate,
+        currency: tutor.currency,
+        cached: false,
+        fetchedAt: now.toISOString(),
+        expiresIn: CACHE_DURATION_HOURS * 60 // minutes
+      });
+
+    } catch (error) {
+      console.error('USD rate fetch error:', error);
+      res.status(500).json({ error: "Failed to fetch exchange rate" });
+    }
+  });
+
   // Admin endpoints - check if user is admin first, then apply rate limiting
   // Uses server-side SQL aggregation for scalability (handles millions of sessions)
   app.get("/api/admin/metrics", authenticateUser, authorizeAdmin, adminLimiter, async (req, res) => {

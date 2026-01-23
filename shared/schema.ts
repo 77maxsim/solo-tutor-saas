@@ -121,6 +121,9 @@ export interface Tutor {
   created_at?: string;
   onboarding_completed?: boolean;
   onboarding_dismissed?: boolean;
+  // USD exchange rate caching for tutor toggle
+  usd_exchange_rate?: number | null;
+  usd_rate_fetched_at?: string | null;
 }
 
 // Cancellation tracking types
