@@ -48,21 +48,24 @@ export function UsdButton({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={onToggle}
             disabled={isLoading}
             className={cn(
-              "h-6 w-6 p-0 rounded-full transition-all",
+              "h-6 px-1.5 py-0 text-[10px] font-medium rounded transition-all border",
               showUsd 
-                ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-400 dark:hover:bg-green-900/70" 
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/70" 
+                : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700"
             )}
           >
             {isLoading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
-              <DollarSign className="h-3.5 w-3.5" />
+              <>
+                <DollarSign className="h-3 w-3" />
+                <span className="ml-0.5">USD</span>
+              </>
             )}
           </Button>
         </TooltipTrigger>
