@@ -115,28 +115,38 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   }, [onboardingData?.onboardingDismissed]);
 
   // Auto-mark onboarding as complete for existing users who already have 
-  // a complete profile and sessions (fixes issue for users who registered 
-  // before onboarding feature was added)
+  // ALL steps completed (profile, sessions, AND telegram) but onboarding_completed 
+  // is not set in database (fixes issue for users who registered before onboarding 
+  // feature was added)
   useEffect(() => {
     const autoCompleteOnboarding = async () => {
       if (!onboardingData || isLoading) return;
       
-      // If user already has all steps completed but onboarding_completed is not set,
-      // automatically update it in the database
-      if (
+      // Only auto-complete if ALL three steps are done
+      const allStepsComplete = 
         onboardingData.hasProfileCompleted && 
         onboardingData.hasSessions && 
-        !onboardingData.onboardingCompleted
-      ) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        onboardingData.hasTelegram;
+      
+      if (allStepsComplete && !onboardingData.onboardingCompleted) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
 
-        await supabase
-          .from('tutors')
-          .update({ onboarding_completed: true })
-          .eq('user_id', user.id);
-        
-        refetch();
+          const { error } = await supabase
+            .from('tutors')
+            .update({ onboarding_completed: true })
+            .eq('user_id', user.id);
+          
+          if (error) {
+            console.error('Error auto-completing onboarding:', error);
+            return;
+          }
+          
+          refetch();
+        } catch (err) {
+          console.error('Error in autoCompleteOnboarding:', err);
+        }
       }
     };
 

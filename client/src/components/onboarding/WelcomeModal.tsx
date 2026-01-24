@@ -66,8 +66,17 @@ export function WelcomeModal() {
     setShowWelcomeModal(false);
   };
 
+  // Handle all modal close paths (backdrop click, X button, escape key)
+  // to persist the dismissal to database
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      dismissOnboarding();
+    }
+    setShowWelcomeModal(open);
+  };
+
   return (
-    <Dialog open={showWelcomeModal} onOpenChange={setShowWelcomeModal}>
+    <Dialog open={showWelcomeModal} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg" data-testid="welcome-modal">
         <DialogHeader className="text-center pb-2">
           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center mb-4">
