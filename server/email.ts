@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Classter Support <onboarding@resend.dev>';
+const REPLY_TO_EMAIL = process.env.RESEND_REPLY_TO_EMAIL || '77maxsim@gmail.com';
 
 function escapeHtml(text: string): string {
   const htmlEscapes: Record<string, string> = {
@@ -103,6 +104,7 @@ The Classter Team`;
   try {
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
+      replyTo: REPLY_TO_EMAIL,
       to: [to],
       subject: `Re: Your ${typeLabel} - Classter Support`,
       html,
