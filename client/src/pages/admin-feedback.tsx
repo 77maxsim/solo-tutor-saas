@@ -10,6 +10,7 @@ import { Loader2, MessageCircle, Mail, Clock, User, ArrowLeft, Send, HelpCircle,
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabaseClient";
 import type { Feedback, FeedbackStatus, FeedbackType } from "@shared/schema";
 
 const typeLabels: Record<FeedbackType, { label: string; icon: typeof HelpCircle; color: string }> = {
@@ -38,8 +39,16 @@ export default function AdminFeedbackPage() {
       const params = new URLSearchParams();
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (typeFilter !== 'all') params.append('type', typeFilter);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: HeadersInit = {};
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+      
       const response = await fetch(`/api/admin/feedback?${params}`, {
         credentials: 'include',
+        headers,
       });
       if (!response.ok) throw new Error('Failed to fetch feedback');
       return response.json();
