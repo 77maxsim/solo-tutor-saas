@@ -9,6 +9,7 @@ import { TimezoneProvider } from "@/contexts/TimezoneContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { WelcomeModal } from "@/components/onboarding/WelcomeModal";
 import { Sidebar } from "@/components/layout/sidebar";
+import { FeedbackButton } from "@/components/FeedbackButton";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { ScheduleSessionModal } from "@/components/modals/schedule-session-modal";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -775,6 +776,9 @@ function AppLayout() {
             open={isScheduleModalOpen} 
             onOpenChange={setIsScheduleModalOpen} 
           />
+
+          {/* Floating Help/Feedback Button */}
+          <FeedbackButton />
         </div>
       ) : (
         // Unauthenticated layout (public pages including auth/callback)
