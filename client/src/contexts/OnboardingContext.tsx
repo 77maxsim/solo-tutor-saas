@@ -31,7 +31,8 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-  const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(false);
+  // Track locally dismissed state for optimistic UI updates only
+  const [locallyDismissed, setLocallyDismissed] = useState(false);
 
   const { data: onboardingData, isLoading, refetch } = useQuery({
     queryKey: ['onboarding-progress'],
@@ -107,12 +108,10 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   const totalSteps = steps.length;
   const progressPercent = Math.round((completedSteps / totalSteps) * 100);
   const isOnboardingComplete = completedSteps === totalSteps;
-
-  useEffect(() => {
-    if (onboardingData?.onboardingDismissed) {
-      setIsOnboardingDismissed(true);
-    }
-  }, [onboardingData?.onboardingDismissed]);
+  
+  // Derive dismissed state from database (primary source) OR local optimistic state
+  // This ensures the dismissed state is always correct after re-login
+  const isOnboardingDismissed = locallyDismissed || (onboardingData?.onboardingDismissed ?? false);
 
   // Auto-mark onboarding as complete for existing users who already have 
   // ALL steps completed (profile, sessions, AND telegram) but onboarding_completed 
@@ -172,12 +171,14 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Optimistically update local state immediately for instant UI feedback
+    setLocallyDismissed(true);
+
     await supabase
       .from('tutors')
       .update({ onboarding_dismissed: true })
       .eq('user_id', user.id);
 
-    setIsOnboardingDismissed(true);
     refetch();
   }, [refetch]);
 
