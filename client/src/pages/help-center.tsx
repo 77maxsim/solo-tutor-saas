@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { ArrowLeft, Mail, MessageCircle, Book, Calendar, Users, DollarSign, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { FeedbackModal } from "@/components/FeedbackModal";
 
 export default function HelpCenter() {
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Link href="/">
           <Button variant="ghost" className="mb-6">
@@ -125,12 +129,10 @@ export default function HelpCenter() {
               Can't find what you're looking for? We're here to help.
             </p>
             <div className="flex flex-wrap gap-3">
-              <a href="mailto:support@classter.net">
-                <Button variant="outline">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Contact Support
-                </Button>
-              </a>
+              <Button variant="outline" onClick={() => setFeedbackModalOpen(true)}>
+                <Mail className="h-4 w-4 mr-2" />
+                Contact Support
+              </Button>
               <a href="https://classter.net" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline">
                   <Book className="h-4 w-4 mr-2" />
@@ -140,6 +142,12 @@ export default function HelpCenter() {
             </div>
           </CardContent>
         </Card>
+
+        <FeedbackModal 
+          open={feedbackModalOpen} 
+          onOpenChange={setFeedbackModalOpen}
+          defaultType="help"
+        />
       </div>
     </div>
   );

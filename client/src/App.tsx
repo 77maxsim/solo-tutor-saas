@@ -773,11 +773,12 @@ function AppLayout() {
     };
   }, []);
 
-  // Check if we're on a public page that should always be accessible
+  // Check if we're on a public page that should always be accessible (no sidebar)
   const isPublicPage = location === '/auth' || 
                        location === '/auth/callback' || 
                        location === '/reset-password' ||
-                       location.startsWith('/booking');
+                       location.startsWith('/booking') ||
+                       (!user && (location === '/privacy-policy' || location === '/help-center'));
 
   // Show navigation only if user is authenticated and not on a public page
   const showNavigation = user && !isPublicPage && !loading;
@@ -794,14 +795,14 @@ function AppLayout() {
   }
 
   return (
-    <div className={cn("h-screen bg-background", !showNavigation && "flex flex-col")}>
+    <div className={cn("h-screen bg-background overflow-hidden", !showNavigation && "flex flex-col")}>
       {showNavigation ? (
         // Authenticated layout with sidebar
         <div className="flex h-full">
-          {/* Desktop Sidebar */}
-          <div className="hidden md:flex md:w-64 md:flex-shrink-0">
+          {/* Desktop Sidebar - Fixed position with its own scroll */}
+          <aside className="hidden md:flex md:w-64 md:flex-shrink-0 md:fixed md:inset-y-0 md:left-0 md:z-30 md:overflow-y-auto">
             <Sidebar onScheduleSession={handleScheduleSession} />
-          </div>
+          </aside>
 
           {/* Mobile Sidebar */}
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -821,10 +822,10 @@ function AppLayout() {
             </SheetContent>
           </Sheet>
 
-          {/* Main Content - Full width on mobile, reduced width on desktop */}
-          <div className="flex-1 flex flex-col min-w-0 w-full md:w-[calc(100%-16rem)] pt-16 md:pt-0">
+          {/* Main Content - Full width on mobile, offset by sidebar width on desktop */}
+          <main className="flex-1 flex flex-col w-full md:ml-64 pt-16 md:pt-0 overflow-y-auto">
             <Router />
-          </div>
+          </main>
 
           {/* Global Schedule Session Modal */}
           <ScheduleSessionModal 
@@ -837,7 +838,7 @@ function AppLayout() {
         </div>
       ) : (
         // Unauthenticated layout (public pages including auth/callback)
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-y-auto">
           <Router />
         </div>
       )}
