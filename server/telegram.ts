@@ -441,6 +441,39 @@ async function sendBookingNotification(session: any) {
   }
 }
 
+// Admin chat ID for receiving feedback notifications
+const ADMIN_CHAT_ID = '1610008120';
+
+export async function sendFeedbackNotification(feedback: {
+  type: string;
+  subject: string;
+  message: string;
+  userName: string;
+  userEmail: string;
+  feedbackId: number;
+}) {
+  if (!bot) {
+    console.warn('⚠️ Cannot send feedback notification - bot not initialized');
+    return { success: false, error: 'Bot not initialized' };
+  }
+
+  try {
+    const telegramMessage = `📬 *New ${feedback.type}*\n\n` +
+      `👤 *From:* ${feedback.userName}\n` +
+      `📧 *Email:* ${feedback.userEmail}\n` +
+      `📝 *Subject:* ${feedback.subject}\n\n` +
+      `💬 *Message:*\n${feedback.message}\n\n` +
+      `🆔 Feedback ID: #${feedback.feedbackId}`;
+
+    await bot.sendMessage(ADMIN_CHAT_ID, telegramMessage, { parse_mode: 'Markdown' });
+    console.log(`✅ Feedback notification sent to admin for feedback #${feedback.feedbackId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error sending feedback notification:', error);
+    return { success: false, error };
+  }
+}
+
 export async function sendBroadcast(message: string, tutors: any[]) {
   if (!bot) {
     console.warn('⚠️ Cannot send broadcast - bot not initialized');

@@ -9,6 +9,8 @@ import { adminLimiter } from "./rateLimiters";
 import { setSentryUser, clearSentryUser } from "./sentry";
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, bulkSyncSessions, isSyncEnabled, getAuthorizationUrl, handleOAuthCallback, disconnectGoogleCalendar } from "./googleCalendarSync";
 import { Sentry } from "./instrument";
+import { sendFeedbackNotification } from "./telegram";
+import { insertFeedbackSchema } from "@shared/schema";
 import fs from "fs";
 import path from "path";
 
@@ -1034,6 +1036,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(logoBuffer);
     } catch (error) {
       console.error('Logo serving error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Feedback / Help / Technical Support endpoint
+  app.post("/api/feedback", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      
+      // Validate request body
+      const parseResult = insertFeedbackSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid feedback data", details: parseResult.error.errors });
+      }
+      
+      const { type, subject, message, email } = parseResult.data;
+      
+      // Get tutor info for context
+      const { data: tutor } = await supabase
+        .from('tutors')
+        .select('id, full_name, email')
+        .eq('user_id', user.id)
+        .single();
+      
+      // Insert feedback into database
+      const { data: feedback, error: insertError } = await supabase
+        .from('feedback')
+        .insert({
+          tutor_id: tutor?.id || null,
+          type,
+          subject: subject || null,
+          message,
+          email: email || tutor?.email || null,
+          status: 'new'
+        })
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error('Error inserting feedback:', insertError);
+        return res.status(500).json({ error: "Failed to submit feedback" });
+      }
+      
+      // Send Telegram notification to admin
+      const typeLabels: Record<string, string> = {
+        'help': 'Help Request',
+        'feedback': 'Feedback',
+        'technical_support': 'Technical Support'
+      };
+      
+      await sendFeedbackNotification({
+        type: typeLabels[type] || type,
+        subject: subject || 'No subject',
+        message,
+        userName: tutor?.full_name || 'Unknown User',
+        userEmail: email || tutor?.email || 'No email',
+        feedbackId: feedback.id
+      });
+      
+      console.log(`✅ Feedback #${feedback.id} submitted by ${tutor?.full_name || 'Unknown'}`);
+      res.json({ success: true, id: feedback.id });
+      
+    } catch (error) {
+      console.error('Feedback submission error:', error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

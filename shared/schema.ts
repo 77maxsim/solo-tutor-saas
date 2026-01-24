@@ -147,3 +147,33 @@ export interface CancellationStats {
   tutorCancellationRate: number;
   studentCancellationRate: number;
 }
+
+// Feedback types for Help/Feedback/Technical Support feature
+export type FeedbackType = 'help' | 'feedback' | 'technical_support';
+export type FeedbackStatus = 'new' | 'in_progress' | 'resolved';
+
+export interface Feedback {
+  id: number;
+  tutor_id: string | null;
+  type: FeedbackType;
+  subject: string | null;
+  message: string;
+  email: string | null;
+  status: FeedbackStatus;
+  created_at: string;
+}
+
+export interface InsertFeedback {
+  tutor_id?: string;
+  type: FeedbackType;
+  subject?: string;
+  message: string;
+  email?: string;
+}
+
+export const insertFeedbackSchema = z.object({
+  type: z.enum(['help', 'feedback', 'technical_support']),
+  subject: z.string().optional(),
+  message: z.string().min(1, "Message is required"),
+  email: z.string().email().optional().or(z.literal('')),
+});
