@@ -51,12 +51,18 @@ export function WelcomeModal() {
     steps,
     completedSteps,
     totalSteps,
-    progressPercent
+    progressPercent,
+    dismissOnboarding
   } = useOnboarding();
 
   const nextIncompleteStep = steps.find(s => !s.completed);
 
   const handleGetStarted = () => {
+    setShowWelcomeModal(false);
+  };
+
+  const handleSkipOnboarding = () => {
+    dismissOnboarding();
     setShowWelcomeModal(false);
   };
 
@@ -162,7 +168,7 @@ export function WelcomeModal() {
           <Button 
             variant="ghost" 
             className="w-full text-muted-foreground" 
-            onClick={handleGetStarted}
+            onClick={handleSkipOnboarding}
             data-testid="button-skip-onboarding"
           >
             I'll do this later

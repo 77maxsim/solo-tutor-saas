@@ -114,6 +114,35 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     }
   }, [onboardingData?.onboardingDismissed]);
 
+  // Auto-mark onboarding as complete for existing users who already have 
+  // a complete profile and sessions (fixes issue for users who registered 
+  // before onboarding feature was added)
+  useEffect(() => {
+    const autoCompleteOnboarding = async () => {
+      if (!onboardingData || isLoading) return;
+      
+      // If user already has all steps completed but onboarding_completed is not set,
+      // automatically update it in the database
+      if (
+        onboardingData.hasProfileCompleted && 
+        onboardingData.hasSessions && 
+        !onboardingData.onboardingCompleted
+      ) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        await supabase
+          .from('tutors')
+          .update({ onboarding_completed: true })
+          .eq('user_id', user.id);
+        
+        refetch();
+      }
+    };
+
+    autoCompleteOnboarding();
+  }, [onboardingData, isLoading, refetch]);
+
   useEffect(() => {
     if (!isLoading && onboardingData && !onboardingData.onboardingCompleted && !onboardingData.onboardingDismissed) {
       const hasSeenWelcome = localStorage.getItem('onboarding-welcome-seen');
