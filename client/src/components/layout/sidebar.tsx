@@ -219,13 +219,6 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
 
       {/* User Profile Section with Micro-interactions */}
       <div className="border-t border-border p-4 animate-fade-in" style={{animationDelay: '0.8s'}}>
-        <div className="mb-3 text-center">
-          <Link href="/privacy-policy">
-            <span className="text-[10px] text-muted-foreground hover:text-foreground hover:underline cursor-pointer transition-colors">
-              Privacy Policy
-            </span>
-          </Link>
-        </div>
         <Link href="/profile">
           <div 
             className="flex items-center gap-3 mb-3 group hover-lift cursor-pointer p-2 rounded-lg transition-all duration-200 hover:bg-accent/50"
@@ -270,6 +263,21 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
             </Button>
             <ThemeToggle />
           </div>
+        </div>
+        
+        {/* Footer Links */}
+        <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-center gap-2 text-[10px] text-muted-foreground">
+          <Link href="/privacy-policy">
+            <span className="hover:text-foreground hover:underline cursor-pointer transition-colors">
+              Privacy Policy
+            </span>
+          </Link>
+          <span>·</span>
+          <Link href="/help-center">
+            <span className="hover:text-foreground hover:underline cursor-pointer transition-colors">
+              Help Center
+            </span>
+          </Link>
         </div>
       </div>
     </div>
