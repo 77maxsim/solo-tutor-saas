@@ -971,11 +971,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`✅ Admin replied to feedback #${id} for ${feedback.email}`);
       
-      // Note: Email sending would require integration with an email service
-      // For now, we store the reply and mark as resolved
+      // Send email notification to the user
+      const { sendFeedbackReplyEmail } = await import('./email');
+      const emailResult = await sendFeedbackReplyEmail({
+        to: feedback.email,
+        userName: feedback.tutors?.full_name || feedback.name || 'User',
+        feedbackType: feedback.type,
+        originalMessage: feedback.message,
+        adminResponse: message,
+        adminName: admin?.full_name || 'Classter Support'
+      });
+      
+      if (!emailResult.success) {
+        console.error(`⚠️ Email failed to send: ${emailResult.error}`);
+      }
+      
       res.json({ 
         success: true, 
-        message: "Reply saved. User will be notified via email when email service is configured.",
+        message: emailResult.success 
+          ? "Reply saved and email sent to user." 
+          : "Reply saved but email failed to send.",
+        emailSent: emailResult.success,
         recipientEmail: feedback.email
       });
     } catch (error) {

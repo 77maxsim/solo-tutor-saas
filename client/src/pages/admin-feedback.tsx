@@ -87,8 +87,11 @@ export default function AdminFeedbackPage() {
       setReplyMessage("");
       setSelectedFeedback(null);
       toast({
-        title: "Reply sent",
-        description: `Reply saved for ${data.recipientEmail}`,
+        title: data.emailSent ? "Reply sent & email delivered" : "Reply saved",
+        description: data.emailSent 
+          ? `Email sent successfully to ${data.recipientEmail}` 
+          : `Reply saved but email could not be sent to ${data.recipientEmail}`,
+        variant: data.emailSent ? "default" : "destructive",
       });
     },
     onError: () => {
