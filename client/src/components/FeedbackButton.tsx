@@ -37,7 +37,7 @@ const feedbackSchema = z.object({
   type: z.enum(["help", "feedback", "technical_support"]),
   subject: z.string().optional(),
   message: z.string().min(1, "Please enter your message"),
-  email: z.string().email("Please enter a valid email").optional().or(z.literal("")),
+  email: z.string().min(1, "Email is required").email("Please enter a valid email"),
 });
 
 type FeedbackForm = z.infer<typeof feedbackSchema>;
@@ -186,7 +186,7 @@ export function FeedbackButton() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email (optional)</FormLabel>
+                  <FormLabel>Email <span className="text-destructive">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="email"

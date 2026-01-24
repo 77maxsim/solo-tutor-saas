@@ -3,10 +3,12 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Users, DollarSign, Calendar, AlertCircle, TrendingUp, Send } from "lucide-react";
+import { Loader2, Users, DollarSign, Calendar, AlertCircle, TrendingUp, Send, MessageCircle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Feedback } from "@shared/schema";
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -24,6 +26,12 @@ export default function AdminDashboard() {
   const { data: topTutors } = useQuery<any[]>({
     queryKey: ['/api/admin/top-tutors'],
   });
+
+  const { data: feedbackList } = useQuery<Feedback[]>({
+    queryKey: ['/api/admin/feedback'],
+  });
+
+  const newFeedbackCount = feedbackList?.filter(f => f.status === 'new').length || 0;
 
   const broadcastMutation = useMutation({
     mutationFn: async (message: string) => {
@@ -214,6 +222,47 @@ export default function AdminDashboard() {
               No tutor data available
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Feedback Management */}
+      <Card data-testid="card-feedback-management">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5" />
+                Feedback & Support
+                {newFeedbackCount > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-xs font-medium rounded-full">
+                    {newFeedbackCount} new
+                  </span>
+                )}
+              </CardTitle>
+              <CardDescription>Manage help requests, feedback, and technical support tickets</CardDescription>
+            </div>
+            <Link href="/admin/feedback">
+              <Button>
+                View All
+              </Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-red-600">{feedbackList?.filter(f => f.status === 'new').length || 0}</div>
+              <div className="text-sm text-muted-foreground">New</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-yellow-600">{feedbackList?.filter(f => f.status === 'in_progress').length || 0}</div>
+              <div className="text-sm text-muted-foreground">In Progress</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-green-600">{feedbackList?.filter(f => f.status === 'resolved').length || 0}</div>
+              <div className="text-sm text-muted-foreground">Resolved</div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

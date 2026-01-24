@@ -861,6 +861,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Get all feedback submissions
+  app.get("/api/admin/feedback", authenticateUser, authorizeAdmin, adminLimiter, async (req, res) => {
+    try {
+      const { status, type } = req.query;
+      
+      let query = supabase
+        .from('feedback')
+        .select(`
+          *,
+          tutors:tutor_id (full_name, email)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (status && status !== 'all') {
+        query = query.eq('status', status);
+      }
+      if (type && type !== 'all') {
+        query = query.eq('type', type);
+      }
+      
+      const { data: feedback, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching feedback:', error);
+        return res.status(500).json({ error: "Failed to fetch feedback" });
+      }
+      
+      res.json(feedback || []);
+    } catch (error) {
+      console.error('Admin feedback fetch error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Admin: Update feedback status
+  app.patch("/api/admin/feedback/:id/status", authenticateUser, authorizeAdmin, adminLimiter, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      if (!['new', 'in_progress', 'resolved'].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+      
+      const { data, error } = await supabase
+        .from('feedback')
+        .update({ status })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating feedback status:', error);
+        return res.status(500).json({ error: "Failed to update status" });
+      }
+      
+      res.json(data);
+    } catch (error) {
+      console.error('Admin feedback status update error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Admin: Reply to feedback (stores reply and sends email)
+  app.post("/api/admin/feedback/:id/reply", authenticateUser, authorizeAdmin, adminLimiter, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { message } = req.body;
+      const user = (req as any).user;
+      
+      if (!message || message.trim().length === 0) {
+        return res.status(400).json({ error: "Reply message is required" });
+      }
+      
+      // Get the feedback entry
+      const { data: feedback, error: fetchError } = await supabase
+        .from('feedback')
+        .select('*, tutors:tutor_id (full_name)')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError || !feedback) {
+        return res.status(404).json({ error: "Feedback not found" });
+      }
+      
+      // Get admin info
+      const { data: admin } = await supabase
+        .from('tutors')
+        .select('full_name')
+        .eq('user_id', user.id)
+        .single();
+      
+      // Store the reply in the feedback record (admin_response field)
+      const { error: updateError } = await supabase
+        .from('feedback')
+        .update({ 
+          admin_response: message,
+          admin_responded_at: new Date().toISOString(),
+          admin_responder_name: admin?.full_name || 'Admin',
+          status: 'resolved'
+        })
+        .eq('id', id);
+      
+      if (updateError) {
+        console.error('Error storing reply:', updateError);
+        return res.status(500).json({ error: "Failed to store reply" });
+      }
+      
+      console.log(`✅ Admin replied to feedback #${id} for ${feedback.email}`);
+      
+      // Note: Email sending would require integration with an email service
+      // For now, we store the reply and mark as resolved
+      res.json({ 
+        success: true, 
+        message: "Reply saved. User will be notified via email when email service is configured.",
+        recipientEmail: feedback.email
+      });
+    } catch (error) {
+      console.error('Admin feedback reply error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Google Calendar sync endpoints
   app.post("/api/google-calendar/sync-session", async (req, res) => {
     try {
@@ -1068,7 +1191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type,
           subject: subject || null,
           message,
-          email: email || tutor?.email || null,
+          email: email,
           status: 'new'
         })
         .select()
@@ -1091,7 +1214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subject: subject || 'No subject',
         message,
         userName: tutor?.full_name || 'Unknown User',
-        userEmail: email || tutor?.email || 'No email',
+        userEmail: email,
         feedbackId: feedback.id
       });
       

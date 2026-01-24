@@ -158,9 +158,13 @@ export interface Feedback {
   type: FeedbackType;
   subject: string | null;
   message: string;
-  email: string | null;
+  email: string;
   status: FeedbackStatus;
   created_at: string;
+  admin_response?: string | null;
+  admin_responded_at?: string | null;
+  admin_responder_name?: string | null;
+  tutors?: { full_name: string; email: string } | null;
 }
 
 export interface InsertFeedback {
@@ -168,12 +172,20 @@ export interface InsertFeedback {
   type: FeedbackType;
   subject?: string;
   message: string;
-  email?: string;
+  email: string;
+}
+
+export interface FeedbackReply {
+  id: number;
+  feedback_id: number;
+  message: string;
+  sent_at: string;
+  sent_by: string;
 }
 
 export const insertFeedbackSchema = z.object({
   type: z.enum(['help', 'feedback', 'technical_support']),
   subject: z.string().optional(),
   message: z.string().min(1, "Message is required"),
-  email: z.string().email().optional().or(z.literal('')),
+  email: z.string().email("Please enter a valid email address"),
 });
