@@ -40,7 +40,8 @@ Preferred communication style: Simple, everyday language.
     - **Query Timeout Protection**: 30-second timeout on all Supabase queries with proper abort signal handling to prevent hung requests.
     - **API Usage Monitoring**: Comprehensive tracking of ExchangeRate-API calls with monthly limits (1,500 requests) and 80% threshold warnings.
 - **Notifications**: Telegram bot integration for daily summaries, booking alerts, broadcast messages, and admin feedback notifications.
-- **Help/Feedback System**: Floating feedback button on all authenticated pages allowing users to submit help requests, feedback, or technical support tickets. Submissions are stored in a `feedback` table and instantly notify the admin via Telegram.
+- **Help/Feedback System**: Floating feedback button on all authenticated pages allowing users to submit help requests, feedback, or technical support tickets. Submissions are stored in a `feedback` table and instantly notify the admin via Telegram. Email is required for responses.
+    - **Admin Feedback Management** (`/admin/feedback`): Centralized dashboard for viewing, filtering, and responding to all user submissions. Supports status tracking (New/In Progress/Resolved), type filtering (Help/Feedback/Technical Support), and admin reply functionality. Replies are stored in the database with responder info.
 - **Error Tracking & Monitoring**: Sentry integration for comprehensive error tracking, performance monitoring, and session replay on both frontend and backend.
 - **Admin Dashboard**: Comprehensive dashboard with KPIs, analytics charts, top tutors performance metrics, and multi-currency earnings conversion to USD.
     - **SQL Aggregation for Scalability**: Admin metrics use PostgreSQL RPC functions for server-side aggregation (handles millions of sessions). Falls back to paginated batch fetching if RPC functions not installed.
