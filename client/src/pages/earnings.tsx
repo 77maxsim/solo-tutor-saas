@@ -47,7 +47,7 @@ import {
   Info
 } from "lucide-react";
 import { useUsdToggle } from "@/hooks/useUsdToggle";
-import { UsdToggle } from "@/components/ui/usd-toggle";
+import { UsdButton } from "@/components/ui/usd-button";
 import { SessionStatCompact } from "@/components/stats/SessionStatCompact";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, ComposedChart } from 'recharts';
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -1201,19 +1201,19 @@ ${filteredData.map(m => `${m.month} ${m.year}: ${formatCurrency(m.earnings, curr
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div className="flex items-center gap-2">
+                <Coins className="h-4 w-4 text-green-600" />
                 <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                {isUsdAvailable && (
-                  <UsdToggle
-                    showUsd={showUsd}
-                    onToggle={toggleUsd}
-                    isLoading={isLoadingRate}
-                    isAvailable={isUsdAvailable}
-                    defaultCurrency={tutorCurrency}
-                    rateInfo={rateData ? { rate: rateData.rate, cached: rateData.cached, expiresIn: rateData.expiresIn } : undefined}
-                  />
-                )}
               </div>
-              <Coins className="h-4 w-4 text-green-600" />
+              {isUsdAvailable && (
+                <UsdButton
+                  showUsd={showUsd}
+                  onToggle={toggleUsd}
+                  isLoading={isLoadingRate}
+                  isAvailable={isUsdAvailable}
+                  defaultCurrency={tutorCurrency}
+                  rateInfo={rateData ? { rate: rateData.rate, cached: rateData.cached, expiresIn: rateData.expiresIn } : undefined}
+                />
+              )}
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
