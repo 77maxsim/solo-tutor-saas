@@ -90,8 +90,8 @@ export default function AdminFeedbackPage() {
         title: data.emailSent ? "Reply sent & email delivered" : "Reply saved",
         description: data.emailSent 
           ? `Email sent successfully to ${data.recipientEmail}` 
-          : `Reply saved but email could not be sent to ${data.recipientEmail}`,
-        variant: data.emailSent ? "default" : "destructive",
+          : `Reply saved. Email requires domain verification in Resend settings.`,
+        variant: data.emailSent ? "default" : "default",
       });
     },
     onError: () => {
@@ -273,27 +273,23 @@ export default function AdminFeedbackPage() {
                       </div>
 
                       <div className="flex gap-2 flex-shrink-0">
-                        {item.status !== 'resolved' && (
-                          <>
-                            <Select
-                              value={item.status}
-                              onValueChange={(value) => updateStatusMutation.mutate({ id: item.id, status: value as FeedbackStatus })}
-                            >
-                              <SelectTrigger className="w-[130px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="in_progress">In Progress</SelectItem>
-                                <SelectItem value="resolved">Resolved</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button onClick={() => handleReply(item)} size="sm">
-                              <Send className="h-4 w-4 mr-1" />
-                              Reply
-                            </Button>
-                          </>
-                        )}
+                        <Select
+                          value={item.status}
+                          onValueChange={(value) => updateStatusMutation.mutate({ id: item.id, status: value as FeedbackStatus })}
+                        >
+                          <SelectTrigger className="w-[130px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="resolved">Resolved</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button onClick={() => handleReply(item)} size="sm">
+                          <Send className="h-4 w-4 mr-1" />
+                          Reply
+                        </Button>
                       </div>
                     </div>
                   </div>
