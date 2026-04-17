@@ -110,7 +110,7 @@ export default function HelpCenter() {
           <AccordionItem value="item-6">
             <AccordionTrigger>How do I share my booking link with students?</AccordionTrigger>
             <AccordionContent>
-              Your public booking page is available at classter.net/booking/[your-id]. You can find and copy 
+              Your public booking page is available at app.classterly.com/booking/[your-id]. You can find and copy 
               your unique booking link from your Profile page. Share this link with students so they can 
               book sessions with you directly.
             </AccordionContent>
@@ -133,7 +133,7 @@ export default function HelpCenter() {
                 <Mail className="h-4 w-4 mr-2" />
                 Contact Support
               </Button>
-              <a href="https://classter.net" target="_blank" rel="noopener noreferrer">
+              <a href="https://classterly.com" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline">
                   <Book className="h-4 w-4 mr-2" />
                   Visit Website

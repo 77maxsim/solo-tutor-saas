@@ -38,4 +38,4 @@ waitForPort = 5000
 [userenv]
 
 [userenv.shared]
-RESEND_FROM_EMAIL = "Classter Support <support@classter.net>"
+RESEND_FROM_EMAIL = "Classterly Support <support@classterly.com>"
