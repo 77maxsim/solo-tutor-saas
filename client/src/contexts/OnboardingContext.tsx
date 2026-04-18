@@ -45,7 +45,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
       const { data: tutor, error: tutorError } = await supabase
         .from('tutors')
-        .select('id, full_name, avatar_url, timezone, currency, telegram_chat_id, google_calendar_connected, onboarding_completed, onboarding_dismissed')
+        .select('id, full_name, avatar_url, timezone, currency, telegram_chat_id, google_calendar_connected, onboarding_completed, onboarding_dismissed, created_at')
         .eq('user_id', user.id)
         .single();
 
@@ -54,21 +54,47 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
         return null;
       }
 
-      const { data: sessions, error: sessionsError } = await supabase
+      const { count: sessionsCount, error: sessionsError } = await supabase
         .from('sessions')
-        .select('id')
-        .eq('tutor_id', tutorId)
-        .limit(1);
+        .select('id', { count: 'exact', head: true })
+        .eq('tutor_id', tutorId);
 
-      const hasSessions = sessions && sessions.length > 0;
+      if (sessionsError) {
+        console.error('Error counting sessions for onboarding:', sessionsError);
+      }
+
+      const { count: studentsCount, error: studentsError } = await supabase
+        .from('students')
+        .select('id', { count: 'exact', head: true })
+        .eq('tutor_id', tutorId);
+
+      if (studentsError) {
+        console.error('Error counting students for onboarding:', studentsError);
+      }
+
+      const hasSessions = (sessionsCount ?? 0) > 0;
+      const hasStudents = (studentsCount ?? 0) > 0;
       const hasProfileCompleted = !!(tutor.full_name && tutor.full_name.trim() && tutor.timezone && tutor.currency);
       const hasTelegram = !!tutor.telegram_chat_id;
+
+      // An account is "established" (past onboarding) if it has any sessions,
+      // any students, or was created more than 7 days ago. Once established,
+      // onboarding is considered complete forever — regardless of optional
+      // integrations like Telegram.
+      const ESTABLISHED_GRACE_DAYS = 7;
+      const accountAgeMs = tutor.created_at
+        ? Date.now() - new Date(tutor.created_at).getTime()
+        : 0;
+      const accountIsOld = accountAgeMs > ESTABLISHED_GRACE_DAYS * 24 * 60 * 60 * 1000;
+      const isEstablished = hasSessions || hasStudents || accountIsOld;
 
       return {
         tutor,
         hasProfileCompleted,
         hasSessions,
+        hasStudents,
         hasTelegram,
+        isEstablished,
         onboardingCompleted: tutor.onboarding_completed || false,
         onboardingDismissed: tutor.onboarding_dismissed || false,
       };
@@ -107,27 +133,30 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   const completedSteps = steps.filter(s => s.completed).length;
   const totalSteps = steps.length;
   const progressPercent = Math.round((completedSteps / totalSteps) * 100);
-  const isOnboardingComplete = completedSteps === totalSteps;
+  // Onboarding is "complete" if the DB flag is set, OR the account is past
+  // its new-user grace window, OR every visible step is checked off. The DB
+  // flag and "established" check make this a one-way door: once an account
+  // is past onboarding, it never reverts to the checklist again.
+  const isOnboardingComplete =
+    (onboardingData?.onboardingCompleted ?? false) ||
+    (onboardingData?.isEstablished ?? false) ||
+    completedSteps === totalSteps;
   
   // Derive dismissed state from database (primary source) OR local optimistic state
   // This ensures the dismissed state is always correct after re-login
   const isOnboardingDismissed = locallyDismissed || (onboardingData?.onboardingDismissed ?? false);
 
-  // Auto-mark onboarding as complete for existing users who already have 
-  // ALL steps completed (profile, sessions, AND telegram) but onboarding_completed 
-  // is not set in database (fixes issue for users who registered before onboarding 
-  // feature was added)
+  // Auto-mark onboarding as complete for any "established" account.
+  // Onboarding is a one-time lifecycle event, not a live derived status:
+  // once a user has any sessions, any students, or an account older than the
+  // grace window, we permanently flip onboarding_completed = true so they
+  // never see the checklist or welcome modal again — regardless of optional
+  // integrations like Telegram or any flaky live data reads.
   useEffect(() => {
     const autoCompleteOnboarding = async () => {
       if (!onboardingData || isLoading) return;
-      
-      // Only auto-complete if ALL three steps are done
-      const allStepsComplete = 
-        onboardingData.hasProfileCompleted && 
-        onboardingData.hasSessions && 
-        onboardingData.hasTelegram;
-      
-      if (allStepsComplete && !onboardingData.onboardingCompleted) {
+
+      if (onboardingData.isEstablished && !onboardingData.onboardingCompleted) {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
@@ -153,7 +182,13 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   }, [onboardingData, isLoading, refetch]);
 
   useEffect(() => {
-    if (!isLoading && onboardingData && !onboardingData.onboardingCompleted && !onboardingData.onboardingDismissed) {
+    if (
+      !isLoading &&
+      onboardingData &&
+      !onboardingData.onboardingCompleted &&
+      !onboardingData.onboardingDismissed &&
+      !onboardingData.isEstablished
+    ) {
       const hasSeenWelcome = localStorage.getItem('onboarding-welcome-seen');
       if (!hasSeenWelcome && completedSteps < totalSteps) {
         setShowWelcomeModal(true);
