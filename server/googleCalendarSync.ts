@@ -19,9 +19,12 @@ function getRedirectUri(): string {
   if (process.env.GOOGLE_OAUTH_REDIRECT_URI) {
     return process.env.GOOGLE_OAUTH_REDIRECT_URI;
   }
-  // For Replit deployments (production): REPLIT_DEPLOYMENT is a flag ("1"),
-  // the actual domain(s) live in REPLIT_DOMAINS (comma-separated).
-  if (process.env.REPLIT_DEPLOYMENT === '1' && process.env.REPLIT_DOMAINS) {
+  // For Replit deployments (production): REPLIT_DEPLOYMENT is a flag (commonly
+  // "1" or "true", never the actual hostname). The real domain(s) live in
+  // REPLIT_DOMAINS (comma-separated).
+  const deploymentFlag = (process.env.REPLIT_DEPLOYMENT || '').toLowerCase();
+  const isDeployment = deploymentFlag === '1' || deploymentFlag === 'true';
+  if (isDeployment && process.env.REPLIT_DOMAINS) {
     const domain = process.env.REPLIT_DOMAINS.split(',')[0].trim();
     if (domain) {
       return `https://${domain}/api/auth/google/callback`;
