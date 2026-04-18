@@ -139,7 +139,7 @@ export default function HelpCenter() {
                   Visit Website
                 </Button>
               </a>
-              <a href="https://calendly.com/classter_demo/30min" target="_blank" rel="noopener noreferrer">
+              <a href="https://calendly.com/classterly_demo/30min" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline">
                   <Calendar className="h-4 w-4 mr-2" />
                   Book a Demo
