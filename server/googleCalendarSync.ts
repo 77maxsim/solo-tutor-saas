@@ -15,19 +15,35 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
 // Determine the correct redirect URI based on environment
 function getRedirectUri(): string {
-  // For Replit deployments (production)
-  if (process.env.REPLIT_DEPLOYMENT) {
-    return `https://${process.env.REPLIT_DEPLOYMENT}/api/auth/google/callback`;
+  // Explicit override always wins
+  if (process.env.GOOGLE_OAUTH_REDIRECT_URI) {
+    return process.env.GOOGLE_OAUTH_REDIRECT_URI;
+  }
+  // For Replit deployments (production): REPLIT_DEPLOYMENT is a flag ("1"),
+  // the actual domain(s) live in REPLIT_DOMAINS (comma-separated).
+  if (process.env.REPLIT_DEPLOYMENT === '1' && process.env.REPLIT_DOMAINS) {
+    const domain = process.env.REPLIT_DOMAINS.split(',')[0].trim();
+    if (domain) {
+      return `https://${domain}/api/auth/google/callback`;
+    }
   }
   // For Replit development environment
   if (process.env.REPLIT_DEV_DOMAIN) {
     return `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/google/callback`;
+  }
+  // Fallback: first entry of REPLIT_DOMAINS if available (covers dev too)
+  if (process.env.REPLIT_DOMAINS) {
+    const domain = process.env.REPLIT_DOMAINS.split(',')[0].trim();
+    if (domain) {
+      return `https://${domain}/api/auth/google/callback`;
+    }
   }
   // Fallback for local development
   return 'http://localhost:5000/api/auth/google/callback';
 }
 
 const REDIRECT_URI = getRedirectUri();
+console.log(`[GoogleCalendar] OAuth redirect URI: ${REDIRECT_URI}`);
 
 // OAuth state management - stores cryptographically secure state tokens
 interface OAuthState {
