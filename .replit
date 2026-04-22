@@ -39,3 +39,7 @@ waitForPort = 5000
 
 [userenv.shared]
 RESEND_FROM_EMAIL = "Classterly Support <support@classterly.com>"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
