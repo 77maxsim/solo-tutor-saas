@@ -40,6 +40,9 @@ waitForPort = 5000
 [userenv.shared]
 RESEND_FROM_EMAIL = "Classterly Support <support@classterly.com>"
 
+[userenv.production]
+GOOGLE_OAUTH_REDIRECT_URI = "https://classterly.com/api/auth/google/callback"
+
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
