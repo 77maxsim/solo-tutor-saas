@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentTutorId } from "@/lib/tutorHelpers";
-import classterLogo from "@assets/Blue and Light Gray Modern Company Logo (2)_1760973142069.png";
+import classterLogo from "@assets/classterly-horizontal-2048_1776969480251.png";
 
 import { usePendingSessions } from "@/hooks/use-pending-sessions";
 
@@ -126,7 +126,7 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
         <div className="flex items-center justify-center px-4 py-6 border-b border-border hover-lift cursor-pointer group" onClick={handleNavClick}>
           <img 
             src={classterLogo} 
-            alt="Classter" 
+            alt="Classterly" 
             className="w-full max-w-[180px] h-auto transition-all duration-300 group-hover:scale-105"
           />
         </div>
@@ -244,7 +244,7 @@ export function Sidebar({ onScheduleSession, onCloseMobile }: SidebarProps) {
                 {tutorProfile?.full_name || 'Tutor'}
               </p>
               <p className="text-xs text-muted-foreground truncate group-hover:text-muted-foreground/80 transition-colors duration-200">
-                {tutorProfile?.email || 'Classter User'}
+                {tutorProfile?.email || 'Classterly User'}
               </p>
             </div>
             <Settings className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:rotate-[360deg] transition-all duration-500" />

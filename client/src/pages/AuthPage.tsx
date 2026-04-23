@@ -27,7 +27,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { TIMEZONE_GROUPS, getBrowserTimezone } from "@/lib/timezones";
-import tutorStudentImg from "@assets/Blue and Light Gray Modern Company Logo (1)_1760972575641.png";
+import tutorStudentImg from "@assets/classterly-illustration-a-2400_1776969512828.png";
+import classterlyLogo from "@assets/classterly-horizontal-2048_1776969480251.png";
 
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -304,11 +305,18 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="w-full max-w-md">
+        <div className="flex justify-center mb-4">
+          <img
+            src={classterlyLogo}
+            alt="Classterly"
+            className="w-full max-w-[260px] h-auto object-contain"
+          />
+        </div>
         <div className="flex justify-center mb-6">
-          <img 
-            src={tutorStudentImg} 
-            alt="Classter - Tutoring Management" 
-            className="w-64 h-64 object-contain"
+          <img
+            src={tutorStudentImg}
+            alt="Classterly - Tutoring Management"
+            className="w-full max-w-[320px] h-auto object-contain"
           />
         </div>
         <Card className="shadow-xl">
@@ -320,7 +328,7 @@ export default function AuthPage() {
               {isPasswordResetMode 
                 ? 'Enter your email to receive password reset instructions'
                 : isLogin 
-                ? 'Sign in to access your Classter dashboard' 
+                ? 'Sign in to access your Classterly dashboard' 
                 : 'Start managing your tutoring business today'
               }
             </CardDescription>
@@ -665,7 +673,7 @@ export default function AuthPage() {
         </Card>
 
         <div className="text-center text-xs text-muted-foreground mt-4 space-y-1">
-          <p>© 2025 Classter. Manage your tutoring business with ease.</p>
+          <p>© 2025 Classterly. Manage your tutoring business with ease.</p>
           <a href="/privacy-policy" className="hover:underline hover:text-foreground transition-colors">
             Privacy Policy
           </a>
