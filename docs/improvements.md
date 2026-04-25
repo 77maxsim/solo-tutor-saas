@@ -1,10 +1,13 @@
 # Classterly — Improvement Suggestions
 
+**Generated:** April 25, 2026
+**Status:** Suggestions only — no code changes have been made as part of this document. Each item is a recommendation gathered from a read-only audit of the codebase.
+
 A prioritized audit of issues found across the codebase. Items are grouped by impact, with file references where applicable.
 
 ---
 
-## 🔴 Critical — Security & Data Integrity
+## 🔴 Critical — Security
 
 ### 1. Missing authentication on tutor-scoped API routes
 Several backend endpoints accept a `:tutorId` URL parameter and return that tutor's data without verifying that the requester is the same tutor (or an admin). Anyone who can guess a tutor ID can read their data.
@@ -22,24 +25,24 @@ Several backend endpoints accept a `:tutorId` URL parameter and return that tuto
 
 **Fix:** Ignore `req.body.userId` and use `req.user.id` from the session.
 
-### 3. Telegram bot daily-notification check is non-atomic
-`server/telegram.ts` (around lines 330–350) reads the "last notification sent" flag, then writes it back later. Two concurrent ticks can both read "not sent yet" and send the message twice.
-
-**Fix:** Use a single conditional UPDATE (`UPDATE ... WHERE last_sent < today RETURNING ...`) and only send when the row is actually updated.
-
 ---
 
-## 🟠 Bugs
+## 🟠 Bugs & Reliability
 
-### 4. Recurring-session creation is not transactional
+### 3. Recurring-session creation is not transactional
 `client/src/components/modals/session-details-modal.tsx` (lines ~108–162) creates 12 future sessions in one insert and then updates the original session in a separate statement. If the second call fails, you end up with orphaned future sessions and an inconsistent series.
 
 **Fix:** Move this into a single backend route wrapped in a Postgres transaction (or a Supabase RPC), so both writes succeed or both roll back.
 
-### 5. Google Calendar sync has no retry on transient failures
+### 4. Google Calendar sync has no retry on transient failures
 `server/googleCalendarSync.ts` (around lines 331 and 397) makes Google API calls with no retry logic. A single 5xx or rate-limit response leaves the local session out of sync with Google Calendar until the next manual edit.
 
 **Fix:** Wrap Google API calls in a small retry helper with exponential backoff (e.g. 3 attempts at 500 ms / 1 s / 2 s) and only mark a sync failed after all retries fail. Log the failure and surface it in the UI.
+
+### 5. Telegram bot daily-notification check is non-atomic
+`server/telegram.ts` (around lines 330–350) reads the "last notification sent" flag, then writes it back later. Two concurrent ticks can both read "not sent yet" and send the message twice.
+
+**Fix:** Use a single conditional UPDATE (`UPDATE ... WHERE last_sent < today RETURNING ...`) and only send when the row is actually updated.
 
 ### 6. Admin metrics N+1 currency conversion
 `server/routes.ts` (around lines 521–527) converts each tutor's earnings to USD one-by-one inside a loop, hitting the FX rate source repeatedly.
@@ -48,7 +51,7 @@ Several backend endpoints accept a `:tutorId` URL parameter and return that tuto
 
 ---
 
-## 🟡 UX & Frontend Polish
+## 🟡 UX & Design
 
 ### 7. Duplicated route-protection wrappers in App.tsx
 `client/src/App.tsx` (lines ~93–597) defines 10+ near-identical `Protected*` wrapper components, one per page. This is repetitive and easy to forget when adding a new route.
@@ -70,29 +73,38 @@ The full-page loading spinner shown during route transitions appears even for in
 
 **Fix:** Delay the spinner by ~150 ms (only show it if the transition takes longer than that), or use Suspense fallbacks scoped to the page contents.
 
-### 11. Console noise in production
+### 11. Empty and skeleton state consistency
+Loading and empty states are inconsistent across pages. Some lists use shadcn `<Skeleton>` while others show a spinner or nothing at all; some empty states have a friendly message and a CTA, others are blank. The dashboard, students list, sessions list, earnings page, and calendar each take a different approach.
+
+**Areas to review:**
+- `client/src/pages/dashboard.tsx`
+- `client/src/pages/students.tsx`
+- `client/src/pages/sessions.tsx`
+- `client/src/pages/earnings.tsx`
+- `client/src/pages/calendar.tsx`
+
+**Fix:** Define one shared `<EmptyState>` and one shared `<ListSkeleton>` component (in `client/src/components/ui/`) with consistent illustration, heading, body, and primary action slots, then use them everywhere a list, table, or card grid loads or returns no data.
+
+### 12. Console noise in production
 Several pages (calendar, earnings, session-details modal) log heavily with `console.log` in normal flow. This pollutes the production browser console and leaks internal state.
 
 **Fix:** Gate verbose logs behind `import.meta.env.DEV`, or strip `console.log` at build time via the Vite config.
 
 ---
 
-## 🟢 Feature Ideas
+## 🟢 Feature Gaps
 
-### 12. Invoicing
+### 13. Invoicing
 Generate downloadable PDF invoices per student for a given month or date range, including session list, rate breakdown, and totals.
 
-### 13. Stripe "Pay Now" links
+### 14. Stripe "Pay Now" links
 Let tutors send a Stripe Checkout link with each invoice or session reminder so parents can pay online instead of by manual transfer.
 
-### 14. Student / parent portal
+### 15. Student / parent portal
 A read-only login for students or parents to see upcoming sessions, past notes, and outstanding balances. Reduces back-and-forth messaging.
 
-### 15. Lesson resource sharing
+### 16. Lesson resource sharing
 Attach files (PDFs, worksheets, links) to a session or to a student profile, accessible from both sides.
-
-### 16. Cancellation / no-show policy
-Configurable rules so a no-show or late cancellation is automatically flagged as billable per the tutor's policy.
 
 ---
 
@@ -112,8 +124,8 @@ The project currently relies only on `tsc` for type-checking. There are no unit 
 
 ## Suggested order of work
 
-1. Items 1–3 (auth gaps and double-send race) — these are user-data and trust issues, should ship first.
-2. Items 4–6 (data integrity and reliability bugs).
+1. Items 1–2 (auth gaps) — these are user-data and trust issues, should ship first.
+2. Items 3–6 (data integrity and reliability bugs).
 3. Items 17–18 (tests + types) — pays back across everything else.
-4. Items 7–11 (UX polish) in parallel, as bandwidth allows.
-5. Items 12–16 (new features) once the foundation is solid.
+4. Items 7–12 (UX polish) in parallel, as bandwidth allows.
+5. Items 13–16 (new features) once the foundation is solid.
