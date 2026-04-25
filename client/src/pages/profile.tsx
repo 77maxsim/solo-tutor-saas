@@ -346,8 +346,13 @@ export default function Profile() {
         description: "Your profile picture has been updated successfully.",
       });
       setAvatarPreview(avatarUrl);
+      // Invalidate every cached query that exposes avatar_url so the new
+      // picture shows up immediately wherever it's rendered (profile, sidebar,
+      // dashboard greeting, calendar, onboarding checklist).
       queryClient.invalidateQueries({ queryKey: ['tutor-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['tutor-profile-sidebar'] });
       queryClient.invalidateQueries({ queryKey: ['tutor-info'] });
+      queryClient.invalidateQueries({ queryKey: ['onboarding-progress'] });
     },
     onError: (error) => {
       console.error('Avatar upload error:', error);

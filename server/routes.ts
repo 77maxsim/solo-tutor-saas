@@ -227,12 +227,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from('tutor-avatars')
         .getPublicUrl(filePath);
 
-      console.log('Backend upload successful, public URL:', publicUrl);
+      // Cache-bust: the storage object lives at a stable path so the public URL
+      // is identical on every upload. Browsers (and the Supabase CDN, which we
+      // tell to cache for 3600s) would keep serving the previous image. Append
+      // a per-upload version token so the URL string changes each time, which
+      // forces every <img> in the app to refetch the new bytes.
+      const versionedUrl = `${publicUrl}?v=${Date.now()}`;
+
+      console.log('Backend upload successful, public URL:', versionedUrl);
 
       // Update tutor profile with avatar_url
       const { error: updateError } = await supabase
         .from('tutors')
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: versionedUrl })
         .eq('user_id', userId);
 
       if (updateError) {
@@ -242,7 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ 
         success: true, 
-        avatarUrl: publicUrl,
+        avatarUrl: versionedUrl,
         message: "Avatar uploaded successfully" 
       });
 
