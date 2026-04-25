@@ -140,7 +140,7 @@ export function TelegramSetupCard({ compact = false }: TelegramSetupCardProps) {
         <div className="space-y-3 pt-2">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="rounded-full px-3">1</Badge>
-            <span className="text-sm">Open the Classter Telegram Bot</span>
+            <span className="text-sm">Open the Classterly Telegram Bot</span>
           </div>
           <Button 
             variant="outline" 

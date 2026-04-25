@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Classter Support <onboarding@resend.dev>';
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Classterly Support <onboarding@resend.dev>';
 const REPLY_TO_EMAIL = process.env.RESEND_REPLY_TO_EMAIL || '77maxsim@gmail.com';
 
 function escapeHtml(text: string): string {
@@ -51,7 +51,7 @@ export async function sendFeedbackReplyEmail(params: FeedbackReplyEmailParams): 
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">Classter</h1>
+        <h1 style="color: white; margin: 0; font-size: 24px;">Classterly</h1>
         <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0; font-size: 14px;">Tutoring Management Platform</p>
       </div>
       
@@ -74,11 +74,11 @@ export async function sendFeedbackReplyEmail(params: FeedbackReplyEmailParams): 
         
         <p>If you have any further questions or need additional assistance, please don't hesitate to reach out through the app.</p>
         
-        <p style="margin-bottom: 0;">Best regards,<br><strong>The Classter Team</strong></p>
+        <p style="margin-bottom: 0;">Best regards,<br><strong>The Classterly Team</strong></p>
       </div>
       
       <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
-        <p style="margin: 0;">This email was sent in response to your ${typeLabel.toLowerCase()} submitted through Classter.</p>
+        <p style="margin: 0;">This email was sent in response to your ${typeLabel.toLowerCase()} submitted through Classterly.</p>
       </div>
     </body>
     </html>
@@ -94,19 +94,19 @@ ${originalMessage}
 OUR RESPONSE:
 ${adminResponse}
 
-Response from: ${adminName || 'Classter Support'}
+Response from: ${adminName || 'Classterly Support'}
 
 If you have any further questions or need additional assistance, please don't hesitate to reach out through the app.
 
 Best regards,
-The Classter Team`;
+The Classterly Team`;
 
   try {
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
       replyTo: REPLY_TO_EMAIL,
       to: [to],
-      subject: `Re: Your ${typeLabel} - Classter Support`,
+      subject: `Re: Your ${typeLabel} - Classterly Support`,
       html,
       text,
     });

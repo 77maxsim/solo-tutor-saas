@@ -1,4 +1,4 @@
-// Timezone utilities and data for Classter
+// Timezone utilities and data for Classterly
 export interface TimezoneOption {
   value: string;
   label: string;

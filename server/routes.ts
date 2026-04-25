@@ -979,7 +979,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         feedbackType: feedback.type,
         originalMessage: feedback.message,
         adminResponse: message,
-        adminName: admin?.full_name || 'Classter Support'
+        adminName: admin?.full_name || 'Classterly Support'
       });
       
       if (!emailResult.success) {

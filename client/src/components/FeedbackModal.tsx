@@ -35,7 +35,7 @@ const feedbackSchema = z.object({
 type FeedbackForm = z.infer<typeof feedbackSchema>;
 
 const feedbackTypes = [
-  { value: "help", label: "Help", icon: HelpCircle, description: "Get assistance with using Classter" },
+  { value: "help", label: "Help", icon: HelpCircle, description: "Get assistance with using Classterly" },
   { value: "feedback", label: "Feedback", icon: MessageSquare, description: "Share your thoughts and suggestions" },
   { value: "technical_support", label: "Technical Support", icon: Wrench, description: "Report bugs or technical issues" },
 ] as const;

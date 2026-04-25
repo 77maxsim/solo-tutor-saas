@@ -752,7 +752,7 @@ function AppLayout() {
       case "/admin":
         return "Admin Dashboard";
       default:
-        return "Classter";
+        return "Classterly";
     }
   };
 

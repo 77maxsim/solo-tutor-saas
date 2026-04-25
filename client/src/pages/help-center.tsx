@@ -21,7 +21,7 @@ export default function HelpCenter() {
 
         <h1 className="text-3xl font-bold mb-2">Help Center</h1>
         <p className="text-muted-foreground mb-8">
-          Find answers to common questions and learn how to get the most out of Classter.
+          Find answers to common questions and learn how to get the most out of Classterly.
         </p>
 
         <div className="grid gap-4 md:grid-cols-3 mb-8">

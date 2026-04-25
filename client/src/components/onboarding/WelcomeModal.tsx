@@ -82,7 +82,7 @@ export function WelcomeModal() {
           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center mb-4">
             <Sparkles className="h-8 w-8 text-white" />
           </div>
-          <DialogTitle className="text-2xl" data-testid="welcome-modal-title">Welcome to Classter!</DialogTitle>
+          <DialogTitle className="text-2xl" data-testid="welcome-modal-title">Welcome to Classterly!</DialogTitle>
           <DialogDescription className="text-base">
             Let's get your tutoring dashboard ready in just a few minutes.
           </DialogDescription>

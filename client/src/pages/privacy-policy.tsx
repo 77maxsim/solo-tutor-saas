@@ -23,7 +23,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-xl font-semibold mb-3">1. Introduction</h2>
             <p>
-              Welcome to Classter. We respect your privacy and are committed to protecting your personal data. 
+              Welcome to Classterly. We respect your privacy and are committed to protecting your personal data. 
               This privacy policy explains how we collect, use, and safeguard your information when you use our tutoring management platform.
             </p>
           </section>
@@ -58,7 +58,7 @@ export default function PrivacyPolicy() {
             <h2 className="text-xl font-semibold mb-3">4. How We Use Your Information</h2>
             <p>We use the collected information to:</p>
             <ul className="list-disc pl-6 space-y-1">
-              <li>Provide and maintain the Classter service</li>
+              <li>Provide and maintain the Classterly service</li>
               <li>Manage your tutoring sessions and student information</li>
               <li>Sync sessions with your calendar (if enabled)</li>
               <li>Send you service-related notifications</li>
