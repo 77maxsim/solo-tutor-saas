@@ -2,8 +2,6 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { createClient } from "@supabase/supabase-js";
 import multer from "multer";
-import { storage } from "./storage";
-import { insertStudentSchema, insertSessionSchema, insertPaymentSchema } from "@shared/schema";
 import { convertToUSD } from "./services/currencyConverter";
 import { adminLimiter } from "./rateLimiters";
 import { setSentryUser, clearSentryUser } from "./sentry";
@@ -194,16 +192,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Avatar upload endpoint
-  app.post("/api/upload/avatar", upload.single('avatar'), async (req, res) => {
+  app.post("/api/upload/avatar", authenticateUser, upload.single('avatar'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      const { userId } = req.body;
-      if (!userId) {
-        return res.status(400).json({ error: "User ID is required" });
-      }
+      // Always trust the authenticated session for the user ID — never the request body.
+      const userId = (req as any).user.id as string;
 
       // Get file extension from original filename
       const fileExt = req.file.originalname.split('.').pop();
@@ -256,90 +252,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard stats endpoint
-  app.get("/api/dashboard/stats/:tutorId", async (req, res) => {
-    try {
-      const tutorId = parseInt(req.params.tutorId);
-      const stats = await storage.getDashboardStats(tutorId);
-      res.json(stats);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch dashboard stats" });
-    }
-  });
-
-  // Students endpoints
-  app.get("/api/students/:tutorId", async (req, res) => {
-    try {
-      const tutorId = parseInt(req.params.tutorId);
-      const students = await storage.getStudentsByTutorId(tutorId);
-      res.json(students);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch students" });
-    }
-  });
-
-  app.post("/api/students", async (req, res) => {
-    try {
-      const validatedData = insertStudentSchema.parse(req.body);
-      const student = await storage.createStudent(validatedData);
-      res.status(201).json(student);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid student data" });
-    }
-  });
-
-  // Sessions endpoints
-  app.get("/api/sessions/:tutorId", async (req, res) => {
-    try {
-      const tutorId = parseInt(req.params.tutorId);
-      const sessions = await storage.getSessionsByTutorId(tutorId);
-      res.json(sessions);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch sessions" });
-    }
-  });
-
-  app.get("/api/sessions/:tutorId/upcoming", async (req, res) => {
-    try {
-      const tutorId = parseInt(req.params.tutorId);
-      const limit = parseInt(req.query.limit as string) || 5;
-      const sessions = await storage.getUpcomingSessions(tutorId, limit);
-      res.json(sessions);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch upcoming sessions" });
-    }
-  });
-
-  app.post("/api/sessions", async (req, res) => {
-    try {
-      const validatedData = insertSessionSchema.parse(req.body);
-      const session = await storage.createSession(validatedData);
-      res.status(201).json(session);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid session data" });
-    }
-  });
-
-  // Payments endpoints
-  app.get("/api/payments/:tutorId", async (req, res) => {
-    try {
-      const tutorId = parseInt(req.params.tutorId);
-      const payments = await storage.getPaymentsByTutorId(tutorId);
-      res.json(payments);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch payments" });
-    }
-  });
-
-  app.post("/api/payments", async (req, res) => {
-    try {
-      const validatedData = insertPaymentSchema.parse(req.body);
-      const payment = await storage.createPayment(validatedData);
-      res.status(201).json(payment);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid payment data" });
-    }
-  });
+  // Note: tutor-scoped REST endpoints (dashboard stats, students, sessions, payments
+  // by :tutorId) used to live here. They were unauthenticated and unused — the frontend
+  // talks to Supabase directly with row-level security. Removed for safety.
+  //
+  // The POST /api/students, /api/sessions, /api/payments endpoints were also unused
+  // (the frontend writes via Supabase) and depended on storage helpers tied to the
+  // dead in-memory store, so they were removed alongside.
 
   app.get("/api/telegram/status", async (req, res) => {
     try {

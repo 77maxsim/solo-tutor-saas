@@ -310,26 +310,28 @@ export default function Profile() {
   // Avatar upload mutation
   const uploadAvatarMutation = useMutation({
     mutationFn: async (file: File) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('User not authenticated');
 
       setIsUploadingAvatar(true);
 
-      console.log('User ID for upload:', user.id);
-
-      // Create FormData for multipart upload
+      // Create FormData for multipart upload — the backend reads the user ID
+      // from the verified Supabase JWT, not from the body, so we don't include it.
       const formData = new FormData();
       formData.append('avatar', file);
-      formData.append('userId', user.id);
 
-      // Upload through backend API
+      // Upload through backend API. Note: do NOT set Content-Type manually —
+      // the browser sets it (with the multipart boundary) automatically.
       const response = await fetch('/api/upload/avatar', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: formData,
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Upload failed');
       }
 
