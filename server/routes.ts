@@ -252,13 +252,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Note: tutor-scoped REST endpoints (dashboard stats, students, sessions, payments
-  // by :tutorId) used to live here. They were unauthenticated and unused — the frontend
-  // talks to Supabase directly with row-level security. Removed for safety.
-  //
-  // The POST /api/students, /api/sessions, /api/payments endpoints were also unused
-  // (the frontend writes via Supabase) and depended on storage helpers tied to the
-  // dead in-memory store, so they were removed alongside.
+  // Tutor-scoped REST endpoints were removed: the frontend uses Supabase directly
+  // (with row-level security) and the old routes were unauthenticated.
 
   app.get("/api/telegram/status", async (req, res) => {
     try {
